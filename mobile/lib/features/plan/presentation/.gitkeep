@@ -1,0 +1,3 @@
+// Plan feature — presentation layer stub.
+// Step 5 will add: plan_generation_page.dart, plan_preview_page.dart, plan_details_page.dart
+// Step 6 will connect backend endpoints.

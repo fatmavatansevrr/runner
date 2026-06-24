@@ -1,0 +1,3 @@
+// Pending confirmation feature — presentation layer stub.
+// Step 5 will add: pending_confirmation_page.dart
+// Step 6 will connect GET /api/v1/pending-confirmations

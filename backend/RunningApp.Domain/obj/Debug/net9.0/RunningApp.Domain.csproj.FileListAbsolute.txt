@@ -1,0 +1,11 @@
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\bin\Debug\net9.0\RunningApp.Domain.deps.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\bin\Debug\net9.0\RunningApp.Domain.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\bin\Debug\net9.0\RunningApp.Domain.pdb
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.AssemblyInfoInputs.cache
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.AssemblyInfo.cs
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.csproj.CoreCompileInputs.cache
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\refint\RunningApp.Domain.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.pdb
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\ref\RunningApp.Domain.dll

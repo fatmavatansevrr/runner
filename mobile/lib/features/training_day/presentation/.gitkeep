@@ -1,0 +1,3 @@
+// Training day feature — presentation layer stub.
+// Step 5 will add: training_day_detail_modal.dart
+// Step 6 will connect GET /api/v1/training-days/{id}
