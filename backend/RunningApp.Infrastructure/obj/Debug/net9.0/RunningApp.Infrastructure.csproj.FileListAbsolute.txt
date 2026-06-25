@@ -13,3 +13,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Infrastructure\obj\Debug\net9.0
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Infrastructure\obj\Debug\net9.0\refint\RunningApp.Infrastructure.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Infrastructure\obj\Debug\net9.0\RunningApp.Infrastructure.pdb
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Infrastructure\obj\Debug\net9.0\ref\RunningApp.Infrastructure.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Infrastructure\obj\Debug\net9.0\RunningApp.Infrastructure.sourcelink.json

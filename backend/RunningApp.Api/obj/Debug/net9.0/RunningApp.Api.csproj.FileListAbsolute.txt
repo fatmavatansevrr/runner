@@ -137,3 +137,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\ru\Microso
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\obj\Debug\net9.0\RunningApp.Api.sourcelink.json

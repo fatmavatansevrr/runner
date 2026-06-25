@@ -1,132 +1,160 @@
 # Antigravity — Adaptive Running App
 
-> Calm, guilt-free running planner. Connected MVP Skeleton — Step 1 complete.
+> A calm, guilt-free running planner designed to help people build consistent running habits and prepare for races without the stress of rigid schedules.
 
 ---
 
-## Project Structure
+## 1. Product Overview & MVP Scope
 
-```
-runner/
-├── mobile/                        # Flutter mobile app
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── app.dart
-│   │   ├── core/
-│   │   │   ├── routing/           # go_router config + route constants
-│   │   │   ├── theme/             # app_colors, app_text_styles, app_spacing, app_radius, app_theme
-│   │   │   ├── network/           # ApiClient (Dio wrapper)
-│   │   │   └── widgets/           # Shared: buttons, cards, bottom sheet, empty/loading state
-│   │   └── features/
-│   │       ├── auth/              # Auth / Welcome page
-│   │       ├── onboarding/        # Intro carousel, Goal selection, (+ more in Step 5)
-│   │       ├── plan/              # Plan generation, preview, details (Step 5)
-│   │       ├── home/              # Home page (6 states, Step 5/6)
-│   │       ├── calendar/          # Calendar page (Step 5/6)
-│   │       ├── training_day/      # Training day detail modal (Step 5/6)
-│   │       ├── pending_confirmation/ # Pending confirmation (Step 5/6)
-│   │       ├── profile/           # Profile page
-│   │       └── settings/          # Settings placeholder
-│   └── pubspec.yaml
-│
-└── backend/                       # .NET 9 Web API
-    ├── RunningApp.sln
-    ├── RunningApp.Api/            # Controllers, Program.cs, appsettings
-    ├── RunningApp.Application/    # Service interfaces, DTOs, Adaptation engine interface
-    ├── RunningApp.Domain/         # Entities, Enums
-    ├── RunningApp.Infrastructure/ # (future: external service adapters)
-    └── RunningApp.Persistence/    # AppDbContext, EF Core, migrations (Step 2)
+Antigravity is an adaptive training platform that dynamically adjusts running plans to the user's real-life compliance. Instead of penalizing missed runs, it leverages a supportive design philosophy to adapt future workouts gently.
+
+### MVP (Phase 1) Scope:
+- **Calm, Supportive Experience**: Gentle wording and states for missed runs, rest days, and confirmations.
+- **Onboarding Flow**: Structured steps collecting goal type, target distance, level of experience, frequency, day-of-week preferences, start date, and plan generation preview.
+- **Three Core Tabs**:
+  - **Home**: Today's workout details, action buttons (Complete / Not Today), weekly mini-calendar, weekly progress, and dynamic tips. Supports special states like "Plan Completed" and "No Active Plan".
+  - **Calendar**: Complete monthly overview mapping completed runs, missed runs, planned runs, and rest days, including monthly summary statistics.
+  - **Profile**: Displays weekly stats, active plan summary, options to cancel/stop plans, and settings.
+- **Backend & Persistence**: Fully connected ASP.NET Core Web API with PostgreSQL database, migrations, and seed data.
+- **Placeholder Adaptation Engine**: Stubbed engine structure that is ready to be swapped out for a real adaptive algorithm in Phase 2.
+
+---
+
+## 2. Architecture Overview
+
+Antigravity is built as a split-client architecture:
+1. **Frontend**: A cross-platform mobile app built with Flutter (Dart), utilizing Riverpod for state management, GoRouter for navigation, and Dio for network requests.
+2. **Backend**: A clean-architecture ASP.NET Core Web API built with .NET 9, using Entity Framework Core for ORM and Npgsql for PostgreSQL integration.
+3. **Database**: PostgreSQL storing user profiles, active plans, generated calendar days, workout completion logs, and "not today" decisions.
+
+```mermaid
+graph TD
+    Flutter[Flutter Mobile App]
+    API[ASP.NET Core Web API]
+    DB[(PostgreSQL Database)]
+
+    Flutter -- "HTTPS (JSON/REST)" --> API
+    API -- "EF Core / Npgsql" --> DB
 ```
 
 ---
 
-## How to Run the Backend
+## 3. Project Structure
 
-### Prerequisites
+### Flutter (Frontend)
+Located in `/mobile`:
+```
+mobile/
+├── lib/
+│   ├── main.dart                      # App entry point
+│   ├── app.dart                       # Root Material App configuration
+│   ├── core/                          # Cross-cutting concerns
+│   │   ├── network/                   # API client (Dio wrapper), DTOs, bootstrap provider
+│   │   ├── routing/                   # GoRouter configuration & routes
+│   │   ├── theme/                     # AppTheme, colors, text styles, spacing
+│   │   └── widgets/                   # Common reusable widgets (buttons, cards, badges)
+│   └── features/                      # Feature modules
+│       ├── auth/                      # Welcome screen & sign in / sign up mock flows
+│       ├── onboarding/                # Onboarding carousel, goal & day selectors, plan generator
+│       ├── plan/                      # Plan details & summary views
+│       ├── home/                      # Today's workout card, weekly mini-calendar, daily tips
+│       ├── calendar/                  # Grid monthly calendar & month summaries
+│       ├── training_day/              # Full-page workout details (planned, completed, missed, rest states)
+│       ├── pending_confirmation/       # View & resolve past unlogged workout decisions
+│       ├── profile/                   # User stats & stop plan triggers
+│       └── settings/                  # Profile settings stub
+```
+
+### .NET 9 API (Backend)
+Located in `/backend`:
+```
+backend/
+├── RunningApp.sln                     # Visual Studio Solution
+├── RunningApp.Api/                    # Controllers, Startup configuration (Program.cs), and appsettings
+├── RunningApp.Application/            # Application logic, DTOs, interfaces, and services
+├── RunningApp.Domain/                 # Core Entities, Enums, and domain model
+├── RunningApp.Infrastructure/         # Future external adapters (placeholder stubs)
+└── RunningApp.Persistence/            # Database Context, EF Core Migrations, and seeds
+```
+
+---
+
+## 4. Setup & Running Instructions
+
+### Running the Backend
+
+#### Prerequisites:
 - .NET 9 SDK
-- PostgreSQL running locally (default: `localhost:5432`)
+- PostgreSQL database server running (default port `5432`)
 
-### Setup
-```powershell
-# Update connection string if needed
-# backend/RunningApp.Api/appsettings.json → ConnectionStrings.DefaultConnection
-
-cd backend
-dotnet restore
-dotnet run --project RunningApp.Api
-```
-
-Swagger UI will be available at: **http://localhost:5001/swagger**
-
-> **Note:** Migrations do not exist yet. Step 2 will add `dotnet ef migrations add InitialCreate`.
-> The API can start but any endpoint that touches the DB will throw until migrations are applied.
+#### Instructions:
+1. Open [backend/RunningApp.Api/appsettings.json](file:///c:/Users/vatan/Desktop/runner/backend/RunningApp.Api/appsettings.json) and verify or update the connection string:
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Host=localhost;Database=running_db;Username=postgres;Password=yourpassword"
+   }
+   ```
+2. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+3. Run the migrations to initialize the database:
+   ```bash
+   dotnet ef database update --project RunningApp.Persistence --startup-project RunningApp.Api
+   ```
+4. Run the API project:
+   ```bash
+   dotnet run --project RunningApp.Api
+   ```
+5. Open your browser and navigate to the Swagger Documentation UI:
+   - **Swagger UI**: [http://localhost:5001/swagger](http://localhost:5001/swagger)
 
 ---
 
-## How to Run the Flutter App
+### Running the Flutter Frontend
 
-### Prerequisites
+#### Prerequisites:
 - Flutter SDK (stable channel)
-- Android Studio or VS Code with Flutter extension
+- A running emulator (iOS/Android) or a connected physical test device
 
-### Setup
-```bash
-cd mobile
-
-# Install Inter font files into assets/fonts/ (download from Google Fonts)
-# or temporarily remove the fonts: block from pubspec.yaml
-
-flutter pub get
-flutter run
-```
-
-> **Note:** The app currently navigates Auth → Intro Carousel → Goal Selection → Home shell.
-> No real API calls are made yet (Step 6).
-
----
-
-## What Is Intentionally Placeholder
-
-| Item | Status | Added in |
-|---|---|---|
-| Real Adaptive Engine | ❌ Not implemented | Never (Phase 2) |
-| `PlaceholderAdaptationEngine` | ✅ Present | Step 1 |
-| All backend service implementations | ❌ Stub only | Step 3 |
-| EF Core migrations | ❌ Not created | Step 2 |
-| Seed plan templates | ❌ Not seeded | Step 2 |
-| Flutter API integration | ❌ Static data only | Step 6 |
-| Onboarding remaining pages | ❌ Stub folders | Step 5 |
-| Real auth (JWT/Firebase) | ❌ Mock userId | Step 3+ |
-| Completion / Not Today modals | ❌ TODO comments | Step 5/6 |
-| Calendar grid widget | ❌ Placeholder | Step 5 |
-| Inter font files | ❌ Must be downloaded | Step 5 |
-| Assets (images, illustrations) | ❌ Placeholder icons | Step 5 |
+#### Instructions:
+1. Navigate to the mobile directory:
+   ```bash
+   cd mobile
+   ```
+2. Retrieve packages:
+   ```bash
+   flutter pub get
+   ```
+3. Run the application:
+   ```bash
+   flutter run
+   ```
+   *Note:* The Flutter app defaults its API base URL to `http://localhost:5001/api/v1` (or `http://10.0.2.2:5001/api/v1` on Android emulators). This configuration can be adjusted in [mobile/lib/core/network/api_client.dart](file:///c:/Users/vatan/Desktop/runner/mobile/lib/core/network/api_client.dart).
 
 ---
 
-## Next Step — Step 2
+## 5. Environment Configuration
 
-Step 2 covers the backend domain and database:
+### Backend Configuration
+Managed in [RunningApp.Api/appsettings.json](file:///c:/Users/vatan/Desktop/runner/backend/RunningApp.Api/appsettings.json):
+- `ConnectionStrings:DefaultConnection`: PostgreSQL server coordinates.
+- `AllowedHosts`: Restricts incoming requests (configured to `*` for local dev).
 
-1. **Write EF Core migrations** (`dotnet ef migrations add InitialCreate`)
-2. **Apply migrations** (`dotnet ef database update`)
-3. **Seed 3 plan templates** (`habit_5k_beginner_3day_km_v1`, `habit_5k_beginner_4day_km_v1`, `race_5k_beginner_3day_km_v1`)
-4. **Seed daily tips** (5–10 rows across workout types)
-5. **Verify AppDbContext** relationships compile and apply correctly
-6. **Test all entities** with a simple integration test or manual EF query
+### Frontend Configuration
+Managed in [mobile/lib/core/network/api_client.dart](file:///c:/Users/vatan/Desktop/runner/mobile/lib/core/network/api_client.dart):
+- `_baseUrl`: Pointed to the local development environment API.
 
 ---
 
-## Tech Decisions Made in Step 1
+## 6. Known Placeholders & Future Roadmap
 
-| Decision | Choice | Reason |
-|---|---|---|
-| State management | `flutter_riverpod` | Clean, testable, matches feature-based structure |
-| Navigation | `go_router` | Shell routes for bottom nav, named routes |
-| HTTP client | `dio` | Interceptor support for auth headers (Step 6) |
-| Date formatting | `intl` | Standard Flutter date/locale formatting |
-| Backend framework | .NET 9 Web API | Specified in brief |
-| ORM | EF Core 9.0.1 + Npgsql | Specified in brief |
-| API docs | Swashbuckle 7.3.1 | Swagger UI in development |
-| Font | Inter | Extracted from design references |
-| Color palette | Extracted from PNGs | No invented colors |
+To ensure the MVP Skeleton remains within bounds, the following items are intentionally implemented as stubs/placeholders:
+
+- **Placeholder Adaptation Engine**: Located at `RunningApp.Application/Services/PlaceholderAdaptationEngine.cs`. It acts as a structural placeholder, immediately returning a `NoChange` outcome rather than recalculating dates.
+- **Mock Authentication**: There is no live Firebase/Cognito configuration. All requests currently bypass tokens and map back to a hardcoded identity `mock-user-001` on the backend.
+- **Seed Templates**: The system seeds 3 core plan templates. Production will require additional configurations for further combinations.
+- **Settings & Plan Summary Pages**: Renders simple UI overlays or SnackBar warnings indicating they are future features.
+
+For more details on these limitations, refer to [MVP_LIMITATIONS.md](file:///c:/Users/vatan/Desktop/runner/MVP_LIMITATIONS.md).
+For guides on full feature implementation, see [DEVELOPER_HANDOFF.md](file:///c:/Users/vatan/Desktop/runner/DEVELOPER_HANDOFF.md).

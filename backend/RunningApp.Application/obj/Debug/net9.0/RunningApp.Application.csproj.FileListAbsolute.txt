@@ -17,3 +17,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Debug\net9.0\Ru
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Debug\net9.0\RunningApp.Persistence.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Debug\net9.0\RunningApp.Persistence.pdb
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Debug\net9.0\RunningApp.Infrastructure.pdb
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\obj\Debug\net9.0\RunningApp.Application.sourcelink.json

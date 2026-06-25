@@ -17,3 +17,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Persistence\obj\Debug\net9.0\re
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Persistence\obj\Debug\net9.0\RunningApp.Persistence.pdb
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Persistence\obj\Debug\net9.0\RunningApp.Persistence.genruntimeconfig.cache
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Persistence\obj\Debug\net9.0\ref\RunningApp.Persistence.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Persistence\obj\Debug\net9.0\RunningApp.Persistence.sourcelink.json

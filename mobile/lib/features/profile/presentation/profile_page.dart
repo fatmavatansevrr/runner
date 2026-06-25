@@ -125,11 +125,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 const SizedBox(height: AppSpacing.md),
                 ElevatedButton(
                   onPressed: () {
-                    ref.refresh(profileOverviewProvider);
-                    ref.refresh(activePlanDetailsProvider);
+                    ref.invalidate(profileOverviewProvider);
+                    ref.invalidate(activePlanDetailsProvider);
                   },
                   child: const Text('Retry'),
                 ),
+
               ],
             ),
           ),

@@ -107,7 +107,7 @@ class _PendingConfirmationPageState extends ConsumerState<PendingConfirmationPag
                   Text(err.toString(), style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
                   const SizedBox(height: AppSpacing.md),
                   ElevatedButton(
-                    onPressed: () => ref.refresh(pendingConfirmationsProvider),
+                    onPressed: () => ref.invalidate(pendingConfirmationsProvider),
                     child: const Text('Retry'),
                   ),
                 ],

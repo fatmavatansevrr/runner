@@ -51,7 +51,7 @@ class PlanDetailsPage extends ConsumerWidget {
                   Text(err.toString(), style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
                   const SizedBox(height: AppSpacing.md),
                   ElevatedButton(
-                    onPressed: () => ref.refresh(activePlanDetailsProvider),
+                    onPressed: () => ref.invalidate(activePlanDetailsProvider),
                     child: const Text('Retry'),
                   ),
                 ],

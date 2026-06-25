@@ -4,7 +4,8 @@ import '../../../core/network/dtos.dart';
 
 class OnboardingState {
   OnboardingState({
-    this.goalType = 'cardio',
+    this.goalType = 'habit',
+
     this.goalDistance = 'five_k',
     this.level = 'beginner',
     this.daysPerWeek = 3,

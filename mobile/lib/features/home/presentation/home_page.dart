@@ -197,7 +197,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async => ref.refresh(homeDataProvider),
+          onRefresh: () => ref.refresh(homeDataProvider.future),
           color: AppColors.primary,
           child: homeState.when(
             loading: () => const LoadingState(message: 'Updating your schedule...'),
@@ -214,7 +214,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Text(err.toString(), style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
                     const SizedBox(height: AppSpacing.lg),
                     ElevatedButton(
-                      onPressed: () => ref.refresh(homeDataProvider),
+                      onPressed: () => ref.invalidate(homeDataProvider),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -230,6 +230,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                   illustration: const Icon(Icons.directions_run_rounded, size: 90, color: AppColors.primary),
                   actionLabel: 'Create a Plan',
                   action: () => context.go(AppRoutes.goalSelection),
+                );
+              }
+
+              // ── Plan Completed Detection ──────────────────────────────────
+              // Read plan details to detect completion (totalWeeks == completedWeeksCount).
+              // Falls back gracefully if not yet loaded.
+              final planDetailsAsync = ref.watch(activePlanDetailsProvider);
+              final planDetails = planDetailsAsync.valueOrNull;
+              final isPlanCompleted = planDetails != null &&
+                  planDetails.totalWeeks > 0 &&
+                  planDetails.completedWeeksCount >= planDetails.totalWeeks;
+
+              if (isPlanCompleted) {
+                return _PlanCompletedState(
+                  goalDistance: activePlan.goalDistance,
+                  totalDistance: planDetails.totalCompletedDistance,
+                  onStartNew: () => context.go(AppRoutes.goalSelection),
                 );
               }
 
@@ -268,7 +285,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
-                          onPressed: () => ref.refresh(homeDataProvider),
+                          onPressed: () => ref.invalidate(homeDataProvider),
                         ),
                       ],
                     ),
@@ -308,7 +325,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
 
-                    // ── Today's Plan Card ───────────────────────────────────────
+
+                    // ── Today's Plan Card ───────────────────────────────────────────
                     if (todayWorkout == null || todayWorkout.dayType == 'rest' || todayWorkout.status == 'skipped')
                       Container(
                         width: double.infinity,
@@ -332,8 +350,50 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ],
                         ),
                       )
+                    else if (todayWorkout.status == 'missed')
+                      // ── Missed state — supportive, not punishing ──────────────────
+                      GestureDetector(
+                        onTap: () => context.push('/training-day/${todayWorkout.dayId}'),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.missedLight,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("TODAY'S WORKOUT", style: AppTextStyles.label),
+                              const SizedBox(height: AppSpacing.sm),
+                              Row(
+                                children: [
+                                  const Icon(Icons.directions_run_rounded, size: 32, color: AppColors.textSecondary),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('You missed today\'s run.', style: AppTextStyles.h3),
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Text(
+                                          'That\'s okay — consistency is built over time, not perfection.',
+                                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     else
-                      Container(
+                      GestureDetector(
+                        onTap: () => context.push('/training-day/${todayWorkout.dayId}'),
+                        child: Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.todayCardBackground,
@@ -443,6 +503,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ],
                           ],
                         ),
+                      ),
                       ),
                     const SizedBox(height: AppSpacing.lg),
 
@@ -559,3 +620,128 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan Completed State — shown when all training weeks are done
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PlanCompletedState extends StatelessWidget {
+  const _PlanCompletedState({
+    required this.goalDistance,
+    required this.totalDistance,
+    required this.onStartNew,
+  });
+
+  final String goalDistance;
+  final double totalDistance;
+  final VoidCallback onStartNew;
+
+  String _formatGoalDistance(String val) => switch (val) {
+        'five_k'       => '5K',
+        'ten_k'        => '10K',
+        'half_marathon' => 'Half Marathon',
+        'marathon'     => 'Marathon',
+        _              => val,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: AppSpacing.xl),
+            // ── Celebration card ───────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: AppColors.completedLight,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_rounded,
+                    size: 72,
+                    color: AppColors.completed,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text('Plan Complete!', style: AppTextStyles.h1),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'You finished your ${_formatGoalDistance(goalDistance)} plan.',
+                    style: AppTextStyles.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    '${totalDistance.toStringAsFixed(1)} km',
+                    style: AppTextStyles.displayLarge.copyWith(color: AppColors.completed),
+                  ),
+                  Text(
+                    'total distance logged',
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── CTA section ────────────────────────────────────────────────
+            Text(
+              "What's next?",
+              style: AppTextStyles.h3,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Start a new plan to keep building your running habit.',
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            SizedBox(
+              width: double.infinity,
+              height: AppSpacing.buttonHeight,
+              child: ElevatedButton.icon(
+                onPressed: onStartNew,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Start New Plan'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // ── View summary placeholder ───────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: AppSpacing.buttonHeight,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  // Placeholder — full plan summary screen is a future-scope feature.
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Plan summary view coming in a future update.'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.bar_chart_rounded),
+                label: const Text('View Plan Summary'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  foregroundColor: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

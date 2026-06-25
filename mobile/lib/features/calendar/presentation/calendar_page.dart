@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -7,6 +8,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_shared_widgets.dart';
 import '../data/calendar_provider.dart';
 import '../../../core/network/dtos.dart';
+
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -140,7 +142,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         Text(err.toString(), style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
                         const SizedBox(height: AppSpacing.md),
                         ElevatedButton(
-                          onPressed: () => ref.refresh(calendarDataProvider),
+                          onPressed: () => ref.invalidate(calendarDataProvider),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -204,7 +206,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
                                 final (bgColor, border, textColor, icon) = _resolveCellState(workout);
 
-                                return Container(
+                                // Only navigate to detail if the day has a real UUID (not a blank/rest filler)
+                                final hasDetail = workout != null && workout.dayId.isNotEmpty && workout.dayId != '00000000-0000-0000-0000-000000000000';
+
+                                return GestureDetector(
+                                  onTap: hasDetail
+                                      ? () => context.push(
+                                            '/training-day/${workout!.dayId}',
+                                          )
+                                      : null,
+                                  child: Container(
                                   decoration: BoxDecoration(
                                     color: bgColor,
                                     borderRadius: BorderRadius.circular(10),
@@ -228,6 +239,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                         ),
                                     ],
                                   ),
+                                ),
                                 );
                               },
                             ),

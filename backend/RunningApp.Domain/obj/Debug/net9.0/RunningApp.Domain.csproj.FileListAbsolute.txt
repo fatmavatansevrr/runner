@@ -9,3 +9,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\Running
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\refint\RunningApp.Domain.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.pdb
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\ref\RunningApp.Domain.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Domain\obj\Debug\net9.0\RunningApp.Domain.sourcelink.json

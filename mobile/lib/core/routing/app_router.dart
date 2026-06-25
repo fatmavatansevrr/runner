@@ -21,6 +21,7 @@ import '../../features/profile/presentation/profile_page.dart';
 import '../../features/plan/presentation/plan_details_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/pending_confirmation/presentation/pending_confirmation_page.dart';
+import '../../features/training_day/presentation/training_day_detail_page.dart';
 import '../theme/app_colors.dart';
 
 /// Route names — use these constants everywhere to avoid typos.
@@ -46,6 +47,7 @@ abstract final class AppRoutes {
   static const String planDetails       = '/profile/plan-details';
   static const String settings          = '/settings';
   static const String pendingConfirmation = '/pending-confirmation';
+  static const String trainingDayDetail  = '/training-day/:dayId';
 }
 
 /// Central router configuration using go_router.
@@ -153,6 +155,15 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.pendingConfirmation,
         builder: (_, __) => const PendingConfirmationPage(),
+      ),
+
+      // ── Training Day Detail ──────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.trainingDayDetail,
+        builder: (_, state) {
+          final dayId = state.pathParameters['dayId'] ?? '';
+          return TrainingDayDetailPage(dayId: dayId);
+        },
       ),
     ],
   );
