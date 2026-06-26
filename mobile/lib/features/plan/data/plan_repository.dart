@@ -8,8 +8,10 @@ class PlanRepository {
   final ApiClient _client;
 
   Future<GeneratePreviewResponse> generatePreview(GeneratePreviewRequest request) async {
+    const path = '/plans/generate-preview';
+    print('Calling generatePreview: ${ApiClient.resolveBaseUrl()}$path');
     final response = await _client.post(
-      '/plans/generate-preview',
+      path,
       data: request.toJson(),
     );
     return GeneratePreviewResponse.fromJson(response.data as Map<String, dynamic>);

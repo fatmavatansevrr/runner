@@ -9,10 +9,13 @@ import '../../features/onboarding/presentation/race_details_page.dart';
 import '../../features/onboarding/presentation/running_background_page.dart';
 import '../../features/onboarding/presentation/habit_goal_page.dart';
 import '../../features/onboarding/presentation/custom_goal_page.dart';
+import '../../features/onboarding/presentation/custom_goal_with_time_page.dart';
 import '../../features/onboarding/presentation/weekly_frequency_page.dart';
 import '../../features/onboarding/presentation/running_days_selection_page.dart';
 import '../../features/onboarding/presentation/long_run_day_preference_page.dart';
 import '../../features/onboarding/presentation/start_date_selection_page.dart';
+import '../../features/onboarding/presentation/goal_time_page.dart';
+import '../../features/onboarding/presentation/preferred_run_duration_page.dart';
 import '../../features/onboarding/presentation/plan_generation_page.dart';
 import '../../features/onboarding/presentation/plan_preview_page.dart';
 import '../../features/home/presentation/home_page.dart';
@@ -35,10 +38,13 @@ abstract final class AppRoutes {
   static const String runningBackground = '/onboarding/background';
   static const String habitGoal         = '/onboarding/habit-goal';
   static const String customGoal        = '/onboarding/custom-goal';
+  static const String customGoalWithTime = '/onboarding/custom-goal-time';
   static const String weeklyFrequency   = '/onboarding/frequency';
   static const String runningDays       = '/onboarding/days';
   static const String longRunDay        = '/onboarding/long-run-day';
   static const String startDate         = '/onboarding/start-date';
+  static const String goalTime          = '/onboarding/goal-time';
+  static const String preferredDuration = '/onboarding/preferred-duration';
   static const String planGeneration    = '/onboarding/generating';
   static const String planPreview       = '/onboarding/plan-preview';
   static const String home              = '/home';
@@ -96,6 +102,10 @@ abstract final class AppRouter {
         builder: (_, __) => const CustomGoalPage(),
       ),
       GoRoute(
+        path: AppRoutes.customGoalWithTime,
+        builder: (_, __) => const CustomGoalWithTimePage(),
+      ),
+      GoRoute(
         path: AppRoutes.weeklyFrequency,
         builder: (_, __) => const WeeklyFrequencyPage(),
       ),
@@ -110,6 +120,14 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.startDate,
         builder: (_, __) => const StartDateSelectionPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.goalTime,
+        builder: (_, __) => const GoalTimePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.preferredDuration,
+        builder: (_, __) => const PreferredRunDurationPage(),
       ),
       GoRoute(
         path: AppRoutes.planGeneration,

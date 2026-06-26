@@ -67,4 +67,24 @@ abstract final class AppColors {
   // ── Insight cards (home bottom widgets) ──────────────────────────────────
   static const Color weeklyCardBackground = Color(0xFFFFFBE6); // warm yellow
   static const Color tipCardBackground = Color(0xFFF0EBFF);    // light lavender
+
+  // ── Today's plan card — workout-type backgrounds ──────────────────────────
+  /// Easy run card: soft sky blue
+  static const Color easyRunCard = Color(0xFFEBF2FF);
+  /// Long run card: soft mint green
+  static const Color longRunCard = Color(0xFFEDFBF0);
+  /// Interval card: soft lavender
+  static const Color intervalCard = Color(0xFFF3E8FF);
+  /// Rest day card: warm cream
+  static const Color restCard = Color(0xFFFFFBEA);
+  /// Completed card: dark teal (white text)
+  static const Color completedCard = Color(0xFF1A3A2A);
+  /// Missed card: muted near-white
+  static const Color missedCard = Color(0xFFF5F5F7);
+
+  // ── Plan Generation screen ────────────────────────────────────────────────
+  /// Dark navy background for plan generation loading screen
+  static const Color navyBackground = Color(0xFF0A0F1C);
+  /// Step icon for completed steps (green check)
+  static const Color stepCompleted = Color(0xFF34C759);
 }

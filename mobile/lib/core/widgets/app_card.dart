@@ -35,7 +35,6 @@ class AppCard extends StatelessWidget {
     );
   }
 }
-
 /// Selectable card with blue border + checkmark when selected.
 /// Used in Goal Selection, Running Background, Habit Goal screens.
 class SelectableCard extends StatelessWidget {
@@ -58,12 +57,27 @@ class SelectableCard extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.surface,
+          color: AppColors.surface, // Always white background matching screenshots
           borderRadius: BorderRadius.circular(AppRadius.selectableCard),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
         ),
         child: child,
       ),

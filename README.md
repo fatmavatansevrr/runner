@@ -1,4 +1,4 @@
-# Antigravity — Adaptive Running App
+# **flutter**run**-**d**windows**Antigravity — Adaptive Running App
 
 > A calm, guilt-free running planner designed to help people build consistent running habits and prepare for races without the stress of rigid schedules.
 
@@ -9,6 +9,7 @@
 Antigravity is an adaptive training platform that dynamically adjusts running plans to the user's real-life compliance. Instead of penalizing missed runs, it leverages a supportive design philosophy to adapt future workouts gently.
 
 ### MVP (Phase 1) Scope:
+
 - **Calm, Supportive Experience**: Gentle wording and states for missed runs, rest days, and confirmations.
 - **Onboarding Flow**: Structured steps collecting goal type, target distance, level of experience, frequency, day-of-week preferences, start date, and plan generation preview.
 - **Three Core Tabs**:
@@ -23,6 +24,7 @@ Antigravity is an adaptive training platform that dynamically adjusts running pl
 ## 2. Architecture Overview
 
 Antigravity is built as a split-client architecture:
+
 1. **Frontend**: A cross-platform mobile app built with Flutter (Dart), utilizing Riverpod for state management, GoRouter for navigation, and Dio for network requests.
 2. **Backend**: A clean-architecture ASP.NET Core Web API built with .NET 9, using Entity Framework Core for ORM and Npgsql for PostgreSQL integration.
 3. **Database**: PostgreSQL storing user profiles, active plans, generated calendar days, workout completion logs, and "not today" decisions.
@@ -42,7 +44,9 @@ graph TD
 ## 3. Project Structure
 
 ### Flutter (Frontend)
+
 Located in `/mobile`:
+
 ```
 mobile/
 ├── lib/
@@ -66,7 +70,9 @@ mobile/
 ```
 
 ### .NET 9 API (Backend)
+
 Located in `/backend`:
+
 ```
 backend/
 ├── RunningApp.sln                     # Visual Studio Solution
@@ -84,10 +90,12 @@ backend/
 ### Running the Backend
 
 #### Prerequisites:
+
 - .NET 9 SDK
 - PostgreSQL database server running (default port `5432`)
 
 #### Instructions:
+
 1. Open [backend/RunningApp.Api/appsettings.json](file:///c:/Users/vatan/Desktop/runner/backend/RunningApp.Api/appsettings.json) and verify or update the connection string:
    ```json
    "ConnectionStrings": {
@@ -114,10 +122,12 @@ backend/
 ### Running the Flutter Frontend
 
 #### Prerequisites:
+
 - Flutter SDK (stable channel)
 - A running emulator (iOS/Android) or a connected physical test device
 
 #### Instructions:
+
 1. Navigate to the mobile directory:
    ```bash
    cd mobile
@@ -130,6 +140,7 @@ backend/
    ```bash
    flutter run
    ```
+
    *Note:* The Flutter app defaults its API base URL to `http://localhost:5001/api/v1` (or `http://10.0.2.2:5001/api/v1` on Android emulators). This configuration can be adjusted in [mobile/lib/core/network/api_client.dart](file:///c:/Users/vatan/Desktop/runner/mobile/lib/core/network/api_client.dart).
 
 ---
@@ -137,12 +148,16 @@ backend/
 ## 5. Environment Configuration
 
 ### Backend Configuration
+
 Managed in [RunningApp.Api/appsettings.json](file:///c:/Users/vatan/Desktop/runner/backend/RunningApp.Api/appsettings.json):
+
 - `ConnectionStrings:DefaultConnection`: PostgreSQL server coordinates.
 - `AllowedHosts`: Restricts incoming requests (configured to `*` for local dev).
 
 ### Frontend Configuration
+
 Managed in [mobile/lib/core/network/api_client.dart](file:///c:/Users/vatan/Desktop/runner/mobile/lib/core/network/api_client.dart):
+
 - `_baseUrl`: Pointed to the local development environment API.
 
 ---

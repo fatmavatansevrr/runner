@@ -5,7 +5,6 @@ import '../../../core/network/dtos.dart';
 class OnboardingState {
   OnboardingState({
     this.goalType = 'habit',
-
     this.goalDistance = 'five_k',
     this.level = 'beginner',
     this.daysPerWeek = 3,
@@ -16,6 +15,12 @@ class OnboardingState {
     this.longRunDay = 'Sunday',
     this.startDate,
     this.previewResponse,
+    this.selectedRunningDays = const [],
+    this.preferredRunDuration = 30,
+    this.customGoalDistance = 5,
+    this.customGoalType = 'finish',
+    this.customGoalTime = 50,
+    this.habitGoal = 'five_k',
   });
 
   final String goalType;
@@ -29,6 +34,12 @@ class OnboardingState {
   final String longRunDay;
   final DateTime? startDate;
   final GeneratePreviewResponse? previewResponse;
+  final List<String> selectedRunningDays;
+  final int preferredRunDuration;
+  final int customGoalDistance;
+  final String customGoalType; // "finish" | "steady" | "time"
+  final int customGoalTime;
+  final String habitGoal;
 
   OnboardingState copyWith({
     String? goalType,
@@ -42,6 +53,12 @@ class OnboardingState {
     String? longRunDay,
     DateTime? startDate,
     GeneratePreviewResponse? previewResponse,
+    List<String>? selectedRunningDays,
+    int? preferredRunDuration,
+    int? customGoalDistance,
+    String? customGoalType,
+    int? customGoalTime,
+    String? habitGoal,
   }) {
     return OnboardingState(
       goalType: goalType ?? this.goalType,
@@ -55,6 +72,12 @@ class OnboardingState {
       longRunDay: longRunDay ?? this.longRunDay,
       startDate: startDate ?? this.startDate,
       previewResponse: previewResponse ?? this.previewResponse,
+      selectedRunningDays: selectedRunningDays ?? this.selectedRunningDays,
+      preferredRunDuration: preferredRunDuration ?? this.preferredRunDuration,
+      customGoalDistance: customGoalDistance ?? this.customGoalDistance,
+      customGoalType: customGoalType ?? this.customGoalType,
+      customGoalTime: customGoalTime ?? this.customGoalTime,
+      habitGoal: habitGoal ?? this.habitGoal,
     );
   }
 }
@@ -74,6 +97,17 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   void updateTargetFinishTime(int? seconds) => state = state.copyWith(targetFinishTimeSeconds: seconds);
   void updateLongRunDay(String day) => state = state.copyWith(longRunDay: day);
   void updateStartDate(DateTime date) => state = state.copyWith(startDate: date);
+  void updateSelectedRunningDays(List<String> days) => state = state.copyWith(selectedRunningDays: days);
+  void updatePreferredRunDuration(int mins) => state = state.copyWith(preferredRunDuration: mins);
+  void updateHabitGoal(String goal) => state = state.copyWith(habitGoal: goal);
+  
+  void updateCustomGoalDetails({int? distance, String? type, int? time}) {
+    state = state.copyWith(
+      customGoalDistance: distance ?? state.customGoalDistance,
+      customGoalType: type ?? state.customGoalType,
+      customGoalTime: time ?? state.customGoalTime,
+    );
+  }
 
   Future<GeneratePreviewResponse> generatePreview() async {
     final request = GeneratePreviewRequest(

@@ -27,6 +27,7 @@ Alternative internal wording:
 ## 1.2 Target Users
 
 Target users are adults who:
+
 - Are new to running or returning after a break.
 - Want a structured plan but do not want pressure-heavy coaching.
 - May feel guilty when they miss workouts.
@@ -37,6 +38,7 @@ Target users are adults who:
 ## 1.3 Product Philosophy
 
 The app should prioritize:
+
 - Consistency over perfection.
 - Sustainable progress over aggressive performance.
 - Clarity over analytics overload.
@@ -45,6 +47,7 @@ The app should prioritize:
 - A single clear daily focus over complex dashboards.
 
 The app should avoid:
+
 - Competitive leaderboards.
 - Social comparison.
 - Streak shaming.
@@ -62,6 +65,7 @@ This first implementation phase is not the final product. It is the connected sk
 ## 2.1 Phase 1 Goal
 
 Build a functioning app where:
+
 - All core pages exist.
 - Navigation works.
 - Main frontend states are represented.
@@ -77,6 +81,7 @@ Build a functioning app where:
 Do not implement the real Adaptive Engine.
 
 Do not implement:
+
 - Real adaptive plan generation algorithm.
 - RuleEvaluator.
 - SafetyValidator.
@@ -102,6 +107,7 @@ Do not implement:
 Adaptive behavior must be represented structurally, but not implemented.
 
 Create these types/interfaces so the real engine can be added later:
+
 - `IAdaptationEngine`
 - `PlaceholderAdaptationEngine`
 - `AdaptationDecision`
@@ -119,6 +125,7 @@ The goal of the MVP Skeleton phase is not final pixel-perfect UI, but the screen
 ### 2.4.1 Non-Negotiable Design Rules
 
 Antigravity must not:
+
 - Replace the app with generic Material Design screens.
 - Create its own visual design language.
 - Redesign page hierarchy.
@@ -128,6 +135,7 @@ Antigravity must not:
 - Introduce new colors, card styles, or typography that do not match the references.
 
 Antigravity must:
+
 - Follow the provided screenshots/wireframes as the primary reference.
 - Match layout hierarchy as closely as possible.
 - Preserve card structure and visual priority.
@@ -178,6 +186,7 @@ If a screen has multiple states, each state should be treated as a separate refe
 ### 2.4.3 Screen-Level Implementation Rule
 
 For every screen implementation, Antigravity should identify:
+
 - Reference image name.
 - Screen purpose.
 - Main layout sections.
@@ -188,11 +197,13 @@ For every screen implementation, Antigravity should identify:
 - Backend endpoint used, if any.
 
 If a screen has a provided reference:
+
 - Follow the reference image as closely as possible.
 - Match spacing, card hierarchy, visual weight, and CTA placement.
 - Keep the same emotional tone.
 
 If a screen does not have a provided reference:
+
 - Use the closest existing component pattern.
 - Keep the screen simple.
 - Use the shared design system tokens.
@@ -203,6 +214,7 @@ If a screen does not have a provided reference:
 Before implementing page screens, first create a shared Flutter design system based on the provided references.
 
 Create reusable tokens/components for:
+
 - Color tokens.
 - Typography tokens.
 - Spacing tokens.
@@ -245,6 +257,7 @@ lib/
 The MVP Skeleton does not need to be final pixel-perfect. However, it must not look like a generic Flutter starter template.
 
 Priority order for this phase:
+
 1. Correct screen hierarchy.
 2. Correct navigation and state transitions.
 3. Correct shared component usage.
@@ -255,6 +268,7 @@ Priority order for this phase:
 ### 2.4.6 Implementation Order for UI
 
 When building the Flutter side, follow this order:
+
 1. Read the design references.
 2. Create shared design tokens and reusable components.
 3. Build page shells using the shared design system.
@@ -262,7 +276,6 @@ When building the Flutter side, follow this order:
 5. Connect pages to backend endpoints.
 6. Add loading, empty, and error states.
 7. Refine individual screens one by one after the connected skeleton works.
-
 
 ---
 
@@ -273,6 +286,7 @@ When building the Flutter side, follow this order:
 Use Flutter.
 
 Recommended Flutter principles:
+
 - Feature-based folder structure.
 - Clean, readable state management.
 - API client layer separated from UI.
@@ -281,6 +295,7 @@ Recommended Flutter principles:
 - Mobile-first design.
 
 Suggested packages may include:
+
 - `go_router` for navigation.
 - `dio` or `http` for API calls.
 - `flutter_riverpod` or a similarly clean state approach.
@@ -294,6 +309,7 @@ If a package decision is uncertain, prefer the simplest stable option and docume
 Use .NET 8 or .NET 9 Web API.
 
 Recommended backend structure:
+
 - `RunningApp.Api`
 - `RunningApp.Application`
 - `RunningApp.Domain`
@@ -301,6 +317,7 @@ Recommended backend structure:
 - `RunningApp.Persistence`
 
 Use:
+
 - EF Core.
 - PostgreSQL.
 - Swagger/OpenAPI.
@@ -313,6 +330,7 @@ Use:
 Use PostgreSQL.
 
 For Phase 1:
+
 - PostgreSQL is the source of truth.
 - Do not implement Redis.
 - Do not implement cache invalidation infrastructure beyond comments or placeholder interfaces.
@@ -321,11 +339,13 @@ For Phase 1:
 ## 3.4 Auth
 
 Authentication UI must exist in Flutter:
+
 - Google Sign-In button.
 - Apple Sign-In button.
 - Email/password sign-up screen.
 
 For Phase 1:
+
 - Real Firebase/Supabase Auth integration can be left as a placeholder unless explicitly requested.
 - Backend should be structured as if JWT auth will be added later.
 - API ownership validation should be represented in service method structure, but can use a mock/current user ID during skeleton development.
@@ -337,6 +357,7 @@ For Phase 1:
 ## 4.1 Build in Phase 1
 
 Pages and flows to build:
+
 - Authentication / Welcome entry.
 - Intro carousel.
 - Goal selection.
@@ -365,6 +386,7 @@ Pages and flows to build:
 - Basic settings placeholder.
 
 Backend flows to build:
+
 - Bootstrap routing.
 - Plan preview.
 - Plan confirm.
@@ -383,6 +405,7 @@ Backend flows to build:
 ## 4.2 Future Scope — Do Not Build Now
 
 Do not build in Phase 1:
+
 - Real adaptive engine.
 - Real notifications.
 - Strava/Health detected run flows.
@@ -414,6 +437,7 @@ Splash
 ```
 
 Possible `nextScreen` values:
+
 - `Welcome`
 - `Onboarding`
 - `PlanSetup`
@@ -422,6 +446,7 @@ Possible `nextScreen` values:
 - `NoActivePlan`
 
 Routing rules:
+
 - If user is not authenticated: show Auth / Welcome.
 - If profile/onboarding is incomplete: show onboarding.
 - If there are unresolved past runs: show Pending Confirmation.
@@ -431,11 +456,13 @@ Routing rules:
 ## 5.2 Bottom Navigation
 
 Main app tabs:
+
 - Calendar
 - Home
 - Profile
 
 Default destination after active plan creation:
+
 - Home
 
 ## 5.3 Onboarding Navigation
@@ -494,9 +521,11 @@ Goal Selection: Build a Running Habit
 ## 6.1 Authentication / Welcome
 
 Purpose:
+
 - Allow users to enter the app with low friction.
 
 UI elements:
+
 - App logo/name placeholder.
 - Calm introductory text.
 - Continue with Google.
@@ -504,6 +533,7 @@ UI elements:
 - Continue with Email.
 
 Phase 1 behavior:
+
 - Auth can use mock login or placeholder auth service.
 - After mock login, continue to Intro Carousel or Onboarding.
 
@@ -512,15 +542,19 @@ Phase 1 behavior:
 3 pages:
 
 Page 1 — Progress & Clarity
+
 - Message: the app helps users clearly track running plans, progress, and milestones.
 
 Page 2 — Low Pressure Running
+
 - Message: running plans should fit real life without pressure or guilt.
 
 Page 3 — Adaptive Planning
+
 - Message: the app can adjust when life gets in the way.
 
 UI behavior:
+
 - Horizontal swipe.
 - Continue button.
 - Skip button.
@@ -529,10 +563,12 @@ UI behavior:
 ## 6.3 Goal Selection
 
 Options:
+
 - Build a running habit.
 - Train for a race.
 
 Behavior:
+
 - Single selection.
 - Continue disabled until selected.
 - Routes to race details if race is selected.
@@ -541,12 +577,14 @@ Behavior:
 ## 6.4 Race Details
 
 Fields:
+
 - Race name: optional.
 - Race date: required, future date.
 - Race distance: required.
 - Unit: km/mi.
 
 Supported distance examples:
+
 - 5K.
 - 10K.
 - Half Marathon.
@@ -554,35 +592,41 @@ Supported distance examples:
 - Custom.
 
 Phase 1 behavior:
+
 - Collect values in frontend state.
 - No real training intelligence yet.
 
 ## 6.5 Running Background
 
 Options:
+
 - New to running.
 - Used to run.
 - Running regularly.
 
 Behavior:
+
 - Single selection.
 - Continue disabled until selected.
 
 ## 6.6 Habit Goal Selection
 
 Options:
+
 - Run 5 km comfortably.
 - Run 10 km nonstop.
 - Run 5 km under 30 minutes.
 - Create my own goal.
 
 Behavior:
+
 - Single selection.
 - Custom goal unlocks custom goal screen.
 
 ## 6.7 Custom Goal Screen
 
 Fields:
+
 - Target distance.
 - Goal preference:
   - Just finish comfortably.
@@ -591,12 +635,14 @@ Fields:
 - Target time only if user chooses finish under a time.
 
 Phase 1:
+
 - Collect data only.
 - Do not implement advanced plan logic.
 
 ## 6.8 Weekly Frequency
 
 MVP options:
+
 - 3 days per week.
 - 4 days per week.
 
@@ -605,6 +651,7 @@ Do not show or implement 5/6 day plans in Phase 1.
 ## 6.9 Preferred Run Duration
 
 Options/examples:
+
 - 15 minutes.
 - 20 minutes.
 - 30 minutes.
@@ -612,6 +659,7 @@ Options/examples:
 - 60 minutes.
 
 Phase 1:
+
 - Store in onboarding state.
 - It can be included in preview request.
 - It does not need to drive real plan generation yet.
@@ -619,6 +667,7 @@ Phase 1:
 ## 6.10 Running Days Selection
 
 Behavior:
+
 - Multi-select weekdays.
 - Number of selected days must match weekly frequency.
 - Continue disabled until valid.
@@ -628,36 +677,43 @@ Behavior:
 Shown for race flow.
 
 Behavior:
+
 - User selects one preferred long-run day.
 - It should be one of selected running days if possible.
 
 Phase 1:
+
 - Store preference.
 - Use it if seed schedule supports it; otherwise keep simple.
 
 ## 6.12 Start Date Selection
 
 Options:
+
 - Today.
 - Next Monday.
 - Custom date.
 
 Behavior:
+
 - Custom date opens date picker.
 - Start date must be today or a future date.
 
 ## 6.13 Plan Generation Screen
 
 Purpose:
+
 - Transition from onboarding to preview.
 
 Important Phase 1 decision:
+
 - Do not implement real intelligent generation.
 - Show a lightweight loading screen.
 - Call `POST /api/v1/plans/generate-preview`.
 - Backend returns a static/seed preview.
 
 Suggested staged UI text:
+
 - Understanding your goal.
 - Checking your schedule.
 - Building your first plan.
@@ -668,6 +724,7 @@ These are UI messages only. They should not imply a real adaptive engine is impl
 ## 6.14 Plan Preview
 
 Display:
+
 - Plan name.
 - Goal.
 - Duration weeks.
@@ -676,15 +733,18 @@ Display:
 - Weekly summary preview.
 
 Primary CTA:
+
 - Start Plan.
 
 Action:
+
 - Calls `POST /api/v1/plans/confirm`.
 - On success route to Home.
 
 ## 6.15 Home Screen
 
 Main sections:
+
 - Header.
 - Today’s Plan Card.
 - Weekly Mini Calendar.
@@ -692,6 +752,7 @@ Main sections:
 - Bottom Navigation.
 
 Today’s Plan Card displays:
+
 - Workout type.
 - Distance.
 - Duration.
@@ -700,6 +761,7 @@ Today’s Plan Card displays:
 - Actions.
 
 Primary states:
+
 - Planned Run State.
 - Completed Run State.
 - Rest Day State.
@@ -712,17 +774,20 @@ Primary states:
 ## 6.16 Planned Run State
 
 Actions:
+
 - Complete.
 - Not Today.
 - Tap card to open training day detail.
 
 Complete action:
+
 - Opens completion modal.
 - Saves activity.
 - Calls complete endpoint.
 - Home updates to completed state.
 
 Not Today action:
+
 - Opens Not Today modal.
 - User may select reason.
 - User confirms with Got it.
@@ -731,6 +796,7 @@ Not Today action:
 ## 6.17 Completed Run State
 
 Display:
+
 - Completed indicator.
 - Supportive message.
 - Updated weekly calendar marker.
@@ -741,6 +807,7 @@ Do not make the state overly celebratory or gamified.
 ## 6.18 Rest Day State
 
 Display:
+
 - Recovery-focused Today card.
 - No Complete / Not Today buttons.
 - Recovery tips.
@@ -751,10 +818,12 @@ Display:
 This state is important.
 
 It appears when:
+
 - User taps Not Today for today’s run and confirms.
 - User marks a past pending confirmation as missed.
 
 UX principles:
+
 - The state is still missed/not completed.
 - It must not feel punitive.
 - It should communicate continuity, flexibility, and support.
@@ -762,23 +831,27 @@ UX principles:
 - The missed indicator should be visually muted, not aggressive.
 
 Possible messages:
+
 - “One missed run doesn’t define your progress.”
 - “Your plan can continue from here.”
 - “See you on your next run.”
 
 Actions:
+
 - View Missed Workout.
 - Acknowledge Missed Run, if implemented locally.
 - Navigate to Calendar.
 - Navigate to Profile.
 
 Phase 1 backend:
+
 - Mark the day missed or skipped.
 - Do not perform real adaptive mutation.
 
 ## 6.20 Calendar Screen
 
 Display:
+
 - Monthly grid.
 - Workout indicators.
 - Completed markers.
@@ -786,10 +859,12 @@ Display:
 - Rest days.
 
 Interaction:
+
 - Tap a day.
 - Open day detail modal/page.
 
 Day detail variants:
+
 - Future workout.
 - Current day workout.
 - Completed workout.
@@ -801,10 +876,12 @@ Frontend decides visual indicators based on backend type/status. Backend should 
 ## 6.21 Training Day Detail
 
 Opened from:
+
 - Home Today card.
 - Calendar day tap.
 
 Display:
+
 - Workout title.
 - Type.
 - Date.
@@ -816,6 +893,7 @@ Display:
 - Allowed actions.
 
 Allowed actions:
+
 - Complete if current/planned.
 - Not Today if current/planned.
 - Close/back.
@@ -825,11 +903,13 @@ Allowed actions:
 Triggered by Complete.
 
 Options:
+
 - As planned.
 - Shorter.
 - Exceeded.
 
 Phase 1:
+
 - Store feedback if simple.
 - Actual stats are optional.
 - Complete endpoint can accept empty request or simple feedback.
@@ -839,12 +919,14 @@ Phase 1:
 Triggered by Not Today.
 
 Reason chips:
+
 - Need rest.
 - No time.
 - Feeling tired.
 - Other.
 
 Behavior:
+
 - Reason is optional.
 - Got it confirms.
 - Result transitions to Missed / Not Completed State.
@@ -855,15 +937,18 @@ Behavior:
 Shown when backend indicates unresolved past planned workouts.
 
 Single item version:
+
 - Title: “Did you get this run in?”
 - Buttons: Yes, I ran / No, I missed it.
 
 Multiple item version:
+
 - List cards.
 - Each card has Completed / Missed choice.
 - CTA: Update my plan.
 
 Phase 1:
+
 - Completed marks completed.
 - Missed marks missed.
 - No real adaptation.
@@ -871,6 +956,7 @@ Phase 1:
 ## 6.25 Profile Screen
 
 Main sections:
+
 - Profile header.
 - User statistics.
 - Active plan card.
@@ -878,6 +964,7 @@ Main sections:
 - Bottom navigation.
 
 Actions:
+
 - View Plan.
 - Stop Plan.
 - Settings.
@@ -885,6 +972,7 @@ Actions:
 ## 6.26 Plan Details Screen
 
 Display:
+
 - Plan name.
 - Goal type.
 - Level/background.
@@ -901,16 +989,19 @@ Display:
 Triggered from Profile / Active Plan Card.
 
 Optional reasons:
+
 - Too hard.
 - Injury.
 - No time.
 - Other.
 
 Actions:
+
 - Keep Going.
 - Stop Plan.
 
 Backend:
+
 - Calls `POST /api/v1/plans/{planId}/cancel`.
 - Backend status becomes `cancelled`.
 - Frontend label can be “Stop Plan”.
@@ -920,6 +1011,7 @@ Backend:
 Shown when no active plan exists.
 
 Actions:
+
 - Create New Plan.
 - Explore App placeholder.
 - Navigate to Profile.
@@ -930,9 +1022,11 @@ Actions:
 Basic Phase 1 only.
 
 Trigger:
+
 - If all training days are completed or the plan reaches completion criteria.
 
 Display:
+
 - Calm completion message.
 - Start New Plan.
 - View Plan Summary placeholder.
@@ -942,6 +1036,7 @@ Do not build a full achievement system yet.
 ## 6.30 Settings Placeholder
 
 Build a basic settings screen with placeholder sections:
+
 - Active Plan Settings.
 - Notification Settings.
 - App Preferences.
@@ -949,6 +1044,7 @@ Build a basic settings screen with placeholder sections:
 - Legal & Support.
 
 Phase 1:
+
 - These can be mostly static.
 - Do not build full edit behavior unless explicitly requested.
 
@@ -969,6 +1065,7 @@ GET /api/v1/me/bootstrap
 ```
 
 Purpose:
+
 - Decide where the app should route on startup.
 
 Response:
@@ -984,6 +1081,7 @@ Response:
 ```
 
 Possible `nextScreen` values:
+
 - `Welcome`
 - `Onboarding`
 - `PlanSetup`
@@ -998,9 +1096,11 @@ POST /api/v1/plans/generate-preview
 ```
 
 Purpose:
+
 - Create a preview before permanently creating a training plan.
 
 Important Phase 1 decision:
+
 - Do not run a real plan generation engine.
 - Select a simple seed/static template.
 - Return a valid preview.
@@ -1055,6 +1155,7 @@ POST /api/v1/plans/confirm
 ```
 
 Purpose:
+
 - Persist previewed plan.
 
 Request:
@@ -1066,6 +1167,7 @@ Request:
 ```
 
 Backend behavior:
+
 - Read preview.
 - Create or update user profile/onboarding snapshot if needed.
 - Create TrainingPlan.
@@ -1090,6 +1192,7 @@ GET /api/v1/plans/active/home
 ```
 
 Purpose:
+
 - Return everything needed for Home in one response.
 
 Response:
@@ -1156,6 +1259,7 @@ GET /api/v1/plans/active/calendar?month=YYYY-MM
 ```
 
 Purpose:
+
 - Return flat monthly training day data.
 
 Response:
@@ -1231,6 +1335,7 @@ Request:
 ```
 
 Phase 1 backend behavior:
+
 - Validate ownership/mock current user.
 - Set TrainingDay.status = completed.
 - Create WorkoutLog.
@@ -1269,14 +1374,17 @@ POST /api/v1/training-days/{trainingDayId}/not-today-decisions
 ```
 
 Purpose:
+
 - Create a pending Not Today decision for today’s planned run.
 
 Important UX decision:
+
 - Not Today transitions the user to Missed / Not Completed Run State.
 - It is still a missed/not completed state.
 - It must not feel punitive.
 
 Phase 1 backend behavior:
+
 - Do not perform real reschedule/shorten/recovery logic.
 - Do not generate a real adaptive recommendation.
 - Create NotTodayDecision.
@@ -1292,6 +1400,7 @@ Request:
 ```
 
 Reason values:
+
 - `need_rest`
 - `no_time`
 - `feeling_tired`
@@ -1322,6 +1431,7 @@ POST /api/v1/not-today-decisions/{decisionId}/confirm
 ```
 
 Purpose:
+
 - Finalize Not Today and update today’s training day.
 
 Request:
@@ -1333,6 +1443,7 @@ Request:
 ```
 
 Phase 1 backend behavior:
+
 - Set not_today_decision.status = confirmed.
 - Set current TrainingDay.status = missed or skipped. Prefer `missed` if the UI calls the state Missed / Not Completed.
 - Write NotTodayDecisionConfirmed event.
@@ -1362,6 +1473,7 @@ GET /api/v1/pending-confirmations
 ```
 
 Purpose:
+
 - Return past planned workouts that need completed/missed resolution.
 
 Response:
@@ -1407,6 +1519,7 @@ Request:
 ```
 
 Phase 1 backend behavior:
+
 - Process answers chronologically.
 - completed → TrainingDay.status = completed.
 - completed → WorkoutCompleted event.
@@ -1525,9 +1638,11 @@ POST /api/v1/plans/{planId}/cancel
 ```
 
 Frontend label:
+
 - Stop Plan.
 
 Backend status:
+
 - cancelled.
 
 Request:
@@ -1539,6 +1654,7 @@ Request:
 ```
 
 Backend behavior:
+
 - Set TrainingPlan.status = cancelled.
 - Write PlanCancelled event.
 - Do not delete historical data.
@@ -1666,6 +1782,7 @@ pending
 ```
 
 Recommendation for Phase 1:
+
 - Not Today confirm can set status to `missed` to match Missed / Not Completed UI.
 - If using `skipped`, ensure UI still maps it to Missed / Not Completed State.
 
@@ -1712,6 +1829,7 @@ Create EF Core entities for Phase 1. Keep them simple but future-compatible.
 ## 9.1 UserProfile
 
 Fields:
+
 - `id`
 - `userId`
 - `name`
@@ -1724,6 +1842,7 @@ Fields:
 ## 9.2 PlanTemplate
 
 Fields:
+
 - `id`
 - `version`
 - `goalType`
@@ -1736,12 +1855,14 @@ Fields:
 - `deprecatedAt`
 
 Phase 1:
+
 - Seed a small number of templates.
 - Template JSON can be simple.
 
 ## 9.3 PlanPreview
 
 Fields:
+
 - `id`
 - `userId`
 - `templateId`
@@ -1753,6 +1874,7 @@ Fields:
 ## 9.4 TrainingPlan
 
 Fields:
+
 - `id`
 - `userId`
 - `templateId`
@@ -1773,11 +1895,13 @@ Fields:
 - `createdAt`
 
 Rule:
+
 - Only one active plan per user.
 
 ## 9.5 TrainingWeek
 
 Fields:
+
 - `id`
 - `planId`
 - `weekNumber`
@@ -1791,6 +1915,7 @@ Fields:
 ## 9.6 TrainingDay
 
 Fields:
+
 - `id`
 - `planId`
 - `weekId`
@@ -1817,6 +1942,7 @@ Fields:
 ## 9.7 WorkoutLog
 
 Fields:
+
 - `id`
 - `userId`
 - `planId`
@@ -1830,6 +1956,7 @@ Fields:
 ## 9.8 NotTodayDecision
 
 Fields:
+
 - `id`
 - `userId`
 - `planId`
@@ -1846,6 +1973,7 @@ Fields:
 ## 9.9 PendingConfirmation
 
 Fields:
+
 - `id`
 - `userId`
 - `planId`
@@ -1857,6 +1985,7 @@ Fields:
 ## 9.10 PlanEvent
 
 Fields:
+
 - `id`
 - `userId`
 - `planId`
@@ -1868,6 +1997,7 @@ Fields:
 ## 9.11 AdaptationEvent
 
 Fields:
+
 - `id`
 - `userId`
 - `planId`
@@ -1881,12 +2011,14 @@ Fields:
 - `dismissedAt`
 
 Phase 1:
+
 - Can be created but rarely used.
 - Placeholder engine can write no adaptation events unless simple logging is desired.
 
 ## 9.12 DailyTipSet
 
 Fields:
+
 - `id`
 - `tipKey`
 - `title`
@@ -1898,6 +2030,7 @@ Fields:
 - `createdAt`
 
 Phase 1:
+
 - Seed a few tips.
 - Return tips inside Home response.
 
@@ -1906,6 +2039,7 @@ Phase 1:
 Optional Phase 1.
 
 Fields:
+
 - `id`
 - `userId`
 - `reminderStyle`
@@ -1922,6 +2056,7 @@ Fields:
 ## 10.1 Seed Plan Templates
 
 Create at least these seed templates:
+
 - `habit_5k_beginner_3day_km_v1`
 - `habit_5k_beginner_4day_km_v1`
 - `race_5k_beginner_3day_km_v1`
@@ -1974,6 +2109,7 @@ Example:
 ## 10.2 Seed Tips
 
 Seed simple home tips:
+
 - Easy run tip.
 - Long run tip.
 - Rest day tip.
@@ -2000,6 +2136,7 @@ Suggested services:
 - `PlaceholderAdaptationEngine`
 
 Important:
+
 - Keep read services separate from mutation services if possible.
 - Keep controllers thin.
 - Put business logic in application services.
@@ -2062,6 +2199,7 @@ lib/
 ## 12.1 Frontend Data Layer
 
 Create:
+
 - `ApiClient`
 - DTO classes matching backend contracts.
 - Repositories per feature.
@@ -2071,6 +2209,7 @@ Create:
 ## 12.2 Frontend State Management
 
 State should support:
+
 - Bootstrap loading state.
 - Onboarding local state.
 - Active plan/home state.
@@ -2081,6 +2220,7 @@ State should support:
 ## 12.3 UI Components
 
 Reusable components:
+
 - Primary button.
 - Secondary button.
 - Selectable card.
@@ -2097,6 +2237,7 @@ Reusable components:
 # 13. UI Tone and Design Rules
 
 Visual style:
+
 - Calm.
 - Minimal.
 - Mature.
@@ -2109,6 +2250,7 @@ Use placeholder mascot assets for Phase 1.
 Do not block development on final illustrations.
 
 Language examples:
+
 - “No problem.”
 - “Your plan can continue from here.”
 - “Recovery is part of progress.”
@@ -2116,6 +2258,7 @@ Language examples:
 - “One missed run doesn’t define your progress.”
 
 Avoid:
+
 - “You failed.”
 - “Streak lost.”
 - “You are behind.”
@@ -2131,6 +2274,7 @@ Avoid:
 Complete is fast and simple.
 
 Complete should:
+
 - Mark the workout completed.
 - Create workout log.
 - Update Home/Calendar.
@@ -2139,12 +2283,14 @@ Complete should:
 ## 14.2 Not Today
 
 Not Today means:
+
 - The user is intentionally not completing today’s run.
 - The app transitions to Missed / Not Completed State.
 - Calendar gets a missed/not completed marker.
 - The UX stays supportive and non-punitive.
 
 Phase 1:
+
 - No real reschedule.
 - No real adaptive mutation.
 - Just mark day missed/skipped after confirm.
@@ -2152,10 +2298,12 @@ Phase 1:
 ## 14.3 Pending Confirmation
 
 Pending Confirmation means:
+
 - A past planned workout was not resolved.
 - User must say completed or missed.
 
 Phase 1:
+
 - Completed marks completed.
 - Missed marks missed.
 - No real adaptation.
@@ -2165,6 +2313,7 @@ Phase 1:
 Plan generation in Phase 1 is not intelligent.
 
 It should:
+
 - Use a seed template.
 - Map template slots to selected run days if simple.
 - Persist TrainingPlan/Weeks/Days after confirm.
@@ -2204,6 +2353,7 @@ Build in this exact order.
 ## Step 1 — Repository and Project Setup
 
 Create:
+
 - Flutter app.
 - .NET Web API backend.
 - PostgreSQL connection.
@@ -2213,6 +2363,7 @@ Create:
 ## Step 2 — Backend Domain and DB
 
 Create:
+
 - Entities.
 - Enums.
 - DbContext.
@@ -2223,6 +2374,7 @@ Create:
 ## Step 3 — Backend Controllers and DTOs
 
 Implement endpoints:
+
 - Bootstrap.
 - Plan preview.
 - Plan confirm.
@@ -2239,6 +2391,7 @@ Implement endpoints:
 ## Step 4 — Placeholder Adaptation Engine
 
 Create:
+
 - Interface.
 - Placeholder implementation.
 - DTOs/enums.
@@ -2250,6 +2403,7 @@ Do not implement real logic.
 Before building page shells, apply the Design Reference Policy: create the shared Flutter design system from the provided screen references and do not use generic Material Design screens.
 
 Create all pages and navigation:
+
 - Auth.
 - Intro.
 - Onboarding.
@@ -2262,6 +2416,7 @@ Create all pages and navigation:
 ## Step 6 — Flutter API Integration
 
 Connect:
+
 - Bootstrap.
 - Generate preview.
 - Confirm plan.
@@ -2277,6 +2432,7 @@ Connect:
 ## Step 7 — State and UI Polishing
 
 Make sure:
+
 - Loading states work.
 - Empty states work.
 - Error states are present.
@@ -2287,6 +2443,7 @@ Make sure:
 ## Step 8 — Documentation
 
 Add README sections:
+
 - How to run backend.
 - How to run Flutter app.
 - Environment variables.
@@ -2335,3 +2492,430 @@ Do not attempt to make the product fully intelligent in this phase.
 The most important goal is to create a clean, maintainable foundation where all pages, endpoints, entities, and navigation paths exist and work together with simple placeholder behavior.
 
 After this skeleton works, each page and each backend flow will be improved one by one.
+
+# 19. Visual Alignment & Navigation Enforcement (Overrides Previous Assumptions)
+
+This section is authoritative and overrides any inferred UI, navigation, layout, styling, or screen transition decisions.
+
+If there is any conflict between implementation and the design references, the design references win.
+
+---
+
+# 19.1 Design References Are The Source Of Truth
+
+The `/design-references` folder contains the intended UI.
+
+Antigravity must not:
+
+* redesign screens
+* invent alternative layouts
+* replace layouts with generic Material Design widgets
+* change CTA positions
+* move navigation patterns
+* simplify screens because they seem visually similar
+* create its own visual interpretation
+
+Antigravity must:
+
+* match each reference screen as closely as possible
+* preserve hierarchy
+* preserve spacing relationships
+* preserve card structure
+* preserve CTA placement
+* preserve onboarding progression
+* preserve modal behavior
+* preserve bottom navigation behavior
+
+The goal is not to create a similar design.
+
+The goal is to recreate the provided design references as accurately as possible.
+
+---
+
+# 19.2 Screen ↔ Reference Mapping
+
+The following mapping is mandatory.
+
+Auth Welcome Screen
+→ firstpage-auth.png
+
+Create Account Screen
+→ create-your-account.png
+
+Goal Selection Screen
+→ what-is-your-plan.png
+
+Race Details Screen
+→ enter-race-details.png
+
+Running Background Screen
+→ what-is-ur-background.png
+
+Habit Goal Selection Screen
+→ habit-base-plan.png
+
+Custom Habit Goal Screen
+→ custom-habit-base-plan.png
+
+Weekly Frequency Screen
+→ how-many-days-to-run.png
+
+Preferred Run Duration Screen
+→ how-much-time-to-run-as-habit-based-user.png
+
+Running Days Selection Screen
+→ select-running-days.png
+
+Long Run Day Preference Screen
+→ long-run-day.png
+
+Goal Time Screen
+→ goal-time-to-finish-race-as-racer.png
+
+Start Date Screen
+→ start-day.png
+
+Plan Generation Screen
+→ plan-generation.png
+
+Plan Preview Screen
+→ plan-preview.png
+
+Home Planned State
+→ home-screen-with-easy-run.png
+
+Home Long Run State
+→ home-page-with-long-run.png
+
+Home Interval State
+→ home-page-with-interval.png
+
+Home Rest Day State
+→ home-page-with-rest.png
+
+Home Completed State
+→ completed-run-home-page.png
+
+Home Missed State
+→ missed-run-home-page-and-popup.png
+
+Plan Completed State
+→ completed-run-home-page.png
+
+Calendar Screen
+→ calender.png
+
+Profile Screen
+→ onboarding-placeholder.png
+
+Only use another screen as fallback when no matching design reference exists.
+
+---
+
+# 19.3 Global CTA Rules
+
+All primary CTA buttons must use the same visual system throughout onboarding and plan creation.
+
+Properties:
+
+* background color: black
+* text color: white
+* full width appearance
+* pill shape
+* bottom aligned
+* consistent height
+* consistent horizontal padding
+* consistent corner radius
+
+Examples:
+
+* Continue
+* Get Started
+* Generate Plan
+* Start Plan
+* Update My Plan
+
+If a reference screen shows a black pill CTA, implement it exactly.
+
+Do not replace with standard Material buttons.
+
+---
+
+# 19.4 Navigation Source Of Truth
+
+The following navigation flow is mandatory.
+
+Auth Welcome
+
+Get Started
+→ Create Account
+
+I Already Have An Account
+→ Sign In
+
+Google
+→ Intro Carousel
+
+Apple
+→ Intro Carousel
+
+---
+
+Create Account
+
+Sign Up
+→ Intro Carousel
+
+Back
+→ Auth Welcome
+
+---
+
+Sign In
+
+Sign In
+→ Intro Carousel
+
+Back
+→ Auth Welcome
+
+---
+
+Intro Carousel
+
+Page 1 Continue
+→ Page 2
+
+Page 2 Continue
+→ Page 3
+
+Page 3 Continue
+→ Goal Selection
+
+Skip
+→ Goal Selection
+
+---
+
+Goal Selection
+
+Train For A Race
+→ Race Details
+
+Build A Running Habit
+→ Running Background
+
+Continue disabled until selection exists.
+
+---
+
+Race Flow
+
+Race Details
+→ Goal Time Screen
+
+Running Background
+→ Goal Time Screen
+
+Goal Time Screen
+→ Weekly Frequency
+
+Weekly Frequency
+→ Running Days Selection
+
+Running Days Selection
+→ Long Run Day Preference 
+
+Long Run Day Preference
+→ Start Date
+
+Start Date
+→ Plan Generation
+
+Plan Generation
+→ Plan Preview
+
+Plan Preview
+→ Home
+
+---
+
+Habit Flow
+
+Running Background
+→ Habit Goal Selection
+
+Habit Goal Selection 
+
+option 1 ) Predefined Goal
+→ Weekly Frequency
+
+option 2) Create My Own Goal
+→ Custom Goal
+
+Custom Goal
+option 1 ) predefined goal
+
+→Weekly Frequency
+
+
+option 2 ) goal under spesifc time
+
+→custom-habit-base-plan-with-time -> →Weekly Frequency
+
+Weekly Frequency
+→ Preferred Run Duration
+
+Preferred Run Duration
+→ Running Days Selection
+
+Running Days Selection
+→ Start Date
+
+Start Date
+→ Plan Generation
+
+Plan Generation
+→ Plan Preview
+
+Plan Preview
+→ Home
+
+---
+
+Bottom Navigation
+
+Home Tab
+→ Home
+
+Calendar Tab
+→ Calendar
+
+Profile Tab
+→ Profile
+
+Bottom navigation must remain persistent.
+
+---
+
+Home
+
+Today Card Tap
+→ Training Day Detail
+
+Complete
+→ Completion Modal
+
+Completion Modal Confirm
+→ Home Completed State
+
+Not Today
+→ Not Today Modal
+
+Not Today Modal Confirm
+→ Home Missed State
+
+---
+
+Calendar
+
+Day Tap
+→ Training Day Detail
+
+Future Day
+→ Future Workout Detail
+
+Completed Day
+→ Completed Workout Detail
+
+Missed Day
+→ Missed Workout Detail
+
+Rest Day
+→ Rest Day Detail
+
+---
+
+Profile
+
+View Plan
+→ Plan Details
+
+Stop Plan
+→ Stop Plan Modal
+
+Settings
+→ Settings Screen
+
+---
+
+Stop Plan Modal
+
+Keep Going
+→ Profile
+
+Stop Plan
+→ No Active Plan State
+
+---
+
+No Active Plan State
+
+Create New Plan
+→ Goal Selection
+
+---
+
+Plan Completed State
+
+Start New Plan
+→ Goal Selection
+
+View Summary
+→ Plan Details
+
+---
+
+# 19.5 Current Development Priority
+
+Priority 1
+
+Visual parity with design references.
+
+Priority 2
+
+Correct screen-to-screen navigation.
+
+Priority 3
+
+Correct onboarding flow.
+
+Priority 4
+
+Backend integration.
+
+Priority 5
+
+Minor UI polish.
+
+Do not build new features until the existing screens visually match the references.
+
+---
+
+# 19.6 Definition Of Done
+
+A screen is NOT considered complete if:
+
+* navigation works but layout differs
+* data loads but hierarchy differs
+* buttons exist but styling differs
+* content exists but reference layout differs
+
+A screen is complete only when:
+
+* navigation is correct
+* reference screen is matched
+* CTA styling is matched
+* component hierarchy is matched
+* backend integration works
+* loading/error states exist

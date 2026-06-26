@@ -1,13 +1,16 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 
 /// HTTP client wrapper using Dio.
-/// Phase 1: baseUrl points to localhost backend.
-/// Step 6 will add request/response interceptors and error handling.
+/// Automatically selects the correct base URL for the current platform:
+///   - Android emulator: 10.0.2.2 (routes to host machine)
+///   - iOS simulator / desktop / web: localhost
 class ApiClient {
   ApiClient({String? baseUrl})
       : _dio = Dio(
           BaseOptions(
-            baseUrl: baseUrl ?? 'http://localhost:5001/api/v1',
+            baseUrl: baseUrl ?? resolveBaseUrl(),
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 15),
             headers: {
@@ -19,6 +22,42 @@ class ApiClient {
         );
 
   final Dio _dio;
+
+  /// Returns the correct base URL for the current runtime environment.
+  ///
+  /// Uses API_BASE_URL from the environment (defaulting to http://10.0.2.2:40118).
+  /// Dynamically switches between 10.0.2.2 for Android emulator and localhost for others.
+  static String resolveBaseUrl() {
+    const apiBaseUrl = String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'http://10.0.2.2:40118',
+    );
+
+    String url = apiBaseUrl;
+
+    // If using default and on non-Android platform, switch to localhost
+    if (url == 'http://10.0.2.2:40118' && (kIsWeb || !Platform.isAndroid)) {
+      url = 'http://localhost:40118';
+    }
+
+    // Translate localhost/127.0.0.1 to 10.0.2.2 on Android emulator
+    if (!kIsWeb && Platform.isAndroid) {
+      url = url
+          .replaceAll('localhost', '10.0.2.2')
+          .replaceAll('127.0.0.1', '10.0.2.2');
+    }
+
+    // Ensure it ends with /api/v1
+    if (url.isNotEmpty && !url.endsWith('/api/v1')) {
+      if (url.endsWith('/')) {
+        url = '${url}api/v1';
+      } else {
+        url = '$url/api/v1';
+      }
+    }
+
+    return url;
+  }
 
   Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) =>
       _dio.get(path, queryParameters: queryParameters);

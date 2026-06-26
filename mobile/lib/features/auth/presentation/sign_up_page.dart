@@ -36,73 +36,133 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     context.go(AppRoutes.introCarousel);
   }
 
+  bool _obscurePassword = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
-          onPressed: () => context.pop(),
-        ),
-      ),
+      backgroundColor: AppColors.background, // Off-white background matching the reference
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Create account', style: AppTextStyles.h1),
+              // Top category label
+              Text(
+                'Sign up',
+                style: AppTextStyles.label.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+
+              // Back button and Progress Bar row
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => context.go(AppRoutes.welcome),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: const LinearProgressIndicator(
+                        value: 0.15,
+                        backgroundColor: AppColors.border,
+                        color: AppColors.primary,
+                        minHeight: 6,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Title & Subtitle
+              Text(
+                'Create your account',
+                style: AppTextStyles.h1.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Let\'s set up your profile and starting point.',
+                "Let's get you started.",
                 style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xl),
 
               // Full name field
+              Text(
+                'Full name',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Full name',
                   hintText: 'Enter your full name',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
 
               // Email field
+              Text(
+                'Email',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email address',
-                  border: OutlineInputBorder(),
+                  hintText: 'Enter your email',
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
 
               // Password field
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Create a password',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.visibility_outlined, color: AppColors.textMuted),
+              Text(
+                'Password',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xs),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  hintText: 'Create a password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      color: AppColors.textMuted,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
 
               if (_isLoading)
                 const Center(child: CircularProgressIndicator(color: AppColors.primary))
               else
                 AppPrimaryButton(
-                  label: 'Create Account',
+                  label: 'Sign up',
                   onPressed: _onSignUp,
                 ),
               const SizedBox(height: AppSpacing.lg),

@@ -53,25 +53,49 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     }
   }
 
+  bool _obscurePassword = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
-          onPressed: () => context.pop(),
-        ),
-      ),
+      backgroundColor: AppColors.background, // Off-white background
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Welcome back', style: AppTextStyles.h1),
+              // Top category label
+              Text(
+                'Sign in',
+                style: AppTextStyles.label.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+
+              // Back button row
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => context.go(AppRoutes.welcome),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Title & Subtitle
+              Text(
+                'Welcome back',
+                style: AppTextStyles.h1.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Sign in to access your custom running plan.',
@@ -80,35 +104,53 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               const SizedBox(height: AppSpacing.xl),
 
               // Email field
+              Text(
+                'Email',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email address',
-                  border: OutlineInputBorder(),
+                  hintText: 'Enter your email',
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
 
               // Password field
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.visibility_outlined, color: AppColors.textMuted),
+              Text(
+                'Password',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xs),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  hintText: 'Enter your password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      color: AppColors.textMuted,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
 
               if (_isLoading)
                 const Center(child: CircularProgressIndicator(color: AppColors.primary))
               else
                 AppPrimaryButton(
-                  label: 'Sign In',
+                  label: 'Sign in',
                   onPressed: _onSignIn,
                 ),
               const SizedBox(height: AppSpacing.lg),
@@ -118,7 +160,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                   onPressed: () => context.pushReplacement(AppRoutes.signUp),
                   child: RichText(
                     text: TextSpan(
-                      text: 'New to antigravity? ',
+                      text: "Don't have an account? ",
                       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                       children: [
                         TextSpan(

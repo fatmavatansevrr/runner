@@ -29,46 +29,96 @@ class AuthWelcomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface, // Matches the light background in firstpage-auth.png
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Spacer(),
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Spacer(flex: 3),
 
-              // Logo / Icon placeholder
+              // Logo container: white card with shadow and blue teardrop leaf logo
               Container(
                 width: 90,
                 height: 90,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.directions_run_rounded,
-                    size: 48,
-                    color: AppColors.primary,
+                child: Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Teardrop / Leaf outline
+                      Transform.rotate(
+                        angle: -0.785398, // -45 degrees in radians
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 3.5,
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Inner smaller filled teardrop / leaf seed
+                      Transform.rotate(
+                        angle: -0.785398,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomLeft: Radius.circular(8),
+                              bottomRight: Radius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // Title
               Text(
-                'antigravity',
-                style: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.primary,
-                  letterSpacing: -1,
+                'Your running\nplan, made simple.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.h1.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                  letterSpacing: -0.8,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: AppSpacing.md),
 
               // Subtitle
               Text(
-                'A gentle adaptive running planner\nthat adjusts with real life.',
+                'Personalized plans that adapt\nto you and your progress.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
@@ -76,45 +126,55 @@ class AuthWelcomePage extends ConsumerWidget {
                 ),
               ),
 
-              const Spacer(flex: 2),
+              const Spacer(flex: 3),
 
               // Primary Actions
               AppPrimaryButton(
-                label: 'Get Started',
+                label: 'Sign up',
                 onPressed: () => context.push(AppRoutes.signUp),
               ),
               const SizedBox(height: AppSpacing.md),
 
               AppSecondaryButton(
-                label: 'I already have an account',
+                label: 'Sign in',
                 onPressed: () => context.push(AppRoutes.signIn),
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              // Social logins
+              // Social logins divider
               Row(
                 children: [
                   const Expanded(child: Divider(color: AppColors.border)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text('OR JOIN WITH', style: AppTextStyles.label.copyWith(fontSize: 11)),
+                    child: Text(
+                      'or continue with',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                   const Expanded(child: Divider(color: AppColors.border)),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
 
+              // Social logins buttons
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _onLoginSuccess(context, ref),
                       icon: const Icon(Icons.g_mobiledata_rounded, size: 24, color: AppColors.textPrimary),
-                      label: const Text('Google'),
+                      label: const Text('Google', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.border),
                         foregroundColor: AppColors.textPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
                   ),
@@ -123,20 +183,70 @@ class AuthWelcomePage extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => _onLoginSuccess(context, ref),
                       icon: const Icon(Icons.apple, size: 20, color: AppColors.textPrimary),
-                      label: const Text('Apple'),
+                      label: const Text('Apple', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.border),
                         foregroundColor: AppColors.textPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Footer
+              Text(
+                'By continuing, you agree to our',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, fontSize: 11),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      'Terms of Service',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    ' and ',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      'Privacy Policy',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
             ],
           ),
         ),
       ),
+    ],
+  ),
+),
     );
   }
 }

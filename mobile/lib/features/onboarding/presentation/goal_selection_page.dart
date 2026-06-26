@@ -22,23 +22,36 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background, // Off-white background
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.sm),
-              LinearProgressIndicator(
-                value: 0.1,
-                backgroundColor: AppColors.border,
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(2),
+              // Linear progress indicator
+              ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: const LinearProgressIndicator(
+                  value: 0.2,
+                  backgroundColor: AppColors.border,
+                  color: AppColors.primary,
+                  minHeight: 6,
+                ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.md),
 
-              Text('What are you\nplanning for?', style: AppTextStyles.h1),
+              // Back button below progress bar
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => context.go(AppRoutes.introCarousel),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              Text('What are you\nplanning for?', style: AppTextStyles.h1.copyWith(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               const SizedBox(height: AppSpacing.xl),
 
               // Habit card
@@ -83,10 +96,10 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
+                        color: AppColors.primary, // Solid blue matching what-is-your-plan.png
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.emoji_events_rounded, color: AppColors.primary),
+                      child: const Icon(Icons.emoji_events_rounded, color: Colors.white), // White trophy icon
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -114,7 +127,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                         if (_selected == 'habit') {
                           ref.read(onboardingProvider.notifier).updateGoalType('habit');
                           ref.read(onboardingProvider.notifier).updateGoalDistance('five_k'); // fallback
-                          context.go(AppRoutes.habitGoal);
+                          context.go(AppRoutes.runningBackground); // Habits flow now goes to RunningBackgroundPage
                         } else {
                           ref.read(onboardingProvider.notifier).updateGoalType('race');
                           context.go(AppRoutes.raceDetails);

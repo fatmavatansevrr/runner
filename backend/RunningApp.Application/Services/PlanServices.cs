@@ -17,6 +17,13 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
 {
     private readonly AppDbContext _context;
 
+    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) }
+    };
+
     public PlanServices(AppDbContext context)
     {
         _context = context;
@@ -42,10 +49,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         }
 
         // 2. Parse week/day layout from the template JSON
-        var templateData = JsonSerializer.Deserialize<TemplateJsonData>(template.DataJson, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        var templateData = JsonSerializer.Deserialize<TemplateJsonData>(template.DataJson, SerializerOptions);
 
         if (templateData == null || templateData.Weeks == null)
         {
@@ -116,8 +120,8 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             Id = previewResponse.PreviewId,
             UserId = userId,
             TemplateId = template.TemplateId,
-            RequestPayloadJson = JsonSerializer.Serialize(request),
-            PreviewPayloadJson = JsonSerializer.Serialize(previewResponse),
+            RequestPayloadJson = JsonSerializer.Serialize(request, SerializerOptions),
+            PreviewPayloadJson = JsonSerializer.Serialize(previewResponse, SerializerOptions),
             ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             CreatedAt = DateTime.UtcNow
         };
@@ -145,8 +149,8 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         }
 
         // 2. Deserialize preview payload
-        var previewData = JsonSerializer.Deserialize<GeneratePreviewResponse>(preview.PreviewPayloadJson);
-        var requestData = JsonSerializer.Deserialize<GeneratePreviewRequest>(preview.RequestPayloadJson);
+        var previewData = JsonSerializer.Deserialize<GeneratePreviewResponse>(preview.PreviewPayloadJson, SerializerOptions);
+        var requestData = JsonSerializer.Deserialize<GeneratePreviewRequest>(preview.RequestPayloadJson, SerializerOptions);
 
         if (previewData == null || requestData == null)
         {

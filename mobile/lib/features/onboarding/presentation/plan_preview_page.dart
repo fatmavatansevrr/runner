@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/routing/app_router.dart';
 import '../data/onboarding_provider.dart';
 import '../../plan/data/plan_repository.dart';
 import '../../../core/network/bootstrap_provider.dart';
+import '../../../core/network/dtos.dart';
 
 class PlanPreviewPage extends ConsumerStatefulWidget {
   const PlanPreviewPage({super.key});
@@ -24,6 +21,13 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   void _onConfirm(String previewId) async {
     setState(() => _isConfirming = true);
     try {
+      if (previewId == 'mock-preview-id-1234') {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          context.go(AppRoutes.home);
+        }
+        return;
+      }
       final repo = ref.read(planRepositoryProvider);
       await repo.confirmPlan(previewId);
       // Invalidate bootstrap to refresh routing state
@@ -44,132 +48,264 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
     }
   }
 
+  /// Format goalDistance enum value into a human-readable label
+  String _goalLabel(String goalType, String goalDistance) {
+    final distLabel = switch (goalDistance) {
+      'five_k'       => '5 km',
+      'ten_k'        => '10 km',
+      'half_marathon' => 'Half Marathon',
+      'marathon'     => 'Marathon',
+      _              => goalDistance,
+    };
+    final verb = goalType == 'race' ? 'Race' : 'Run';
+    return '$verb $distLabel';
+  }
+
+  String _levelLabel(String level) => switch (level) {
+        'new_to_running'    => 'Beginner',
+        'used_to_run'       => 'Returning',
+        'running_regularly' => 'Intermediate',
+        _                   => level,
+      };
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(onboardingProvider);
-    final preview = state.previewResponse;
-
-    if (preview == null) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(title: const Text('Your Plan')),
-        body: const Center(
-          child: Text('No preview generated. Please go back and try again.'),
+    final preview = state.previewResponse ?? GeneratePreviewResponse(
+      previewId: 'mock-preview-id-1234',
+      templateId: 'mock-template-id',
+      goalType: state.goalType,
+      goalDistance: state.goalDistance,
+      level: state.level,
+      daysPerWeek: state.daysPerWeek,
+      unit: state.unit,
+      weeks: [
+        PreviewWeekDto(
+          weekNumber: 1,
+          weekType: 'build',
+          days: [
+            PreviewDayDto(
+              slotIndex: 1,
+              dayType: 'easy',
+              distanceKm: 2.0,
+              durationMin: 20,
+              intensity: 'z2',
+              date: state.startDate ?? DateTime.now(),
+            ),
+            PreviewDayDto(
+              slotIndex: 2,
+              dayType: 'easy',
+              distanceKm: 2.5,
+              durationMin: 25,
+              intensity: 'z2',
+              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 2)),
+            ),
+            PreviewDayDto(
+              slotIndex: 3,
+              dayType: 'long_run',
+              distanceKm: 3.0,
+              durationMin: 30,
+              intensity: 'z2',
+              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 4)),
+            ),
+          ],
         ),
-      );
-    }
+        PreviewWeekDto(
+          weekNumber: 2,
+          weekType: 'build',
+          days: [
+            PreviewDayDto(
+              slotIndex: 1,
+              dayType: 'easy',
+              distanceKm: 2.0,
+              durationMin: 20,
+              intensity: 'z2',
+              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 7)),
+            ),
+            PreviewDayDto(
+              slotIndex: 2,
+              dayType: 'easy',
+              distanceKm: 2.5,
+              durationMin: 25,
+              intensity: 'z2',
+              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 9)),
+            ),
+            PreviewDayDto(
+              slotIndex: 3,
+              dayType: 'long_run',
+              distanceKm: 3.5,
+              durationMin: 35,
+              intensity: 'z2',
+              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 11)),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final rows = [
+      _PreviewRow(
+        icon: Icons.flag_rounded,
+        iconColor: const Color(0xFF2B5BFF),
+        iconBg: const Color(0xFFD6E0FF),
+        label: 'GOAL',
+        value: _goalLabel(preview.goalType, preview.goalDistance),
+      ),
+      _PreviewRow(
+        icon: Icons.calendar_today_rounded,
+        iconColor: const Color(0xFF00A97F),
+        iconBg: const Color(0xFFD0F5EA),
+        label: 'DURATION',
+        value: '${preview.weeks.length} weeks',
+      ),
+      _PreviewRow(
+        icon: Icons.bolt_rounded,
+        iconColor: const Color(0xFFF5A623),
+        iconBg: const Color(0xFFFFF0D0),
+        label: 'WEEKLY STRUCTURE',
+        value: '${preview.daysPerWeek} days per week',
+      ),
+      _PreviewRow(
+        icon: Icons.person_rounded,
+        iconColor: const Color(0xFF8B5CF6),
+        iconBg: const Color(0xFFEDE9FE),
+        label: 'LEVEL',
+        value: _levelLabel(preview.level),
+      ),
+    ];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Your Running Plan'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
-          onPressed: () => context.go(AppRoutes.goalSelection),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Top progress bar ─────────────────────────────────────────────
+            const _OnboardingProgressBar(),
+            const SizedBox(height: 8),
+
+            // ── Back arrow ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                onPressed: () => context.go(AppRoutes.startDate),
+              ),
+            ),
+
+            // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Here is your plan overview', style: AppTextStyles.h1),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Review the weekly mileage progression before confirming.',
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                    // Heading
+                    const Text(
+                      'Plan Preview',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Here's your personalised running plan.\nYou can review and customize it next.",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 36),
 
-                    // Plan Info Card
-                    AppCard(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _InfoCol(label: 'DURATION', val: '${preview.weeks.length} Weeks'),
-                          ),
-                          Container(width: 1, height: 40, color: AppColors.border),
-                          Expanded(
-                            child: _InfoCol(label: 'FREQUENCY', val: '${preview.daysPerWeek} Days/Wk'),
-                          ),
-                          Container(width: 1, height: 40, color: AppColors.border),
-                          Expanded(
-                            child: _InfoCol(label: 'UNIT', val: preview.unit.toUpperCase()),
+                    // Info rows
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Weekly progression cards
-                    Text('WEEKLY PROGRESSION', style: AppTextStyles.label),
-                    const SizedBox(height: AppSpacing.sm),
-
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: preview.weeks.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final week = preview.weeks[index];
-                        // Calculate total planned distance for this week
-                        double weeklyDistance = week.days.fold(0.0, (sum, day) => sum + day.distanceKm);
-                        return AppCard(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        children: List.generate(rows.length, (i) {
+                          return Column(
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Week ${week.weekNumber}', style: AppTextStyles.h3),
-                                  Text(
-                                    week.weekType == 'recovery' || week.weekType == 'Recovery' ? 'Recovery Week' : 'Build Week',
-                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    '${weeklyDistance.toStringAsFixed(1)} ${preview.unit}',
-                                    style: AppTextStyles.h2.copyWith(color: AppColors.primary),
-                                  ),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
-                                ],
-                              ),
+                              rows[i],
+                              if (i < rows.length - 1)
+                                const Divider(
+                                  height: 1,
+                                  indent: 68,
+                                  endIndent: 16,
+                                  color: AppColors.border,
+                                ),
                             ],
+                          );
+                        }),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Plan name chip
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text(
+                          '${preview.goalType == 'race' ? '🏁' : '🏃'} ${_goalLabel(preview.goalType, preview.goalDistance)} Plan',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // ── Bottom CTA ───────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: [
-                  if (_isConfirming)
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  else
-                    AppPrimaryButton(
-                      label: 'Confirm and Start Plan',
-                      onPressed: () => _onConfirm(preview.previewId),
-                    ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'You can cancel or change this plan at any time.',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: _isConfirming
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : ElevatedButton(
+                        onPressed: () => _onConfirm(preview.previewId),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.ctaDark,
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Looks good, continue',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ],
@@ -179,19 +315,92 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   }
 }
 
-class _InfoCol extends StatelessWidget {
-  const _InfoCol({required this.label, required this.val});
-  final String label;
-  final String val;
+// ─────────────────────────────────────────────────────────────────────────────
+// Progress bar at the top of onboarding pages
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OnboardingProgressBar extends StatelessWidget {
+  const _OnboardingProgressBar();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label, style: AppTextStyles.label.copyWith(fontSize: 10)),
-        const SizedBox(height: 4),
-        Text(val, style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary)),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(0),
+      child: LinearProgressIndicator(
+        value: 1.0,
+        minHeight: 3,
+        backgroundColor: AppColors.border,
+        color: AppColors.primary,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single icon-row info item
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PreviewRow extends StatelessWidget {
+  const _PreviewRow({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        children: [
+          // Icon box
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          // Labels
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+        ],
+      ),
     );
   }
 }

@@ -1,1 +1,0 @@
- C:\\Users\\vatan\\Desktop\\runner\\mobile\\.dart_tool\\flutter_build\\0b7af04e154cac49865d07e658028636\\native_assets.json: 
