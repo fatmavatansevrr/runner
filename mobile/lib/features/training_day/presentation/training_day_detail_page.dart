@@ -309,10 +309,10 @@ class _TrainingDayDetailPageState
                       style: AppTextStyles.bodyMedium,
                       textAlign: TextAlign.center),
                   const SizedBox(height: AppSpacing.lg),
-                  ElevatedButton(
+                  AppPrimaryButton(
+                    label: 'Retry',
                     onPressed: () =>
                         ref.invalidate(trainingDayDetailProvider(widget.dayId)),
-                    child: const Text('Retry'),
                   ),
                 ],
               ),

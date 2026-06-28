@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/routing/app_router.dart';
 import '../data/onboarding_provider.dart';
+import '../../../core/widgets/app_button.dart';
 
 class PlanGenerationPage extends ConsumerStatefulWidget {
   const PlanGenerationPage({super.key});
@@ -126,17 +127,9 @@ class _PlanGenerationPageState extends ConsumerState<PlanGenerationPage>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _startGeneration,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: const StadiumBorder(),
-              ),
-              child: const Text('Try Again', style: TextStyle(fontSize: 16, color: Colors.white)),
-            ),
+          AppPrimaryButton(
+            label: 'Try Again',
+            onPressed: _startGeneration,
           ),
         ],
       ),

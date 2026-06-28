@@ -7,6 +7,7 @@ import '../data/onboarding_provider.dart';
 import '../../plan/data/plan_repository.dart';
 import '../../../core/network/bootstrap_provider.dart';
 import '../../../core/network/dtos.dart';
+import '../../../core/widgets/app_button.dart';
 
 class PlanPreviewPage extends ConsumerStatefulWidget {
   const PlanPreviewPage({super.key});
@@ -281,31 +282,11 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
             // ── Bottom CTA ───────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: _isConfirming
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                    : ElevatedButton(
-                        onPressed: () => _onConfirm(preview.previewId),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.ctaDark,
-                          foregroundColor: Colors.white,
-                          shape: const StadiumBorder(),
-                          elevation: 0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Looks good, continue',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 20),
-                          ],
-                        ),
-                      ),
+              child: AppPrimaryButton(
+                label: 'Looks good, continue',
+                isLoading: _isConfirming,
+                icon: Icons.arrow_forward_rounded,
+                onPressed: () => _onConfirm(preview.previewId),
               ),
             ),
           ],

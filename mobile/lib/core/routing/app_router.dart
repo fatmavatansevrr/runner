@@ -154,6 +154,10 @@ abstract final class AppRouter {
             path: AppRoutes.profile,
             builder: (_, __) => const ProfilePage(),
           ),
+          GoRoute(
+            path: AppRoutes.planDetails,
+            builder: (_, __) => const PlanDetailsPage(),
+          ),
         ],
       ),
 
@@ -161,12 +165,6 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.settings,
         builder: (_, __) => const SettingsPage(),
-      ),
-
-      // ── Plan Details (Profile sub-route) ──────────────────────────────────
-      GoRoute(
-        path: AppRoutes.planDetails,
-        builder: (_, __) => const PlanDetailsPage(),
       ),
 
       // ── Pending Confirmations ────────────────────────────────────────────
@@ -218,8 +216,11 @@ class _MainShell extends StatelessWidget {
           currentIndex: index,
           onTap: (i) => context.go(_tabs[i]),
           backgroundColor: AppColors.navBackground,
-          selectedItemColor: AppColors.primary,
+          selectedItemColor: AppColors.navActive,
           unselectedItemColor: AppColors.navInactive,
+          selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+          iconSize: 22,
           showSelectedLabels: true,
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
@@ -229,23 +230,9 @@ class _MainShell extends StatelessWidget {
               activeIcon: Icon(Icons.calendar_month),
               label: 'Calendar',
             ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: AppColors.ctaDark,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.home_outlined, color: Colors.white, size: 28),
-              ),
-              activeIcon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.home, color: Colors.white, size: 28),
-              ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             const BottomNavigationBarItem(

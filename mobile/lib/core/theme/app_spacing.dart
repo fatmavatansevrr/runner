@@ -11,6 +11,6 @@ abstract final class AppSpacing {
   static const double pageHorizontal = md;
   static const double cardPadding    = md;
   static const double sectionGap     = lg;
-  static const double buttonHeight   = 56.0;
+  static const double buttonHeight   = 48.0;
   static const double bottomNavHeight = 72.0;
 }

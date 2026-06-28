@@ -77,10 +77,13 @@ class _RunningDaysSelectionPageState extends ConsumerState<RunningDaysSelectionP
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top category label
-              Text(
-                'Schedule',
-                style: AppTextStyles.label.copyWith(
-                  fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Text(
+                  'Schedule',
+                  style: AppTextStyles.label.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -116,18 +119,26 @@ class _RunningDaysSelectionPageState extends ConsumerState<RunningDaysSelectionP
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              Text(
-                'Which days do you\nprefer to run?',
-                style: AppTextStyles.h1.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Which days do you\nprefer to run?',
+                      style: AppTextStyles.h1.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Select exactly $limit days for your plan.',
+                      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Select exactly $limit days for your plan.',
-                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xl),
 

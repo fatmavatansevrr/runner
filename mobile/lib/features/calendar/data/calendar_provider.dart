@@ -30,10 +30,12 @@ List<TrainingDayResponse> _getMockCalendarData(String monthStr) {
   // DateTime(year, month + 1, 0) gives the last day of the current month.
   final daysInMonth = month == 12 ? 31 : DateTime(year, month + 1, 0).day;
   final now = DateTime.now();
+  final todayDate = DateTime(now.year, now.month, now.day);
 
   return List.generate(daysInMonth, (index) {
     final dayNumber = index + 1;
     final date = DateTime(year, month, dayNumber);
+    final cellDate = DateTime(date.year, date.month, date.day);
     final weekday = date.weekday;
     
     String dayType = 'rest';
@@ -45,6 +47,9 @@ List<TrainingDayResponse> _getMockCalendarData(String monthStr) {
     double? plannedPace;
     String? intensity;
 
+    final isPast = cellDate.isBefore(todayDate);
+    final isToday = cellDate.isAtSameMomentAs(todayDate);
+
     if (weekday == 2) {
       dayType = 'easy';
       title = 'Easy Run';
@@ -53,7 +58,11 @@ List<TrainingDayResponse> _getMockCalendarData(String monthStr) {
       plannedDuration = 35;
       plannedPace = 7.0;
       intensity = 'z2';
-      if (date.isBefore(now)) status = 'completed';
+      if (isPast) {
+        status = dayNumber % 9 == 0 ? 'missed' : 'completed';
+      } else if (isToday) {
+        status = 'planned';
+      }
     } else if (weekday == 4) {
       dayType = 'interval';
       title = 'Interval Run';
@@ -62,16 +71,24 @@ List<TrainingDayResponse> _getMockCalendarData(String monthStr) {
       plannedDuration = 40;
       plannedPace = 6.5;
       intensity = 'z4';
-      if (date.isBefore(now)) status = 'completed';
+      if (isPast) {
+        status = dayNumber % 12 == 0 ? 'missed' : 'completed';
+      } else if (isToday) {
+        status = 'planned';
+      }
     } else if (weekday == 6) {
-      dayType = 'tempo';
-      title = 'Tempo Run';
-      description = 'Sustained threshold run.';
-      plannedDistance = 8.0;
-      plannedDuration = 50;
-      plannedPace = 6.25;
-      intensity = 'z3';
-      if (date.isBefore(now)) status = 'completed';
+      dayType = 'easy';
+      title = 'Easy Run';
+      description = 'Run at an easy, conversational pace.';
+      plannedDistance = 6.0;
+      plannedDuration = 40;
+      plannedPace = 7.0;
+      intensity = 'z2';
+      if (isPast) {
+        status = 'completed';
+      } else if (isToday) {
+        status = 'planned';
+      }
     } else if (weekday == 7) {
       dayType = 'long_run';
       title = 'Long Run';
@@ -80,8 +97,10 @@ List<TrainingDayResponse> _getMockCalendarData(String monthStr) {
       plannedDuration = 80;
       plannedPace = 7.25;
       intensity = 'z2';
-      if (date.isBefore(now)) {
+      if (isPast) {
         status = dayNumber % 2 == 0 ? 'completed' : 'missed';
+      } else if (isToday) {
+        status = 'planned';
       }
     }
 

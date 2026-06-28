@@ -12,7 +12,7 @@ abstract final class AppRadius {
 
   // Semantic aliases
   static const double card        = lg;
-  static const double button      = pill;
+  static const double button      = 24.0;
   static const double selectableCard = lg;
   static const double modal       = xl;
   static const double calendarDay = md;

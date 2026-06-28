@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_shared_widgets.dart';
 import '../../../core/routing/app_router.dart';
 import '../data/profile_provider.dart';
@@ -79,291 +77,523 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  String _formatLevel(String level) {
-    switch (level) {
-      case 'new_to_running':
-        return 'New to Running';
-      case 'used_to_run':
-        return 'Used to Run';
-      case 'running_regularly':
-        return 'Running Regularly';
-      default:
-        return level;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final profileState = ref.watch(profileOverviewProvider);
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white, // White background for the entire page
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
-        title: Text('Profile', style: AppTextStyles.h2),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            }
+          },
+        ),
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: AppColors.textPrimary,
+              size: 22,
+            ),
             onPressed: () => context.push(AppRoutes.settings),
           ),
         ],
       ),
-      body: profileState.when(
-        loading: () => const LoadingState(message: 'Loading your profile...'),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.textMuted),
-                const SizedBox(height: AppSpacing.md),
-                Text('Error loading profile', style: AppTextStyles.h3),
-                const SizedBox(height: AppSpacing.xs),
-                Text(err.toString(), style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
-                const SizedBox(height: AppSpacing.md),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.invalidate(profileOverviewProvider);
-                    ref.invalidate(activePlanDetailsProvider);
-                  },
-                  child: const Text('Retry'),
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            const SizedBox(height: 24),
 
-              ],
+            // Profile Identity Section
+            const _ProfileAvatar(initials: 'JD'),
+            const SizedBox(height: 16),
+            const Text(
+              'John Doe',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-        ),
-        data: (profile) {
-          final stats = profile.activePlanStats;
-          final initials = profile.name.isNotEmpty
-              ? profile.name.split(' ').map((e) => e[0]).take(2).join().toUpperCase()
-              : 'JD';
+            const SizedBox(height: 4),
+            const Text(
+              'Professional Member',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Column(
-              children: [
-                const SizedBox(height: AppSpacing.md),
+            // Stats row
+            const _ProfileStatsRow(runs: '45', distanceKm: '187'),
+            const SizedBox(height: 32),
 
-                // Profile Header
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: AppColors.primaryLight,
-                  child: Text(
-                    initials,
-                    style: AppTextStyles.h1.copyWith(color: AppColors.primary, fontSize: 32),
-                  ),
+            // Active Plan Section Title
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Active Plan',
+                style: AppTextStyles.h3.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(profile.name.isEmpty ? 'Jane Doe' : profile.name, style: AppTextStyles.h2),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Active Plan Card
+            _ActivePlanCard(
+              planName: '21K Half Marathon',
+              weekText: 'Week 6 of 12',
+              progressPercent: 0.5,
+              onViewPlan: () => context.push(AppRoutes.planDetails),
+              onStopPlan: () => _showCancelPlanDialog(context, '21K Half Marathon'),
+            ),
+            const SizedBox(height: 32),
+
+            // Recent Badges Title Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  '${_formatLevel(profile.runningBackground)}  |  ${profile.unit.toUpperCase()}',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Stats row
-                AppCard(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _StatColumn(
-                        value: stats != null ? stats.completedRunsCount.toString() : '0',
-                        label: 'COMPLETED RUNS',
-                      ),
-                      Container(width: 1, height: 32, color: AppColors.border),
-                      _StatColumn(
-                        value: stats != null ? '${stats.totalCompletedDistance.toStringAsFixed(1)} ${profile.unit}' : '0.0 ${profile.unit}',
-                        label: 'TOTAL DISTANCE',
-                      ),
-                      Container(width: 1, height: 32, color: AppColors.border),
-                      _StatColumn(
-                        value: stats != null ? '1' : '0',
-                        label: 'PLANS',
-                      ),
-                    ],
+                  'Recent Badges',
+                  style: AppTextStyles.h3.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Active Plan details card
-                if (stats != null)
-                  AppCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('ACTIVE PLAN', style: AppTextStyles.label),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.completedLight,
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                              child: Text(
-                                stats.adherenceRatePercent >= 70 ? 'ON TRACK' : 'NEEDS ATTENTION',
-                                style: AppTextStyles.label.copyWith(
-                                  color: stats.adherenceRatePercent >= 70 ? AppColors.completed : AppColors.primary,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(stats.planName, style: AppTextStyles.h2),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '${stats.completedRunsCount} of ${stats.totalPlannedRunsCount} runs completed (${stats.adherenceRatePercent.toStringAsFixed(0)}% adherence)',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-
-                        LinearProgressIndicator(
-                          value: stats.totalPlannedRunsCount > 0 ? (stats.completedRunsCount / stats.totalPlannedRunsCount) : 0.0,
-                          backgroundColor: AppColors.border,
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-
-                        if (_isStopping)
-                          const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                        else ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AppPrimaryButton(
-                                  label: 'View Plan Details',
-                                  onPressed: () => context.push(AppRoutes.planDetails),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Center(
-                            child: TextButton(
-                              onPressed: () => _showCancelPlanDialog(context, stats.planName),
-                              child: Text(
-                                'Stop Plan',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.missed,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                else
-                  AppCard(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.info_outline_rounded, size: 40, color: AppColors.textMuted),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('No active plan', style: AppTextStyles.h3),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Get started by setting up a custom running plan.',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppPrimaryButton(
-                          label: 'Get Started',
-                          onPressed: () => context.go(AppRoutes.goalSelection),
-                        ),
-                      ],
+                GestureDetector(
+                  onTap: () {}, // View All
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                   ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Badges Section
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text('BADGES & ACHIEVEMENTS', style: AppTextStyles.label),
-                  ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-
-                AppCard(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _BadgeWidget(icon: Icons.flash_on_rounded, label: 'First Step', unlocked: stats != null),
-                      _BadgeWidget(icon: Icons.done_all_rounded, label: 'Consistent', unlocked: stats != null && stats.completedRunsCount >= 3),
-                      _BadgeWidget(icon: Icons.emoji_events_rounded, label: 'First 5K', unlocked: stats != null && stats.totalCompletedDistance >= 5.0),
-                      _BadgeWidget(icon: Icons.timer_rounded, label: 'Pace Master', unlocked: stats != null && stats.completedRunsCount >= 10),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
               ],
             ),
-          );
-        },
+            const SizedBox(height: 12),
+
+            // Badge cards side by side
+            Row(
+              children: const [
+                Expanded(
+                  child: _BadgeCard(
+                    icon: Icons.bolt_rounded,
+                    iconColor: Color(0xFFD97706),
+                    iconBgColor: Color(0xFFFEF3C7),
+                    title: 'Fast Paced',
+                    subtitle: 'Avg pace < 5:00',
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _BadgeCard(
+                    icon: Icons.water_drop_rounded,
+                    iconColor: Color(0xFF2563EB),
+                    iconBgColor: Color(0xFFDBEAFE),
+                    title: 'Rain Runner',
+                    subtitle: 'Wet weather run',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.value, required this.label});
-  final String value;
-  final String label;
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable Sub-Widgets for Profile
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.initials});
+  final String initials;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        Text(value, style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary)),
-        const SizedBox(height: 2),
-        Text(label, style: AppTextStyles.label.copyWith(fontSize: 10)),
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: const Color(0xFFEFF6FF), // light blue tint
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D4ED8), // blue accent
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
-class _BadgeWidget extends StatelessWidget {
-  const _BadgeWidget({required this.icon, required this.label, required this.unlocked});
-  final IconData icon;
-  final String label;
-  final bool unlocked;
+class _ProfileStatsRow extends StatelessWidget {
+  const _ProfileStatsRow({required this.runs, required this.distanceKm});
+  final String runs;
+  final String distanceKm;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Opacity(
-          opacity: unlocked ? 1.0 : 0.35,
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: unlocked ? AppColors.primaryLight : AppColors.border,
-              shape: BoxShape.circle,
+        Column(
+          children: [
+            Text(
+              runs,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
             ),
-            child: Icon(icon, color: unlocked ? AppColors.primary : AppColors.textSecondary, size: 24),
-          ),
+            const SizedBox(height: 4),
+            const Text(
+              'RUNS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: unlocked ? AppColors.textPrimary : AppColors.textMuted,
-          ),
+        const SizedBox(width: 40),
+        Container(
+          width: 1,
+          height: 36,
+          color: AppColors.border,
+        ),
+        const SizedBox(width: 40),
+        Column(
+          children: [
+            Text(
+              distanceKm,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'KM',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+}
+
+class _ActivePlanCard extends StatelessWidget {
+  const _ActivePlanCard({
+    required this.planName,
+    required this.weekText,
+    required this.progressPercent,
+    required this.onViewPlan,
+    required this.onStopPlan,
+  });
+  final String planName;
+  final String weekText;
+  final double progressPercent;
+  final VoidCallback onViewPlan;
+  final VoidCallback onStopPlan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ON TRACK Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7), // light green
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: const Text(
+              'ON TRACK',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF15803D), // dark green
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Title, Subtitle and Flag Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      planName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      weekText,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Flag icon container
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3F4F6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.flag_rounded,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Progress Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Progress',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                '${(progressPercent * 100).toStringAsFixed(0)}%',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Progress Indicator
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: LinearProgressIndicator(
+              value: progressPercent,
+              minHeight: 8,
+              backgroundColor: AppColors.border,
+              color: AppColors.ctaDark,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Action Buttons
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onViewPlan,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.ctaDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'View Plan',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton(
+              onPressed: onStopPlan,
+              child: const Text(
+                'Stop Plan',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.missed,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgeCard extends StatelessWidget {
+  const _BadgeCard({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.title,
+    required this.subtitle,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon Container
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

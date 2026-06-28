@@ -10,6 +10,9 @@ import '../data/home_repository.dart';
 import '../../calendar/data/calendar_provider.dart';
 import '../../profile/data/profile_provider.dart';
 import '../../../core/network/dtos.dart';
+import '../../../core/widgets/app_button.dart';
+
+enum DayStatus { planned, completed, notToday }
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -20,23 +23,21 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   bool _isSubmitting = false;
+  DateTime? _selectedDate;
+  final Map<String, DayStatus> _localDayStates = {};
+  bool _showCompletionBanner = false;
 
   // ── Completion sheet ────────────────────────────────────────────────────
 
-  void _showCompletionSheet(
-      String dayId, double plannedDistance, int plannedDuration) {
-    String selectedResult = 'as_planned';
-    final distanceController =
-        TextEditingController(text: plannedDistance.toStringAsFixed(1));
-    final durationController =
-        TextEditingController(text: plannedDuration.toString());
+  void _showCompletionSheet(String dayId) {
+    String selectedOption = 'as_planned';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
@@ -50,140 +51,139 @@ class _HomePageState extends ConsumerState<HomePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text('Log Workout',
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary)),
-              const SizedBox(height: 4),
-              const Text('How did it go?',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-              const SizedBox(height: 20),
-
-              // Result chips
+              // Header Row
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ResultChip(
-                    label: 'As Planned',
-                    selected: selectedResult == 'as_planned',
-                    onTap: () => setModal(() => selectedResult = 'as_planned'),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: const BoxDecoration(
+                      color: AppColors.completedLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: AppColors.completed,
+                      size: 22,
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  _ResultChip(
-                    label: 'Shorter',
-                    selected: selectedResult == 'shorter',
-                    onTap: () => setModal(() => selectedResult = 'shorter'),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Run Complete',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Great job! How did your run feel?',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  _ResultChip(
-                    label: 'Exceeded',
-                    selected: selectedResult == 'exceeded',
-                    onTap: () => setModal(() => selectedResult = 'exceeded'),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textMuted,
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // Distance / duration fields
-              Row(children: [
-                Expanded(
-                  child: _CompactTextField(
-                    controller: distanceController,
-                    label: 'Distance (km)',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _CompactTextField(
-                    controller: durationController,
-                    label: 'Duration (min)',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ]),
               const SizedBox(height: 24),
 
-              // CTA
-              if (_isSubmitting)
-                const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary))
-              else
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final dist =
-                          double.tryParse(distanceController.text.trim()) ??
-                              plannedDistance;
-                      final dur =
-                          int.tryParse(durationController.text.trim()) ??
-                              plannedDuration;
-                      setModal(() => _isSubmitting = true);
-                      setState(() => _isSubmitting = true);
-                      try {
-                        final repo = ref.read(homeRepositoryProvider);
-                        await repo.completeWorkout(
-                            dayId, dist, dur, 'Completed!');
-                        ref.invalidate(homeDataProvider);
-                        ref.invalidate(calendarDataProvider);
-                        ref.invalidate(profileOverviewProvider);
-                        ref.invalidate(activePlanDetailsProvider);
-                        if (context.mounted) Navigator.pop(context);
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())));
-                        }
-                      } finally {
-                        setModal(() => _isSubmitting = false);
-                        setState(() => _isSubmitting = false);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ctaDark,
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                      elevation: 0,
+              // Selection Rows
+              _CompletionOptionRow(
+                title: 'As planned',
+                subtitle: 'Everything went as expected',
+                value: 'as_planned',
+                groupValue: selectedOption,
+                onTap: () => setModal(() => selectedOption = 'as_planned'),
+              ),
+              const SizedBox(height: 12),
+              _CompletionOptionRow(
+                title: 'Shorter',
+                subtitle: 'I couldn’t complete the whole run',
+                value: 'shorter',
+                groupValue: selectedOption,
+                onTap: () => setModal(() => selectedOption = 'shorter'),
+              ),
+              const SizedBox(height: 12),
+              _CompletionOptionRow(
+                title: 'Exceeded',
+                subtitle: 'I did more than planned',
+                value: 'exceeded',
+                groupValue: selectedOption,
+                onTap: () => setModal(() => selectedOption = 'exceeded'),
+              ),
+              const SizedBox(height: 20),
+
+              // Recovery Tip Card
+              const _RecoveryTipCard(
+                title: 'RECOVERY TIP',
+                text: 'Hydrate within 30 minutes to speed up muscle repair.',
+              ),
+              const SizedBox(height: 24),
+
+              // Save Activity Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Mark as completed locally and show success banner
+                    setState(() {
+                      _localDayStates[dayId] = DayStatus.completed;
+                      _showCompletionBanner = true;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.ctaDark,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24.0),
                     ),
-                    child: const Text('Log it',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Save Activity',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ),
             ],
           ),
         ),
       ),
-    ).whenComplete(() {
-      distanceController.dispose();
-      durationController.dispose();
-    });
+    );
   }
 
   // ── Not Today sheet ─────────────────────────────────────────────────────
 
-  void _showNotTodaySheet(String dayId) {
-    String? selectedReason;
+  void _showNotTodayReasonSheet(String dayId) {
+    String selectedReason = 'Too tired';
     final reasons = [
-      ('need_rest', 'Need rest'),
-      ('no_time', 'No time'),
-      ('feeling_tired', 'Not feeling it'),
-      ('other', 'Other'),
+      'Too tired',
+      'Too busy',
+      'Sick or injured',
+      'Bad weather',
+      'Other',
     ];
 
     showModalBottomSheet(
@@ -191,177 +191,228 @@ class _HomePageState extends ConsumerState<HomePage> {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
-            top: 24,
+            top: 12,
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle
+              // Drag handle
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 36,
+                  height: 5,
                   decoration: BoxDecoration(
                     color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Header row
+              // Title and Close Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Skip today\'s workout?',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary)),
+                  const Text(
+                    'Not today?',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
-                    child: const Icon(Icons.close_rounded,
-                        color: AppColors.textMuted, size: 22),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textMuted,
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               const Text(
-                "Rest days are part of progress.\nWe'll adjust your plan to keep you on track.",
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                'Tell us what happened so we can adapt your plan later.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 20),
 
-              // Reason chips
-              const Text('Reason (Optional)',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                      letterSpacing: 0.4)),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: reasons.map((r) {
-                  final isSelected = selectedReason == r.$1;
-                  return GestureDetector(
-                    onTap: () => setModal(() => selectedReason =
-                        isSelected ? null : r.$1),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+              // Radio Options
+              ...reasons.map((reason) {
+                final isSelected = selectedReason == reason;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () => setModal(() => selectedReason = reason),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.ctaDark
-                            : const Color(0xFFF5F6FA),
-                        borderRadius: BorderRadius.circular(100),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected
-                              ? AppColors.ctaDark
-                              : AppColors.border,
+                          color: isSelected ? AppColors.ctaDark : AppColors.border,
+                          width: isSelected ? 1.5 : 1,
                         ),
                       ),
-                      child: Text(
-                        r.$2,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            reason,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          IgnorePointer(
+                            child: Radio<String>(
+                              value: reason,
+                              groupValue: selectedReason,
+                              activeColor: AppColors.ctaDark,
+                              onChanged: (_) {},
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
+                  ),
+                );
+              }).toList(),
+              const SizedBox(height: 16),
 
-              // Supportive note
+              // Info card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.tipCardBackground,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.lightbulb_outline_rounded,
-                        color: Color(0xFF8B5CF6), size: 18),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Consistency is key — Taking a rest today won\'t affect your progress. Your schedule will update automatically.',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                            height: 1.4),
+                  children: const [
+                    Text(
+                      'Your plan will adapt',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF8B5CF6),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'For now this is only saved locally. Later, the adaptive engine can use this to adjust your schedule.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // CTA
-              if (_isSubmitting)
-                const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary))
-              else
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      setModal(() => _isSubmitting = true);
-                      setState(() => _isSubmitting = true);
-                      try {
-                        final repo = ref.read(homeRepositoryProvider);
-                        final decision = await repo.createNotTodayDecision(
-                            dayId, selectedReason ?? 'other');
-                        await repo.confirmNotTodayDecision(decision.decisionId);
-                        ref.invalidate(homeDataProvider);
-                        ref.invalidate(calendarDataProvider);
-                        ref.invalidate(profileOverviewProvider);
-                        ref.invalidate(activePlanDetailsProvider);
-                        if (context.mounted) Navigator.pop(context);
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())));
-                        }
-                      } finally {
-                        setModal(() => _isSubmitting = false);
-                        setState(() => _isSubmitting = false);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ctaDark,
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                      elevation: 0,
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24.0),
+                          ),
+                          foregroundColor: AppColors.textPrimary,
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     ),
-                    child: const Text('Got it!',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _localDayStates[dayId] = DayStatus.notToday;
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.ctaDark,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24.0),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Save',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showUndoNotTodayDialog(String dayId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Undo Not Today?'),
+        content: const Text('This will mark the run as planned again.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _localDayStates[dayId] = DayStatus.planned;
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text(
+              'Undo',
+              style: TextStyle(color: AppColors.missed, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -371,16 +422,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeDataProvider);
-    // Read profile name with graceful fallback
+    // Read profile name with Sandra fallback
     final profileAsync = ref.watch(profileOverviewProvider);
-    final userName = profileAsync.valueOrNull?.name ?? 'Runner';
+    final userName = profileAsync.valueOrNull?.name ?? 'Sandra';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => ref.refresh(homeDataProvider.future),
-          color: AppColors.primary,
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () => ref.refresh(homeDataProvider.future),
+              color: AppColors.primary,
           child: homeState.when(
             loading: () => const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
@@ -417,6 +470,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               final dailyTip = homeData.dailyTip;
               final weekSummary = homeData.weekSummary;
 
+              // Determine current selected workout
+              final now = DateTime.now();
+              final effectiveSelectedDate = _selectedDate ?? now;
+              final selectedWorkout = weekSummary.firstWhere(
+                (d) => d.date.day == effectiveSelectedDate.day &&
+                       d.date.month == effectiveSelectedDate.month &&
+                       d.date.year == effectiveSelectedDate.year,
+                orElse: () => todayWorkout ?? weekSummary[0],
+              );
+
               final weeklyCompleted = weekSummary.fold(
                   0.0, (sum, d) => sum + (d.actualDistanceKm ?? 0.0));
               final weeklyPlanned =
@@ -437,6 +500,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     _HomeHeader(userName: userName),
                     const SizedBox(height: 20),
 
+
+
                     // ── Pending confirmations banner ─────────────────────────
                     if (homeData.hasPendingConfirmations)
                       _PendingBanner(
@@ -444,73 +509,67 @@ class _HomePageState extends ConsumerState<HomePage> {
                             context.go(AppRoutes.pendingConfirmation),
                       ),
 
-                    // ── Today's Plan label ───────────────────────────────────
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("TODAY'S PLAN",
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                              letterSpacing: 0.8,
-                            )),
-                        Icon(Icons.more_horiz_rounded,
-                            color: AppColors.textMuted),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
                     // ── Workout card (state-driven) ──────────────────────────
-                    if (todayWorkout == null ||
-                        todayWorkout.dayType == 'rest')
+                    if (selectedWorkout.dayType == 'rest')
                       _RestDayCard(tip: dailyTip?.message)
-                    else if (todayWorkout.status == 'completed')
-                      _CompletedCard(
-                        workout: todayWorkout,
-                        onTap: () => context.push(
-                            '/training-day/${todayWorkout.dayId}'),
-                      )
-                    else if (todayWorkout.status == 'missed')
-                      _MissedCard(
-                        workout: todayWorkout,
-                        onTap: () => context.push(
-                            '/training-day/${todayWorkout.dayId}'),
-                      )
                     else
-                      _PlannedCard(
-                        workout: todayWorkout,
-                        onTap: () => context.push(
-                            '/training-day/${todayWorkout.dayId}'),
-                        onComplete: () => _showCompletionSheet(
-                          todayWorkout.dayId,
-                          todayWorkout.plannedDistanceKm,
-                          todayWorkout.plannedDurationMin,
-                        ),
-                        onNotToday: () =>
-                            _showNotTodaySheet(todayWorkout.dayId),
-                      ),
+                      Builder(builder: (context) {
+                        final dayStatus = _localDayStates[selectedWorkout.dayId] ??
+                            (selectedWorkout.status == 'completed'
+                                ? DayStatus.completed
+                                : (selectedWorkout.status == 'missed' ||
+                                        selectedWorkout.status == 'not_today' ||
+                                        selectedWorkout.status == 'skipped')
+                                    ? DayStatus.notToday
+                                    : DayStatus.planned);
+                        return _PlannedCard(
+                          workout: selectedWorkout,
+                          dayStatus: dayStatus,
+                          onTap: () => context.push(
+                              '/training-day/${selectedWorkout.dayId}'),
+                          onComplete: () => _showCompletionSheet(selectedWorkout.dayId),
+                          onNotToday: () => _showNotTodayReasonSheet(selectedWorkout.dayId),
+                          onUndoComplete: () {
+                            setState(() {
+                              _localDayStates[selectedWorkout.dayId] = DayStatus.planned;
+                              _showCompletionBanner = false;
+                            });
+                          },
+                          onUndoNotToday: () => _showUndoNotTodayDialog(selectedWorkout.dayId),
+                        );
+                      }),
 
                     const SizedBox(height: 24),
 
                     // ── Week mini calendar ──────────────────────────────────
                     _WeekCalendar(
-                        days: weekSummary, weekLabel: 'WEEK $weekNum'),
-                    const SizedBox(height: 20),
+                      days: weekSummary,
+                      weekLabel: 'WEEK $weekNum',
+                      selectedDate: effectiveSelectedDate,
+                      localDayStates: _localDayStates,
+                      onSelectDate: (date) {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
 
                     // ── Insight cards ───────────────────────────────────────
-                    Row(children: [
-                      Expanded(
-                        child: _WeeklyCard(
-                          completed: weeklyCompleted,
-                          planned: weeklyPlanned,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _WeeklyCard(
+                            completed: weeklyCompleted,
+                            planned: weeklyPlanned,
+                          ),
                         ),
-                      ),
-                      if (dailyTip != null) ...[
-                        const SizedBox(width: 12),
-                        Expanded(child: _DailyTipCard(tip: dailyTip)),
+                        if (dailyTip != null) ...[
+                          const SizedBox(width: 12),
+                          Expanded(child: _DailyTipCard(tip: dailyTip)),
+                        ],
                       ],
-                    ]),
+                    ),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -518,9 +577,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
           ),
         ),
-      ),
-    );
-  }
+        if (_showCompletionBanner)
+          _FloatingNotificationBanner(
+            onClose: () => setState(() => _showCompletionBanner = false),
+          ),
+      ],
+    ),
+  ),
+);
+}
 
   int _extractWeekNumber(String progressText) {
     final match = RegExp(r'Week (\d+)').firstMatch(progressText);
@@ -539,8 +604,7 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final dateLabel =
-        DateFormat('EEE, d MMM').format(now).toUpperCase();
+    final dateLabel = DateFormat('EEEE, d MMMM').format(now);
 
     return Row(
       children: [
@@ -549,7 +613,7 @@ class _HomeHeader extends StatelessWidget {
           radius: 22,
           backgroundColor: AppColors.primaryLight,
           child: Text(
-            userName.isNotEmpty ? userName[0].toUpperCase() : 'R',
+            userName.isNotEmpty ? userName[0].toUpperCase() : 'S',
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
@@ -561,23 +625,24 @@ class _HomeHeader extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Hello, $userName',
-                style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
-            Text(dateLabel,
-                style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.5)),
+            Text(
+              'Hello, $userName',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              dateLabel,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
-        ),
-        const Spacer(),
-        IconButton(
-          icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary),
-          onPressed: null, // placeholder
         ),
       ],
     );
@@ -630,7 +695,7 @@ class _PendingBanner extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Planned card — Easy / Long / Interval differentiated by dayType
+// Planned card — Easy / Long / Interval / Tempo
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PlannedCard extends StatelessWidget {
@@ -639,25 +704,33 @@ class _PlannedCard extends StatelessWidget {
     required this.onTap,
     required this.onComplete,
     required this.onNotToday,
+    required this.dayStatus,
+    this.onUndoComplete,
+    this.onUndoNotToday,
   });
   final TrainingDayResponse workout;
   final VoidCallback onTap;
   final VoidCallback onComplete;
   final VoidCallback onNotToday;
+  final DayStatus dayStatus;
+  final VoidCallback? onUndoComplete;
+  final VoidCallback? onUndoNotToday;
 
-  (Color, Color, IconData, String) _cardStyle(String type) {
+  Color _accentColor(String type) {
     return switch (type) {
-      'long_run'  => (AppColors.longRunCard, const Color(0xFF1A6B3A), Icons.landscape_rounded, '🌲'),
-      'interval'  => (AppColors.intervalCard, const Color(0xFF6B21A8), Icons.bar_chart_rounded, '⚡'),
-      _           => (AppColors.easyRunCard, AppColors.primary, Icons.directions_run_rounded, '👟'),
+      'easy' || 'easy_run' => const Color(0xFF1D4ED8), // Deep blue
+      'interval'           => const Color(0xFFDC2626), // Deep red/pink
+      'long_run'           => const Color(0xFF6D28D9), // Deep purple
+      'tempo'              => const Color(0xFFC2410C), // Deep orange/brown
+      _                    => AppColors.primary,
     };
   }
 
   String _paceLabel() {
     if (workout.plannedPaceMinKm == null) return '';
     final pace = workout.plannedPaceMinKm!;
-    final low = pace - 0.3;
-    final high = pace + 0.3;
+    final low = pace - 0.25;
+    final high = pace + 0.25;
     String fmt(double v) {
       final min = v.floor();
       final sec = ((v - min) * 60).round();
@@ -668,99 +741,214 @@ class _PlannedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bg, accentColor, _, emoji) = _cardStyle(workout.dayType);
+    final accentColor = _accentColor(workout.dayType);
+    final bg = switch (workout.dayType) {
+      'easy' || 'easy_run' => AppColors.easyRunTint,
+      'interval'           => AppColors.intervalTint,
+      'long_run'           => AppColors.longRunTint,
+      'tempo'              => const Color(0xFFFFEDD5),
+      _                    => AppColors.easyRunTint,
+    };
+
+    final isCompleted = dayStatus == DayStatus.completed;
+
+    // Check if editable (today or future)
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final isEditable = !workout.date.isBefore(todayStart);
+
+    // Determine button states
+    final bool showCompletedButton;
+    final bool showNotTodayButton;
+    final VoidCallback? completedTap;
+    final VoidCallback? notTodayTap;
+    final String completedLabel;
+    final String notTodayLabel;
+    final bool completedActive;
+    final bool notTodayActive;
+
+    if (dayStatus == DayStatus.completed) {
+      showCompletedButton = true;
+      showNotTodayButton = true;
+      completedTap = onUndoComplete;
+      notTodayTap = null; // Disabled when completed
+      completedLabel = '✓ Completed';
+      notTodayLabel = 'Not Today';
+      completedActive = true;
+      notTodayActive = false;
+    } else if (dayStatus == DayStatus.notToday) {
+      if (isEditable) {
+        showCompletedButton = true; // Disabled
+        showNotTodayButton = true;
+        completedTap = null; // Disabled
+        notTodayTap = onUndoNotToday;
+        completedLabel = 'Completed';
+        notTodayLabel = '✓ Not Today';
+        completedActive = false;
+        notTodayActive = true;
+      } else {
+        // Non-editable past skipped day: hide Completed button, show disabled selected Not Today
+        showCompletedButton = false;
+        showNotTodayButton = true;
+        completedTap = null;
+        notTodayTap = null;
+        completedLabel = 'Completed';
+        notTodayLabel = 'Not Today';
+        completedActive = false;
+        notTodayActive = true;
+      }
+    } else {
+      // DayStatus.planned
+      showCompletedButton = true;
+      showNotTodayButton = true;
+      completedTap = onComplete;
+      notTodayTap = onNotToday;
+      completedLabel = 'Completed';
+      notTodayLabel = 'Not Today';
+      completedActive = false;
+      notTodayActive = false;
+    }
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        height: 260,
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Distance + emoji row
+            // Top Row: label + ellipsis menu or check icon
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1)} km',
-                        style: AppTextStyles.displayLarge,
-                      ),
-                      Text(workout.title,
-                          style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary)),
-                    ],
+                Text(
+                  "TODAY'S PLAN",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: accentColor,
+                    letterSpacing: 0.8,
                   ),
                 ),
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(16),
+                isCompleted
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.completed,
+                        size: 24,
+                      )
+                    : Icon(
+                        Icons.more_horiz_rounded,
+                        color: accentColor.withOpacity(0.6),
+                        size: 20,
+                      ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Distance & Title & Pace
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '${workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1)}',
+                  style: AppTextStyles.displayLarge.copyWith(
+                    color: AppColors.textPrimary,
                   ),
-                  child: Center(
-                    child: Text(emoji, style: const TextStyle(fontSize: 30)),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  'km',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
-
-            // Pace
+            const SizedBox(height: 4),
+            Text(
+              workout.title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
             if (workout.plannedPaceMinKm != null) ...[
-              const SizedBox(height: 10),
-              Row(children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _paceLabel(),
-                  style: TextStyle(
+                  const SizedBox(width: 6),
+                  Text(
+                    _paceLabel(),
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: accentColor),
-                ),
-              ]),
+                      color: accentColor,
+                    ),
+                  ),
+                ],
+              ),
             ],
 
-            const SizedBox(height: 16),
+            const Spacer(),
 
-            // Buttons
+            // Action Buttons
             Row(
               children: [
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Completed',
-                    icon: Icons.check_rounded,
-                    isPositive: true,
-                    onTap: onComplete,
+                if (showCompletedButton)
+                  Expanded(
+                    child: _ActionButton(
+                      label: completedLabel,
+                      icon: completedActive ? null : Icons.check_rounded,
+                      onTap: completedTap,
+                      backgroundColor: completedActive ? AppColors.completed : Colors.white,
+                      borderColor: AppColors.completed,
+                      textColor: completedActive ? Colors.white : AppColors.completed,
+                      iconColor: completedActive ? Colors.white : AppColors.completed,
+                    ),
+                  )
+                else
+                  const Spacer(),
+                const SizedBox(width: 12),
+                if (showNotTodayButton)
+                  Expanded(
+                    child: _ActionButton(
+                      label: notTodayLabel,
+                      icon: notTodayActive ? null : Icons.close_rounded,
+                      onTap: notTodayTap,
+                      backgroundColor: notTodayActive ? AppColors.ctaDark : Colors.white,
+                      borderColor: notTodayActive ? AppColors.ctaDark : AppColors.border,
+                      textColor: notTodayActive
+                          ? Colors.white
+                          : (dayStatus == DayStatus.completed ? AppColors.textSecondary : AppColors.textPrimary),
+                      iconColor: notTodayActive
+                          ? Colors.white
+                          : (dayStatus == DayStatus.completed ? AppColors.textSecondary : AppColors.textPrimary),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Not Today',
-                    icon: Icons.close_rounded,
-                    isPositive: false,
-                    onTap: onNotToday,
-                  ),
-                ),
               ],
             ),
           ],
@@ -779,8 +967,45 @@ class _CompletedCard extends StatelessWidget {
   final TrainingDayResponse workout;
   final VoidCallback onTap;
 
+  String _fmtAvgPace(TrainingDayResponse w) {
+    final dist = w.actualDistanceKm ?? w.plannedDistanceKm;
+    final dur = w.actualDurationMin ?? w.plannedDurationMin;
+    if (dist <= 0) return '-:--';
+    final paceDecimal = dur / dist;
+    final min = paceDecimal.floor();
+    final sec = ((paceDecimal - min) * 60).round();
+    return '$min:${sec.toString().padLeft(2, '0')} /km';
+  }
+
+  Widget _buildCompletedMetric(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final actualDistance = workout.actualDistanceKm ?? workout.plannedDistanceKm;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -801,7 +1026,7 @@ class _CompletedCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1)} km',
+                        '${actualDistance.toStringAsFixed(actualDistance == actualDistance.roundToDouble() ? 0 : 1)} km',
                         style: AppTextStyles.displayLarge
                             .copyWith(color: Colors.white),
                       ),
@@ -817,7 +1042,7 @@ class _CompletedCard extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: AppColors.completed.withValues(alpha: 0.2),
+                    color: AppColors.completed.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.check_circle_rounded,
@@ -825,50 +1050,24 @@ class _CompletedCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.emoji_events_rounded,
-                      color: Color(0xFFFFD700), size: 18),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      "Nice work! 🎉 Every run brings you closer to your best.",
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                          height: 1.4),
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 18),
+            // Horizontal progress section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildCompletedMetric('DISTANCE', '${actualDistance.toStringAsFixed(1)} km'),
+                _buildCompletedMetric('DURATION', '${workout.actualDurationMin ?? workout.plannedDurationMin} min'),
+                _buildCompletedMetric('PACE', _fmtAvgPace(workout)),
+              ],
             ),
-            const SizedBox(height: 14),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.completed.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: AppColors.completed, size: 16),
-                  SizedBox(width: 6),
-                  Text('Completed',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.completed)),
-                ],
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: const LinearProgressIndicator(
+                value: 1.0,
+                minHeight: 6,
+                backgroundColor: Colors.white24,
+                color: AppColors.completed,
               ),
             ),
           ],
@@ -983,10 +1182,18 @@ class _RestDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      height: 260,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.restCard,
+        color: AppColors.restTint,
         borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1014,15 +1221,15 @@ class _RestDayCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Text('🏖️', style: TextStyle(fontSize: 52)),
+              const Text('🏖️', style: TextStyle(fontSize: 48)),
             ],
           ),
+          const Spacer(),
           if (tip != null) ...[
-            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -1033,11 +1240,13 @@ class _RestDayCard extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
+                          color: Color(0xFFB45309),
                           letterSpacing: 0.5)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(tip!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontSize: 13, color: AppColors.textSecondary)),
                   ),
@@ -1052,108 +1261,167 @@ class _RestDayCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Week mini calendar strip
+// Week mini calendar strip — Reworked to vertical date chips (pills)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _WeekCalendar extends StatelessWidget {
-  const _WeekCalendar({required this.days, required this.weekLabel});
+  const _WeekCalendar({
+    required this.days,
+    required this.weekLabel,
+    required this.selectedDate,
+    required this.localDayStates,
+    required this.onSelectDate,
+  });
   final List<TrainingDayResponse> days;
   final String weekLabel;
+  final DateTime selectedDate;
+  final Map<String, DayStatus> localDayStates;
+  final ValueChanged<DateTime> onSelectDate;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(weekLabel,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-                letterSpacing: 0.8)),
-        const SizedBox(height: 10),
+        Text(
+          weekLabel,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: days.map((day) {
-            final isToday = day.date.day == now.day &&
-                day.date.month == now.month &&
-                day.date.year == now.year;
-            final label = weekdays[day.date.weekday % 7]; // 0=Sun … 6=Sat
+            final isSelected = day.date.day == selectedDate.day &&
+                day.date.month == selectedDate.month &&
+                day.date.year == selectedDate.year;
 
-            Color bg;
-            Color textClr;
-            Widget? statusDot;
-
-            if (isToday) {
-              bg = AppColors.ctaDark;
-              textClr = Colors.white;
-            } else {
-              bg = Colors.white;
-              textClr = AppColors.textPrimary;
-            }
-
-            // Status dot below the day number
-            if (day.status == 'completed') {
-              statusDot = Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                    color: AppColors.completed, shape: BoxShape.circle),
-              );
-            } else if (day.status == 'missed') {
-              statusDot = Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                    color: AppColors.missed, shape: BoxShape.circle),
-              );
-            } else if (day.dayType != 'rest' && !isToday) {
-              statusDot = Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 1.5),
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: _WeekDayChip(
+                  day: day,
+                  isSelected: isSelected,
+                  localDayStates: localDayStates,
+                  onTap: () => onSelectDate(day.date),
                 ),
-              );
-            }
-
-            return Column(
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: bg,
-                    shape: BoxShape.circle,
-                    border: isToday
-                        ? null
-                        : Border.all(color: AppColors.border, width: 1),
-                  ),
-                  child: Center(
-                    child: Text(day.date.day.toString(),
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textClr)),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                statusDot ?? const SizedBox(width: 6, height: 6),
-              ],
+              ),
             );
           }).toList(),
         ),
       ],
+    );
+  }
+}
+
+class _WeekDayChip extends StatelessWidget {
+  const _WeekDayChip({
+    required this.day,
+    required this.isSelected,
+    required this.localDayStates,
+    required this.onTap,
+  });
+  final TrainingDayResponse day;
+  final bool isSelected;
+  final Map<String, DayStatus> localDayStates;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final weekdayLabel = weekdays[(day.date.weekday - 1) % 7];
+
+    final bg = isSelected ? AppColors.ctaDark : Colors.white;
+    final weekdayColor = isSelected ? Colors.white70 : AppColors.textSecondary;
+    final dateColor = isSelected ? Colors.white : AppColors.textPrimary;
+    final border = isSelected ? null : Border.all(color: AppColors.border, width: 1);
+
+    final status = localDayStates[day.dayId] ??
+        (day.status == 'completed'
+            ? DayStatus.completed
+            : (day.status == 'missed' ||
+                    day.status == 'not_today' ||
+                    day.status == 'skipped')
+                ? DayStatus.notToday
+                : DayStatus.planned);
+    final isCompleted = status == DayStatus.completed;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: border,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              weekdayLabel,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: weekdayColor,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              day.date.day.toString(),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: dateColor,
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (status == DayStatus.completed)
+              Container(
+                width: 14,
+                height: 14,
+                decoration: const BoxDecoration(
+                  color: AppColors.completed,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  size: 9,
+                  color: Colors.white,
+                ),
+              )
+            else if (status == DayStatus.notToday)
+              Container(
+                width: 14,
+                height: 14,
+                decoration: const BoxDecoration(
+                  color: AppColors.ctaDark,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 9,
+                  color: Colors.white,
+                ),
+              )
+            else
+              const SizedBox(width: 14, height: 14),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1172,10 +1440,10 @@ class _WeeklyCard extends StatelessWidget {
     final progress =
         planned > 0 ? (completed / planned).clamp(0.0, 1.0) : 0.0;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.weeklyCardBackground,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1183,30 +1451,31 @@ class _WeeklyCard extends StatelessWidget {
           const Text('THIS WEEK',
               style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
                   letterSpacing: 0.6)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text('${completed.toStringAsFixed(1)} / ${planned.toStringAsFixed(1)} km',
               style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(100),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: AppColors.border,
+              backgroundColor: AppColors.textSecondary.withOpacity(0.15),
               color: AppColors.ctaDark,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text('${(progress * 100).toStringAsFixed(0)}% of weekly goal',
               style: const TextStyle(
                   fontSize: 11,
-                  color: AppColors.textMuted)),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary)),
         ],
       ),
     );
@@ -1224,10 +1493,10 @@ class _DailyTipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.tipCardBackground,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1235,17 +1504,18 @@ class _DailyTipCard extends StatelessWidget {
           const Text('DAILY TIP',
               style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
                   letterSpacing: 0.6)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(tip.message,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.textSecondary,
-                  height: 1.4)),
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -1259,40 +1529,128 @@ class _DailyTipCard extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.label,
-    required this.icon,
-    required this.isPositive,
+    this.icon,
     required this.onTap,
+    this.backgroundColor,
+    this.borderColor,
+    this.textColor,
+    this.iconColor,
   });
   final String label;
-  final IconData icon;
-  final bool isPositive;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final Color? textColor;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = onTap == null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Opacity(
+        opacity: isDisabled ? 0.4 : 1.0,
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: backgroundColor ?? Colors.white,
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+              color: borderColor ?? AppColors.border,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon,
+                    size: 16,
+                    color: iconColor ?? AppColors.textPrimary),
+                const SizedBox(width: 6),
+              ],
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor ?? AppColors.textPrimary)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Completion option row for Run Complete popup
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CompletionOptionRow extends StatelessWidget {
+  const _CompletionOptionRow({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.groupValue,
+    required this.onTap,
+  });
+  final String title;
+  final String subtitle;
+  final String value;
+  final String groupValue;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isSelected = value == groupValue;
+
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 44,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isPositive ? AppColors.completed : Colors.white,
-          borderRadius: BorderRadius.circular(100),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isPositive ? AppColors.completed : AppColors.border,
+            color: isSelected ? AppColors.ctaDark : AppColors.border,
+            width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 16,
-                color: isPositive ? Colors.white : AppColors.textPrimary),
-            const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isPositive ? Colors.white : AppColors.textPrimary)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IgnorePointer(
+              child: Radio<String>(
+                value: value,
+                groupValue: groupValue,
+                activeColor: AppColors.ctaDark,
+                onChanged: (_) {},
+              ),
+            ),
           ],
         ),
       ),
@@ -1301,91 +1659,189 @@ class _ActionButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Compact text field for workout log sheet
+// Recovery tip card for Run Complete popup
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _CompactTextField extends StatelessWidget {
-  const _CompactTextField({
-    required this.controller,
-    required this.label,
-    required this.keyboardType,
+class _RecoveryTipCard extends StatelessWidget {
+  const _RecoveryTipCard({
+    required this.title,
+    required this.text,
   });
-  final TextEditingController controller;
-  final String label;
-  final TextInputType keyboardType;
+  final String title;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.tipCardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
             style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary)),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary),
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF8B5CF6),
+              letterSpacing: 0.6,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textPrimary,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Result chip for completion sheet
+// Completion success notification banner
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ResultChip extends StatelessWidget {
-  const _ResultChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
+class _FloatingNotificationBanner extends StatefulWidget {
+  const _FloatingNotificationBanner({
+    super.key,
+    required this.onClose,
   });
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback onClose;
+
+  @override
+  State<_FloatingNotificationBanner> createState() => _FloatingNotificationBannerState();
+}
+
+class _FloatingNotificationBannerState extends State<_FloatingNotificationBanner> {
+  bool _visible = false;
+  double _offsetY = -20.0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _visible = true;
+          _offsetY = 16.0;
+        });
+      }
+    });
+
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        _dismiss();
+      }
+    });
+  }
+
+  void _dismiss() {
+    setState(() {
+      _visible = false;
+      _offsetY = -20.0;
+    });
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        widget.onClose();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.ctaDark : const Color(0xFFF5F6FA),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-              color: selected ? AppColors.ctaDark : AppColors.border),
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      top: _offsetY,
+      left: 20,
+      right: 20,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: _visible ? 1.0 : 0.0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F8EE),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFBFEFD3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.completed,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Run recorded!',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Nice work! See you on your next run. 🏃‍♀️',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '🎉',
+                style: TextStyle(fontSize: 20),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _dismiss,
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textMuted,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : AppColors.textPrimary)),
       ),
     );
   }
@@ -1432,21 +1888,9 @@ class _NoActivePlanState extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 36),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: onCreatePlan,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ctaDark,
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                      elevation: 0,
-                    ),
-                    child: const Text('Create a Plan',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
-                  ),
+                AppPrimaryButton(
+                  label: 'Create a Plan',
+                  onPressed: onCreatePlan,
                 ),
               ],
             ),
@@ -1525,39 +1969,18 @@ class _PlanCompletedState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: onStartNew,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.ctaDark,
-                foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-                elevation: 0,
-              ),
-              child: const Text('Start New Plan',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
+          AppPrimaryButton(
+            label: 'Start New Plan',
+            onPressed: onStartNew,
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: OutlinedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content:
-                        Text('Plan summary view coming in a future update.')));
-              },
-              style: OutlinedButton.styleFrom(
-                shape: const StadiumBorder(),
-                side: const BorderSide(color: AppColors.border),
-                foregroundColor: AppColors.textPrimary,
-              ),
-              child: const Text('View Plan Summary',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            ),
+          AppSecondaryButton(
+            label: 'View Plan Summary',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content:
+                      Text('Plan summary view coming in a future update.')));
+            },
           ),
           const SizedBox(height: 24),
         ],
@@ -1594,14 +2017,9 @@ class _ErrorState extends StatelessWidget {
                     fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
-            ElevatedButton(
+            AppPrimaryButton(
+              label: 'Retry',
               onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.ctaDark,
-                foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-              ),
-              child: const Text('Retry'),
             ),
           ],
         ),
