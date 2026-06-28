@@ -207,38 +207,93 @@ class _MainShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
+        height: 80,
         decoration: const BoxDecoration(
+          color: Colors.white,
           boxShadow: [
             BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: index,
-          onTap: (i) => context.go(_tabs[i]),
-          backgroundColor: AppColors.navBackground,
-          selectedItemColor: AppColors.navActive,
-          unselectedItemColor: AppColors.navInactive,
-          selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-          iconSize: 22,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month_outlined),
-              activeIcon: Icon(Icons.calendar_month),
-              label: 'Calendar',
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            // Calendar Tab
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go(AppRoutes.calendar),
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      index == 0 ? Icons.calendar_month : Icons.calendar_month_outlined,
+                      color: index == 0 ? AppColors.navActive : AppColors.navInactive,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Calendar',
+                      style: TextStyle(
+                        fontFamily: 'GeneralSans',
+                        fontSize: 11,
+                        fontWeight: index == 0 ? FontWeight.w600 : FontWeight.w500,
+                        color: index == 0 ? AppColors.navActive : AppColors.navInactive,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
+
+            // Home Center Circle Tab
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go(AppRoutes.home),
+                behavior: HitTestBehavior.opaque,
+                child: Center(
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0F172A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.home_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
+
+            // Profile Tab
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go(AppRoutes.profile),
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      index == 2 ? Icons.person : Icons.person_outline,
+                      color: index == 2 ? AppColors.navActive : AppColors.navInactive,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Profile',
+                      style: TextStyle(
+                        fontFamily: 'GeneralSans',
+                        fontSize: 11,
+                        fontWeight: index == 2 ? FontWeight.w600 : FontWeight.w500,
+                        color: index == 2 ? AppColors.navActive : AppColors.navInactive,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

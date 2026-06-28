@@ -484,6 +484,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   0.0, (sum, d) => sum + (d.actualDistanceKm ?? 0.0));
               final weeklyPlanned =
                   weekSummary.fold(0.0, (sum, d) => sum + d.plannedDistanceKm);
+              final runsCompleted = weekSummary.where((d) => d.dayType != 'rest' && (_localDayStates[d.dayId] == DayStatus.completed || (d.status == 'completed' && _localDayStates[d.dayId] != DayStatus.planned && _localDayStates[d.dayId] != DayStatus.notToday))).length;
+              final runsTotal = weekSummary.where((d) => d.dayType != 'rest').length;
 
               // Determine current week number (rough from plan text or default 1)
               final weekNum = _extractWeekNumber(activePlan.progressText);
@@ -544,7 +546,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     // ── Week mini calendar ──────────────────────────────────
                     _WeekCalendar(
                       days: weekSummary,
-                      weekLabel: 'WEEK $weekNum',
+                      weekLabel: 'Week $weekNum',
                       selectedDate: effectiveSelectedDate,
                       localDayStates: _localDayStates,
                       onSelectDate: (date) {
@@ -562,6 +564,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           child: _WeeklyCard(
                             completed: weeklyCompleted,
                             planned: weeklyPlanned,
+                            runsCompleted: runsCompleted,
+                            runsTotal: runsTotal,
                           ),
                         ),
                         if (dailyTip != null) ...[
@@ -604,47 +608,36 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final dateLabel = DateFormat('EEEE, d MMMM').format(now);
+    final dateLabel = DateFormat('EEE, d MMM').format(now).toUpperCase();
 
-    return Row(
-      children: [
-        // Avatar
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: AppColors.primaryLight,
-          child: Text(
-            userName.isNotEmpty ? userName[0].toUpperCase() : 'S',
+    return Container(
+      width: double.infinity,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Hello, $userName',
             style: const TextStyle(
+              fontFamily: 'ClashGrotesk',
+              fontSize: 16.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-              fontSize: 17,
+              color: AppColors.textPrimary,
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hello, $userName',
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+          const SizedBox(height: 1),
+          Text(
+            dateLabel,
+            style: const TextStyle(
+              fontFamily: 'GeneralSans',
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.5,
             ),
-            const SizedBox(height: 2),
-            Text(
-              dateLabel,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -718,11 +711,31 @@ class _PlannedCard extends StatelessWidget {
 
   Color _accentColor(String type) {
     return switch (type) {
-      'easy' || 'easy_run' => const Color(0xFF1D4ED8), // Deep blue
-      'interval'           => const Color(0xFFDC2626), // Deep red/pink
-      'long_run'           => const Color(0xFF6D28D9), // Deep purple
-      'tempo'              => const Color(0xFFC2410C), // Deep orange/brown
+      'easy' || 'easy_run' => const Color(0xFF0044FF), // Strong blue
+      'interval'           => const Color(0xFFE11D48), // Strong rose/red
+      'long_run'           => const Color(0xFF7C3AED), // Strong purple
+      'tempo'              => const Color(0xFFC2410C),
       _                    => AppColors.primary,
+    };
+  }
+
+  Color _pillBgColor(String type) {
+    return switch (type) {
+      'easy' || 'easy_run' => const Color(0xFFDBEAFE),
+      'interval'           => const Color(0xFFFECDD3),
+      'long_run'           => const Color(0xFFE9D5FF),
+      'tempo'              => const Color(0xFFFFEDD5),
+      _                    => const Color(0xFFDBEAFE),
+    };
+  }
+
+  Color _cardBgColor(String type) {
+    return switch (type) {
+      'easy' || 'easy_run' => const Color(0xFFEFF6FF),
+      'interval'           => const Color(0xFFFFF1F2),
+      'long_run'           => const Color(0xFFF5F3FF),
+      'tempo'              => const Color(0xFFFFEDD5),
+      _                    => const Color(0xFFEFF6FF),
     };
   }
 
@@ -742,20 +755,8 @@ class _PlannedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accentColor = _accentColor(workout.dayType);
-    final bg = switch (workout.dayType) {
-      'easy' || 'easy_run' => AppColors.easyRunTint,
-      'interval'           => AppColors.intervalTint,
-      'long_run'           => AppColors.longRunTint,
-      'tempo'              => const Color(0xFFFFEDD5),
-      _                    => AppColors.easyRunTint,
-    };
-
-    final isCompleted = dayStatus == DayStatus.completed;
-
-    // Check if editable (today or future)
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final isEditable = !workout.date.isBefore(todayStart);
+    final bg = _cardBgColor(workout.dayType);
+    final pillBg = _pillBgColor(workout.dayType);
 
     // Determine button states
     final bool showCompletedButton;
@@ -767,27 +768,31 @@ class _PlannedCard extends StatelessWidget {
     final bool completedActive;
     final bool notTodayActive;
 
+    // Check if editable (today or future)
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final isEditable = !workout.date.isBefore(todayStart);
+
     if (dayStatus == DayStatus.completed) {
       showCompletedButton = true;
       showNotTodayButton = true;
       completedTap = onUndoComplete;
-      notTodayTap = null; // Disabled when completed
-      completedLabel = '✓ Completed';
+      notTodayTap = null;
+      completedLabel = 'Completed';
       notTodayLabel = 'Not Today';
       completedActive = true;
       notTodayActive = false;
     } else if (dayStatus == DayStatus.notToday) {
       if (isEditable) {
-        showCompletedButton = true; // Disabled
+        showCompletedButton = true;
         showNotTodayButton = true;
-        completedTap = null; // Disabled
+        completedTap = null;
         notTodayTap = onUndoNotToday;
         completedLabel = 'Completed';
-        notTodayLabel = '✓ Not Today';
+        notTodayLabel = 'Not Today';
         completedActive = false;
         notTodayActive = true;
       } else {
-        // Non-editable past skipped day: hide Completed button, show disabled selected Not Today
         showCompletedButton = false;
         showNotTodayButton = true;
         completedTap = null;
@@ -798,7 +803,6 @@ class _PlannedCard extends StatelessWidget {
         notTodayActive = true;
       }
     } else {
-      // DayStatus.planned
       showCompletedButton = true;
       showNotTodayButton = true;
       completedTap = onComplete;
@@ -809,6 +813,10 @@ class _PlannedCard extends StatelessWidget {
       notTodayActive = false;
     }
 
+    final isEasyRun = workout.dayType == 'easy' || workout.dayType == 'easy_run';
+    final distLabel = workout.dayType == 'interval' ? '5x200' : workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1);
+    final unitLabel = workout.dayType == 'interval' ? 'm' : 'km';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -817,10 +825,10 @@ class _PlannedCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withOpacity(0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -829,52 +837,57 @@ class _PlannedCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: label + ellipsis menu or check icon
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "TODAY'S PLAN",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: accentColor,
-                    letterSpacing: 0.8,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: pillBg,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    "TODAY'S PLAN",
+                    style: TextStyle(
+                      fontFamily: 'GeneralSans',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: accentColor,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-                isCompleted
-                    ? const Icon(
-                        Icons.check_circle_rounded,
-                        color: AppColors.completed,
-                        size: 24,
-                      )
-                    : Icon(
-                        Icons.more_horiz_rounded,
-                        color: accentColor.withOpacity(0.6),
-                        size: 20,
-                      ),
+                Icon(
+                  Icons.more_horiz_rounded,
+                  color: AppColors.textPrimary.withOpacity(0.7),
+                  size: 22,
+                ),
               ],
             ),
             const SizedBox(height: 16),
-
-            // Distance & Title & Pace
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '${workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1)}',
-                  style: AppTextStyles.displayLarge.copyWith(
-                    color: AppColors.textPrimary,
+                  distLabel,
+                  style: TextStyle(
+                    fontFamily: 'ClashGrotesk',
+                    fontSize: 48,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                    height: 1.1,
+                    letterSpacing: -1.0,
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  'km',
+                Text(
+                  unitLabel,
                   style: TextStyle(
+                    fontFamily: 'ClashGrotesk',
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
                   ),
                 ),
               ],
@@ -882,52 +895,48 @@ class _PlannedCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               workout.title,
-              style: const TextStyle(
+              style: TextStyle(
+                fontFamily: 'ClashGrotesk',
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: accentColor,
               ),
             ),
             if (workout.plannedPaceMinKm != null) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      shape: BoxShape.circle,
-                    ),
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 16,
+                    color: accentColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     _paceLabel(),
-                    style: TextStyle(
+                    style: const TextStyle(
+                      fontFamily: 'GeneralSans',
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: accentColor,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
             ],
-
             const Spacer(),
-
-            // Action Buttons
             Row(
               children: [
                 if (showCompletedButton)
                   Expanded(
                     child: _ActionButton(
                       label: completedLabel,
-                      icon: completedActive ? null : Icons.check_rounded,
+                      icon: Icons.check_rounded,
                       onTap: completedTap,
-                      backgroundColor: completedActive ? AppColors.completed : Colors.white,
-                      borderColor: AppColors.completed,
-                      textColor: completedActive ? Colors.white : AppColors.completed,
-                      iconColor: completedActive ? Colors.white : AppColors.completed,
+                      backgroundColor: completedActive ? const Color(0xFF0F172A) : Colors.white,
+                      borderColor: completedActive ? const Color(0xFF0F172A) : AppColors.border,
+                      textColor: completedActive ? Colors.white : const Color(0xFF0F172A),
+                      iconColor: completedActive ? Colors.white : const Color(0xFF0F172A),
                     ),
                   )
                 else
@@ -937,16 +946,12 @@ class _PlannedCard extends StatelessWidget {
                   Expanded(
                     child: _ActionButton(
                       label: notTodayLabel,
-                      icon: notTodayActive ? null : Icons.close_rounded,
+                      icon: Icons.close_rounded,
                       onTap: notTodayTap,
-                      backgroundColor: notTodayActive ? AppColors.ctaDark : Colors.white,
-                      borderColor: notTodayActive ? AppColors.ctaDark : AppColors.border,
-                      textColor: notTodayActive
-                          ? Colors.white
-                          : (dayStatus == DayStatus.completed ? AppColors.textSecondary : AppColors.textPrimary),
-                      iconColor: notTodayActive
-                          ? Colors.white
-                          : (dayStatus == DayStatus.completed ? AppColors.textSecondary : AppColors.textPrimary),
+                      backgroundColor: notTodayActive ? const Color(0xFF0F172A) : pillBg,
+                      borderColor: notTodayActive ? const Color(0xFF0F172A) : pillBg,
+                      textColor: notTodayActive ? Colors.white : accentColor,
+                      iconColor: notTodayActive ? Colors.white : accentColor,
                     ),
                   ),
               ],
@@ -1180,16 +1185,20 @@ class _RestDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const amberColor = Color(0xFFD97706);
+    const bg = Color(0xFFFFFBEB);
+    const pillBg = Color(0xFFFEF3C7);
+
     return Container(
       width: double.infinity,
       height: 260,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.restTint,
-        borderRadius: BorderRadius.circular(24),
+        color: bg,
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -1199,29 +1208,62 @@ class _RestDayCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: pillBg,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Text(
+                  "TODAY'S PLAN",
+                  style: TextStyle(
+                    fontFamily: 'GeneralSans',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: amberColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.more_horiz_rounded,
+                color: AppColors.textPrimary.withOpacity(0.7),
+                size: 22,
+              ),
+            ],
+          ),
+          const Spacer(),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Rest Day',
-                        style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary)),
+                    Text(
+                      'Rest Day',
+                      style: TextStyle(
+                        fontFamily: 'ClashGrotesk',
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: amberColor,
+                      ),
+                    ),
                     SizedBox(height: 6),
                     Text(
                       'Your body needs rest\nto come back stronger.',
                       style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.4),
+                        fontFamily: 'GeneralSans',
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Text('🏖️', style: TextStyle(fontSize: 48)),
             ],
           ),
           const Spacer(),
@@ -1229,26 +1271,35 @@ class _RestDayCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Text('💤', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  const Text('REST DAY TIP',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFB45309),
-                          letterSpacing: 0.5)),
+                  const Text(
+                    'REST DAY TIP',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontFamily: 'GeneralSans',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: amberColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(tip!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 13, color: AppColors.textSecondary)),
+                    child: Text(
+                      tip!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'GeneralSans',
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1286,10 +1337,10 @@ class _WeekCalendar extends StatelessWidget {
         Text(
           weekLabel,
           style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-            letterSpacing: 0.8,
+            fontFamily: 'ClashGrotesk',
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -1332,10 +1383,10 @@ class _WeekDayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    final weekdayLabel = weekdays[(day.date.weekday - 1) % 7];
+    final weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final weekdayLabel = weekdays[(day.date.weekday) % 7];
 
-    final bg = isSelected ? AppColors.ctaDark : Colors.white;
+    final bg = isSelected ? const Color(0xFF0F172A) : Colors.white;
     final weekdayColor = isSelected ? Colors.white70 : AppColors.textSecondary;
     final dateColor = isSelected ? Colors.white : AppColors.textPrimary;
     final border = isSelected ? null : Border.all(color: AppColors.border, width: 1);
@@ -1348,7 +1399,6 @@ class _WeekDayChip extends StatelessWidget {
                     day.status == 'skipped')
                 ? DayStatus.notToday
                 : DayStatus.planned);
-    final isCompleted = status == DayStatus.completed;
 
     return GestureDetector(
       onTap: onTap,
@@ -1374,8 +1424,9 @@ class _WeekDayChip extends StatelessWidget {
             Text(
               weekdayLabel,
               style: TextStyle(
+                fontFamily: 'GeneralSans',
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: weekdayColor,
               ),
             ),
@@ -1383,6 +1434,7 @@ class _WeekDayChip extends StatelessWidget {
             Text(
               day.date.day.toString(),
               style: TextStyle(
+                fontFamily: 'GeneralSans',
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: dateColor,
@@ -1393,14 +1445,14 @@ class _WeekDayChip extends StatelessWidget {
               Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(
-                  color: AppColors.completed,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : const Color(0xFF0F172A),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check_rounded,
                   size: 9,
-                  color: Colors.white,
+                  color: isSelected ? const Color(0xFF0F172A) : Colors.white,
                 ),
               )
             else if (status == DayStatus.notToday)
@@ -1408,7 +1460,7 @@ class _WeekDayChip extends StatelessWidget {
                 width: 14,
                 height: 14,
                 decoration: const BoxDecoration(
-                  color: AppColors.ctaDark,
+                  color: Color(0xFF0F172A),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1431,60 +1483,125 @@ class _WeekDayChip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _WeeklyCard extends StatelessWidget {
-  const _WeeklyCard({required this.completed, required this.planned});
+  const _WeeklyCard({
+    required this.completed,
+    required this.planned,
+    required this.runsCompleted,
+    required this.runsTotal,
+  });
   final double completed;
   final double planned;
+  final int runsCompleted;
+  final int runsTotal;
 
   @override
   Widget build(BuildContext context) {
     final progress =
         planned > 0 ? (completed / planned).clamp(0.0, 1.0) : 0.0;
     return Container(
-      padding: const EdgeInsets.all(20),
+      height: 180,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.weeklyCardBackground,
+        color: const Color(0xFFFEF3C7),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('THIS WEEK',
-              style: TextStyle(
-                  fontSize: 11,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'WEEKLY PROGRESS',
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
-                  letterSpacing: 0.6)),
-          const SizedBox(height: 8),
-          Text('${completed.toStringAsFixed(1)} / ${planned.toStringAsFixed(1)} km',
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
+                  letterSpacing: 0.6,
+                ),
+              ),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.north_east_rounded,
+                  size: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            completed.toStringAsFixed(completed == completed.roundToDouble() ? 0 : 1),
+            style: const TextStyle(
+              fontFamily: 'GeneralSans',
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              height: 1.1,
+            ),
+          ),
+          Text(
+            '/ ${planned.toStringAsFixed(1)} km',
+            style: const TextStyle(
+              fontFamily: 'GeneralSans',
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: AppColors.textSecondary.withOpacity(0.15),
-              color: AppColors.ctaDark,
+              backgroundColor: const Color(0xFFFDE68A),
+              color: const Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 8),
-          Text('${(progress * 100).toStringAsFixed(0)}% of weekly goal',
-              style: const TextStyle(
-                  fontSize: 11,
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Runs',
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary)),
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  '$runsCompleted/$runsTotal',
+                  style: const TextStyle(
+                    fontFamily: 'GeneralSans',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Daily tip card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _DailyTipCard extends StatelessWidget {
   const _DailyTipCard({required this.tip});
@@ -1493,38 +1610,83 @@ class _DailyTipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      height: 180,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.tipCardBackground,
+        color: const Color(0xFFF3E8FF),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('DAILY TIP',
-              style: TextStyle(
-                  fontSize: 11,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'DAILY TIP',
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
-                  letterSpacing: 0.6)),
-          const SizedBox(height: 8),
-          Text(tip.message,
-              maxLines: 4,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Text(
+              tip.message,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
+                fontFamily: 'ClashGrotesk',
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'Read more',
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
                   fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Action button (Completed / Not Today)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
@@ -1555,7 +1717,7 @@ class _ActionButton extends StatelessWidget {
           height: 44,
           decoration: BoxDecoration(
             color: backgroundColor ?? Colors.white,
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: borderColor ?? AppColors.border,
               width: 1,
@@ -1570,11 +1732,15 @@ class _ActionButton extends StatelessWidget {
                     color: iconColor ?? AppColors.textPrimary),
                 const SizedBox(width: 6),
               ],
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textColor ?? AppColors.textPrimary)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: textColor ?? AppColors.textPrimary,
+                ),
+              ),
             ],
           ),
         ),

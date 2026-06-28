@@ -7,9 +7,9 @@ abstract final class AppTextStyles {
   // ── Display ───────────────────────────────────────────────────────────────
   /// Large workout distance/type heading (e.g. "5 km" on Home card)
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 48,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w700, // Bold
     color: AppColors.textPrimary,
     height: 1.1,
     letterSpacing: -1.0,
@@ -17,51 +17,51 @@ abstract final class AppTextStyles {
 
   // ── Headings ──────────────────────────────────────────────────────────────
   static const TextStyle h1 = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'ClashGrotesk',
     fontSize: 28,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w700, // Bold
     color: AppColors.textPrimary,
     height: 1.2,
     letterSpacing: -0.5,
   );
 
   static const TextStyle h2 = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'ClashGrotesk',
     fontSize: 22,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w700, // Bold
     color: AppColors.textPrimary,
     height: 1.3,
   );
 
   static const TextStyle h3 = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'ClashGrotesk',
     fontSize: 18,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700, // Bold
     color: AppColors.textPrimary,
     height: 1.4,
   );
 
   // ── Body ──────────────────────────────────────────────────────────────────
   static const TextStyle bodyLarge = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 16,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w400, // Regular
     color: AppColors.textPrimary,
     height: 1.5,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 14,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w400, // Regular
     color: AppColors.textSecondary,
     height: 1.5,
   );
 
   static const TextStyle bodySmall = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 12,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w400, // Regular
     color: AppColors.textMuted,
     height: 1.4,
   );
@@ -69,18 +69,18 @@ abstract final class AppTextStyles {
   // ── Label / Caption ───────────────────────────────────────────────────────
   /// Uppercase micro-label (e.g. "TODAY'S PLAN", "WEEK 6", "THIS WEEK")
   static const TextStyle label = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 11,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500, // Medium
     color: AppColors.textSecondary,
     height: 1.2,
     letterSpacing: 0.8,
   );
 
   static const TextStyle labelPrimary = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 11,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500, // Medium
     color: AppColors.primary,
     height: 1.2,
     letterSpacing: 0.8,
@@ -88,33 +88,33 @@ abstract final class AppTextStyles {
 
   // ── Button ────────────────────────────────────────────────────────────────
   static const TextStyle buttonPrimary = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500, // Medium
     color: AppColors.textOnDark,
     letterSpacing: 0.1,
   );
 
   static const TextStyle buttonSecondary = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 16,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w500, // Medium
     color: AppColors.textPrimary,
     letterSpacing: 0.1,
   );
 
   // ── Calendar ──────────────────────────────────────────────────────────────
   static const TextStyle calendarDayNumber = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 14,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700, // Bold
     color: AppColors.textPrimary,
   );
 
   static const TextStyle calendarDayLabel = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'GeneralSans',
     fontSize: 11,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w400, // Regular
     color: AppColors.textSecondary,
   );
 }

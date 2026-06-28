@@ -9,6 +9,7 @@ import 'app_spacing.dart';
 abstract final class AppTheme {
   static ThemeData get light => ThemeData(
     useMaterial3: true,
+    fontFamily: 'GeneralSans',
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       primary: AppColors.primary,
