@@ -8,5 +8,5 @@ namespace RunningApp.Application.Services;
 /// </summary>
 public interface IBootstrapService
 {
-    Task<BootstrapResponse> GetBootstrapAsync(string userId, CancellationToken ct = default);
+    Task<BootstrapResponse> GetBootstrapAsync(Guid internalUserId, CancellationToken ct = default);
 }

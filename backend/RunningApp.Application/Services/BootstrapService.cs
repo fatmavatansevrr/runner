@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RunningApp.Application.DTOs.Bootstrap;
 using RunningApp.Persistence;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,10 +16,14 @@ public class BootstrapService : IBootstrapService
         _context = context;
     }
 
-    public async Task<BootstrapResponse> GetBootstrapAsync(string userId, CancellationToken ct = default)
+    public async Task<BootstrapResponse> GetBootstrapAsync(Guid internalUserId, CancellationToken ct = default)
     {
-        var profile = await _context.UserProfiles.FirstOrDefaultAsync(u => u.UserId == userId, ct);
-        if (profile == null)
+        // UserProfile is guaranteed to exist for any authenticated request because
+        // the auth middleware → UserSynchronizationService runs first and upserts it.
+        var hasProfile = await _context.UserProfiles
+            .AnyAsync(u => u.InternalUserId == internalUserId, ct);
+
+        if (!hasProfile)
         {
             return new BootstrapResponse
             {
@@ -30,9 +35,8 @@ public class BootstrapService : IBootstrapService
             };
         }
 
-        // Check for pending confirmations
         var hasPendingConfirmations = await _context.PendingConfirmations
-            .AnyAsync(p => p.UserId == userId && p.Status == "pending", ct);
+            .AnyAsync(p => p.InternalUserId == internalUserId && p.Status == "pending", ct);
 
         if (hasPendingConfirmations)
         {
@@ -46,9 +50,8 @@ public class BootstrapService : IBootstrapService
             };
         }
 
-        // Check for active plan
         var hasActivePlan = await _context.TrainingPlans
-            .AnyAsync(p => p.UserId == userId && p.Status == Domain.Enums.TrainingPlanStatus.Active, ct);
+            .AnyAsync(p => p.InternalUserId == internalUserId && p.Status == Domain.Enums.TrainingPlanStatus.Active, ct);
 
         return new BootstrapResponse
         {

@@ -1,0 +1,7 @@
+{
+  "RunningApp.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Api",
+  "RunningApp.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Application",
+  "RunningApp.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Domain",
+  "RunningApp.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Infrastructure",
+  "RunningApp.Persistence, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Persistence"
+}

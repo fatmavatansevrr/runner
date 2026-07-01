@@ -6,5 +6,7 @@ public enum TrainingDayStatus
     Completed,
     Missed,
     Skipped,
-    Pending
+    PendingConfirmation,
+    Rescheduled,
+    SoftMissed
 }

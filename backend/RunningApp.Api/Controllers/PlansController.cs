@@ -17,21 +17,22 @@ public class PlansController : ControllerBase
     private readonly IPlanManagementService _managementService;
     private readonly IHomeQueryService _homeQueryService;
     private readonly ICalendarQueryService _calendarQueryService;
-
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
     public PlansController(
         IPlanPreviewService previewService,
         IPlanConfirmationService confirmationService,
         IPlanManagementService managementService,
         IHomeQueryService homeQueryService,
-        ICalendarQueryService calendarQueryService)
+        ICalendarQueryService calendarQueryService,
+        ICurrentUserAccessor currentUser)
     {
         _previewService = previewService;
         _confirmationService = confirmationService;
         _managementService = managementService;
         _homeQueryService = homeQueryService;
         _calendarQueryService = calendarQueryService;
+        _currentUser = currentUser;
     }
 
     /// <summary>POST /api/v1/plans/generate-preview — returns a seed template preview</summary>
@@ -39,7 +40,7 @@ public class PlansController : ControllerBase
     [ProducesResponseType(typeof(GeneratePreviewResponse), 200)]
     public async Task<IActionResult> GeneratePreview([FromBody] GeneratePreviewRequest request, CancellationToken ct)
     {
-        var response = await _previewService.GeneratePreviewAsync(MockUserId, request, ct);
+        var response = await _previewService.GeneratePreviewAsync(_currentUser.InternalUserId, request, ct);
         return Ok(response);
     }
 
@@ -48,7 +49,7 @@ public class PlansController : ControllerBase
     [ProducesResponseType(typeof(ConfirmPlanResponse), 200)]
     public async Task<IActionResult> ConfirmPlan([FromBody] ConfirmPlanRequest request, CancellationToken ct)
     {
-        var response = await _confirmationService.ConfirmPlanAsync(MockUserId, request, ct);
+        var response = await _confirmationService.ConfirmPlanAsync(_currentUser.InternalUserId, request, ct);
         return Ok(response);
     }
 
@@ -57,7 +58,7 @@ public class PlansController : ControllerBase
     [ProducesResponseType(typeof(HomeResponse), 200)]
     public async Task<IActionResult> GetHome(CancellationToken ct)
     {
-        var response = await _homeQueryService.GetHomeAsync(MockUserId, ct);
+        var response = await _homeQueryService.GetHomeAsync(_currentUser.InternalUserId, ct);
         return Ok(response);
     }
 
@@ -66,15 +67,16 @@ public class PlansController : ControllerBase
     [ProducesResponseType(typeof(System.Collections.Generic.List<TrainingDayResponse>), 200)]
     public async Task<IActionResult> GetCalendar([FromQuery] string month, CancellationToken ct)
     {
-        var response = await _calendarQueryService.GetCalendarAsync(MockUserId, month, ct);
+        var response = await _calendarQueryService.GetCalendarAsync(_currentUser.InternalUserId, month, ct);
         return Ok(response);
     }
 
     /// <summary>GET /api/v1/plans/active/details</summary>
     [HttpGet("active/details")]
+    [ProducesResponseType(typeof(PlanDetailsResponse), 200)]
     public async Task<IActionResult> GetActivePlanDetails(CancellationToken ct)
     {
-        var response = await _managementService.GetActivePlanDetailsAsync(MockUserId, ct);
+        var response = await _managementService.GetActivePlanDetailsAsync(_currentUser.InternalUserId, ct);
         return Ok(response);
     }
 
@@ -83,7 +85,7 @@ public class PlansController : ControllerBase
     [ProducesResponseType(typeof(CancelPlanResponse), 200)]
     public async Task<IActionResult> CancelPlan(Guid planId, [FromBody] CancelPlanRequest request, CancellationToken ct)
     {
-        var response = await _managementService.CancelPlanAsync(MockUserId, planId, request, ct);
+        var response = await _managementService.CancelPlanAsync(_currentUser.InternalUserId, planId, request, ct);
         return Ok(response);
     }
 }

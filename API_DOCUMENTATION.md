@@ -6,9 +6,9 @@ This document lists all endpoints implemented in the ASP.NET Core Web API backen
 
 ## 1. Authentication & Mock Behavior
 
-In Phase 1, there is **no authentication provider integration** (e.g. Firebase, Cognito, or JWT verification). 
+In Phase 1, there is **no authentication provider integration** (e.g. Firebase, Cognito, or JWT verification).
 - All incoming requests assume they are made on behalf of a single mock identity: `mock-user-001`.
-- The controllers extract `mock-user-001` as the client ID directly in the controller code (via `private const string MockUserId = "mock-user-001";` or similar constants).
+- Controllers never reference that literal directly. They resolve the current user via `ICurrentUserAccessor.UserId`, which delegates to `IIdentityProvider.GetCurrentIdentity()` — today backed by `MockIdentityProvider`, the only place in the solution that knows `"mock-user-001"`. See the root `README.md` §6 for how a real identity provider plugs into this abstraction later.
 - If database tables do not contain records for `mock-user-001` (for instance, if the app is opened for the first time), the `GET /api/v1/me/bootstrap` endpoint will indicate that no active profile or plan exists.
 
 ---
@@ -403,13 +403,31 @@ Fetches active notifications settings (returns static JSON payload).
 
 ## 4. Error Response Format
 
-Standard API error responses are serialized as text or basic JSON objects:
+Every 4xx/5xx response uses the same standardized envelope
+(`RunningApp.Api/ErrorHandling/ApiErrorResponse.cs`), produced by the global
+exception handler:
+
 ```json
 {
-  "status": 400,
-  "title": "Bad Request",
-  "detail": "Invalid month format. Expected YYYY-MM."
+  "errorCode": "VALIDATION_ERROR",
+  "message": "Invalid month format. Expected YYYY-MM.",
+  "correlationId": "451b0af957fc4397b890a174ec78fba2"
 }
 ```
-If a validation error occurs (e.g. sending `goal_type = 'cardio'`), the server responds with **400 Bad Request** outlining the failing parameters.
-If a route contains an invalid UUID, the database queries throw a **404 Not Found** response.
+
+`errorCode` is one of:
+
+| errorCode | HTTP status | Thrown by |
+|---|---|---|
+| `NOT_FOUND` | 404 | `NotFoundAppException` (e.g. missing preview, plan, training day, decision) |
+| `CONFLICT` | 409 | `ConflictAppException` (e.g. an expired plan preview) |
+| `VALIDATION_ERROR` | 400 | `ArgumentException` (e.g. invalid `month` query parameter) |
+| `INTERNAL_ERROR` | 500 | anything else — the real exception is logged server-side with the same `correlationId`, never echoed to the client |
+
+Send a `X-Correlation-Id` request header to control/trace the `correlationId`
+yourself; otherwise the server generates one and echoes it back as a
+response header too.
+
+Note: this error envelope intentionally uses camelCase, distinct from the
+snake_case used by every success-response DTO — clients can branch on
+status code alone without needing to know each endpoint's success shape.

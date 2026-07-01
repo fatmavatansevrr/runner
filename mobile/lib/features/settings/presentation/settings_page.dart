@@ -6,12 +6,14 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/widgets/app_shared_widgets.dart';
-import '../../auth/data/auth_provider.dart';
+import '../../auth/data/auth_providers.dart';
 import '../data/settings_provider.dart';
 import '../../../core/network/api_provider.dart';
 import '../../../core/network/bootstrap_provider.dart';
 import '../../home/data/home_provider.dart';
+import '../../calendar/data/calendar_provider.dart';
 import '../../profile/data/profile_provider.dart';
+import '../../pending_confirmation/data/pending_confirmation_provider.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -23,10 +25,23 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _isResetting = false;
 
-  void _onSignOut() {
-    ref.read(authProvider.notifier).logout();
-    // Redirect to Auth Welcome
-    context.go(AppRoutes.welcome);
+  Future<void> _onSignOut() async {
+    // Invalidate data caches first so no stale data flashes on re-login.
+    // app.dart's auth-state listener also does this, but calling it here
+    // makes the logout feel instant for the current session.
+    ref.invalidate(bootstrapDataProvider);
+    ref.invalidate(homeDataProvider);
+    ref.invalidate(calendarDataProvider);
+    ref.invalidate(profileOverviewProvider);
+    ref.invalidate(activePlanDetailsProvider);
+    ref.invalidate(pendingConfirmationsProvider);
+
+    await ref.read(firebaseAuthRepositoryProvider).signOut();
+
+    // GoRouter's _AuthChangeNotifier will detect the auth state change and
+    // trigger the redirect guard automatically. We also navigate explicitly
+    // as a belt-and-suspenders fallback.
+    if (mounted) context.go(AppRoutes.welcome);
   }
 
   void _onResetDatabase() async {
@@ -44,7 +59,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database reset successful for mock user!')),
+          const SnackBar(content: Text('Database reset successful.')),
         );
         context.go(AppRoutes.welcome);
       }
@@ -136,7 +151,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               else
                 _SettingsItem(
                   title: 'Reset database',
-                  subtitle: 'Clear all plans & workouts for mock-user-001',
+                  subtitle: 'Clear all plans & workouts for current user',
                   textColor: Colors.orange,
                   onTap: _onResetDatabase,
                 ),

@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'bootstrap_repository.dart';
 import 'dtos.dart';
-import '../../features/auth/data/auth_provider.dart';
+import '../../features/auth/data/auth_providers.dart';
 
 final bootstrapDataProvider = FutureProvider<BootstrapResponse>((ref) async {
-  final auth = ref.watch(authProvider);
-  if (!auth.isAuthenticated) {
+  // Gate on Firebase auth state: if no user is signed in, return 'Welcome'
+  // without hitting the backend.
+  final authAsync = ref.watch(authStateProvider);
+  final session = authAsync.valueOrNull;
+
+  if (session == null) {
     return BootstrapResponse(
       isAuthenticated: false,
       hasProfile: false,
@@ -17,10 +21,9 @@ final bootstrapDataProvider = FutureProvider<BootstrapResponse>((ref) async {
 
   try {
     final repo = ref.watch(bootstrapRepositoryProvider);
-    final response = await repo.getBootstrap();
-    return response;
-  } catch (e) {
-    // If backend fails or not setup, return default fallback authenticated nextScreen
+    return await repo.getBootstrap();
+  } catch (_) {
+    // Backend unavailable — route to onboarding so the user can proceed.
     return BootstrapResponse(
       isAuthenticated: true,
       hasProfile: false,

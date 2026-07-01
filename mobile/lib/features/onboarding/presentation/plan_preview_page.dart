@@ -6,8 +6,10 @@ import '../../../core/routing/app_router.dart';
 import '../data/onboarding_provider.dart';
 import '../../plan/data/plan_repository.dart';
 import '../../../core/network/bootstrap_provider.dart';
-import '../../../core/network/dtos.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../home/data/home_provider.dart';
+import '../../calendar/data/calendar_provider.dart';
+import '../../profile/data/profile_provider.dart';
 
 class PlanPreviewPage extends ConsumerStatefulWidget {
   const PlanPreviewPage({super.key});
@@ -22,17 +24,14 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   void _onConfirm(String previewId) async {
     setState(() => _isConfirming = true);
     try {
-      if (previewId == 'mock-preview-id-1234') {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          context.go(AppRoutes.home);
-        }
-        return;
-      }
       final repo = ref.read(planRepositoryProvider);
       await repo.confirmPlan(previewId);
-      // Invalidate bootstrap to refresh routing state
+      // The plan is now active — refresh every screen that reads plan state.
       ref.invalidate(bootstrapDataProvider);
+      ref.invalidate(homeDataProvider);
+      ref.invalidate(calendarDataProvider);
+      ref.invalidate(profileOverviewProvider);
+      ref.invalidate(activePlanDetailsProvider);
       if (mounted) {
         context.go(AppRoutes.home);
       }
@@ -72,77 +71,47 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(onboardingProvider);
-    final preview = state.previewResponse ?? GeneratePreviewResponse(
-      previewId: 'mock-preview-id-1234',
-      templateId: 'mock-template-id',
-      goalType: state.goalType,
-      goalDistance: state.goalDistance,
-      level: state.level,
-      daysPerWeek: state.daysPerWeek,
-      unit: state.unit,
-      weeks: [
-        PreviewWeekDto(
-          weekNumber: 1,
-          weekType: 'build',
-          days: [
-            PreviewDayDto(
-              slotIndex: 1,
-              dayType: 'easy',
-              distanceKm: 2.0,
-              durationMin: 20,
-              intensity: 'z2',
-              date: state.startDate ?? DateTime.now(),
+    final preview = state.previewResponse;
+
+    // Defensive empty state: this page should only be reached after
+    // generate-preview succeeds (see the previous onboarding step), but if
+    // it's ever opened without a preview in local state, show a clear way
+    // back instead of fabricating fake plan data.
+    if (preview == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded, size: 40, color: AppColors.textMuted),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "We couldn't find a plan preview.\nPlease go back and try again.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 20),
+                  AppPrimaryButton(
+                    label: 'Go Back',
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(AppRoutes.startDate);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
-            PreviewDayDto(
-              slotIndex: 2,
-              dayType: 'easy',
-              distanceKm: 2.5,
-              durationMin: 25,
-              intensity: 'z2',
-              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 2)),
-            ),
-            PreviewDayDto(
-              slotIndex: 3,
-              dayType: 'long_run',
-              distanceKm: 3.0,
-              durationMin: 30,
-              intensity: 'z2',
-              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 4)),
-            ),
-          ],
+          ),
         ),
-        PreviewWeekDto(
-          weekNumber: 2,
-          weekType: 'build',
-          days: [
-            PreviewDayDto(
-              slotIndex: 1,
-              dayType: 'easy',
-              distanceKm: 2.0,
-              durationMin: 20,
-              intensity: 'z2',
-              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 7)),
-            ),
-            PreviewDayDto(
-              slotIndex: 2,
-              dayType: 'easy',
-              distanceKm: 2.5,
-              durationMin: 25,
-              intensity: 'z2',
-              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 9)),
-            ),
-            PreviewDayDto(
-              slotIndex: 3,
-              dayType: 'long_run',
-              distanceKm: 3.5,
-              durationMin: 35,
-              intensity: 'z2',
-              date: (state.startDate ?? DateTime.now()).add(const Duration(days: 11)),
-            ),
-          ],
-        ),
-      ],
-    );
+      );
+    }
 
     final rows = [
       _PreviewRow(

@@ -12,9 +12,13 @@ class CalendarRepository {
       '/plans/active/calendar',
       queryParameters: {'month': month},
     );
-    return (response.data as List? ?? [])
+    final parseStart = DateTime.now();
+    final list = (response.data as List? ?? [])
         .map((e) => TrainingDayResponse.fromJson(e as Map<String, dynamic>))
         .toList();
+    final parseEnd = DateTime.now();
+    print('CALENDAR_REPOSITORY_LOG: Response parsing duration: ${parseEnd.difference(parseStart).inMilliseconds}ms');
+    return list;
   }
 }
 

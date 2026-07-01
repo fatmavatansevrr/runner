@@ -25,6 +25,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   bool _isSubmitting = false;
   DateTime? _selectedDate = DateTime.now();
 
+  @override
+  void initState() {
+    super.initState();
+    print('CALENDAR_PAGE_LOG: CalendarPage Initialized at ${DateTime.now().toIso8601String()}');
+  }
+
   int _getWeekNumber(DateTime date) {
     final firstDayOfYear = DateTime(date.year, 1, 1);
     final daysOffset = firstDayOfYear.weekday - 1; // days before first Monday
@@ -72,6 +78,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    final buildStart = DateTime.now();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final renderEnd = DateTime.now();
+      print('CALENDAR_PAGE_LOG: Render completed at ${renderEnd.toIso8601String()}. Render duration from build start: ${renderEnd.difference(buildStart).inMilliseconds}ms');
+    });
+
     final monthStr = ref.watch(calendarMonthProvider);
     final calendarState = ref.watch(calendarDataProvider);
     final profileAsync = ref.watch(profileOverviewProvider);
@@ -102,8 +114,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   const Text(
                     'Calendar',
                     style: TextStyle(
+                      fontFamily: 'ClashGrotesk',
                       fontSize: 28,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -289,22 +302,24 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                             w.date.year == day.year);
                                         final workout = matches.isEmpty ? null : matches.first;
                                         
+                                        // Rest days (and days with no scheduled workout) render as
+                                        // ordinary calendar cells — no fill, no badge, no markers.
+                                        // Only actual running workouts (easy/interval/long run/tempo)
+                                        // get a colored highlight.
+                                        final isRestDay = isOverflow
+                                            ? false
+                                            : (workout == null || workout.dayType == 'rest');
+
                                         // Resolve background color based on training type (dayType)
                                         Color bg = Colors.transparent;
-                                        if (!isOverflow && workout != null) {
+                                        if (!isOverflow && !isRestDay && workout != null) {
                                           bg = switch (workout.dayType) {
                                             'easy' || 'easy_run' => AppColors.easyRunTint,
                                             'interval'           => AppColors.intervalTint,
                                             'long_run'           => AppColors.longRunTint,
                                             'tempo'              => const Color(0xFFFFEDD5),
-                                            'rest'               => AppColors.restTint,
                                             _                    => Colors.transparent,
                                           };
-                                        }
-                                        
-                                        // Inactive rest default is soft cream
-                                        if (!isOverflow && workout == null) {
-                                          bg = AppColors.restTint;
                                         }
 
                                         return GestureDetector(
@@ -316,16 +331,20 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                           },
                                           child: Container(
                                             height: 52,
-                                            margin: const EdgeInsets.all(2),
+                                            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: isSelected
                                                   ? AppColors.ctaDark
-                                                  : (isOverflow ? Colors.transparent : bg),
+                                                  : (isOverflow
+                                                      ? Colors.transparent
+                                                      : (isRestDay ? Colors.white : bg)),
                                               borderRadius: BorderRadius.circular(8),
                                               border: Border.all(
                                                 color: isSelected
                                                     ? AppColors.ctaDark
-                                                    : (isToday ? AppColors.ctaDark.withOpacity(0.3) : Colors.transparent),
+                                                    : (isToday
+                                                        ? AppColors.ctaDark.withOpacity(0.3)
+                                                        : (isRestDay ? AppColors.border : Colors.transparent)),
                                                 width: 1.5,
                                               ),
                                             ),
@@ -360,10 +379,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
-                                                // Missed or completed marker
+                                                // Missed or completed marker (rest days never show one)
                                                 SizedBox(
                                                   height: 10,
-                                                  child: isOverflow
+                                                  child: isOverflow || isRestDay
                                                       ? null
                                                       : (workout?.status == 'missed'
                                                           ? Icon(
@@ -401,7 +420,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 _LegendItem(color: AppColors.easyRunTint, label: 'Easy Run'),
                                 _LegendItem(color: AppColors.intervalTint, label: 'Interval'),
                                 _LegendItem(color: AppColors.longRunTint, label: 'Long Run'),
-                                _LegendItem(color: AppColors.restTint, label: 'Rest Day'),
                                 _LegendItem(
                                   isIcon: true,
                                   icon: Icons.close_rounded,
@@ -1213,7 +1231,7 @@ class _LegendItem extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
           ),
         ),
@@ -1278,7 +1296,7 @@ class _ProgressCard extends StatelessWidget {
                 valueText,
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -1286,7 +1304,7 @@ class _ProgressCard extends StatelessWidget {
                 subValueText,
                 style: const TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
                 ),
               ),

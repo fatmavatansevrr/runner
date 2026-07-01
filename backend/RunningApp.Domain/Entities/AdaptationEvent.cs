@@ -9,14 +9,14 @@ namespace RunningApp.Domain.Entities;
 public class AdaptationEvent
 {
     public Guid Id { get; set; }
-    public string UserId { get; set; } = string.Empty;
+    public Guid? InternalUserId { get; set; }  // FK → Users.Id
     public Guid PlanId { get; set; }
     public string EventType { get; set; } = string.Empty;
     public TriggerSource TriggerSource { get; set; }
     public Guid? TriggeredByTrainingDayId { get; set; }
     public AdaptationAction Action { get; set; } = AdaptationAction.NoChange;
     public string? AffectedDaysJson { get; set; }
-    public string? ExplanationKey { get; set; }
+    public string ExplanationKey { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? DismissedAt { get; set; }
 }

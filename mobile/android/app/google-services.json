@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "313897784498",
+    "project_id": "runner-29739",
+    "storage_bucket": "runner-29739.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313897784498:android:cadeb8d49ea7e0cf49a5ab",
+        "android_client_info": {
+          "package_name": "com.example.antigravity_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "313897784498-tep7el9v2j9d2uju8kdu8mommnfdntme.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDS2a4J32bYWfwdL5lciKJBLN38wyI13T0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "313897784498-tep7el9v2j9d2uju8kdu8mommnfdntme.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

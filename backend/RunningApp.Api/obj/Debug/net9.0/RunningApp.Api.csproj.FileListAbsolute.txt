@@ -138,3 +138,12 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\tr\Microso
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\obj\Debug\net9.0\RunningApp.Api.sourcelink.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\FirebaseAdmin.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Google.Api.Gax.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Google.Api.Gax.Rest.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Google.Apis.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Google.Apis.Auth.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Google.Apis.Core.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\Newtonsoft.Json.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\System.Management.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\runtimes\win\lib\net7.0\System.Management.dll

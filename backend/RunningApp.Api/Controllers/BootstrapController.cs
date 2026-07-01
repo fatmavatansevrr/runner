@@ -11,18 +11,19 @@ namespace RunningApp.Api.Controllers;
 public class BootstrapController : ControllerBase
 {
     private readonly IBootstrapService _bootstrapService;
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public BootstrapController(IBootstrapService bootstrapService)
+    public BootstrapController(IBootstrapService bootstrapService, ICurrentUserAccessor currentUser)
     {
         _bootstrapService = bootstrapService;
+        _currentUser = currentUser;
     }
 
     [HttpGet("bootstrap")]
     [ProducesResponseType(typeof(BootstrapResponse), 200)]
     public async Task<IActionResult> GetBootstrap(CancellationToken ct)
     {
-        var response = await _bootstrapService.GetBootstrapAsync(MockUserId, ct);
+        var response = await _bootstrapService.GetBootstrapAsync(_currentUser.InternalUserId, ct);
         return Ok(response);
     }
 }

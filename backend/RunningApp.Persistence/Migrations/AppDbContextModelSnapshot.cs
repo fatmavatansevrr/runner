@@ -33,7 +33,7 @@ namespace RunningApp.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("AffectedDaysJson")
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -46,7 +46,11 @@ namespace RunningApp.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ExplanationKey")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
@@ -58,11 +62,14 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<Guid?>("TriggeredByTrainingDayId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId");
+
+                    b.HasIndex("TriggeredByTrainingDayId");
+
+                    b.HasIndex("PlanId", "CreatedAt")
+                        .HasDatabaseName("IX_AdaptationEvents_PlanId_CreatedAt");
 
                     b.ToTable("AdaptationEvents");
                 });
@@ -175,6 +182,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<string>("DecisionPayloadJson")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
 
@@ -196,11 +206,13 @@ namespace RunningApp.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TrainingDayId");
 
                     b.ToTable("NotTodayDecisions");
                 });
@@ -217,6 +229,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<bool>("EveningReminderEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ReminderStyle")
                         .IsRequired()
                         .HasColumnType("text");
@@ -227,14 +242,12 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("WorkoutRemindersEnabled")
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId");
 
                     b.ToTable("NotificationPreferences");
                 });
@@ -247,6 +260,12 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
@@ -261,11 +280,13 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<Guid>("TrainingDayId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TrainingDayId");
 
                     b.ToTable("PendingConfirmations");
                 });
@@ -283,6 +304,9 @@ namespace RunningApp.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PayloadJson")
                         .HasColumnType("text");
 
@@ -292,11 +316,12 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<Guid?>("TrainingDayId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("IX_PlanEvents_PlanId");
 
                     b.ToTable("PlanEvents");
                 });
@@ -313,23 +338,24 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PreviewPayloadJson")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("RequestPayloadJson")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("TemplateId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId")
+                        .HasDatabaseName("IX_PlanPreviews_InternalUserId");
 
                     b.ToTable("PlanPreviews");
                 });
@@ -345,7 +371,7 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<string>("DataJson")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("DaysPerWeek")
                         .HasColumnType("integer");
@@ -437,6 +463,12 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<int?>("ActualDurationMin")
                         .HasColumnType("integer");
 
+                    b.Property<double?>("ActualPaceMinKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<Guid?>("AdaptedFromId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("CanMarkComplete")
                         .HasColumnType("boolean");
 
@@ -475,6 +507,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("PlanVersion")
+                        .HasColumnType("integer");
+
                     b.Property<double>("PlannedDistanceKm")
                         .HasColumnType("double precision");
 
@@ -483,6 +518,9 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<double?>("PlannedPaceMinKm")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -500,9 +538,15 @@ namespace RunningApp.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlanId");
+                    b.HasIndex("AdaptedFromId");
 
-                    b.HasIndex("WeekId");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_TrainingDays_Status");
+
+                    b.HasIndex("PlanId", "Date");
+
+                    b.HasIndex("WeekId", "Date")
+                        .HasDatabaseName("IX_TrainingDays_WeekId_Date");
 
                     b.ToTable("TrainingDays");
                 });
@@ -522,6 +566,15 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CustomDurationWeeks")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CustomGoalType")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CustomTargetTimeSeconds")
+                        .HasColumnType("integer");
+
                     b.Property<int>("DaysPerWeek")
                         .HasColumnType("integer");
 
@@ -539,12 +592,30 @@ namespace RunningApp.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("HabitPlanType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InjuryNotes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Level")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("RaceDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LongRunDay")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PreferredDays")
+                        .HasColumnType("text");
+
+                    b.Property<double?>("PreferredPace")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateOnly?>("RaceDate")
+                        .HasColumnType("date");
 
                     b.Property<string>("RaceName")
                         .HasColumnType("text");
@@ -566,11 +637,21 @@ namespace RunningApp.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WeeklyAvailability")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InternalUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrainingPlans_InternalUserId_ActiveOnly")
+                        .HasFilter("\"Status\" = 'active'");
+
+                    b.HasIndex("InternalUserId", "Status")
+                        .HasDatabaseName("IX_TrainingPlans_InternalUserId_Status");
 
                     b.ToTable("TrainingPlans");
                 });
@@ -608,9 +689,50 @@ namespace RunningApp.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlanId");
+                    b.HasIndex("PlanId", "WeekNumber");
 
                     b.ToTable("TrainingWeeks");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ExternalAuthProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExternalUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalAuthProvider", "ExternalUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_Provider_ExternalId");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("RunningApp.Domain.Entities.UserProfile", b =>
@@ -622,17 +744,8 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RunningBackground")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("InternalUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -641,13 +754,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("InternalUserId")
                         .IsUnique();
 
                     b.ToTable("UserProfiles");
@@ -668,7 +777,10 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("PlanId")
+                    b.Property<Guid?>("InternalUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PlanId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Result")
@@ -678,24 +790,121 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<Guid>("TrainingDayId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("UserNote")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TrainingDayId");
+
+                    b.HasIndex("InternalUserId", "CreatedAt")
+                        .HasDatabaseName("IX_WorkoutLogs_InternalUserId_CreatedAt");
+
                     b.ToTable("WorkoutLogs");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.AdaptationEvent", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingDay", null)
+                        .WithMany()
+                        .HasForeignKey("TriggeredByTrainingDayId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.NotTodayDecision", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingDay", null)
+                        .WithMany()
+                        .HasForeignKey("TrainingDayId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.NotificationPreference", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.PendingConfirmation", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingDay", null)
+                        .WithMany()
+                        .HasForeignKey("TrainingDayId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.PlanEvent", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.PlanPreview", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingDay", b =>
                 {
+                    b.HasOne("RunningApp.Domain.Entities.TrainingDay", "AdaptedFrom")
+                        .WithMany()
+                        .HasForeignKey("AdaptedFromId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("RunningApp.Domain.Entities.TrainingPlan", "Plan")
                         .WithMany()
                         .HasForeignKey("PlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("RunningApp.Domain.Entities.TrainingWeek", "Week")
@@ -704,9 +913,19 @@ namespace RunningApp.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AdaptedFrom");
+
                     b.Navigation("Plan");
 
                     b.Navigation("Week");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.TrainingPlan", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingWeek", b =>
@@ -720,6 +939,35 @@ namespace RunningApp.Persistence.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("RunningApp.Domain.Entities.UserProfile", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", "User")
+                        .WithOne("Profile")
+                        .HasForeignKey("RunningApp.Domain.Entities.UserProfile", "InternalUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.WorkoutLog", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("InternalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RunningApp.Domain.Entities.TrainingDay", null)
+                        .WithMany()
+                        .HasForeignKey("TrainingDayId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingPlan", b =>
                 {
                     b.Navigation("Weeks");
@@ -728,6 +976,11 @@ namespace RunningApp.Persistence.Migrations
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingWeek", b =>
                 {
                     b.Navigation("Days");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Profile");
                 });
 #pragma warning restore 612, 618
         }

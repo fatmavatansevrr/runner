@@ -4,5 +4,5 @@ namespace RunningApp.Application.Services;
 
 public interface IHomeQueryService
 {
-    Task<HomeResponse> GetHomeAsync(string userId, CancellationToken ct = default);
+    Task<HomeResponse> GetHomeAsync(Guid internalUserId, CancellationToken ct = default);
 }

@@ -1,19 +1,22 @@
 using RunningApp.Application.DTOs.Plan;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RunningApp.Application.Services;
 
 public interface IPlanPreviewService
 {
-    Task<GeneratePreviewResponse> GeneratePreviewAsync(string userId, GeneratePreviewRequest request, CancellationToken ct = default);
+    Task<GeneratePreviewResponse> GeneratePreviewAsync(Guid internalUserId, GeneratePreviewRequest request, CancellationToken ct = default);
 }
 
 public interface IPlanConfirmationService
 {
-    Task<ConfirmPlanResponse> ConfirmPlanAsync(string userId, ConfirmPlanRequest request, CancellationToken ct = default);
+    Task<ConfirmPlanResponse> ConfirmPlanAsync(Guid internalUserId, ConfirmPlanRequest request, CancellationToken ct = default);
 }
 
 public interface IPlanManagementService
 {
-    Task<CancelPlanResponse> CancelPlanAsync(string userId, Guid planId, CancelPlanRequest request, CancellationToken ct = default);
-    Task<object> GetActivePlanDetailsAsync(string userId, CancellationToken ct = default);
+    Task<CancelPlanResponse> CancelPlanAsync(Guid internalUserId, Guid planId, CancelPlanRequest request, CancellationToken ct = default);
+    Task<PlanDetailsResponse> GetActivePlanDetailsAsync(Guid internalUserId, CancellationToken ct = default);
 }

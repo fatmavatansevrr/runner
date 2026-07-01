@@ -7,6 +7,11 @@ namespace RunningApp.Application.DTOs.Plan;
 
 public class PlanDetailsResponse
 {
+    /// <summary>False when the user has no active plan; all other fields
+    /// are then deterministic empty defaults (never null/missing) so the
+    /// response shape stays stable for the client.</summary>
+    public bool HasActivePlan { get; set; } = true;
+
     public Guid PlanId { get; set; }
     public string? TemplateId { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -16,8 +21,13 @@ public class PlanDetailsResponse
     public int DaysPerWeek { get; set; }
     public DistanceUnit Unit { get; set; }
     public string? RaceName { get; set; }
-    public DateTime? RaceDate { get; set; }
+    public DateOnly? RaceDate { get; set; }
     public int? TargetFinishTimeSeconds { get; set; }
+    public string? LongRunDay { get; set; }
+    public string? HabitPlanType { get; set; }
+    public string? CustomGoalType { get; set; }
+    public int? CustomDurationWeeks { get; set; }
+    public int? CustomTargetTimeSeconds { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime EstimatedEndDate { get; set; }
     public int TotalWeeks { get; set; }

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_shared_widgets.dart';
 import '../../../core/routing/app_router.dart';
 
 class IntroCarouselPage extends StatefulWidget {
@@ -15,118 +12,171 @@ class IntroCarouselPage extends StatefulWidget {
 }
 
 class _IntroCarouselPageState extends State<IntroCarouselPage> {
-  final _controller = PageController();
-  int _currentPage = 0;
+  final PageController _controller = PageController(viewportFraction: 1.0);
 
-  static const _slides = [
+  int _currentPage = 0;
+  double _pageOffset = 0.0;
+  bool _initialized = false;
+
+  static const List<_SlideData> _slides = [
     _SlideData(
-      title: 'See your progress\nclearly',
-      subtitle: 'Weekly plans, rest days, and\nmilestones.',
+      title: 'Yes, you can\nsing while you run.',
+      subtitle: 'Your easy runs are for\nenjoying the moment.',
+      asset: 'assets/images/easy-illustration.png',
+      bgColor: Color(0xFFC9E0F9),
+      accentColor: Color(0xFF2F6BFF),
+      illustrationScale: 1.00,
+      illustrationWidthFactor: 0.88,
     ),
     _SlideData(
-      title: 'Running without\nthe pressure',
-      subtitle: 'Personalized plans that fit your life.\nNo guilt when life gets in the way.',
+      title: 'You can run from\nKültürpark to Göztepe.',
+      subtitle: 'Long runs take you\nfurther than you think.',
+      asset: 'assets/images/long-illustration.png',
+      bgColor: Color(0xFFE8DFFD),
+      accentColor: Color(0xFF8A5CFF),
+      illustrationScale: 1.00,
+      illustrationWidthFactor: 0.92,
     ),
     _SlideData(
-      title: 'Your adaptive\nrunning partner',
-      subtitle: 'The plan adjusts with you —\nautomatically.',
+      title: 'You might even race\nan ostrich.',
+      subtitle: 'Intervals make you faster,\nstride by stride.',
+      asset: 'assets/images/interval-illustration.png',
+      bgColor: Color(0xFFFFD6D6),
+      accentColor: Color(0xFFFF3F56),
+      illustrationScale: 1.00,
+      illustrationWidthFactor: 0.94,
+    ),
+    _SlideData(
+      title: 'And on rest days,\nwe sunbathe together.',
+      subtitle: 'Rest is part of the plan.\nYou\'ve earned it.',
+      asset: 'assets/images/rest-illustration.png',
+      bgColor: Color(0xFFFEF4DD),
+      accentColor: Color(0xFFD9A400),
+      illustrationScale: 1.35,
+      illustrationWidthFactor: 1.05,
+    ),
+    _SlideData(
+      title: 'Ready to do\nthis together?',
+      subtitle:
+          'Whether you\'re building a habit or training for your next race, we\'ll be with you every step of the way.',
+      asset: 'assets/images/team-illustration.png',
+      bgColor: Color(0xFFF5F5F7),
+      accentColor: Color(0xFF0F1426),
+      illustrationScale: 1.10,
+      illustrationWidthFactor: 1.22,
     ),
   ];
 
-  void _next() {
+  @override
+  void initState() {
+    super.initState();
+    _initialized = true;
+
+    _controller.addListener(() {
+      if (!_controller.hasClients) return;
+      setState(() {
+        _pageOffset = _controller.page ?? 0.0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onFinish() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenWelcomeCarousel', true);
+
+    if (mounted) {
+      context.go(AppRoutes.authEntry);
+    }
+  }
+
+  void _onNext() {
     if (_currentPage < _slides.length - 1) {
       _controller.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      context.go(AppRoutes.goalSelection);
+      _onFinish();
     }
+  }
+
+  Color _resolveBackgroundColor() {
+    final floorIndex = _pageOffset.floor().clamp(0, _slides.length - 1);
+    final ceilIndex = _pageOffset.ceil().clamp(0, _slides.length - 1);
+    final ratio = _pageOffset - floorIndex;
+
+    return Color.lerp(
+          _slides[floorIndex].bgColor,
+          _slides[ceilIndex].bgColor,
+          ratio,
+        ) ??
+        _slides[_currentPage].bgColor;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background, // Light background matching screens
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top segment progress indicators
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-              child: Row(
-                children: List.generate(_slides.length, (index) {
-                  final isActive = index == _currentPage;
-                  return Expanded(
-                    child: Container(
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: isActive ? AppColors.primary : AppColors.border,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F5F7),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
 
-            // Top Navigation (Back & Skip)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-                    onPressed: () {
-                      if (_currentPage == 0) {
-                        context.go(AppRoutes.welcome);
-                      } else {
-                        _controller.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      }
+    return Scaffold(
+      backgroundColor: _resolveBackgroundColor(),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                _TopProgressBar(
+                  currentPage: _currentPage,
+                  slides: _slides,
+                  showSkip: _currentPage < _slides.length - 1,
+                  onSkip: () {
+                    _controller.animateToPage(
+                      _slides.length - 1,
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _controller,
+                    itemCount: _slides.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                    },
+                    itemBuilder: (context, index) {
+                      return _SlideView(
+                        slide: _slides[index],
+                        index: index,
+                        isLast: index == _slides.length - 1,
+                        onFinish: _onFinish,
+                      );
                     },
                   ),
-                  TextButton(
-                    onPressed: () => context.go(AppRoutes.goalSelection),
-                    child: Text(
-                      'Skip',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // Slides
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                onPageChanged: (i) => setState(() => _currentPage = i),
-                itemCount: _slides.length,
-                itemBuilder: (_, i) => _SlideView(slide: _slides[i], index: i),
+            if (_currentPage < _slides.length - 1)
+              Positioned(
+                right: 24,
+                bottom: 32,
+                child: _NextArrowButton(
+                  color: _slides[_currentPage].accentColor,
+                  onTap: _onNext,
+                ),
               ),
-            ),
-
-            // Progress dots (visual secondary indicator or removed if segment represents it, but let's keep it clean as spacing)
-            const SizedBox(height: AppSpacing.lg),
-
-            // Continue CTA
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: AppPrimaryButton(
-                label: _currentPage < _slides.length - 1 ? 'Continue' : 'Get started',
-                icon: Icons.arrow_forward_rounded,
-                onPressed: _next,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
           ],
         ),
       ),
@@ -135,245 +185,299 @@ class _IntroCarouselPageState extends State<IntroCarouselPage> {
 }
 
 class _SlideData {
-  const _SlideData({required this.title, required this.subtitle});
+  const _SlideData({
+    required this.title,
+    required this.subtitle,
+    required this.asset,
+    required this.bgColor,
+    required this.accentColor,
+    required this.illustrationScale,
+    required this.illustrationWidthFactor,
+    this.illustrationDx = 0,
+  });
+
   final String title;
   final String subtitle;
+  final String asset;
+  final Color bgColor;
+  final Color accentColor;
+  final double illustrationScale;
+  final double illustrationWidthFactor;
+  final double illustrationDx;
 }
 
-class _SlideView extends StatelessWidget {
-  const _SlideView({required this.slide, required this.index});
-  final _SlideData slide;
-  final int index;
+class _TopProgressBar extends StatelessWidget {
+  const _TopProgressBar({
+    required this.currentPage,
+    required this.slides,
+    required this.showSkip,
+    required this.onSkip,
+  });
+
+  final int currentPage;
+  final List<_SlideData> slides;
+  final bool showSkip;
+  final VoidCallback onSkip;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Graphic illustrations representing the screens in onboarding-placeholder
-          _buildIllustration(index),
-          const SizedBox(height: AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 10),
+      child: SizedBox(
+        // Fixed height so the bar sits at the same vertical position
+        // whether or not the "Skip" label is shown next to it.
+        height: 20,
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: List.generate(slides.length, (index) {
+                  final isLastPage = currentPage == slides.length - 1;
+                  final isActive = index == currentPage;
 
-          // Slide Title (colored blue/primary)
-          Text(
-            slide.title,
-            style: AppTextStyles.h1.copyWith(
-              color: AppColors.primary,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
-              letterSpacing: -0.5,
+                  return Expanded(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        // Last page: reveal every segment in its own color.
+                        // Other pages: only the current page's segment is
+                        // colored, at the matching position; the rest stay
+                        // colorless/faded.
+                        color: isLastPage || isActive
+                            ? slides[index].accentColor
+                            : Colors.white.withOpacity(0.65),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.md),
+            if (showSkip) ...[
+              const SizedBox(width: 16),
+              GestureDetector(
+                onTap: onSkip,
+                child: const Text(
+                  'Skip',
+                  style: TextStyle(
+                    fontFamily: 'GeneralSans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFA3A8B3),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Slide Subtitle
-          Text(
+class _SlideView extends StatelessWidget {
+  const _SlideView({
+    required this.slide,
+    required this.index,
+    required this.isLast,
+    required this.onFinish,
+  });
+
+  final _SlideData slide;
+  final int index;
+  final bool isLast;
+  final VoidCallback onFinish;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final screenHeight = size.height;
+    final screenWidth = size.width;
+
+    if (isLast) {
+      return _buildLastSlide(context, screenWidth);
+    }
+    return _buildGenericSlide(context, screenHeight, screenWidth);
+  }
+
+  Widget _buildTextBlock(double screenWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 34),
+        Text(
+          slide.title,
+          style: const TextStyle(
+            fontFamily: 'ClashGrotesk',
+            fontSize: 33,
+            fontWeight: FontWeight.w700,
+            height: 1.13,
+            letterSpacing: -0.6,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(height: 14),
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: screenWidth * 0.82),
+          child: Text(
             slide.subtitle,
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
+            style: const TextStyle(
+              fontFamily: 'GeneralSans',
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
               height: 1.4,
+              color: Color(0xFF475569),
             ),
-            textAlign: TextAlign.center,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenericSlide(
+    BuildContext context,
+    double screenHeight,
+    double screenWidth,
+  ) {
+    final topTextAreaHeight = screenHeight * 0.27;
+    final illustrationBoxHeight = screenHeight * 0.40;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: topTextAreaHeight,
+            child: _buildTextBlock(screenWidth),
+          ),
+          SizedBox(height: screenHeight * 0.04),
+          Center(
+            child: SizedBox(
+              height: illustrationBoxHeight,
+              width: double.infinity,
+              child: OverflowBox(
+                minWidth: 0,
+                maxWidth: screenWidth * 1.35,
+                minHeight: 0,
+                maxHeight: illustrationBoxHeight * 1.25,
+                alignment: Alignment.center,
+                child: Transform.translate(
+                  offset: Offset(slide.illustrationDx, 0),
+                  child: Transform.scale(
+                    scale: slide.illustrationScale,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      slide.asset,
+                      width: screenWidth * slide.illustrationWidthFactor,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          const SizedBox(height: 86),
         ],
       ),
     );
   }
 
-  Widget _buildIllustration(int idx) {
-    if (idx == 0) {
-      // Calendar view illustration matching onboarding-placeholder.png
-      return Container(
-        width: 190,
-        height: 140,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+  Widget _buildLastSlide(BuildContext context, double screenWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: _buildTextBlock(screenWidth),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Blue Header block
-            Container(
-              height: 32,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle)),
-                  ],
-                ),
-              ),
-            ),
-            // Calendar cells mockup
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(7, (i) {
-                        final isCompleted = i == 3;
-                        final isRest = i == 5;
-                        return Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: isCompleted
-                                ? AppColors.easyRunTint
-                                : isRest
-                                    ? AppColors.restTint
-                                    : AppColors.border.withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: isCompleted
-                              ? const Center(child: Icon(Icons.check, size: 10, color: AppColors.primary))
-                              : null,
-                        );
-                      }),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '15',
-                              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: AppColors.border.withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const Spacer(),
-                        // Rest Day indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.restTint,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'Rest Day',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange.shade700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (idx == 1) {
-      // Heart/Relaxed running illustration
-      return Container(
-        width: 190,
-        height: 140,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: AppColors.intervalTint,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.favorite_rounded,
-                size: 36,
-                color: Colors.pinkAccent,
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Transform.scale(
+              scale: slide.illustrationScale,
+              alignment: Alignment.bottomCenter,
+              child: Image.asset(
+                slide.asset,
+                width: screenWidth * slide.illustrationWidthFactor,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.bottomCenter,
+                filterQuality: FilterQuality.high,
               ),
             ),
           ),
         ),
-      );
-    } else {
-      // Adaptive planner circular flow illustration
-      return Container(
-        width: 190,
-        height: 140,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.auto_fix_high_rounded,
-                size: 36,
-                color: AppColors.primary,
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 26),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: onFinish,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F1426),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                "Let's Start",
+                style: TextStyle(
+                  fontFamily: 'GeneralSans',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
         ),
-      );
-    }
+      ],
+    );
+  }
+}
+
+class _NextArrowButton extends StatelessWidget {
+  const _NextArrowButton({
+    required this.color,
+    required this.onTap,
+  });
+
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Icon(
+          Icons.arrow_forward_rounded,
+          size: 22,
+          color: color,
+        ),
+      ),
+    );
   }
 }

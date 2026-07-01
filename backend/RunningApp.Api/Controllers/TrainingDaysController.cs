@@ -14,17 +14,18 @@ public class TrainingDaysController : ControllerBase
     private readonly ITrainingDayService _trainingDayService;
     private readonly IWorkoutCompletionService _completionService;
     private readonly INotTodayService _notTodayService;
-
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
     public TrainingDaysController(
         ITrainingDayService trainingDayService,
         IWorkoutCompletionService completionService,
-        INotTodayService notTodayService)
+        INotTodayService notTodayService,
+        ICurrentUserAccessor currentUser)
     {
         _trainingDayService = trainingDayService;
         _completionService = completionService;
         _notTodayService = notTodayService;
+        _currentUser = currentUser;
     }
 
     /// <summary>GET /api/v1/training-days/{trainingDayId}</summary>
@@ -32,7 +33,7 @@ public class TrainingDaysController : ControllerBase
     [ProducesResponseType(typeof(TrainingDayDetailResponse), 200)]
     public async Task<IActionResult> GetDetail(Guid trainingDayId, CancellationToken ct)
     {
-        var response = await _trainingDayService.GetTrainingDayDetailAsync(MockUserId, trainingDayId, ct);
+        var response = await _trainingDayService.GetTrainingDayDetailAsync(_currentUser.InternalUserId, trainingDayId, ct);
         return Ok(response);
     }
 
@@ -41,7 +42,7 @@ public class TrainingDaysController : ControllerBase
     [ProducesResponseType(typeof(CompleteWorkoutResponse), 200)]
     public async Task<IActionResult> Complete(Guid trainingDayId, [FromBody] CompleteWorkoutRequest request, CancellationToken ct)
     {
-        var response = await _completionService.CompleteWorkoutAsync(MockUserId, trainingDayId, request, ct);
+        var response = await _completionService.CompleteWorkoutAsync(_currentUser.InternalUserId, trainingDayId, request, ct);
         return Ok(response);
     }
 
@@ -50,7 +51,7 @@ public class TrainingDaysController : ControllerBase
     [ProducesResponseType(typeof(CreateNotTodayDecisionResponse), 200)]
     public async Task<IActionResult> CreateNotTodayDecision(Guid trainingDayId, [FromBody] CreateNotTodayDecisionRequest request, CancellationToken ct)
     {
-        var response = await _notTodayService.CreateNotTodayDecisionAsync(MockUserId, trainingDayId, request, ct);
+        var response = await _notTodayService.CreateNotTodayDecisionAsync(_currentUser.InternalUserId, trainingDayId, request, ct);
         return Ok(response);
     }
 }

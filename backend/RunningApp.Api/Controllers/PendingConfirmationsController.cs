@@ -11,11 +11,12 @@ namespace RunningApp.Api.Controllers;
 public class PendingConfirmationsController : ControllerBase
 {
     private readonly IPendingConfirmationService _pendingConfirmationService;
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public PendingConfirmationsController(IPendingConfirmationService pendingConfirmationService)
+    public PendingConfirmationsController(IPendingConfirmationService pendingConfirmationService, ICurrentUserAccessor currentUser)
     {
         _pendingConfirmationService = pendingConfirmationService;
+        _currentUser = currentUser;
     }
 
     /// <summary>GET /api/v1/pending-confirmations</summary>
@@ -23,7 +24,7 @@ public class PendingConfirmationsController : ControllerBase
     [ProducesResponseType(typeof(System.Collections.Generic.List<PendingConfirmationResponse>), 200)]
     public async Task<IActionResult> GetPendingConfirmations(CancellationToken ct)
     {
-        var response = await _pendingConfirmationService.GetPendingConfirmationsAsync(MockUserId, ct);
+        var response = await _pendingConfirmationService.GetPendingConfirmationsAsync(_currentUser.InternalUserId, ct);
         return Ok(response);
     }
 
@@ -32,7 +33,7 @@ public class PendingConfirmationsController : ControllerBase
     [ProducesResponseType(typeof(ResolvePendingConfirmationResponse), 200)]
     public async Task<IActionResult> Resolve([FromBody] ResolvePendingConfirmationRequest request, CancellationToken ct)
     {
-        var response = await _pendingConfirmationService.ResolvePendingConfirmationAsync(MockUserId, request, ct);
+        var response = await _pendingConfirmationService.ResolvePendingConfirmationAsync(_currentUser.InternalUserId, request, ct);
         return Ok(response);
     }
 }

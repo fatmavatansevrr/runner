@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/splash/presentation/splash_page.dart';
 import '../../features/auth/presentation/auth_welcome_page.dart';
 import '../../features/auth/presentation/sign_up_page.dart';
 import '../../features/auth/presentation/sign_in_page.dart';
@@ -29,7 +32,10 @@ import '../theme/app_colors.dart';
 
 /// Route names — use these constants everywhere to avoid typos.
 abstract final class AppRoutes {
+  static const String splash            = '/';
   static const String welcome           = '/auth';
+  /// Alias for [welcome] — the auth decision screen (Sign Up / Sign In / social).
+  static const String authEntry         = welcome;
   static const String signUp            = '/auth/signup';
   static const String signIn            = '/auth/signin';
   static const String introCarousel     = '/intro';
@@ -54,14 +60,67 @@ abstract final class AppRoutes {
   static const String settings          = '/settings';
   static const String pendingConfirmation = '/pending-confirmation';
   static const String trainingDayDetail  = '/training-day/:dayId';
+
+  /// Maps a bootstrap `nextScreen` value to the route that should follow.
+  /// Used after splash, sign in, and social login so the decision lives
+  /// in one place.
+  static String routeForNextScreen(String nextScreen) {
+    switch (nextScreen) {
+      case 'Home':
+        return home;
+      case 'PendingConfirmation':
+        return pendingConfirmation;
+      case 'Welcome':
+        return authEntry;
+      default:
+        return goalSelection;
+    }
+  }
 }
+
+/// Routes that are accessible without a Firebase session.
+const _publicPaths = {
+  '/',          // splash
+  '/auth',      // welcome
+  '/auth/signup',
+  '/auth/signin',
+  '/intro',
+};
+
+bool _isPublicPath(String location) =>
+    _publicPaths.contains(location) ||
+    location.startsWith('/intro');
 
 /// Central router configuration using go_router.
 abstract final class AppRouter {
+  // Listens to Firebase auth state and notifies GoRouter to re-evaluate
+  // redirects on every sign-in / sign-out event.
+  static final _authNotifier = _AuthChangeNotifier();
+
   static final GoRouter router = GoRouter(
-    initialLocation: AppRoutes.welcome,
+    initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: _authNotifier,
+
+    /// Route guard: unauthenticated requests to protected paths are sent to the
+    /// auth welcome screen. Public paths (splash, auth, intro) are always
+    /// accessible so the login flow is never blocked.
+    redirect: (context, state) {
+      final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+      final loc = state.matchedLocation;
+
+      if (!isLoggedIn && !_isPublicPath(loc)) {
+        return AppRoutes.welcome;
+      }
+      return null;
+    },
     routes: [
+      // ── Launch ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (_, __) => const SplashPage(),
+      ),
+
       // ── Auth & Entry ──────────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.welcome,
@@ -183,6 +242,28 @@ abstract final class AppRouter {
       ),
     ],
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth change notifier — bridges Firebase auth stream → GoRouter Listenable.
+// GoRouter calls redirect whenever this fires, so sign-in/sign-out events
+// trigger an immediate route re-evaluation without any manual navigation call.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier() {
+    _sub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      notifyListeners();
+    });
+  }
+
+  late final StreamSubscription<User?> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
 }
 
 /// Shell widget providing the bottom navigation bar (Calendar | Home | Profile).

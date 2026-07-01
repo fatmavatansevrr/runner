@@ -14,6 +14,16 @@ public class GeneratePreviewResponse
     public int DaysPerWeek { get; set; }
     public DistanceUnit Unit { get; set; }
     public List<PreviewWeekDto> Weeks { get; set; } = new();
+
+    /// <summary>
+    /// True when no seeded template exactly matched the request and the
+    /// engine fell back to a default template. Debug/development-only
+    /// signal — production UI is not required to surface this.
+    /// </summary>
+    public bool FallbackUsed { get; set; }
+
+    /// <summary>Human-readable explanation of the fallback, if any.</summary>
+    public string? FallbackReason { get; set; }
 }
 
 public class PreviewWeekDto

@@ -47,7 +47,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                 icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                onPressed: () => context.go(AppRoutes.introCarousel),
+                onPressed: () => context.go(AppRoutes.authEntry),
               ),
               const SizedBox(height: AppSpacing.lg),
 

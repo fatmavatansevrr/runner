@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    public DbSet<User> Users => Set<User>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<PlanTemplate> PlanTemplates => Set<PlanTemplate>();
     public DbSet<PlanPreview> PlanPreviews => Set<PlanPreview>();
@@ -54,7 +55,21 @@ public class AppDbContext : DbContext
             }
         }
 
-        // TrainingPlan relationships
+        // ── Users ────────────────────────────────────────────────────────────
+        modelBuilder.Entity<User>()
+            .HasIndex(u => new { u.ExternalAuthProvider, u.ExternalUserId })
+            .IsUnique()
+            .HasDatabaseName("IX_Users_Provider_ExternalId");
+
+        // ── UserProfile ──────────────────────────────────────────────────────
+        modelBuilder.Entity<UserProfile>()
+            .HasOne(p => p.User)
+            .WithOne(u => u.Profile)
+            .HasForeignKey<UserProfile>(p => p.InternalUserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ── TrainingPlan relationships ────────────────────────────────────────
         modelBuilder.Entity<TrainingPlan>()
             .HasMany(p => p.Weeks)
             .WithOne(w => w.Plan)
@@ -67,21 +82,207 @@ public class AppDbContext : DbContext
             .HasForeignKey(d => d.WeekId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Restrict delete on TrainingDay to TrainingPlan connection to prevent multiple cascade paths in PostgreSQL
         modelBuilder.Entity<TrainingDay>()
             .HasOne(d => d.Plan)
             .WithMany()
             .HasForeignKey(d => d.PlanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Self-reference for adaptation tracking (AdaptedFromId).
+        // SET NULL on delete so removing the source day doesn't cascade-delete derived days.
+        modelBuilder.Entity<TrainingDay>()
+            .HasOne(d => d.AdaptedFrom)
+            .WithMany()
+            .HasForeignKey(d => d.AdaptedFromId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ── WorkoutLog FK constraints ────────────────────────────────────────
+        modelBuilder.Entity<WorkoutLog>()
+            .HasOne<TrainingDay>()
+            .WithMany()
+            .HasForeignKey(w => w.TrainingDayId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Indexes
-        modelBuilder.Entity<UserProfile>()
-            .HasIndex(u => u.UserId)
-            .IsUnique();
+        modelBuilder.Entity<WorkoutLog>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(w => w.PlanId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
+        // ── InternalUserId FK constraints (→ Users.Id) ──────────────────────
+        modelBuilder.Entity<TrainingPlan>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(p => p.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WorkoutLog>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(w => w.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<NotTodayDecision>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(n => n.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PendingConfirmation>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(p => p.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AdaptationEvent>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(a => a.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PlanPreview>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(p => p.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PlanEvent>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(p => p.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PlanEvent>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(p => p.PlanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<NotificationPreference>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(n => n.InternalUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ── Shadow FK constraints (no navigation properties) ─────────────────
+        modelBuilder.Entity<NotTodayDecision>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(n => n.PlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<NotTodayDecision>()
+            .HasOne<TrainingDay>()
+            .WithMany()
+            .HasForeignKey(n => n.TrainingDayId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PendingConfirmation>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(p => p.PlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PendingConfirmation>()
+            .HasOne<TrainingDay>()
+            .WithMany()
+            .HasForeignKey(p => p.TrainingDayId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AdaptationEvent>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(a => a.PlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AdaptationEvent>()
+            .HasOne<TrainingDay>()
+            .WithMany()
+            .HasForeignKey(a => a.TriggeredByTrainingDayId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ── JSONB column types ───────────────────────────────────────────────
+        modelBuilder.Entity<PlanTemplate>()
+            .Property(t => t.DataJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<PlanPreview>()
+            .Property(p => p.RequestPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<PlanPreview>()
+            .Property(p => p.PreviewPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AdaptationEvent>()
+            .Property(a => a.AffectedDaysJson)
+            .HasColumnType("jsonb");
+
+        // ── Indexes ───────────────────────────────────────────────────────────
         modelBuilder.Entity<PlanTemplate>()
             .HasIndex(t => t.TemplateId)
             .IsUnique();
+
+        // Enforce "one active plan per user" at the database level.
+        // NULL InternalUserId values are excluded from the unique constraint
+        // (the filter already narrows to active rows; NULLs are ignored by PostgreSQL unique indexes).
+        modelBuilder.Entity<TrainingPlan>()
+            .HasIndex(p => p.InternalUserId)
+            .IsUnique()
+            .HasDatabaseName("IX_TrainingPlans_InternalUserId_ActiveOnly")
+            .HasFilter("\"Status\" = 'active'");
+
+        modelBuilder.Entity<TrainingPlan>()
+            .HasIndex(p => new { p.InternalUserId, p.Status })
+            .HasDatabaseName("IX_TrainingPlans_InternalUserId_Status");
+
+        modelBuilder.Entity<TrainingDay>()
+            .HasIndex(d => new { d.PlanId, d.Date });
+
+        modelBuilder.Entity<TrainingDay>()
+            .HasIndex(d => new { d.WeekId, d.Date })
+            .HasDatabaseName("IX_TrainingDays_WeekId_Date");
+
+        modelBuilder.Entity<TrainingDay>()
+            .HasIndex(d => d.Status)
+            .HasDatabaseName("IX_TrainingDays_Status");
+
+        modelBuilder.Entity<TrainingWeek>()
+            .HasIndex(w => new { w.PlanId, w.WeekNumber });
+
+        modelBuilder.Entity<PlanPreview>()
+            .HasIndex(p => p.InternalUserId)
+            .HasDatabaseName("IX_PlanPreviews_InternalUserId");
+
+        modelBuilder.Entity<WorkoutLog>()
+            .HasIndex(w => w.TrainingDayId);
+
+        modelBuilder.Entity<WorkoutLog>()
+            .HasIndex(w => new { w.InternalUserId, w.CreatedAt })
+            .HasDatabaseName("IX_WorkoutLogs_InternalUserId_CreatedAt");
+
+        modelBuilder.Entity<PendingConfirmation>()
+            .HasIndex(p => p.TrainingDayId);
+
+        modelBuilder.Entity<AdaptationEvent>()
+            .HasIndex(a => new { a.PlanId, a.CreatedAt })
+            .HasDatabaseName("IX_AdaptationEvents_PlanId_CreatedAt");
+
+        modelBuilder.Entity<PlanEvent>()
+            .HasIndex(p => p.PlanId)
+            .HasDatabaseName("IX_PlanEvents_PlanId");
 
         // Seed data
         SeedData(modelBuilder);

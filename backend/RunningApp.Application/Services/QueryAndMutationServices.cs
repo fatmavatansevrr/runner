@@ -1,9 +1,12 @@
 // [ignoring loop detection]
 using Microsoft.EntityFrameworkCore;
+using RunningApp.Application.Adaptation;
+using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Home;
 using RunningApp.Application.DTOs.PendingConfirmation;
 using RunningApp.Application.DTOs.Profile;
 using RunningApp.Application.DTOs.TrainingDay;
+using RunningApp.Application.Exceptions;
 using RunningApp.Domain.Entities;
 using RunningApp.Domain.Enums;
 using RunningApp.Persistence;
@@ -13,32 +16,42 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
 namespace RunningApp.Application.Services;
 
-public class QueryAndMutationServices : 
-    IHomeQueryService, 
-    ICalendarQueryService, 
-    ITrainingDayService, 
-    IWorkoutCompletionService, 
-    INotTodayService, 
-    IPendingConfirmationService, 
+public class QueryAndMutationServices :
+    IHomeQueryService,
+    ICalendarQueryService,
+    ITrainingDayService,
+    IWorkoutCompletionService,
+    INotTodayService,
+    IPendingConfirmationService,
     IProfileService
 {
     private readonly AppDbContext _context;
+    private readonly IAdaptationEngine _adaptationEngine;
+    private readonly ILogger<QueryAndMutationServices> _logger;
 
-    public QueryAndMutationServices(AppDbContext context)
+    public QueryAndMutationServices(
+        AppDbContext context, 
+        IAdaptationEngine adaptationEngine,
+        ILogger<QueryAndMutationServices> logger)
     {
         _context = context;
+        _adaptationEngine = adaptationEngine;
+        _logger = logger;
     }
 
     // ─── HOME QUERY SERVICE ──────────────────────────────────────────────────
-    public async Task<HomeResponse> GetHomeAsync(string userId, CancellationToken ct = default)
+    public async Task<HomeResponse> GetHomeAsync(Guid internalUserId, CancellationToken ct = default)
     {
         var plan = await _context.TrainingPlans
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.Status == TrainingPlanStatus.Active, ct);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.InternalUserId == internalUserId && p.Status == TrainingPlanStatus.Active, ct);
 
         var hasPending = await _context.PendingConfirmations
-            .AnyAsync(p => p.UserId == userId && p.Status == "pending", ct);
+            .AnyAsync(p => p.InternalUserId == internalUserId && p.Status == "pending", ct);
 
         if (plan == null)
         {
@@ -56,6 +69,7 @@ public class QueryAndMutationServices :
 
         // Fetch today's workout
         var todayDay = await _context.TrainingDays
+            .AsNoTracking()
             .FirstOrDefaultAsync(d => d.PlanId == plan.Id && d.Date == today, ct);
 
         TrainingDayResponse todayWorkout;
@@ -90,6 +104,7 @@ public class QueryAndMutationServices :
         var endOfWeek = startOfWeek.AddDays(6);
 
         var weekDays = await _context.TrainingDays
+            .AsNoTracking()
             .Where(d => d.PlanId == plan.Id && d.Date >= startOfWeek && d.Date <= endOfWeek)
             .ToListAsync(ct);
 
@@ -128,7 +143,7 @@ public class QueryAndMutationServices :
         var activeWeek = weekDays.FirstOrDefault();
         if (activeWeek != null)
         {
-            var weekEntity = await _context.TrainingWeeks.FirstOrDefaultAsync(w => w.Id == activeWeek.WeekId, ct);
+            var weekEntity = await _context.TrainingWeeks.AsNoTracking().FirstOrDefaultAsync(w => w.Id == activeWeek.WeekId, ct);
             if (weekEntity != null)
             {
                 currentWeekNumber = weekEntity.WeekNumber;
@@ -143,9 +158,9 @@ public class QueryAndMutationServices :
             ActivePlan = new ActivePlanSummaryDto
             {
                 PlanId = plan.Id,
-                GoalType = plan.GoalType.ToString().ToLower(),
-                GoalDistance = plan.GoalDistance.ToString().ToLower(),
-                Level = plan.Level.ToString().ToLower(),
+                GoalType = EnumSnakeCase.ToSnakeCase(plan.GoalType),
+                GoalDistance = EnumSnakeCase.ToSnakeCase(plan.GoalDistance),
+                Level = EnumSnakeCase.ToSnakeCase(plan.Level),
                 ProgressText = planProgressText
             },
             TodayWorkout = todayWorkout,
@@ -156,36 +171,72 @@ public class QueryAndMutationServices :
     }
 
     // ─── CALENDAR QUERY SERVICE ──────────────────────────────────────────────
-    public async Task<List<TrainingDayResponse>> GetCalendarAsync(string userId, string month, CancellationToken ct = default)
+    public async Task<List<TrainingDayResponse>> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default)
     {
+        var swTotal = System.Diagnostics.Stopwatch.StartNew();
+        
+        var swPlan = System.Diagnostics.Stopwatch.StartNew();
         var plan = await _context.TrainingPlans
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.Status == TrainingPlanStatus.Active, ct);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.InternalUserId == internalUserId && p.Status == TrainingPlanStatus.Active, ct);
+        swPlan.Stop();
 
         if (plan == null)
         {
+            _logger.LogInformation("GetCalendarAsync: No active plan found. ActivePlanLookupDurationMs={ActivePlanLookupDurationMs}, TotalDurationMs={TotalDurationMs}", 
+                swPlan.ElapsedMilliseconds, swTotal.ElapsedMilliseconds);
             return new List<TrainingDayResponse>();
         }
 
-        if (!DateTime.TryParse($"{month}-01", out var startOfMonth))
+        if (!DateTime.TryParseExact($"{month}-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var startOfMonth))
         {
             throw new ArgumentException("Invalid month format. Expected YYYY-MM.");
         }
 
+        // All Date columns are stored as UTC ("timestamp with time zone");
+        // DateTime.TryParse produces Kind=Unspecified, which Npgsql rejects.
+        startOfMonth = DateTime.SpecifyKind(startOfMonth, DateTimeKind.Utc);
         var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
+        var swQuery = System.Diagnostics.Stopwatch.StartNew();
         var days = await _context.TrainingDays
+            .AsNoTracking()
             .Where(d => d.PlanId == plan.Id && d.Date >= startOfMonth && d.Date <= endOfMonth)
-            .OrderBy(d => d.Date)
+            .Select(d => new TrainingDayResponse
+            {
+                DayId = d.Id,
+                Date = d.Date,
+                DayType = d.DayType,
+                Status = d.Status,
+                Title = d.Title,
+                Description = d.Description,
+                PlannedDistanceKm = d.PlannedDistanceKm,
+                PlannedDurationMin = d.PlannedDurationMin,
+                PlannedPaceMinKm = d.PlannedPaceMinKm,
+                Intensity = d.Intensity,
+                ActualDistanceKm = d.ActualDistanceKm,
+                ActualDurationMin = d.ActualDurationMin,
+                IsLongRun = d.IsLongRun,
+                CanMarkComplete = d.CanMarkComplete,
+                CanMarkNotToday = d.CanMarkNotToday
+            })
             .ToListAsync(ct);
+        swQuery.Stop();
+
+        var swMap = System.Diagnostics.Stopwatch.StartNew();
+        
+        // Use dictionary with grouping to safely handle any potential duplicate dates
+        var daysDict = days
+            .GroupBy(d => d.Date)
+            .ToDictionary(g => g.Key, g => g.First());
 
         // Include rest days to map the full month calendar view
         var calendarDays = new List<TrainingDayResponse>();
         for (var date = startOfMonth; date <= endOfMonth; date = date.AddDays(1))
         {
-            var existing = days.FirstOrDefault(d => d.Date == date);
-            if (existing != null)
+            if (daysDict.TryGetValue(date, out var existing))
             {
-                calendarDays.Add(MapToResponse(existing));
+                calendarDays.Add(existing);
             }
             else
             {
@@ -204,19 +255,26 @@ public class QueryAndMutationServices :
                 });
             }
         }
+        swMap.Stop();
+        swTotal.Stop();
+
+        _logger.LogInformation(
+            "GetCalendarAsync Completed. Month={Month}, PlanId={PlanId}, ActivePlanLookupDurationMs={ActivePlanLookupDurationMs}, TrainingDaysQueryDurationMs={TrainingDaysQueryDurationMs}, DtoMappingDurationMs={DtoMappingDurationMs}, TotalDurationMs={TotalDurationMs}",
+            month, plan.Id, swPlan.ElapsedMilliseconds, swQuery.ElapsedMilliseconds, swMap.ElapsedMilliseconds, swTotal.ElapsedMilliseconds);
 
         return calendarDays;
     }
 
     // ─── TRAINING DAY SERVICE ────────────────────────────────────────────────
-    public async Task<TrainingDayDetailResponse> GetTrainingDayDetailAsync(string userId, Guid trainingDayId, CancellationToken ct = default)
+    public async Task<TrainingDayDetailResponse> GetTrainingDayDetailAsync(Guid internalUserId, Guid trainingDayId, CancellationToken ct = default)
     {
         var day = await _context.TrainingDays
-            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.UserId == userId, ct);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
 
         if (day == null)
         {
-            throw new ArgumentException("Training day not found.");
+            throw new NotFoundAppException("Training day not found.");
         }
 
         return new TrainingDayDetailResponse
@@ -241,15 +299,15 @@ public class QueryAndMutationServices :
     }
 
     // ─── WORKOUT COMPLETION SERVICE ──────────────────────────────────────────
-    public async Task<CompleteWorkoutResponse> CompleteWorkoutAsync(string userId, Guid trainingDayId, CompleteWorkoutRequest request, CancellationToken ct = default)
+    public async Task<CompleteWorkoutResponse> CompleteWorkoutAsync(Guid internalUserId, Guid trainingDayId, CompleteWorkoutRequest request, CancellationToken ct = default)
     {
         var day = await _context.TrainingDays
             .Include(d => d.Week)
-            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.UserId == userId, ct);
+            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
 
         if (day == null)
         {
-            throw new ArgumentException("Training day not found.");
+            throw new NotFoundAppException("Training day not found.");
         }
 
         day.Status = TrainingDayStatus.Completed;
@@ -264,7 +322,7 @@ public class QueryAndMutationServices :
         var log = new WorkoutLog
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            InternalUserId = internalUserId,
             PlanId = day.PlanId,
             TrainingDayId = day.Id,
             Result = request.ActualDistanceKm >= day.PlannedDistanceKm ? "as_planned" : "shorter",
@@ -278,6 +336,7 @@ public class QueryAndMutationServices :
         // Update the week's actual volume
         var week = day.Week;
         var completedDays = await _context.TrainingDays
+            .AsNoTracking()
             .Where(d => d.WeekId == week.Id && d.Status == TrainingDayStatus.Completed && d.Id != day.Id)
             .ToListAsync(ct);
 
@@ -287,7 +346,7 @@ public class QueryAndMutationServices :
         var planEvent = new PlanEvent
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            InternalUserId = internalUserId,
             PlanId = day.PlanId,
             TrainingDayId = day.Id,
             EventType = "WorkoutCompleted",
@@ -306,20 +365,21 @@ public class QueryAndMutationServices :
     }
 
     // ─── NOT TODAY SERVICE ───────────────────────────────────────────────────
-    public async Task<CreateNotTodayDecisionResponse> CreateNotTodayDecisionAsync(string userId, Guid trainingDayId, CreateNotTodayDecisionRequest request, CancellationToken ct = default)
+    public async Task<CreateNotTodayDecisionResponse> CreateNotTodayDecisionAsync(Guid internalUserId, Guid trainingDayId, CreateNotTodayDecisionRequest request, CancellationToken ct = default)
     {
         var day = await _context.TrainingDays
-            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.UserId == userId, ct);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
 
         if (day == null)
         {
-            throw new ArgumentException("Training day not found.");
+            throw new NotFoundAppException("Training day not found.");
         }
 
         var decision = new NotTodayDecision
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            InternalUserId = internalUserId,
             PlanId = day.PlanId,
             TrainingDayId = day.Id,
             Reason = request.Reason,
@@ -340,20 +400,26 @@ public class QueryAndMutationServices :
         };
     }
 
-    public async Task<ConfirmNotTodayDecisionResponse> ConfirmNotTodayDecisionAsync(string userId, Guid decisionId, ConfirmNotTodayDecisionRequest request, CancellationToken ct = default)
+    public async Task<ConfirmNotTodayDecisionResponse> ConfirmNotTodayDecisionAsync(Guid internalUserId, Guid decisionId, ConfirmNotTodayDecisionRequest request, CancellationToken ct = default)
     {
         var decision = await _context.NotTodayDecisions
-            .FirstOrDefaultAsync(d => d.Id == decisionId && d.UserId == userId, ct);
+            .FirstOrDefaultAsync(d => d.Id == decisionId && d.InternalUserId == internalUserId, ct);
 
         if (decision == null)
         {
-            throw new ArgumentException("Decision not found.");
+            throw new NotFoundAppException("Decision not found.");
         }
+
+        // Ask the adaptation engine what to do. Phase 1: always NoChange —
+        // this never reschedules or mutates future training days.
+        var adaptation = await _adaptationEngine.EvaluateNotTodayAsync(
+            decision.PlanId, decision.TrainingDayId, decision.TriggerSource, decision.Reason, ct);
 
         decision.Status = NotTodayDecisionStatus.Confirmed;
         decision.ConfirmedAt = DateTime.UtcNow;
+        decision.Action = adaptation.Action;
 
-        // Apply missed status to the training day
+        // Apply missed status to the training day (today only — no future days touched)
         var day = await _context.TrainingDays.FirstOrDefaultAsync(d => d.Id == decision.TrainingDayId, ct);
         if (day != null)
         {
@@ -367,7 +433,7 @@ public class QueryAndMutationServices :
         var planEvent = new PlanEvent
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            InternalUserId = internalUserId,
             PlanId = decision.PlanId,
             TrainingDayId = decision.TrainingDayId,
             EventType = "WorkoutMissed",
@@ -382,56 +448,57 @@ public class QueryAndMutationServices :
         {
             DecisionId = decision.Id,
             Status = "confirmed",
-            Action = "no_change"
+            Action = EnumSnakeCase.ToSnakeCase(adaptation.Action),
+            PlanAdapted = adaptation.PlanAdapted
         };
     }
 
     // ─── PENDING CONFIRMATIONS ──────────────────────────────────────────────
-    public async Task<List<PendingConfirmationResponse>> GetPendingConfirmationsAsync(string userId, CancellationToken ct = default)
+    public async Task<List<PendingConfirmationResponse>> GetPendingConfirmationsAsync(Guid internalUserId, CancellationToken ct = default)
     {
-        var list = await _context.PendingConfirmations
-            .Where(p => p.UserId == userId && p.Status == "pending")
-            .ToListAsync(ct);
-
-        var responses = new List<PendingConfirmationResponse>();
-        foreach (var p in list)
-        {
-            var day = await _context.TrainingDays.FirstOrDefaultAsync(d => d.Id == p.TrainingDayId, ct);
-            if (day != null)
-            {
-                responses.Add(new PendingConfirmationResponse
+        // Single joined query + direct DTO projection — avoids the previous
+        // N+1 (one TrainingDays round-trip per pending confirmation).
+        var responses = await _context.PendingConfirmations
+            .AsNoTracking()
+            .Where(p => p.InternalUserId == internalUserId && p.Status == "pending")
+            .Join(
+                _context.TrainingDays.AsNoTracking(),
+                p => p.TrainingDayId,
+                d => d.Id,
+                (p, d) => new PendingConfirmationResponse
                 {
                     PendingConfirmationId = p.Id,
                     TrainingDayId = p.TrainingDayId,
-                    Date = day.Date,
-                    DayType = day.DayType,
-                    Title = day.Title,
-                    PlannedDistanceKm = day.PlannedDistanceKm,
-                    PlannedDurationMin = day.PlannedDurationMin
-                });
-            }
-        }
+                    Date = d.Date,
+                    DayType = d.DayType,
+                    Title = d.Title,
+                    PlannedDistanceKm = d.PlannedDistanceKm,
+                    PlannedDurationMin = d.PlannedDurationMin
+                })
+            .ToListAsync(ct);
 
         return responses;
     }
 
-    public async Task<ResolvePendingConfirmationResponse> ResolvePendingConfirmationAsync(string userId, ResolvePendingConfirmationRequest request, CancellationToken ct = default)
+    public async Task<ResolvePendingConfirmationResponse> ResolvePendingConfirmationAsync(Guid internalUserId, ResolvePendingConfirmationRequest request, CancellationToken ct = default)
     {
         var p = await _context.PendingConfirmations
-            .FirstOrDefaultAsync(pc => pc.Id == request.PendingConfirmationId && pc.UserId == userId, ct);
+            .FirstOrDefaultAsync(pc => pc.Id == request.PendingConfirmationId && pc.InternalUserId == internalUserId, ct);
 
         if (p == null)
         {
-            throw new ArgumentException("Pending confirmation not found.");
+            throw new NotFoundAppException("Pending confirmation not found.");
         }
 
         p.Status = "resolved";
         p.ResolvedAt = DateTime.UtcNow;
 
+        var wasCompleted = request.Resolution.Equals("completed", StringComparison.OrdinalIgnoreCase);
+
         var day = await _context.TrainingDays.FirstOrDefaultAsync(d => d.Id == p.TrainingDayId, ct);
         if (day != null)
         {
-            if (request.Resolution.Equals("completed", StringComparison.OrdinalIgnoreCase))
+            if (wasCompleted)
             {
                 day.Status = TrainingDayStatus.Completed;
                 day.ActualDistanceKm = request.ActualDistanceKm ?? day.PlannedDistanceKm;
@@ -444,7 +511,7 @@ public class QueryAndMutationServices :
                 var log = new WorkoutLog
                 {
                     Id = Guid.NewGuid(),
-                    UserId = userId,
+                    InternalUserId = internalUserId,
                     PlanId = day.PlanId,
                     TrainingDayId = day.Id,
                     Result = "as_planned",
@@ -464,39 +531,58 @@ public class QueryAndMutationServices :
             }
         }
 
+        // Ask the adaptation engine what to do. Phase 1: always NoChange —
+        // this never reschedules or mutates future training days.
+        var adaptation = await _adaptationEngine.EvaluatePendingConfirmationAsync(
+            p.PlanId, p.TrainingDayId, wasCompleted, ct);
+
         await _context.SaveChangesAsync(ct);
 
         return new ResolvePendingConfirmationResponse
         {
             PendingConfirmationId = p.Id,
-            Status = "resolved"
+            Status = "resolved",
+            PlanAdapted = adaptation.PlanAdapted
         };
     }
 
     // ─── PROFILE SERVICE ─────────────────────────────────────────────────────
-    public async Task<ProfileOverviewResponse> GetProfileOverviewAsync(string userId, CancellationToken ct = default)
+    public async Task<ProfileOverviewResponse> GetProfileOverviewAsync(Guid internalUserId, CancellationToken ct = default)
     {
-        var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        var profile = await _context.UserProfiles
+            .AsNoTracking()
+            .Include(p => p.User)
+            .FirstOrDefaultAsync(p => p.InternalUserId == internalUserId, ct);
+
+        var activePlan = await _context.TrainingPlans
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.InternalUserId == internalUserId && p.Status == TrainingPlanStatus.Active, ct);
+
         if (profile == null)
         {
-            // Return defaults if profile not created yet
             return new ProfileOverviewResponse
             {
                 Name = "Runner",
-                Email = "runner@example.com",
+                Email = string.Empty,
                 Unit = DistanceUnit.Km,
-                RunningBackground = RunningBackground.NewToRunning,
+                RunningBackground = activePlan?.Level ?? RunningBackground.NewToRunning,
                 ActivePlanStats = null
             };
         }
 
-        var activePlan = await _context.TrainingPlans
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.Status == TrainingPlanStatus.Active, ct);
+        var name  = profile.User?.DisplayName ?? string.Empty;
+        var email = profile.User?.Email       ?? string.Empty;
+
+        // RunningBackground is no longer stored on UserProfile after Migration 1.
+        // Read it from the active plan snapshot; use NewToRunning as default when
+        // no plan exists.
+        var runningBackground = activePlan?.Level ?? RunningBackground.NewToRunning;
 
         ProfilePlanStatsDto? stats = null;
         if (activePlan != null)
         {
             var planDays = await _context.TrainingDays
+                .AsNoTracking()
                 .Where(d => d.PlanId == activePlan.Id)
                 .ToListAsync(ct);
 
@@ -510,8 +596,8 @@ public class QueryAndMutationServices :
             stats = new ProfilePlanStatsDto
             {
                 PlanName = planName,
-                GoalType = activePlan.GoalType.ToString().ToLower(),
-                GoalDistance = activePlan.GoalDistance.ToString().ToLower(),
+                GoalType = EnumSnakeCase.ToSnakeCase(activePlan.GoalType),
+                GoalDistance = EnumSnakeCase.ToSnakeCase(activePlan.GoalDistance),
                 CompletedRunsCount = completedRuns,
                 TotalPlannedRunsCount = totalRuns,
                 TotalCompletedDistance = completedDist,
@@ -521,10 +607,10 @@ public class QueryAndMutationServices :
 
         return new ProfileOverviewResponse
         {
-            Name = profile.Name,
-            Email = profile.Email,
+            Name = name,
+            Email = email,
             Unit = profile.Unit,
-            RunningBackground = profile.RunningBackground,
+            RunningBackground = runningBackground,
             ActivePlanStats = stats
         };
     }
@@ -555,11 +641,13 @@ public class QueryAndMutationServices :
     private async Task<DailyTipResponse> GetTipForTypeAsync(TrainingDayType type, GoalType goal, RunningBackground level, CancellationToken ct)
     {
         var tip = await _context.DailyTipSets
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.WorkoutType == type && t.GoalType == goal && t.Level == level, ct);
 
         if (tip == null)
         {
             tip = await _context.DailyTipSets
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.WorkoutType == type, ct);
         }
 
@@ -573,13 +661,13 @@ public class QueryAndMutationServices :
             TipKey = tip.TipKey,
             Title = tip.Title,
             Message = tip.Message,
-            WorkoutType = tip.WorkoutType?.ToString().ToLower()
+            WorkoutType = tip.WorkoutType.HasValue ? EnumSnakeCase.ToSnakeCase(tip.WorkoutType.Value) : null
         };
     }
 
     private async Task<DailyTipResponse> GetDefaultTipAsync(CancellationToken ct)
     {
-        var defaultTip = await _context.DailyTipSets.FirstOrDefaultAsync(t => t.WorkoutType == null, ct);
+        var defaultTip = await _context.DailyTipSets.AsNoTracking().FirstOrDefaultAsync(t => t.WorkoutType == null, ct);
         if (defaultTip != null)
         {
             return new DailyTipResponse

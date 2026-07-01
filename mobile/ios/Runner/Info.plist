@@ -45,5 +45,18 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Reversed iOS client ID from GoogleService-Info.plist (iosClientId in firebase_options.dart).
+				     Required for Google Sign-In to redirect back to the app after the browser OAuth flow. -->
+				<string>com.googleusercontent.apps.313897784498-l5k5pjfjfjilrjdv1kt7aigs53j1fpsd</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

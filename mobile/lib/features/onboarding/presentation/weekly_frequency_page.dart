@@ -17,7 +17,7 @@ class WeeklyFrequencyPage extends ConsumerStatefulWidget {
 }
 
 class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
-  int? _selected; // 3 | 4
+  int? _selected;
 
   void _onContinue() {
     if (_selected == null) return;
@@ -25,8 +25,45 @@ class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
     context.push(AppRoutes.runningDays);
   }
 
+  Color _resolveTint(int days) {
+    if (days <= 3) return AppColors.easyRunTint;
+    if (days <= 5) return AppColors.longRunTint;
+    return AppColors.intervalTint;
+  }
+
+  Color _resolveTextColor(int days) {
+    if (days <= 3) return AppColors.primary;
+    if (days <= 5) return Colors.deepPurple;
+    return Colors.red;
+  }
+
+  String _resolveSubtitle(int days) {
+    switch (days) {
+      case 1:
+        return 'Best for very busy schedules.';
+      case 2:
+        return 'Good for maintaining baseline fitness.';
+      case 3:
+        return 'Best for beginners or building habits.';
+      case 4:
+        return 'Recommended if you already run regularly.';
+      case 5:
+        return 'For active runners aiming for higher volume.';
+      case 6:
+        return 'Advanced training frequency.';
+      case 7:
+        return 'Daily running routine.';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final onboardingState = ref.watch(onboardingProvider);
+    final isRace = onboardingState.goalType == 'race';
+    final options = isRace ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7];
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -53,82 +90,56 @@ class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
 
               Text('How many days\nper week?', style: AppTextStyles.h1),
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Phase 1 supports 3 or 4 days per week plans. We suggest starting with 3 days.',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-              ),
               const SizedBox(height: AppSpacing.xl),
 
-              // Option 1: 3 days
-              SelectableCard(
-                isSelected: _selected == 3,
-                onTap: () => setState(() => _selected = 3),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.easyRunTint,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '3',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: options.map((days) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: SelectableCard(
+                          isSelected: _selected == days,
+                          onTap: () => setState(() => _selected = days),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: _resolveTint(days),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '$days',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _resolveTextColor(days),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('$days days per week', style: AppTextStyles.h3),
+                                    Text(_resolveSubtitle(days), style: AppTextStyles.bodyMedium),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('3 days per week', style: AppTextStyles.h3),
-                          Text('Best for beginners or building habits.', style: AppTextStyles.bodyMedium),
-                        ],
-                      ),
-                    ),
-                  ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
+
               const SizedBox(height: AppSpacing.md),
-
-              // Option 2: 4 days
-              SelectableCard(
-                isSelected: _selected == 4,
-                onTap: () => setState(() => _selected = 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.longRunTint,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '4',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('4 days per week', style: AppTextStyles.h3),
-                          Text('Recommended if you already run regularly.', style: AppTextStyles.bodyMedium),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Spacer(),
 
               AppPrimaryButton(
                 label: 'Continue',

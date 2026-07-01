@@ -11,11 +11,12 @@ namespace RunningApp.Api.Controllers;
 public class ProfileController : ControllerBase
 {
     private readonly IProfileService _profileService;
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public ProfileController(IProfileService profileService)
+    public ProfileController(IProfileService profileService, ICurrentUserAccessor currentUser)
     {
         _profileService = profileService;
+        _currentUser = currentUser;
     }
 
     /// <summary>GET /api/v1/profile/overview</summary>
@@ -23,7 +24,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ProfileOverviewResponse), 200)]
     public async Task<IActionResult> GetOverview(CancellationToken ct)
     {
-        var response = await _profileService.GetProfileOverviewAsync(MockUserId, ct);
+        var response = await _profileService.GetProfileOverviewAsync(_currentUser.InternalUserId, ct);
         return Ok(response);
     }
 }

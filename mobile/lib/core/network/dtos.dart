@@ -36,6 +36,12 @@ class GeneratePreviewRequest {
     this.raceName,
     this.raceDate,
     this.targetFinishTimeSeconds,
+    this.preferredDays,
+    this.longRunDay,
+    this.habitPlanType,
+    this.customGoalType,
+    this.customDurationWeeks,
+    this.customTargetTimeSeconds,
   });
 
   final String goalType;
@@ -46,6 +52,12 @@ class GeneratePreviewRequest {
   final String? raceName;
   final String? raceDate;
   final int? targetFinishTimeSeconds;
+  final String? preferredDays;
+  final String? longRunDay;
+  final String? habitPlanType;
+  final String? customGoalType;
+  final int? customDurationWeeks;
+  final int? customTargetTimeSeconds;
 
   Map<String, dynamic> toJson() {
     return {
@@ -57,6 +69,12 @@ class GeneratePreviewRequest {
       if (raceName != null) 'race_name': raceName,
       if (raceDate != null) 'race_date': raceDate,
       if (targetFinishTimeSeconds != null) 'target_finish_time_seconds': targetFinishTimeSeconds,
+      if (preferredDays != null) 'preferred_days': preferredDays,
+      if (longRunDay != null) 'long_run_day': longRunDay,
+      if (habitPlanType != null) 'habit_plan_type': habitPlanType,
+      if (customGoalType != null) 'custom_goal_type': customGoalType,
+      if (customDurationWeeks != null) 'custom_duration_weeks': customDurationWeeks,
+      if (customTargetTimeSeconds != null) 'custom_target_time_seconds': customTargetTimeSeconds,
     };
   }
 }
@@ -597,6 +615,7 @@ class ProfilePlanStatsDto {
 
 class PlanDetailsResponse {
   PlanDetailsResponse({
+    this.hasActivePlan = true,
     required this.planId,
     this.templateId,
     required this.status,
@@ -617,6 +636,7 @@ class PlanDetailsResponse {
     required this.weeks,
   });
 
+  final bool hasActivePlan;
   final String planId;
   final String? templateId;
   final String status;
@@ -638,6 +658,7 @@ class PlanDetailsResponse {
 
   factory PlanDetailsResponse.fromJson(Map<String, dynamic> json) {
     return PlanDetailsResponse(
+      hasActivePlan: json['has_active_plan'] ?? true,
       planId: json['plan_id'] ?? '',
       templateId: json['template_id'],
       status: json['status'] ?? '',

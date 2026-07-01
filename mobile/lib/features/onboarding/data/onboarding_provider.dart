@@ -110,6 +110,17 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   }
 
   Future<GeneratePreviewResponse> generatePreview() async {
+    // Convert selectedRunningDays (full names like "Monday") to abbreviations
+    // the backend expects ("Mon", "Tue", etc.). If empty, the backend will
+    // generate sensible defaults based on daysPerWeek.
+    String? preferredDays;
+    if (state.selectedRunningDays.isNotEmpty) {
+      final abbreviated = state.selectedRunningDays.map((day) {
+        return day.length >= 3 ? day.substring(0, 3) : day;
+      }).toList();
+      preferredDays = abbreviated.join(',');
+    }
+
     final request = GeneratePreviewRequest(
       goalType: state.goalType,
       goalDistance: state.goalDistance,
@@ -119,6 +130,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       raceName: state.raceName,
       raceDate: state.raceDate,
       targetFinishTimeSeconds: state.targetFinishTimeSeconds,
+      preferredDays: preferredDays,
+      longRunDay: state.longRunDay,
+      customGoalType: state.customGoalType,
     );
     final response = await _planRepository.generatePreview(request);
     state = state.copyWith(previewResponse: response);

@@ -25,12 +25,31 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool _isSubmitting = false;
   DateTime? _selectedDate;
   final Map<String, DayStatus> _localDayStates = {};
+  // Optional, user-entered actual distance — analytics/history metadata only.
+  // Never read by adaptive logic, future workout calculation, or regeneration.
+  final Map<String, double?> _localActualDistances = {};
   bool _showCompletionBanner = false;
+
+  /// Validates the optional distance input. Returns null when the value is
+  /// empty (the field is optional) or valid; otherwise an error message.
+  String? _validateDistanceInput(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final parsed = double.tryParse(trimmed);
+    if (parsed == null) return 'Enter a valid number';
+    if (parsed <= 0) return 'Must be greater than 0';
+    if (parsed > 999) return 'Maximum is 999 km';
+    return null;
+  }
 
   // ── Completion sheet ────────────────────────────────────────────────────
 
-  void _showCompletionSheet(String dayId) {
+  void _showCompletionSheet(TrainingDayResponse workout) {
+    final dayId = workout.dayId;
     String selectedOption = 'as_planned';
+    final distanceController = TextEditingController();
+    String? distanceError;
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -110,7 +129,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 subtitle: 'Everything went as expected',
                 value: 'as_planned',
                 groupValue: selectedOption,
-                onTap: () => setModal(() => selectedOption = 'as_planned'),
+                onTap: () => setModal(() {
+                  selectedOption = 'as_planned';
+                  distanceError = null;
+                }),
               ),
               const SizedBox(height: 12),
               _CompletionOptionRow(
@@ -118,7 +140,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 subtitle: 'I couldn’t complete the whole run',
                 value: 'shorter',
                 groupValue: selectedOption,
-                onTap: () => setModal(() => selectedOption = 'shorter'),
+                onTap: () => setModal(() {
+                  selectedOption = 'shorter';
+                  distanceError = null;
+                }),
               ),
               const SizedBox(height: 12),
               _CompletionOptionRow(
@@ -126,7 +151,37 @@ class _HomePageState extends ConsumerState<HomePage> {
                 subtitle: 'I did more than planned',
                 value: 'exceeded',
                 groupValue: selectedOption,
-                onTap: () => setModal(() => selectedOption = 'exceeded'),
+                onTap: () => setModal(() {
+                  selectedOption = 'exceeded';
+                  distanceError = null;
+                }),
+              ),
+
+              // Optional actual-distance input — analytics/history only,
+              // never affects the plan. Smoothly grows the sheet instead of
+              // rebuilding it abruptly.
+              AnimatedSize(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                child: selectedOption == 'shorter' || selectedOption == 'exceeded'
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: _OptionalDistanceField(
+                          label: selectedOption == 'shorter'
+                              ? 'How many km did you complete?'
+                              : 'How many km did you run?',
+                          helperText: selectedOption == 'shorter'
+                              ? 'This is only used to keep your activity history accurate.'
+                              : "This won't change your future plan. It only keeps your statistics accurate.",
+                          controller: distanceController,
+                          errorText: distanceError,
+                          onChanged: (value) => setModal(() {
+                            distanceError = _validateDistanceInput(value);
+                          }),
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
               const SizedBox(height: 20),
 
@@ -142,14 +197,58 @@ class _HomePageState extends ConsumerState<HomePage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Mark as completed locally and show success banner
-                    setState(() {
-                      _localDayStates[dayId] = DayStatus.completed;
-                      _showCompletionBanner = true;
-                    });
-                    Navigator.pop(ctx);
-                  },
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final isDistanceOption = selectedOption == 'shorter' || selectedOption == 'exceeded';
+                          if (isDistanceOption) {
+                            final error = _validateDistanceInput(distanceController.text);
+                            if (error != null) {
+                              setModal(() => distanceError = error);
+                              return;
+                            }
+                          }
+
+                          // Optional, analytics-only metadata. Empty input
+                          // simply means "unknown" — it never blocks saving
+                          // and never feeds into plan adaptation or future
+                          // workouts. Falls back to the planned values, same
+                          // convention used elsewhere (e.g. calendar logging).
+                          final trimmed = distanceController.text.trim();
+                          final actualDistance =
+                              isDistanceOption && trimmed.isNotEmpty ? double.tryParse(trimmed) : null;
+                          final distanceToSave = actualDistance ?? workout.plannedDistanceKm;
+
+                          setModal(() => isSaving = true);
+                          try {
+                            final repo = ref.read(homeRepositoryProvider);
+                            await repo.completeWorkout(
+                              dayId,
+                              distanceToSave,
+                              workout.plannedDurationMin,
+                              null,
+                            );
+
+                            ref.invalidate(homeDataProvider);
+                            ref.invalidate(calendarDataProvider);
+                            ref.invalidate(profileOverviewProvider);
+                            ref.invalidate(activePlanDetailsProvider);
+
+                            setState(() {
+                              _localDayStates[dayId] = DayStatus.completed;
+                              _localActualDistances[dayId] = actualDistance;
+                              _showCompletionBanner = true;
+                            });
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          } catch (e) {
+                            setModal(() => isSaving = false);
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.ctaDark,
                     foregroundColor: Colors.white,
@@ -158,26 +257,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Save Activity',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        )
+                      : const Text(
+                          'Save Activity',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
+    ).then((_) => distanceController.dispose());
   }
 
   // ── Not Today sheet ─────────────────────────────────────────────────────
 
   void _showNotTodayReasonSheet(String dayId) {
     String selectedReason = 'Too tired';
+    bool isSaving = false;
     final reasons = [
       'Too tired',
       'Too busy',
@@ -317,7 +423,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'For now this is only saved locally. Later, the adaptive engine can use this to adjust your schedule.',
+                      "We'll keep this on file. Your upcoming workouts stay exactly as planned.",
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -356,12 +462,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _localDayStates[dayId] = DayStatus.notToday;
-                          });
-                          Navigator.pop(ctx);
-                        },
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                setModal(() => isSaving = true);
+                                try {
+                                  final repo = ref.read(homeRepositoryProvider);
+                                  final decision = await repo.createNotTodayDecision(dayId, selectedReason);
+                                  await repo.confirmNotTodayDecision(decision.decisionId);
+
+                                  ref.invalidate(homeDataProvider);
+                                  ref.invalidate(calendarDataProvider);
+                                  ref.invalidate(profileOverviewProvider);
+                                  ref.invalidate(activePlanDetailsProvider);
+
+                                  setState(() {
+                                    _localDayStates[dayId] = DayStatus.notToday;
+                                  });
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                } catch (e) {
+                                  setModal(() => isSaving = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(content: Text(e.toString())),
+                                    );
+                                  }
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.ctaDark,
                           foregroundColor: Colors.white,
@@ -370,10 +497,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Save',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : const Text(
+                                'Save',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                              ),
                       ),
                     ),
                   ),
@@ -422,9 +555,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeDataProvider);
-    // Read profile name with Sandra fallback
     final profileAsync = ref.watch(profileOverviewProvider);
-    final userName = profileAsync.valueOrNull?.name ?? 'Sandra';
+    final userName = profileAsync.valueOrNull?.name ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -529,7 +661,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           dayStatus: dayStatus,
                           onTap: () => context.push(
                               '/training-day/${selectedWorkout.dayId}'),
-                          onComplete: () => _showCompletionSheet(selectedWorkout.dayId),
+                          onComplete: () => _showCompletionSheet(selectedWorkout),
                           onNotToday: () => _showNotTodayReasonSheet(selectedWorkout.dayId),
                           onUndoComplete: () {
                             setState(() {
@@ -1268,41 +1400,53 @@ class _RestDayCard extends StatelessWidget {
           ),
           const Spacer(),
           if (tip != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Text(
-                    'REST DAY TIP',
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontFamily: 'GeneralSans',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: amberColor,
-                      letterSpacing: 0.5,
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final totalWidth = constraints.maxWidth;
+                final isNarrow = totalWidth < 280;
+                final isVeryNarrow = totalWidth < 240;
+
+                final paddingH = isVeryNarrow ? 8.0 : (isNarrow ? 10.0 : 14.0);
+                final labelSize = isNarrow ? 9.0 : 10.0;
+                final descSize = isVeryNarrow ? 10.0 : (isNarrow ? 11.0 : 12.0);
+
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      tip!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'GeneralSans',
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                  child: Row(
+                    children: [
+                      Text(
+                        'REST DAY TIP',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontFamily: 'GeneralSans',
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w700,
+                          color: amberColor,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          tip!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'GeneralSans',
+                            fontSize: descSize,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ],
@@ -1654,11 +1798,11 @@ class _DailyTipCard extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontFamily: 'ClashGrotesk',
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
+                fontFamily: 'GeneralSans',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
-                height: 1.3,
+                height: 1.4,
               ),
             ),
           ),
@@ -1745,6 +1889,100 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Optional actual-distance input shown under "Shorter" / "Exceeded".
+// Analytics/history metadata only — never read by adaptive logic.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OptionalDistanceField extends StatelessWidget {
+  const _OptionalDistanceField({
+    required this.label,
+    required this.helperText,
+    required this.controller,
+    required this.errorText,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String helperText;
+  final TextEditingController controller;
+  final String? errorText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(14);
+
+    OutlineInputBorder borderWith(Color color, [double width = 1]) {
+      return OutlineInputBorder(borderRadius: borderRadius, borderSide: BorderSide(color: color, width: width));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '(Optional)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: controller,
+          onChanged: onChanged,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+          decoration: InputDecoration(
+            hintText: 'e.g. 3.2',
+            hintStyle: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w400),
+            suffixText: 'km',
+            suffixStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            helperText: errorText == null ? helperText : null,
+            helperStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.3),
+            helperMaxLines: 2,
+            errorText: errorText,
+            errorStyle: const TextStyle(fontSize: 12, color: AppColors.missed),
+            border: borderWith(AppColors.border),
+            enabledBorder: borderWith(AppColors.border),
+            focusedBorder: borderWith(AppColors.primary, 1.5),
+            errorBorder: borderWith(AppColors.missed),
+            focusedErrorBorder: borderWith(AppColors.missed, 1.5),
+          ),
+        ),
+      ],
     );
   }
 }

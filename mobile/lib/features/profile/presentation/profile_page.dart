@@ -77,8 +77,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  String _initialsFor(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final overviewAsync = ref.watch(profileOverviewProvider);
+
     return Scaffold(
       backgroundColor: Colors.white, // White background for the entire page
       appBar: AppBar(
@@ -116,112 +125,231 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
+      body: overviewAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (err, _) => _ProfileErrorState(
+          message: err.toString(),
+          onRetry: () => ref.invalidate(profileOverviewProvider),
+        ),
+        data: (profile) {
+          final planDetailsAsync = ref.watch(activePlanDetailsProvider);
+          final planDetails = planDetailsAsync.valueOrNull;
+          final stats = profile.activePlanStats;
+          final hasActivePlan = stats != null && (planDetails?.hasActivePlan ?? true);
 
-            // Profile Identity Section
-            const _ProfileAvatar(initials: 'JD'),
-            const SizedBox(height: 16),
-            const Text(
-              'John Doe',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Professional Member',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async {
+              ref.invalidate(profileOverviewProvider);
+              ref.invalidate(activePlanDetailsProvider);
+              await ref.read(profileOverviewProvider.future);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
 
-            // Stats row
-            const _ProfileStatsRow(runs: '45', distanceKm: '187'),
-            const SizedBox(height: 32),
-
-            // Active Plan Section Title
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Active Plan',
-                style: AppTextStyles.h3.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Active Plan Card
-            _ActivePlanCard(
-              planName: '21K Half Marathon',
-              weekText: 'Week 6 of 12',
-              progressPercent: 0.5,
-              onViewPlan: () => context.push(AppRoutes.planDetails),
-              onStopPlan: () => _showCancelPlanDialog(context, '21K Half Marathon'),
-            ),
-            const SizedBox(height: 32),
-
-            // Recent Badges Title Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recent Badges',
-                  style: AppTextStyles.h3.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {}, // View All
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                  // Profile Identity Section
+                  _ProfileAvatar(initials: _initialsFor(profile.name)),
+                  const SizedBox(height: 16),
+                  Text(
+                    profile.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 4),
+                  Text(
+                    profile.email,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-            // Badge cards side by side
-            Row(
-              children: const [
-                Expanded(
-                  child: _BadgeCard(
-                    icon: Icons.bolt_rounded,
-                    iconColor: Color(0xFFD97706),
-                    iconBgColor: Color(0xFFFEF3C7),
-                    title: 'Fast Paced',
-                    subtitle: 'Avg pace < 5:00',
+                  // Stats row
+                  _ProfileStatsRow(
+                    runs: '${stats?.completedRunsCount ?? 0}',
+                    distanceKm: (stats?.totalCompletedDistance ?? 0).toStringAsFixed(0),
                   ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _BadgeCard(
-                    icon: Icons.water_drop_rounded,
-                    iconColor: Color(0xFF2563EB),
-                    iconBgColor: Color(0xFFDBEAFE),
-                    title: 'Rain Runner',
-                    subtitle: 'Wet weather run',
+                  const SizedBox(height: 32),
+
+                  // Active Plan Section Title
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Active Plan',
+                      style: AppTextStyles.h3.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+
+                  // Active Plan Card (or a prompt to start one)
+                  if (hasActivePlan)
+                    _ActivePlanCard(
+                      planName: stats.planName,
+                      weekText: planDetails != null
+                          ? '${planDetails.completedWeeksCount} of ${planDetails.totalWeeks} weeks'
+                          : '—',
+                      progressPercent: (planDetails != null && planDetails.totalWeeks > 0)
+                          ? (planDetails.completedWeeksCount / planDetails.totalWeeks).clamp(0.0, 1.0)
+                          : 0.0,
+                      onViewPlan: () => context.push(AppRoutes.planDetails),
+                      onStopPlan: () => _showCancelPlanDialog(context, stats.planName),
+                    )
+                  else
+                    _NoActivePlanCard(onCreatePlan: () => context.go(AppRoutes.goalSelection)),
+                  const SizedBox(height: 32),
+
+                  // Recent Badges Title Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Badges',
+                        style: AppTextStyles.h3.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {}, // View All
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Badge cards side by side
+                  // Note: badges are not backed by any API yet — kept as
+                  // illustrative placeholders until a backend feature exists.
+                  Row(
+                    children: const [
+                      Expanded(
+                        child: _BadgeCard(
+                          icon: Icons.bolt_rounded,
+                          iconColor: Color(0xFFD97706),
+                          iconBgColor: Color(0xFFFEF3C7),
+                          title: 'Fast Paced',
+                          subtitle: 'Avg pace < 5:00',
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _BadgeCard(
+                          icon: Icons.water_drop_rounded,
+                          iconColor: Color(0xFF2563EB),
+                          iconBgColor: Color(0xFFDBEAFE),
+                          title: 'Rain Runner',
+                          subtitle: 'Wet weather run',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-            const SizedBox(height: 40),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _NoActivePlanCard extends StatelessWidget {
+  const _NoActivePlanCard({required this.onCreatePlan});
+  final VoidCallback onCreatePlan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'No active plan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "You don't have a running plan yet. Create one to start tracking your progress.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton(
+              onPressed: onCreatePlan,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.ctaDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                elevation: 0,
+              ),
+              child: const Text('Create a Plan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileErrorState extends StatelessWidget {
+  const _ProfileErrorState({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 40, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.ctaDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),

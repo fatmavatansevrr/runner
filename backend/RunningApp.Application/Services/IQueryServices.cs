@@ -10,16 +10,16 @@ namespace RunningApp.Application.Services;
 
 public interface ICalendarQueryService
 {
-    Task<List<TrainingDayResponse>> GetCalendarAsync(string userId, string month, CancellationToken ct = default);
+    Task<List<TrainingDayResponse>> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default);
 }
 
 public interface IPendingConfirmationService
 {
-    Task<List<PendingConfirmationResponse>> GetPendingConfirmationsAsync(string userId, CancellationToken ct = default);
-    Task<ResolvePendingConfirmationResponse> ResolvePendingConfirmationAsync(string userId, ResolvePendingConfirmationRequest request, CancellationToken ct = default);
+    Task<List<PendingConfirmationResponse>> GetPendingConfirmationsAsync(Guid internalUserId, CancellationToken ct = default);
+    Task<ResolvePendingConfirmationResponse> ResolvePendingConfirmationAsync(Guid internalUserId, ResolvePendingConfirmationRequest request, CancellationToken ct = default);
 }
 
 public interface IProfileService
 {
-    Task<ProfileOverviewResponse> GetProfileOverviewAsync(string userId, CancellationToken ct = default);
+    Task<ProfileOverviewResponse> GetProfileOverviewAsync(Guid internalUserId, CancellationToken ct = default);
 }

@@ -78,10 +78,8 @@ class _PlanGenerationPageState extends ConsumerState<PlanGenerationPage>
     _tickStep(3, 1400);
 
     try {
-      // Bypassed API call for development visual testing
-      await Future.delayed(const Duration(seconds: 2));
+      await ref.read(onboardingProvider.notifier).generatePreview();
 
-      // Ensure final step is marked complete before navigating
       if (mounted) {
         setState(() => _completedSteps = 4);
         await Future.delayed(const Duration(milliseconds: 300));

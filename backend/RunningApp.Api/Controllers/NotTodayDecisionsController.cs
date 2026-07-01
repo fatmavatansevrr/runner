@@ -12,11 +12,12 @@ namespace RunningApp.Api.Controllers;
 public class NotTodayDecisionsController : ControllerBase
 {
     private readonly INotTodayService _notTodayService;
-    private const string MockUserId = "mock-user-001";
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public NotTodayDecisionsController(INotTodayService notTodayService)
+    public NotTodayDecisionsController(INotTodayService notTodayService, ICurrentUserAccessor currentUser)
     {
         _notTodayService = notTodayService;
+        _currentUser = currentUser;
     }
 
     /// <summary>POST /api/v1/not-today-decisions/{decisionId}/confirm</summary>
@@ -24,7 +25,7 @@ public class NotTodayDecisionsController : ControllerBase
     [ProducesResponseType(typeof(ConfirmNotTodayDecisionResponse), 200)]
     public async Task<IActionResult> Confirm(Guid decisionId, [FromBody] ConfirmNotTodayDecisionRequest request, CancellationToken ct)
     {
-        var response = await _notTodayService.ConfirmNotTodayDecisionAsync(MockUserId, decisionId, request, ct);
+        var response = await _notTodayService.ConfirmNotTodayDecisionAsync(_currentUser.InternalUserId, decisionId, request, ct);
         return Ok(response);
     }
 }
