@@ -1,0 +1,34 @@
+{
+  "auditId": "WAVE1-SCHEMA-001",
+  "generatedAtUtc": "2026-07-09T09:30:00Z",
+  "readOnly": true,
+  "scope": ["D1", "D6", "D8", "D10", "D12"],
+  "coreArchitecturalQuestion": "A reusable Process A artifact must contain stable planning knowledge; must not contain user-specific generated dosage, week-specific session construction, values derivable deterministically from another canonical field, duplicate ordering already represented by collection order or slot index, or Process B output masquerading as reusable catalog knowledge.",
+  "completeFieldUsageTrace": [
+    { "field": "RUN_LAYOUT_4D.sequenceOrder", "declaredIn": "LayoutSlotDefinition.SequenceOrder, run-layout.schema.json", "writtenBy": "catalog authors", "readBy": ["RunLayoutValidator.Validate"], "validationUse": "RL_SEQUENCE_ORDER_NOT_CONTIGUOUS (shape only: unique + contiguous 1..N)", "bundleUse": "republished verbatim, no bundle-assembly logic", "runtimeBehaviorUse": "none found", "auditOnlyUse": "AUD-017" },
+    { "field": "EASY_STANDARD.components", "declaredIn": "WorkoutDefinition.Components, workout-definition.schema.json", "writtenBy": "catalog authors", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found", "auditOnlyUse": "AUD-207" },
+    { "field": "FARTLEK.components", "declaredIn": "same model/schema", "writtenBy": "catalog authors", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found", "auditOnlyUse": "AUD-231" },
+    { "field": "LONG_RUN_STANDARD.components", "declaredIn": "same model/schema", "writtenBy": "catalog authors", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found", "auditOnlyUse": "AUD-219" },
+    { "field": "THRESHOLD_TEMPO.components", "declaredIn": "same model/schema", "writtenBy": "catalog authors", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found", "auditOnlyUse": "AUD-243" }
+  ],
+  "keyAsymmetryFound": "sequenceOrder is actively validated (shape-only) while components has zero validator coverage of any kind, despite both being schema-required fields on sibling artifact types.",
+  "searchScopeConfirmation": "sequenceOrder, components, workout components, session components, component ordering, warmup, cooldown, repetitions, recovery, main set searched across plan-catalog/ in full; beyond model/schema/validator/test/audit locations, all remaining matches were catalog JSON data files and Golden Fixture v3 documents (data, not code-level consumers). No Process A CLI command reads/transforms either field beyond generic document operations.",
+  "crossWorkoutComparison": [
+    { "workout": "EASY_STANDARD", "structuralPattern": "continuous (23/23 fixture instances flat)", "legitimateToHaveNoComponentStructure": true, "notes": "generated model never decomposes this key into components; no marathon-specific or embedded-quality structure inferred" },
+    { "workout": "FARTLEK", "structuralPattern": "composite (2/2 fixture instances have components)", "legitimateToHaveNoComponentStructure": false, "notes": "open question is granularity (generic MAIN_SET vs FARTLEK-specific label), not whether structure exists" },
+    { "workout": "LONG_RUN_STANDARD", "structuralPattern": "continuous (10/10 fixture instances flat)", "legitimateToHaveNoComponentStructure": true, "notes": "no marathon-specific long-run structure inferred for this 10K pilot; LONG_RUN_PROGRESSION is a distinct non-substitutable key, not evidence for this key" },
+    { "workout": "THRESHOLD_TEMPO", "structuralPattern": "composite, continuous-format only (2/2 fixture instances have components, zero repetitions field)", "legitimateToHaveNoComponentStructure": false, "notes": "cruise-repeat/interval format realized as a separate workout key (TEN_K_REPETITIONS); distinction should likely live at WorkoutDefinition key level, not as a shape change to THRESHOLD_TEMPO; no concrete repetition count or duration assigned" }
+  ],
+  "noSingleGenericDecisionApplied": true,
+  "structuralGroupingCorroboration": "The continuous/composite split (EASY_STANDARD+LONG_RUN_STANDARD vs FARTLEK+THRESHOLD_TEMPO) is independently corroborated by the pre-existing CANONICAL_CONFIRMED AllowedDistanceAccountingModes field (EXACT_SESSION_TOTAL vs ESTIMATED_SESSION_TOTAL).",
+  "goldenFixtureBoundarySummary": {
+    "genericComponentTypeValues": "structural evidence, reusable catalog knowledge (WARM_UP, COOL_DOWN, STRIDES)",
+    "workoutSpecificComponentTypeValues": "derived fixture output, not promoted to catalog vocabulary (FARTLEK_MAIN_SET, TEMPO_MAIN_SET, INTERVAL_MAIN_SET)",
+    "numericComponentFields": "user-specific generated value, never copied into reusable definitions (repetitions, durationSeconds, distanceKm, pace bounds)",
+    "componentsPresencePattern": "structural evidence only -- tells whether a components concept applies, never what values it should contain"
+  },
+  "validationConfirmations": {
+    "build": "0 errors", "test": "260/260 passing (unchanged)", "activeRootBlockers": "13 decisions / 9 artifacts (unchanged)", "activeBundleHash": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b (unchanged)"
+  },
+  "finalStatus": "Schema-necessity usage trace and cross-workout comparison complete for all five blockers. No field classification changed; no schema, model, validator, or catalog file modified."
+}

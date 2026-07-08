@@ -1,0 +1,162 @@
+{
+  "generatedAtUtc": "2026-07-08T07:46:23.6763289Z",
+  "overallStatus": "PASSED",
+  "checks": [
+    {
+      "check": "All four canonical fixture files exist",
+      "expected": "true",
+      "actual": "True",
+      "status": "PASS"
+    },
+    {
+      "check": "DecisionTrace schemaVersion",
+      "expected": "3",
+      "actual": "3",
+      "status": "PASS"
+    },
+    {
+      "check": "PlanDocument schemaVersion",
+      "expected": "3",
+      "actual": "3",
+      "status": "PASS"
+    },
+    {
+      "check": "PlanDocument fixtureRevision",
+      "expected": "3",
+      "actual": "3",
+      "status": "PASS"
+    },
+    {
+      "check": "Both fixtures use fixtureKey GOLDEN_10K_INTERMEDIATE_4D_12W",
+      "expected": "GOLDEN_10K_INTERMEDIATE_4D_12W / GOLDEN_10K_INTERMEDIATE_4D_12W",
+      "actual": "GOLDEN_10K_INTERMEDIATE_4D_12W / GOLDEN_10K_INTERMEDIATE_4D_12W",
+      "status": "PASS"
+    },
+    {
+      "check": "progression_rules_v2.yaml schemaVersion",
+      "expected": "2",
+      "actual": "2",
+      "status": "PASS"
+    },
+    {
+      "check": "PlanDocument contentHash verifies",
+      "expected": "7b2e92dce611ae27751524ee41cb8c1b6b2b153eea7a125edbf5ab60eb3bc735",
+      "actual": "7b2e92dce611ae27751524ee41cb8c1b6b2b153eea7a125edbf5ab60eb3bc735",
+      "status": "PASS"
+    },
+    {
+      "check": "Week 1 boundary",
+      "expected": "2026-08-03 -\u003E 2026-08-09",
+      "actual": "2026-08-03 -\u003E 2026-08-09",
+      "status": "PASS"
+    },
+    {
+      "check": "Week 12 boundary",
+      "expected": "2026-10-19 -\u003E 2026-10-25",
+      "actual": "2026-10-19 -\u003E 2026-10-25",
+      "status": "PASS"
+    },
+    {
+      "check": "horizon.raceWeekStartDate",
+      "expected": "2026-10-19",
+      "actual": "2026-10-19",
+      "status": "PASS"
+    },
+    {
+      "check": "Every week spans seven calendar days, Monday-\u003ESunday",
+      "expected": "true",
+      "actual": "True",
+      "status": "PASS"
+    },
+    {
+      "check": "Taper training distribution",
+      "expected": "8 \u002B 8 \u002B 4 km",
+      "actual": "8.0 \u002B 8.0 \u002B 4.0 km",
+      "status": "PASS"
+    },
+    {
+      "check": "Week 12 total (training 20 \u002B race 10 = 30 km)",
+      "expected": "30",
+      "actual": "30.0",
+      "status": "PASS"
+    },
+    {
+      "check": "Race day loadClassification",
+      "expected": "RACE",
+      "actual": "RACE",
+      "status": "PASS"
+    },
+    {
+      "check": "Race day stimulusAccountingScope",
+      "expected": "RACE_EXCLUDED_FROM_TRAINING_HARD_COUNT",
+      "actual": "RACE_EXCLUDED_FROM_TRAINING_HARD_COUNT",
+      "status": "PASS"
+    },
+    {
+      "check": "PHASE_TRANSITION_DELOAD present",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "PLANNED_SINGLE_SESSION_SPIKE_CHECK present",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "FINAL_VALIDATION present",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "WARNING_POLICY_V2 present",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "ESTIMATED_THRESHOLD_EFFORT present",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "Obsolete CURRENT_LACTATE_THRESHOLD_EFFORT absent from JSON fixtures",
+      "expected": "0 occurrences",
+      "actual": "0 occurrences",
+      "status": "PASS"
+    },
+    {
+      "check": "\u0027Warning Policy\u0027 pipeline stage documented",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "\u0027Warning Presentation\u0027 pipeline stage documented",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "\u0027Provisional Peak\u0027 pipeline stage documented",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "\u0027Weekly Volume Curve\u0027 pipeline stage documented",
+      "expected": "present",
+      "actual": "present",
+      "status": "PASS"
+    },
+    {
+      "check": "PrescriptionMode and DistanceAccountingMode vocabularies do not overlap",
+      "expected": "no shared values",
+      "actual": "no shared values",
+      "status": "PASS"
+    }
+  ]
+}

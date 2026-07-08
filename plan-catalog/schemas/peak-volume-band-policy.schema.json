@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PeakVolumeBandPolicy",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "PEAK_VOLUME_BAND_POLICY" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "distanceFamily": { "type": "string", "enum": ["FIVE_K", "TEN_K", "HALF_MARATHON", "MARATHON"] },
+          "experience": { "type": "string", "enum": ["NEW", "INTERMEDIATE", "ADVANCED", "EXPERIENCED"] },
+          "runsPerWeek": { "type": "integer", "minimum": 1 },
+          "minimumKm": { "type": "number", "minimum": 0 },
+          "maximumKm": { "type": "number", "minimum": 0 }
+        },
+        "required": ["distanceFamily", "experience", "runsPerWeek", "minimumKm", "maximumKm"]
+      }
+    }
+  },
+  "required": ["metadata", "entries"]
+}

@@ -1,0 +1,33 @@
+{
+  "auditId": "RELEASE-STATUS-001",
+  "generatedAtUtc": "2026-07-07T17:30:00Z",
+  "expectedChain": {
+    "0.2.0-pilot": "SUPERSEDED by 0.3.0-pilot",
+    "0.3.0-pilot": "SUPERSEDED by 0.4.0-pilot",
+    "0.4.0-pilot": "active"
+  },
+  "actualLedgerState": [
+    { "releaseVersion": "1.0.0", "status": "SUPERSEDED", "supersededByVersion": "0.1.0-pilot" },
+    { "releaseVersion": "0.1.0-pilot", "status": "SUPERSEDED", "supersededByVersion": "0.2.0-pilot" },
+    { "releaseVersion": "0.2.0-pilot", "status": "SUPERSEDED", "supersededByVersion": "0.3.0-pilot" },
+    { "releaseVersion": "0.3.0-pilot", "status": "SUPERSEDED", "supersededByVersion": "0.4.0-pilot" },
+    { "releaseVersion": "0.4.0-pilot", "status": "ACTIVE (no ledger entry)", "supersededByVersion": null }
+  ],
+  "verdict": "NO_OP_ALREADY_CORRECT",
+  "ledgerMutated": false,
+  "entriesAddedOrModified": 0,
+  "chainIntegrity": {
+    "acyclic": true,
+    "ordered": true,
+    "noDanglingSupersededByTargets": true,
+    "exactlyOneActiveRelease": "0.4.0-pilot"
+  },
+  "verificationCommands": [
+    { "command": "verify-release --version 1.0.0", "result": "PASSED", "supersededWarning": true, "supersededBy": "0.1.0-pilot" },
+    { "command": "verify-release --version 0.1.0-pilot", "result": "PASSED", "supersededWarning": true, "supersededBy": "0.2.0-pilot" },
+    { "command": "verify-release --version 0.2.0-pilot", "result": "PASSED", "supersededWarning": true, "supersededBy": "0.3.0-pilot" },
+    { "command": "verify-release --version 0.3.0-pilot", "result": "PASSED", "supersededWarning": true, "supersededBy": "0.4.0-pilot" },
+    { "command": "verify-release --version 0.4.0-pilot", "result": "PASSED", "supersededWarning": false }
+  ],
+  "finalStatus": "RELEASE_STATUS_CHAIN: NO_OP_ALREADY_CORRECT"
+}

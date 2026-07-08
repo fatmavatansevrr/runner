@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1707;CA2007</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PlanCatalog.Contracts\PlanCatalog.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\PlanCatalog.Core\PlanCatalog.Core.csproj" />
+    <ProjectReference Include="..\..\src\PlanCatalog.Infrastructure\PlanCatalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\PlanCatalog.Cli\PlanCatalog.Cli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\catalog\**\*.json" Link="TestCatalog\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\schemas\**\*.json" Link="TestSchemas\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

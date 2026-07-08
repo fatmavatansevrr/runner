@@ -1,0 +1,98 @@
+{
+  "inventoryId": "REFINV-001",
+  "generatedAtUtc": "2026-07-08T09:15:00Z",
+  "readOnly": true,
+  "method": "Inspected every record in src/PlanCatalog.Core/Models/, src/PlanCatalog.Contracts/References/, src/PlanCatalog.Contracts/Bundles/, src/PlanCatalog.Contracts/Manifests/, every JSON schema in schemas/, every validator in src/PlanCatalog.Core/Validation/, CatalogSourceSnapshot's FindX methods, and CatalogBundleAssembler.",
+  "keyOnlyCrossArtifactReferences": [
+    {
+      "field": "LevelModifierDefinition.EligibleWorkoutKeys",
+      "file": "src/PlanCatalog.Core/Models/LevelModifierDefinition.cs",
+      "line": 17,
+      "type": "IReadOnlySet<string>",
+      "consumedBy": ["CatalogBundleAssembler.Assemble (membership filter, line 61)", "LevelModifierValidator.Validate (existence check only)"],
+      "classification": "ARTIFACT_DEPENDENCY_REQUIRES_VERSION",
+      "rationale": "Directly determines which specific published WorkoutDefinition artifact instances end up in a PublishedTemplateBundle; not an abstract capability/family filter."
+    },
+    {
+      "field": "WorkoutProgressionStageDefinition.WorkoutCandidateKeys",
+      "file": "src/PlanCatalog.Core/Models/WorkoutProgressionStageDefinition.cs",
+      "line": 14,
+      "type": "IReadOnlyList<string>",
+      "consumedBy": ["CatalogBundleAssembler.Assemble (candidate source, line 59)", "WorkoutProgressionValidator.Validate (existence + family-eligibility checks)"],
+      "classification": "ARTIFACT_DEPENDENCY_REQUIRES_VERSION",
+      "rationale": "Directly determines which specific published WorkoutDefinition artifact instances end up in a PublishedTemplateBundle."
+    }
+  ],
+  "resolutionMechanism": {
+    "method": "CatalogSourceSnapshot.FindWorkout(string key, IRetirementLedger? retirementLedger = null)",
+    "file": "src/PlanCatalog.Core/Catalog/CatalogSourceSnapshot.cs",
+    "lines": "42-49",
+    "behavior": "Workouts.Where(key match && not retired).OrderByDescending(Version).FirstOrDefault() -- auto-selects the highest non-retired version for a bare key.",
+    "isolationNote": "The only FindX method on CatalogSourceSnapshot that performs auto-version-selection; every other FindX method takes a VersionedCatalogReference and does an exact match with no auto-selection."
+  },
+  "findXAutoSelectionAudit": [
+    { "method": "FindPlanTemplate(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindRunLayout(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindLevelModifier(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindWorkoutProgression(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindProgressionModifier(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindWorkout(string key, IRetirementLedger?)", "selector": "key-only, OrderByDescending(Version).FirstOrDefault()", "autoSelectsVersion": true },
+    { "method": "FindRuntimeConditionValueRegistry(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindPeakVolumeBandPolicy(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false },
+    { "method": "FindRulePack(VersionedCatalogReference)", "selector": "exact match", "autoSelectsVersion": false }
+  ],
+  "namedFieldsInTaskThatAreNotKeyOnly": [
+    {
+      "taskNamedField": "PlanTemplateDefinition.WorkoutProgressionKey",
+      "actualField": "PlanTemplateDefinition.WorkoutProgression",
+      "actualType": "VersionedCatalogReference",
+      "file": "src/PlanCatalog.Core/Models/PlanTemplateDefinition.cs",
+      "line": 17,
+      "verified": "Already carries documentType+key+version; resolved via FindWorkoutProgression, exact match. Not key-only."
+    },
+    {
+      "taskNamedField": "LevelModifierDefinition.ProgressionModifierKey",
+      "actualField": "LevelModifierDefinition.ProgressionModifier",
+      "actualType": "VersionedCatalogReference",
+      "file": "src/PlanCatalog.Core/Models/LevelModifierDefinition.cs",
+      "line": 19,
+      "verified": "Already carries documentType+key+version; resolved via FindProgressionModifier, exact match. Not key-only."
+    },
+    {
+      "taskNamedField": "RulePack policy/registry references",
+      "actualFields": ["RulePackDefinition.RuntimeConditionValueRegistry", "RulePackDefinition.PeakVolumeBandPolicy", "RulePackDefinition.Policies", "RulePackDefinition.Rules"],
+      "actualType": "VersionedCatalogReference / IReadOnlyList<VersionedCatalogReference>",
+      "file": "src/PlanCatalog.Core/Models/RulePackDefinition.cs",
+      "verified": "All four fields already carry exact versions; resolved via exact-match FindX methods. Not key-only."
+    },
+    {
+      "taskNamedField": "master required-rule fields",
+      "actualField": "PlanTemplateDefinition.RequiredRules",
+      "actualType": "IReadOnlyList<VersionedCatalogReference>",
+      "file": "src/PlanCatalog.Core/Models/PlanTemplateDefinition.cs",
+      "line": 19,
+      "verified": "Already carries exact versions -- not key-only. However flagged separately as Finding 7 in deterministic-graph-prechange-assessment.json: a versioned reference that is never consulted by bundle assembly and can silently disagree with TemplateCombinationDefinition.RulePack's version -- a duplicate-ownership/consistency defect, a different class from Findings 5/6."
+    }
+  ],
+  "nonDependencyIdentifiers": [
+    { "field": "WorkoutProgressionStageDefinition.StageKey", "reason": "Local identifier scoped to the owning progression's own stage list; never resolved against another catalog artifact." },
+    { "field": "WorkoutProgressionStageDefinition.FallbackStageKey", "reason": "Same document-local scope as StageKey." },
+    { "field": "RuntimeConditionValueSet.AllowedValues", "reason": "Literal permitted value strings, not references to other catalog documents." },
+    { "field": "RuntimeEligibilityCondition.AllowedValues", "reason": "Literal permitted value strings." },
+    { "field": "WorkoutComponentDefinition.IntensityDescriptor", "reason": "Free-text/enum-like label, not an artifact key." },
+    { "field": "PublishedTemplateBundle.BundleKey", "reason": "Identity field of the bundle itself, not a reference to a different artifact." },
+    { "field": "CatalogReleaseManifest.ReleaseKey / ReleaseVersion", "reason": "Identity fields of the release itself." },
+    { "field": "CatalogArtifactReference.Key / VersionedCatalogReference.Key", "reason": "Only meaningful paired with the same record's DocumentType+Version fields -- not a standalone key-only reference." }
+  ],
+  "semanticRequirementKeyOnlyFields": [],
+  "legacySchemaOnlyFields": [],
+  "legacySchemaOnlyNote": "None found. Every document type in schemas/ has exactly one schema version (schemaVersion: 1) currently in use -- no schema evolution history exists yet.",
+  "summary": {
+    "totalGenuineKeyOnlyReferences": 2,
+    "artifactDependencyRequiresVersionCount": 2,
+    "semanticRequirementKeyOnlyCount": 0,
+    "nonDependencyIdentifierCount": 8,
+    "legacySchemaOnlyCount": 0
+  },
+  "noFileModified": true
+}

@@ -1,0 +1,78 @@
+{
+  "investigationId": "COMB-V2-HASH-CLOSURE-001",
+  "generatedAtUtc": "2026-07-07T15:00:00Z",
+  "scope": "TEN_K__4D__INTERMEDIATE v2 hash-stability and dependency-closure verification",
+  "inspectionTable": [
+    {
+      "location": "catalog/combinations/ten-k-4d-intermediate.v1.json (source)",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 1,
+      "recomputedHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71",
+      "pinnedHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71 (1.0.0, 0.1.0-pilot, 0.2.0-pilot, and 0.4.0-pilot's own v1 bundle)",
+      "role": "HISTORICAL_ONLY"
+    },
+    {
+      "location": "catalog/combinations/ten-k-4d-intermediate.v2.json (source)",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 2,
+      "recomputedHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+      "pinnedHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594 (0.4.0-pilot)",
+      "role": "ROOT_COMBINATION"
+    },
+    {
+      "location": "0.4.0-pilot/bundles/TEN_K__4D__INTERMEDIATE.v1.json",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 1,
+      "recomputedHash": "n/a (published bundle, independent of v2's bundle)",
+      "pinnedHash": "combination ref hash c6324371a3...",
+      "role": "EXTRA_PACKAGED_ARTIFACT"
+    },
+    {
+      "location": "0.4.0-pilot/bundles/TEN_K__4D__INTERMEDIATE.v2.json",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 2,
+      "recomputedHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+      "pinnedHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+      "role": "ROOT_COMBINATION"
+    }
+  ],
+  "hashVerification": {
+    "sourceHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+    "bundleAssemblyHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+    "releasePinnedHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594",
+    "verifyReleaseRecomputedChecksum": "PASSED (checksums.sha256 whole-file hash independently verified by `verify-release 0.4.0-pilot`; distinct from, but consistent with, the semantic metadata.contentHash)",
+    "allFourIdentical": true,
+    "computedAcrossRepeatedInvocations": "identical (3x same-process, and again in a fresh process after a 1.1s real-time delay)",
+    "verdict": "STABLE_DETERMINISTIC"
+  },
+  "whyPreviousReportSaidPerRelease": "The phrase 'fresh, distinct per-release' in the prior report referred to the fact that v2's hash value had never appeared in any release before 0.4.0-pilot (it is a newly-introduced hash, as opposed to v1's hash which already existed across three prior releases) — NOT that the hash changes from release to release. This was ambiguous wording, not a hashing defect. It is corrected below.",
+  "dependencyClosure": {
+    "root": { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 2 },
+    "resolvedGraph": [
+      { "documentType": "PLAN_TEMPLATE", "key": "TEN_K_MASTER", "version": 2 },
+      { "documentType": "WORKOUT_PROGRESSION", "key": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 1 },
+      { "documentType": "RUN_LAYOUT", "key": "RUN_LAYOUT_4D", "version": 1 },
+      { "documentType": "LEVEL_MODIFIER", "key": "INTERMEDIATE_MODIFIER", "version": 1 },
+      { "documentType": "PROGRESSION_MODIFIER", "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1", "version": 1 },
+      { "documentType": "RULE_PACK", "key": "APPSEL_RACE_PLAN_V1", "version": 1 },
+      { "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY", "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1 },
+      { "documentType": "PEAK_VOLUME_BAND_POLICY", "key": "PEAK_VOLUME_BANDS_V1", "version": 1 },
+      { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 1 },
+      { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 1 },
+      { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 1 },
+      { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 1 }
+    ],
+    "combinationV1AppearsInGraph": false,
+    "verdict": "v2's PublishedTemplateBundle contains no reference of documentType TEMPLATE_COMBINATION anywhere in its own dependency fields — v1 is not, and structurally cannot be, a dependency of v2."
+  },
+  "whyBothV1AndV2AppearIn040Pilot": {
+    "cause": "CatalogPublisher.BuildRelease builds one PublishedTemplateBundle PER combination present in the full catalog source snapshot (src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs, `stamped.Combinations.Select(c => bundleAssembler.Assemble(...))`), and separately republishes every stamped catalog document (including every PlanTemplate/RunLayout/.../Combination version) into the release's per-type folders. Because catalog/combinations/ contains both ten-k-4d-intermediate.v1.json and .v2.json, every release built from this source produces two independent bundles: one rooted at combination v1, one rooted at combination v2.",
+    "classification": "C — accidentally included in the sense that the publisher packages every catalog file/combination, not because v1 is a dependency of v2 or because of any selection logic bug",
+    "isThisADefect": false,
+    "matchesCanonicalBrief": true,
+    "briefEvidence": "plan-catalog-antigravity-brief-v2.md §15: 'Release manifest: Publish edilen bütün artifact ve bundle'ları listeler' (the release manifest lists ALL published artifacts and bundles) — full-catalog packaging per release is the documented design, not single-bundle selective publishing."
+  },
+  "correctionRequired": false,
+  "replacementReleaseRequired": false,
+  "reasonNoCorrectionNeeded": "Hash is proven deterministic across source, bundle assembly, and the published release (identical value in all three, and stable across repeated computation and elapsed wall-clock time). The v2 bundle's dependency closure contains no reference to combination v1 or to any TEMPLATE_COMBINATION document at all. Both findings match the intended, documented full-catalog release design. Only prior report wording was corrected."
+}

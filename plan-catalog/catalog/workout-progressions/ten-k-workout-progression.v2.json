@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "schemaVersion": 2,
+    "key": "TEN_K_WORKOUT_PROGRESSION_V1",
+    "version": 2,
+    "status": "VALIDATED"
+  },
+  "distanceFamily": "TEN_K",
+  "phaseProgressions": [
+    {
+      "phaseKey": "FOUNDATION",
+      "stages": [
+        {
+          "stageKey": "FOUNDATION_EASY_BASE",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 2 }],
+          "minimumExposures": 3,
+          "maximumExposures": 6,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "BUILD",
+      "stages": [
+        {
+          "stageKey": "FARTLEK_INTRO",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 2 }],
+          "minimumExposures": 1,
+          "maximumExposures": 2,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        },
+        {
+          "stageKey": "THRESHOLD_INTRO",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 2 }],
+          "minimumExposures": 2,
+          "maximumExposures": 4,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "stages": [
+        {
+          "stageKey": "TEN_K_SPECIFIC_INTRO",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 2 }],
+          "minimumExposures": 1,
+          "maximumExposures": 2,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        },
+        {
+          "stageKey": "GOAL_PACE_REHEARSAL",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 1 }],
+          "minimumExposures": 1,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] }
+          ],
+          "fallbackStageKey": "CURRENT_FITNESS_SPECIFIC_REHEARSAL"
+        },
+        {
+          "stageKey": "CURRENT_FITNESS_SPECIFIC_REHEARSAL",
+          "relativeOrder": 3,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 2 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "TAPER",
+      "stages": [
+        {
+          "stageKey": "TAPER_SHARPEN",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 2 }],
+          "minimumExposures": 1,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        }
+      ]
+    }
+  ]
+}

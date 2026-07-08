@@ -1,0 +1,39 @@
+{
+  "auditId": "RULEPACK-OWN-001",
+  "generatedAtUtc": "2026-07-08T12:20:00Z",
+  "before": {
+    "description": "PlanTemplateDefinition.RequiredRules and TemplateCombinationDefinition.RulePack were two separate, exact-version, uncoordinated RulePack selections that could disagree.",
+    "observedConflict": { "masterRequiredRules": "APPSEL_RACE_PLAN_V1 v1 (TEN_K_MASTER v2)", "combinationRulePack": "APPSEL_RACE_PLAN_V1 v2 (TEN_K__4D__INTERMEDIATE v3)" },
+    "bundleAssemblyReadsRequiredRules": false
+  },
+  "after": {
+    "masterNewField": "RequiredRuleKeys: string[]? -- semantic key requirement only, never selects a version",
+    "combinationRemainsSoleExactSelector": true,
+    "newCrossCheck": "CandidatePublishGraphValidator.ValidateRulePackSatisfiesMasterRequirement -> COMBINATION_RULE_PACK_DOES_NOT_SATISFY_MASTER_REQUIREMENTS",
+    "legacyMastersCrossChecked": false
+  },
+  "schemaVersionExclusivity": {
+    "mechanism": "same as exact-workout-reference-migration.md (unified model + SchemaVersionShapeValidator + JSON Schema oneOf)",
+    "TEN_K_MASTER_v3_schemaVersion": 2,
+    "TEN_K_MASTER_v3_requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"],
+    "TEN_K_MASTER_v3_requiredRulesPresent": false
+  },
+  "hashVerification": {
+    "TEN_K_MASTER": [
+      { "version": 1, "hash": "c6cb0c0b4ebcfbdf946d97c9f03f1b8ec384abb68b8f0fa274a64a2eab9e5214", "status": "unchanged" },
+      { "version": 2, "hash": "9ac7f07666a26ec95080592534cf92e5892d6f0853566cc0ffb4d28e527be4b0", "status": "unchanged" },
+      { "version": 3, "hash": "e2ede6a030b3ea1a09b798c2c21840702375bffc2e489bc58f31d51f407e66bb", "status": "new" }
+    ],
+    "APPSEL_RACE_PLAN_V1": [
+      { "version": 1, "hash": "020f9aac902b7816d8d4b4f01a82b143df8d5feb23e8cc75f6d9fda36be66a89", "status": "unchanged" },
+      { "version": 2, "hash": "4ea4270573074714993942feb25b25d93aa00aec6ba4c7ad8896aadb91670300", "status": "unchanged, reused by combination v4 -- no new RulePack version created since content unaffected" }
+    ]
+  },
+  "versionBumpIndependence": "Proven: a RulePack version bump under the same key never requires touching the master's semantic requirement (RulePackOwnershipTests.ChangingOnlyRulePackVersion_DoesNotRequireChangingMaster_WhenKeyRemainsAcceptable)",
+  "classification": "TECHNICAL_ONLY (architecture/ownership decision, not a domain-content decision)",
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Validation/RulePackOwnershipTests.cs",
+    "count": 6
+  },
+  "finalStatus": "RULE_PACK_OWNERSHIP: IMPLEMENTED"
+}

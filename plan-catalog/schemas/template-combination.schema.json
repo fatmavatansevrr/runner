@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TemplateCombinationDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "TEMPLATE_COMBINATION" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "masterTemplate": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    },
+    "layout": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    },
+    "levelModifier": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    },
+    "rulePack": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    }
+  },
+  "required": ["metadata", "masterTemplate", "layout", "levelModifier", "rulePack"]
+}

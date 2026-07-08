@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkoutDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "WORKOUT_DEFINITION" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "family": { "type": "string", "enum": ["EASY", "LONG_RUN", "QUALITY", "RACE"] },
+    "complexityTier": { "type": "integer", "minimum": 1 },
+    "eligiblePhases": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"] } },
+    "allowedPrescriptionModes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["DISTANCE", "MIXED", "PACE_BASED", "EFFORT_BASED", "HEART_RATE_BASED"] } },
+    "allowedDistanceAccountingModes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["EXACT_SESSION_TOTAL", "ESTIMATED_SESSION_TOTAL", "EMBEDDED_COMPONENTS"] } },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sequenceOrder": { "type": "integer", "minimum": 1 },
+          "componentType": { "type": "string", "enum": ["WARM_UP", "MAIN_SET", "COOL_DOWN", "RECOVERY", "STRIDES"] },
+          "intensityDescriptor": { "type": "string" }
+        },
+        "required": ["sequenceOrder", "componentType", "intensityDescriptor"]
+      }
+    }
+  },
+  "required": ["metadata", "family", "complexityTier", "eligiblePhases", "allowedPrescriptionModes", "components"]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RuntimeConditionValueRegistryDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "RUNTIME_CONDITION_VALUE_REGISTRY" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "conditionValueSets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "conditionType": { "type": "string", "enum": ["GOAL_FEASIBILITY_IN", "PLAN_MODE_IN", "PACE_SOURCE_IN", "TIME_ADEQUACY_IN", "CORE_ENTRY_READINESS_IN"] },
+          "allowedValues": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" } }
+        },
+        "required": ["conditionType", "allowedValues"]
+      }
+    }
+  },
+  "required": ["metadata", "conditionValueSets"]
+}

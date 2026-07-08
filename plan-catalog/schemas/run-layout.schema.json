@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RunLayoutDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "RUN_LAYOUT" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "runsPerWeek": { "type": "integer", "minimum": 1 },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "sequenceOrder": { "type": "integer", "minimum": 1 },
+          "role": { "type": "string", "enum": ["KEY_SESSION", "EASY_SUPPORT", "LONG_RUN"] }
+        },
+        "required": ["sequenceOrder", "role"]
+      }
+    }
+  },
+  "required": ["metadata", "runsPerWeek", "slots"]
+}

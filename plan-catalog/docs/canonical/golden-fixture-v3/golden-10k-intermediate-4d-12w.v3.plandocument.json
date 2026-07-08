@@ -1,0 +1,1692 @@
+{
+  "documentType": "TRAINING_PLAN_REVISION",
+  "schemaVersion": 3,
+  "fixtureKey": "GOLDEN_10K_INTERMEDIATE_4D_12W",
+  "fixtureRevision": 3,
+  "planId": "00000000-0000-0000-0000-000000000001",
+  "revisionNumber": 1,
+  "generatorVersion": "1.1.0-golden-canonical-v3",
+  "template": {
+    "id": "00000000-0000-0000-0000-0000000000a1",
+    "key": "TEN_K_MASTER",
+    "version": 2,
+    "layoutKey": "RUN_LAYOUT_4D"
+  },
+  "rulePack": {
+    "id": "00000000-0000-0000-0000-0000000000b1",
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 3
+  },
+  "profileSnapshot": {
+    "experience": "INTERMEDIATE",
+    "runsPerWeek": 4,
+    "preferredDays": [
+      "TUESDAY",
+      "THURSDAY",
+      "SATURDAY",
+      "SUNDAY"
+    ]
+  },
+  "capacitySnapshot": {
+    "averageWeeklyVolumeRangeInput": "KM_21_30",
+    "weeklyVolumeAnchorKm": 24.0,
+    "longestRunLast30DaysKm": 9.0,
+    "longRunCompatibilityBand": "ACCEPTABLE",
+    "paceMode": "PACE_RANGE",
+    "paceSource": "RECENT_RACE",
+    "recentRace": {
+      "distanceKm": 5,
+      "timeSeconds": 1450,
+      "date": "2026-06-15"
+    },
+    "longRunCompatibilityRatio": 0.375,
+    "longRunCompatibilityFactor": 0.9
+  },
+  "races": [
+    {
+      "sequenceOrder": 1,
+      "type": "PRIMARY",
+      "raceDate": "2026-10-25",
+      "distanceKm": 10,
+      "goalTimeSeconds": 3000
+    }
+  ],
+  "horizon": {
+    "availableWeeks": 12,
+    "runwayWeeks": 0,
+    "coreWeeks": 12,
+    "raceWeekNumber": 12,
+    "raceWeekStartDate": "2026-10-19"
+  },
+  "suitability": "SUITABLE",
+  "planMode": "STANDARD",
+  "goalFeasibility": {
+    "predictedTimeSeconds": 3023.2,
+    "goalTimeSeconds": 3000,
+    "goalGapRatio": 0.007658,
+    "goalGapPercentDisplay": 0.77,
+    "classification": "REALISTIC"
+  },
+  "paceProfile": {
+    "currentRaceEquivalent": {
+      "distanceKm": 10,
+      "timeSeconds": 3023.2,
+      "paceSecPerKm": 302.3
+    },
+    "easyPaceRangeSecPerKm": [
+      350,
+      375
+    ],
+    "estimatedThresholdPaceRangeSecPerKm": [
+      315,
+      320
+    ],
+    "tenKPaceRangeSecPerKm": [
+      300,
+      305
+    ],
+    "goalPaceSecPerKm": 300,
+    "source": "RECENT_RACE_CONVERSION",
+    "ruleFile": "PACE_PROFILE_V1"
+  },
+  "phaseAllocation": {
+    "FOUNDATION": {
+      "weeks": [
+        1,
+        2,
+        3
+      ]
+    },
+    "BUILD": {
+      "weeks": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "cutbackWeeks": [
+        7
+      ]
+    },
+    "RACE_SPECIFIC": {
+      "weeks": [
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "TAPER": {
+      "weeks": [
+        12
+      ]
+    }
+  },
+  "peakVolume": {
+    "provisionalReachablePeakKm": 38.0,
+    "typicalBandKm": [
+      30,
+      42
+    ],
+    "resolvedPeakKm": 38.0,
+    "planModeAdjustment": "NONE_STANDARD_MODE",
+    "belowTypicalPeakFlag": false
+  },
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "phaseKey": "FOUNDATION",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 24.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 24.0,
+      "days": [
+        {
+          "stableDayKey": "W01_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-08-04",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_WITH_STRIDES",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "MAIN_SET",
+                "estimatedDistanceKm": 5.4,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "STRIDES",
+                "repetitions": 4,
+                "durationSeconds": 20,
+                "intensity": {
+                  "mode": "FAST_RELAXED_EFFORT"
+                },
+                "recovery": {
+                  "mode": "WALK_OR_JOG",
+                  "durationSeconds": 60
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "estimatedDistanceKm": 0.6,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "note": "Strides hard day sayilmaz (mimari SS6.2); nöromüsküler uyarı amaçlıdır. Stride ve recovery mesafeleri session total içine gömülüdür.",
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EMBEDDED_COMPONENTS",
+            "componentDistanceToleranceKm": 0.25
+          }
+        },
+        {
+          "stableDayKey": "W01_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-06",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W01_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-08",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 4.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W01_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-08-09",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-08-03",
+      "weekEndDate": "2026-08-09",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 2,
+      "phaseKey": "FOUNDATION",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 25.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 25.0,
+      "days": [
+        {
+          "stableDayKey": "W02_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-08-11",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_WITH_STRIDES",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "MAIN_SET",
+                "estimatedDistanceKm": 5.4,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "STRIDES",
+                "repetitions": 5,
+                "durationSeconds": 20,
+                "intensity": {
+                  "mode": "FAST_RELAXED_EFFORT"
+                },
+                "recovery": {
+                  "mode": "WALK_OR_JOG",
+                  "durationSeconds": 60
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "estimatedDistanceKm": 0.6,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "note": "Strides hard day sayilmaz (mimari SS6.2); nöromüsküler uyarı amaçlıdır. Stride ve recovery mesafeleri session total içine gömülüdür.",
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EMBEDDED_COMPONENTS",
+            "componentDistanceToleranceKm": 0.25
+          }
+        },
+        {
+          "stableDayKey": "W02_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-13",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W02_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-15",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 4.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W02_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-08-16",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-08-10",
+      "weekEndDate": "2026-08-16",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 3,
+      "phaseKey": "FOUNDATION",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 26.5,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 26.5,
+      "days": [
+        {
+          "stableDayKey": "W03_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-08-18",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_WITH_STRIDES",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 7.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "MAIN_SET",
+                "estimatedDistanceKm": 6.4,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "STRIDES",
+                "repetitions": 6,
+                "durationSeconds": 20,
+                "intensity": {
+                  "mode": "FAST_RELAXED_EFFORT"
+                },
+                "recovery": {
+                  "mode": "WALK_OR_JOG",
+                  "durationSeconds": 60
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "estimatedDistanceKm": 0.6,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "note": "Strides hard day sayilmaz (mimari SS6.2); nöromüsküler uyarı amaçlıdır. Stride ve recovery mesafeleri session total içine gömülüdür.",
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EMBEDDED_COMPONENTS",
+            "componentDistanceToleranceKm": 0.25
+          }
+        },
+        {
+          "stableDayKey": "W03_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-20",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W03_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-22",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 4.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W03_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-08-23",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 9.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-08-17",
+      "weekEndDate": "2026-08-23",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 4,
+      "phaseKey": "BUILD",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 28.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 28.0,
+      "days": [
+        {
+          "stableDayKey": "W04_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-08-25",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "FARTLEK",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 7.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "FARTLEK_MAIN_SET",
+                "repetitions": 3,
+                "work": {
+                  "durationSeconds": 180,
+                  "intensity": {
+                    "mode": "CURRENT_10K_PACE_RANGE",
+                    "paceMinSecPerKm": 300,
+                    "paceMaxSecPerKm": 305
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 120,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W04_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-27",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W04_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-08-29",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W04_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-08-30",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 9.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-08-24",
+      "weekEndDate": "2026-08-30",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 5,
+      "phaseKey": "BUILD",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 30.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 30.0,
+      "days": [
+        {
+          "stableDayKey": "W05_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-09-01",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "THRESHOLD_TEMPO",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "TEMPO_MAIN_SET",
+                "durationSeconds": 1200,
+                "intensity": {
+                  "mode": "ESTIMATED_THRESHOLD_EFFORT",
+                  "paceMinSecPerKm": 315,
+                  "paceMaxSecPerKm": 320
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W05_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-03",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 7.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W05_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-05",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W05_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-09-06",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 10.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-08-31",
+      "weekEndDate": "2026-09-06",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 6,
+      "phaseKey": "BUILD",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 32.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 32.0,
+      "days": [
+        {
+          "stableDayKey": "W06_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-09-08",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "FARTLEK",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "FARTLEK_MAIN_SET",
+                "repetitions": 4,
+                "work": {
+                  "durationSeconds": 180,
+                  "intensity": {
+                    "mode": "CURRENT_10K_PACE_RANGE",
+                    "paceMinSecPerKm": 300,
+                    "paceMaxSecPerKm": 305
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 120,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W06_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-10",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W06_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-12",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W06_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-09-13",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 10.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-09-07",
+      "weekEndDate": "2026-09-13",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 7,
+      "phaseKey": "BUILD",
+      "isCutbackWeek": true,
+      "plannedTrainingDistanceKm": 27.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 27.0,
+      "days": [
+        {
+          "stableDayKey": "W07_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-09-15",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_WITH_STRIDES",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 6.5,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "MAIN_SET",
+                "estimatedDistanceKm": 5.9,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "STRIDES",
+                "repetitions": 4,
+                "durationSeconds": 20,
+                "intensity": {
+                  "mode": "FAST_RELAXED_EFFORT"
+                },
+                "recovery": {
+                  "mode": "WALK_OR_JOG",
+                  "durationSeconds": 60
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "estimatedDistanceKm": 0.6,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "note": "Strides hard day sayilmaz (mimari SS6.2); nöromüsküler uyarı amaçlıdır. Stride ve recovery mesafeleri session total içine gömülüdür.",
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EMBEDDED_COMPONENTS",
+            "componentDistanceToleranceKm": 0.25
+          }
+        },
+        {
+          "stableDayKey": "W07_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-17",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W07_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-19",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W07_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-09-20",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 9.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "note": "Cutback: 32.0 -> 27.0 km (%15.6 azaltim, INTERMEDIATE cutback bandi [15,20]% icinde).",
+      "weekStartDate": "2026-09-14",
+      "weekEndDate": "2026-09-20",
+      "isPeakWeek": false,
+      "cutbackReason": "PHASE_TRANSITION_DELOAD"
+    },
+    {
+      "weekNumber": 8,
+      "phaseKey": "RACE_SPECIFIC",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 33.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 33.0,
+      "days": [
+        {
+          "stableDayKey": "W08_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-09-22",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "TEN_K_REPETITIONS",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 8.5,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "INTERVAL_MAIN_SET",
+                "repetitions": 4,
+                "work": {
+                  "durationSeconds": 240,
+                  "intensity": {
+                    "mode": "CURRENT_10K_PACE_RANGE",
+                    "paceMinSecPerKm": 300,
+                    "paceMaxSecPerKm": 305
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 90,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W08_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-24",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W08_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-09-26",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 5.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W08_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-09-27",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 11.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-09-21",
+      "weekEndDate": "2026-09-27",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 9,
+      "phaseKey": "RACE_SPECIFIC",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 35.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 35.0,
+      "days": [
+        {
+          "stableDayKey": "W09_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-09-29",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "THRESHOLD_TEMPO",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 9.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "TEMPO_MAIN_SET",
+                "durationSeconds": 1500,
+                "intensity": {
+                  "mode": "ESTIMATED_THRESHOLD_EFFORT",
+                  "paceMinSecPerKm": 315,
+                  "paceMaxSecPerKm": 320
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W09_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-01",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W09_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-03",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W09_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-10-04",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_PROGRESSION",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 11.5,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "MAIN_SET",
+                "estimatedDistanceKm": 9.5,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "STEADY_FINISH",
+                "durationSeconds": 720,
+                "intensity": {
+                  "mode": "CONTROLLED_AEROBIC_EFFORT",
+                  "paceMinSecPerKm": 330,
+                  "paceMaxSecPerKm": 345
+                }
+              }
+            ],
+            "loadClassification": "MODERATE",
+            "containsQualitySegment": true,
+            "note": "Threshold degil, kontrollu aerobik 'steady finish'; ikinci hard stimulus olusturmaz.",
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        }
+      ],
+      "weekStartDate": "2026-09-28",
+      "weekEndDate": "2026-10-04",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 10,
+      "phaseKey": "RACE_SPECIFIC",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 37.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 37.0,
+      "days": [
+        {
+          "stableDayKey": "W10_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-10-06",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "TEN_K_REPETITIONS",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 9.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "INTERVAL_MAIN_SET",
+                "repetitions": 5,
+                "work": {
+                  "durationSeconds": 240,
+                  "intensity": {
+                    "mode": "CURRENT_10K_PACE_RANGE",
+                    "paceMinSecPerKm": 300,
+                    "paceMaxSecPerKm": 305
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 90,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35
+          }
+        },
+        {
+          "stableDayKey": "W10_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-08",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 9.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W10_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-10",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 6.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W10_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-10-11",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 12.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "weekStartDate": "2026-10-05",
+      "weekEndDate": "2026-10-11",
+      "isPeakWeek": false
+    },
+    {
+      "weekNumber": 11,
+      "phaseKey": "RACE_SPECIFIC",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 38.0,
+      "plannedRaceDistanceKm": 0.0,
+      "totalPlannedDistanceKm": 38.0,
+      "days": [
+        {
+          "stableDayKey": "W11_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-10-13",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "RACE_PACE_REPEATS",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 9.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "INTERVAL_MAIN_SET",
+                "repetitions": 3,
+                "work": {
+                  "distanceKm": 1.5,
+                  "intensity": {
+                    "mode": "GOAL_RACE_PACE",
+                    "paceExactSecPerKm": 300
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 120,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "COOL_DOWN",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY"
+                }
+              }
+            ],
+            "loadClassification": "HARD",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 1,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35,
+            "distanceEstimateBasis": "2.0 km warm-up + 4.5 km work + estimated recovery jog + cooldown; rounded to 9.0 km"
+          }
+        },
+        {
+          "stableDayKey": "W11_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-15",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 10.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W11_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-17",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 7.5,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W11_D4",
+          "slotRole": "LONG_RUN",
+          "scheduledDate": "2026-10-18",
+          "workout": {
+            "family": "LONG_RUN",
+            "workoutKey": "LONG_RUN_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 11.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_EFFORT",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        }
+      ],
+      "note": "Long run bilincli olarak 12.5->11.0 km'ye indirildi: ayni hafta icinde hem peak hacim hem goal-pace rehearsal hem de en uzun long run olmasin diye (ikinci hard-stimulus riski, review madde 7).",
+      "weekStartDate": "2026-10-12",
+      "weekEndDate": "2026-10-18",
+      "isPeakWeek": true
+    },
+    {
+      "weekNumber": 12,
+      "phaseKey": "TAPER",
+      "isCutbackWeek": false,
+      "plannedTrainingDistanceKm": 20.0,
+      "plannedRaceDistanceKm": 10.0,
+      "totalPlannedDistanceKm": 30.0,
+      "note": "Taper: 20.0 km training = 8 + 8 + 4 km. Race-eve shakeout 4 km cap ile freshness, taper yüzdesinden önce gelir.",
+      "days": [
+        {
+          "stableDayKey": "W12_D1",
+          "slotRole": "KEY_SESSION",
+          "scheduledDate": "2026-10-20",
+          "workout": {
+            "family": "QUALITY",
+            "workoutKey": "RACE_PACE_REPEATS",
+            "prescriptionMode": "MIXED",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": true,
+            "components": [
+              {
+                "componentType": "WARM_UP",
+                "distanceKm": 2.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              },
+              {
+                "componentType": "ACTIVATION_REPEATS",
+                "repetitions": 3,
+                "work": {
+                  "durationSeconds": 60,
+                  "intensity": {
+                    "mode": "GOAL_RACE_PACE",
+                    "paceExactSecPerKm": 300
+                  }
+                },
+                "recovery": {
+                  "durationSeconds": 120,
+                  "mode": "EASY_JOG"
+                }
+              },
+              {
+                "componentType": "EASY_RUNNING_TO_SESSION_TOTAL",
+                "targetSessionDistanceKm": 8.0,
+                "intensity": {
+                  "mode": "EASY_PACE_RANGE",
+                  "paceMinSecPerKm": 350,
+                  "paceMaxSecPerKm": 375
+                }
+              }
+            ],
+            "loadClassification": "MODERATE",
+            "containsQualitySegment": true,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+            "componentDistanceToleranceKm": 0.35,
+            "distanceEstimateBasis": "Session capped at 8.0 km; activation and recoveries are embedded in total."
+          }
+        },
+        {
+          "stableDayKey": "W12_D2",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-22",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_STANDARD",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 8.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL"
+          }
+        },
+        {
+          "stableDayKey": "W12_D3",
+          "slotRole": "EASY_SUPPORT",
+          "scheduledDate": "2026-10-24",
+          "workout": {
+            "family": "EASY",
+            "workoutKey": "EASY_SHAKEOUT",
+            "prescriptionMode": "DISTANCE",
+            "plannedDistanceKm": 4.0,
+            "distanceIsEstimate": false,
+            "intensity": {
+              "mode": "EASY_PACE_RANGE",
+              "paceMinSecPerKm": 350,
+              "paceMaxSecPerKm": 375
+            },
+            "loadClassification": "LOW",
+            "containsQualitySegment": false,
+            "trainingHardStimulusCount": 0,
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL",
+            "raceEveShakeout": true,
+            "raceEveDistanceCapKm": 4.0
+          }
+        },
+        {
+          "stableDayKey": "W12_D4",
+          "slotRole": "RACE",
+          "scheduledDate": "2026-10-25",
+          "dayType": "RACE",
+          "workout": {
+            "family": "RACE",
+            "workoutKey": "RACE_DAY",
+            "prescriptionMode": "DISTANCE",
+            "plannedTrainingDistanceKm": 0.0,
+            "plannedRaceDistanceKm": 10.0,
+            "goalTimeSeconds": 3000,
+            "goalPaceSecPerKm": 300,
+            "loadClassification": "RACE",
+            "containsQualitySegment": true,
+            "note": "Yaris gunu; haftalik training hard-stimulus sayacina dahil edilmez, ayri muhasebelenir.",
+            "distanceAccountingMode": "EXACT_SESSION_TOTAL",
+            "stimulusAccountingScope": "RACE_EXCLUDED_FROM_TRAINING_HARD_COUNT"
+          }
+        }
+      ],
+      "weekStartDate": "2026-10-19",
+      "weekEndDate": "2026-10-25",
+      "isPeakWeek": false
+    }
+  ],
+  "warnings": [],
+  "generationTraceRef": "00000000-0000-0000-0000-000000000002",
+  "hashCanonicalizationRule": {
+    "propertyOrdering": "ORDINAL_ASCENDING",
+    "nullFields": "OMIT",
+    "decimalFormat": "NORMALIZED",
+    "dateFormat": "ISO_8601",
+    "enumFormat": "UPPER_SNAKE_CASE",
+    "unicodeNormalization": "NFC",
+    "excludesField": "contentHash"
+  },
+  "createdAt": "2026-07-06T00:00:00+03:00",
+  "planStartDate": "2026-08-03",
+  "planEndDate": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "unit": "KM",
+  "validationSummary": {
+    "status": "PASS",
+    "checks": [
+      "WEEK_TOTAL_EQUALS_DAY_TOTALS",
+      "COMPONENT_DISTANCE_ACCOUNTING_VALID",
+      "PLANNED_SINGLE_SESSION_SPIKE_CHECK",
+      "RACE_EVE_SHAKEOUT_CAP",
+      "PACE_RANGE_ORDER_VALID",
+      "EXACTLY_ONE_RACE_DAY",
+      "ALL_DATES_WITHIN_PLAN_HORIZON"
+    ],
+    "notes": [
+      "Mixed/time-based workouts use estimated totals with explicit tolerance.",
+      "Race is excluded from training hard-stimulus accounting."
+    ]
+  },
+  "contentHash": "7b2e92dce611ae27751524ee41cb8c1b6b2b153eea7a125edbf5ab60eb3bc735"
+}

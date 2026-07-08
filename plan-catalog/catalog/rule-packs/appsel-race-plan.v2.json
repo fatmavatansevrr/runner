@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "documentType": "RULE_PACK",
+    "schemaVersion": 1,
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 2,
+    "status": "VALIDATED"
+  },
+  "runtimeConditionValueRegistry": {
+    "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY",
+    "key": "RUNTIME_CONDITION_VALUES_V1",
+    "version": 1
+  },
+  "peakVolumeBandPolicy": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 2
+  },
+  "policies": [],
+  "rules": []
+}

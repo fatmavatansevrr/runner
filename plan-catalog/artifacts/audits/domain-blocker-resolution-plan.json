@@ -1,0 +1,68 @@
+{
+  "auditId": "RESOLUTION-PLAN-001",
+  "generatedAtUtc": "2026-07-08T18:30:00Z",
+  "readOnly": true,
+  "noDecisionResolved": true,
+  "batches": [
+    { "batchId": "B1", "decisionIds": ["D1"], "theme": "RUN_LAYOUT slot ordering feasibility", "whyGrouped": "Single decision, self-contained; consumption question independent of every other blocker", "requiredSourceSet": ["consumption check (code/Process B contract)", "optional Tier 1 ordering-convention source"], "expectedDifficulty": "Low", "dependsOn": [], "productApprovalRequired": true },
+    { "batchId": "B2", "decisionIds": ["D5", "D7", "D9", "D11"], "theme": "complexityTier assignment across 4 fixture-evidenced workouts", "whyGrouped": "Same semantic question repeated per workout; must apply one consistent tier rubric across all 4 in a single pass", "requiredSourceSet": ["coaching-authored complexity-tier rubric (does not yet exist)", "per-workout classification against it"], "expectedDifficulty": "Moderate", "dependsOn": [], "productApprovalRequired": true },
+    { "batchId": "B3", "decisionIds": ["D2"], "theme": "Intermediate-athlete training-load ceiling (5 bundled fields, 1 audit row)", "whyGrouped": "All 5 fields bundled in one pre-existing audit row (AUD-044), forming one coherent coaching policy question", "requiredSourceSet": ["coaching literature on hard-session frequency/dose scaling"], "expectedDifficulty": "Moderate-to-high", "dependsOn": ["B2"], "dependencyReason": "maximumComplexityTier (part of D2) consumes the tier scale B2 establishes", "productApprovalRequired": true },
+    { "batchId": "B4", "decisionIds": ["D6", "D8", "D10", "D12"], "theme": "Workout structural component/vocabulary granularity", "whyGrouped": "Same semantic question repeated per workout; tied to the open ownership question in ten-k-pilot-vocabulary-decisions.md", "requiredSourceSet": ["coaching material on session structural composition", "explicit vocabulary-ownership decision"], "expectedDifficulty": "Moderate", "dependsOn": [], "sharesOwnershipThemeWith": "D3/B5", "productApprovalRequired": "possibly, if schema/vocabulary change required" },
+    { "batchId": "B5", "decisionIds": ["D3"], "theme": "Runtime-condition-registry vocabulary ownership", "whyGrouped": "Single decision, single artifact; an ownership/API-contract question rather than a literature question", "requiredSourceSet": ["explicit Process A/Process B ownership conversation"], "expectedDifficulty": "Low-to-moderate", "dependsOn": [], "productApprovalRequired": true },
+    { "batchId": "B6", "decisionIds": ["D4"], "theme": "Non-INTERMEDIATE peak weekly-volume bands", "whyGrouped": "Single artifact, one coherent domain-content question, independent of every other batch", "requiredSourceSet": ["coach/book peak-volume tables by experience level", "exercise-science weekly-mileage literature"], "expectedDifficulty": "Moderate-to-high", "dependsOn": [], "productApprovalRequired": "likely, if no source found" },
+    { "batchId": "B7", "decisionIds": ["D13"], "theme": "GOAL_PACE_TEN_K total evidence gap", "whyGrouped": "Single pre-existing audit row bundling 4 fields for one workout with zero fixture evidence; most evidence-starved decision, kept isolated", "requiredSourceSet": ["dedicated new source search", "OR explicit product decision"], "expectedDifficulty": "High", "dependsOn": [], "productApprovalRequired": true }
+  ],
+  "batchingRulesApplied": [
+    "B2 and B4 each group 4 decisions sharing an identical semantic question across workouts, not merely sharing a file",
+    "B3, B5, B6, B7 each correspond to one pre-existing inseparable audit row/artifact, not artificially split",
+    "no batch exceeds 5 decisions",
+    "D5/D6 on the same artifact (EASY_STANDARD) correctly split across B2/B4 because they are different semantic questions"
+  ],
+  "recommendedExecutionOrder": ["B1", "B5", "B6", "B2", "B3", "B4", "B7"],
+  "executionOrderNotes": "B5 and B6 may run in parallel with each other and with B1. B2 must precede B3 (tier-scale consumer dependency). B4 may run in parallel with B2/B3 but is sequenced after to keep per-workout review coherent. B7 is sequenced last as the most evidence-starved, most likely product-owner-dependent decision.",
+  "evidenceReadiness": [
+    { "decisionId": "D1", "state": "POSSIBLY_REMOVE_FIELD", "nextAction": "Determine whether any consumer reads sequenceOrder's numeric value beyond slot-role shape/count; draft removal proposal or escalate to NEEDS_PRODUCT_DECISION" },
+    { "decisionId": "D2", "state": "NEEDS_SOURCE_EXTRACTION", "nextAction": "Search for a Tier 1/2 source on intermediate hard-session frequency/dose scaling; escalate to NEEDS_PRODUCT_DECISION if none found" },
+    { "decisionId": "D3", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Convene explicit Process A/Process B ownership conversation" },
+    { "decisionId": "D4", "state": "NEEDS_SOURCE_EXTRACTION", "nextAction": "Search for a Tier 1/2 experience-segmented peak-volume table; escalate to NEEDS_PRODUCT_DECISION if none found" },
+    { "decisionId": "D5", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Author/approve a complexity-tier rubric before classification is possible" },
+    { "decisionId": "D7", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Same as D5" },
+    { "decisionId": "D9", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Same as D5" },
+    { "decisionId": "D11", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Same as D5" },
+    { "decisionId": "D6", "state": "NEEDS_SCHEMA_RECONSIDERATION", "nextAction": "Resolve WorkoutComponentType vocabulary-ownership question in ten-k-pilot-vocabulary-decisions.md" },
+    { "decisionId": "D8", "state": "NEEDS_SCHEMA_RECONSIDERATION", "nextAction": "Same as D6" },
+    { "decisionId": "D10", "state": "NEEDS_SCHEMA_RECONSIDERATION", "nextAction": "Same as D6" },
+    { "decisionId": "D12", "state": "NEEDS_SCHEMA_RECONSIDERATION", "nextAction": "Same as D6" },
+    { "decisionId": "D13", "state": "NEEDS_PRODUCT_DECISION", "nextAction": "Product owner decides: commission new research, approve explicit default, or remove from active closure" }
+  ],
+  "decisionsRequiringProductOwnerApproval": ["D1", "D2", "D3", "D4", "D5", "D7", "D9", "D11", "D13"],
+  "decisionsPossiblyIndicatingRedundantField": ["D1"],
+  "acceptanceStandard": {
+    "CANONICAL_CONFIRMED": [
+      "atomic claim",
+      "direct or clearly applicable evidence from an approved canonical source (never inferred from a single fixture instance)",
+      "source references (exact path, JSON pointer/section)",
+      "stated conditions and exclusions",
+      "conflict analysis per docs/README.md section 1 precedence when sources disagree",
+      "explicit reusable-catalog applicability",
+      "no contradiction with Golden Fixture v3",
+      "no unsupported generalization from a single realized instance"
+    ],
+    "EXPLICIT_PRODUCT_DEFAULT": [
+      "documented evidence canonical sources do not uniquely determine the value (negative search documented)",
+      "documented product rationale",
+      "bounded applicability",
+      "explicit user/product-owner approval, dated and attributable"
+    ],
+    "TECHNICAL_ONLY": [
+      "proof the value does not encode a running-domain claim",
+      "proof it does not alter training behavior directly or indirectly",
+      "must never be used merely to remove a decision from the Production blocker count"
+    ],
+    "fieldRemoval": [
+      "proof the field is unused or semantically redundant",
+      "schema and compatibility impact analysis (schema files affected, published-artifact shape impact, test assertions on the field)"
+    ]
+  },
+  "finalStatus": "Resolution plan complete: 7 batches, recommended execution order established, no decision resolved."
+}

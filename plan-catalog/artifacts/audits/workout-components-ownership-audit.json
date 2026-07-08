@@ -1,0 +1,75 @@
+{
+  "auditId": "COMPONENTS-OWNERSHIP-001",
+  "generatedAtUtc": "2026-07-09T09:15:00Z",
+  "readOnly": true,
+  "scope": ["EASY_STANDARD v2 $.components", "FARTLEK v2 $.components", "LONG_RUN_STANDARD v2 $.components", "THRESHOLD_TEMPO v2 $.components"],
+  "usageTrace": [
+    { "field": "WorkoutDefinition.Components", "declaredIn": "src/PlanCatalog.Core/Models/WorkoutDefinition.cs:24; schema workout-definition.schema.json $.components (required, array, no minItems)", "writtenBy": "catalog authors", "readBy": [], "validationUse": "NONE -- WorkoutDefinitionValidator.cs has zero checks on Components (no count/contiguity/content check), asymmetric with RunLayoutValidator's active sequenceOrder check", "bundleUse": "republished verbatim, not special-cased by CatalogBundleAssembler", "runtimeBehaviorUse": "none found in this repository", "auditOnlyUse": "PilotDomainContentAudit.cs AUD-207/AUD-231/AUD-219/AUD-243, PLACEHOLDER_UNCONFIRMED for all 4 v2 workouts" },
+    { "field": "WorkoutComponentDefinition.SequenceOrder", "declaredIn": "src/PlanCatalog.Core/Models/WorkoutComponentDefinition.cs:11", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found" },
+    { "field": "WorkoutComponentDefinition.ComponentType", "declaredIn": "WorkoutComponentDefinition.cs:12; enum WarmUp/MainSet/CoolDown/Recovery/Strides; part of stable PlanCatalog.Contracts Process A/B boundary (confirmed via PublishedBoundaryTests.cs allow-list)", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "structurally part of published boundary shape, no runtime logic reads/branches on it in this repository" },
+    { "field": "WorkoutComponentDefinition.IntensityDescriptor", "declaredIn": "WorkoutComponentDefinition.cs:13; unconstrained free-text string, no schema enum unlike ComponentType", "readBy": [], "validationUse": "none", "bundleUse": "republished verbatim", "runtimeBehaviorUse": "none found" }
+  ],
+  "termsNotFoundInSrc": ["warmup (as distinct field)", "cooldown (as distinct field)", "repetitions", "recovery (as structured sub-object)", "main set (as distinct field)"],
+  "modelShapeConclusion": "Process A's components model is a flat list of {sequenceOrder, componentType, intensityDescriptor} triples with no nested repetition-count, duration, or recovery-detail structure of any kind.",
+  "fixtureBoundaryTally": [
+    { "workoutKey": "EASY_STANDARD", "occurrences": 23, "everHasComponents": false },
+    { "workoutKey": "LONG_RUN_STANDARD", "occurrences": 10, "everHasComponents": false },
+    { "workoutKey": "FARTLEK", "occurrences": 2, "everHasComponents": true },
+    { "workoutKey": "THRESHOLD_TEMPO", "occurrences": 2, "everHasComponents": true }
+  ],
+  "outOfScopeContextKeys": ["EASY_SHAKEOUT", "EASY_WITH_STRIDES", "LONG_RUN_PROGRESSION", "RACE_DAY", "RACE_PACE_REPEATS", "TEN_K_REPETITIONS"],
+  "outOfScopeContextNote": "EASY_WITH_STRIDES and LONG_RUN_PROGRESSION show a components-bearing variant of easy/long-run training exists in the domain, but as a different, non-substitutable workout key, not an alternate shape of EASY_STANDARD/LONG_RUN_STANDARD.",
+  "representativeInstances": {
+    "EASY_STANDARD": { "hasComponents": false, "userSpecificFields": ["plannedDistanceKm", "intensity.paceMinSecPerKm", "intensity.paceMaxSecPerKm"], "note": "no components array in generated output for this key at all" },
+    "FARTLEK": { "hasComponents": true, "structuralEvidenceFields": ["componentType=WARM_UP", "componentType=COOL_DOWN"], "userSpecificGeneratedFields": ["FARTLEK_MAIN_SET.repetitions=3", "work.durationSeconds=180", "recovery.durationSeconds=120", "distanceKm on WARM_UP/COOL_DOWN"] },
+    "LONG_RUN_STANDARD": { "hasComponents": false, "note": "structurally identical flat pattern to EASY_STANDARD" },
+    "THRESHOLD_TEMPO": { "hasComponents": true, "structuralEvidenceFields": ["componentType=WARM_UP", "componentType=COOL_DOWN", "componentType=TEMPO_MAIN_SET (no repetitions field, continuous-only across both occurrences)"], "userSpecificGeneratedFields": ["durationSeconds=1200", "paceMinSecPerKm", "paceMaxSecPerKm"], "differentlyKeyedIntervalVariant": "TEN_K_REPETITIONS uses componentType=INTERVAL_MAIN_SET with repetitions=4 -- structural evidence the interval format belongs to a different workout key, not THRESHOLD_TEMPO" }
+  },
+  "fixtureFieldClassification": [
+    { "fieldOrPattern": "workoutKey components-presence pattern", "classification": "structural evidence only" },
+    { "fieldOrPattern": "componentType generic members (WARM_UP, COOL_DOWN, STRIDES)", "classification": "structural evidence, reusable catalog knowledge, already present in WorkoutComponentType" },
+    { "fieldOrPattern": "componentType workout-specific members (FARTLEK_MAIN_SET, TEMPO_MAIN_SET, INTERVAL_MAIN_SET)", "classification": "derived fixture output, not yet promoted to catalog vocabulary (open ownership question per ten-k-pilot-vocabulary-decisions.md)" },
+    { "fieldOrPattern": "repetitions, work.durationSeconds, recovery.durationSeconds, distanceKm, intensity.pace*", "classification": "user-specific generated value -- must never be promoted into a reusable WorkoutDefinition" },
+    { "fieldOrPattern": "plannedDistanceKm, distanceIsEstimate, loadClassification, containsQualitySegment, trainingHardStimulusCount", "classification": "user-specific generated value (session-level)" },
+    { "fieldOrPattern": "distanceAccountingMode on generated workout", "classification": "derived fixture output, corroborates already-CANONICAL_CONFIRMED AllowedDistanceAccountingModes vocabulary, not the components question" }
+  ],
+  "evidenceLevelPerDecision": [
+    { "decisionId": "D6", "artifact": "EASY_STANDARD v2", "evidenceLevel": "structural evidence only -- points toward no components array for this key, not toward confirming any specific catalog-authored breakdown" },
+    { "decisionId": "D8", "artifact": "FARTLEK v2", "evidenceLevel": "structural evidence only for generic WARM_UP/COOL_DOWN presence; no evidence (contrary evidence) for the catalog's generic single MAIN_SET/SURGE_AND_FLOAT middle component vs fixture's more specific FARTLEK_MAIN_SET" },
+    { "decisionId": "D10", "artifact": "LONG_RUN_STANDARD v2", "evidenceLevel": "structural evidence only, same conclusion as D6" },
+    { "decisionId": "D12", "artifact": "THRESHOLD_TEMPO v2", "evidenceLevel": "structural evidence only for WARM_UP/COOL_DOWN; additionally structural evidence the format is continuous-only for this key" }
+  ],
+  "noFixtureValuePromotedToDefault": true,
+  "componentsOwnershipPerWorkout": [
+    {
+      "workout": "EASY_STANDARD v2", "currentValue": "[{sequenceOrder:1, componentType:MAIN_SET, intensityDescriptor:EASY}]",
+      "consumedAnywhere": false, "currentShapeReusableOrGenerated": "neither cleanly -- authored placeholder not matching generated model's actual shape (which has no components for this key)",
+      "duplicatesPrescriptionOrAccountingMode": false, "duplicatesProgressionDosage": false,
+      "belongsInWorkoutDefinition": "only if a components concept is kept for this key at all",
+      "leadingCandidate": "optional structural descriptor, or no components requirement at all"
+    },
+    {
+      "workout": "FARTLEK v2", "currentValue": "[{WARM_UP,EASY},{MAIN_SET,SURGE_AND_FLOAT},{COOL_DOWN,EASY}]",
+      "consumedAnywhere": false, "currentShapeReusableOrGenerated": "structurally reusable (matches fixture's 3-part shape); middle intensityDescriptor is a stable label, not a copied generated value -- no Category-B violation",
+      "duplicatesPrescriptionOrAccountingMode": false, "duplicatesProgressionDosage": false,
+      "belongsInWorkoutDefinition": true,
+      "leadingCandidate": "component-capability taxonomy is defensible as-is; MAIN_SET granularity vs fixture's FARTLEK_MAIN_SET is an unresolved vocabulary-granularity question, not evidence current shape is wrong"
+    },
+    {
+      "workout": "LONG_RUN_STANDARD v2", "currentValue": "[{WARM_UP,EASY},{MAIN_SET,STEADY}]",
+      "consumedAnywhere": false, "currentShapeReusableOrGenerated": "authored placeholder, same character as EASY_STANDARD -- fixture never structures this key with components (10/10 flat)",
+      "duplicatesPrescriptionOrAccountingMode": false, "duplicatesProgressionDosage": false,
+      "belongsInWorkoutDefinition": "only if a components concept is kept for this key at all",
+      "leadingCandidate": "optional structural descriptor, or no components requirement at all (same conclusion as EASY_STANDARD)"
+    },
+    {
+      "workout": "THRESHOLD_TEMPO v2", "currentValue": "[{WARM_UP,EASY},{MAIN_SET,THRESHOLD},{COOL_DOWN,EASY}]",
+      "consumedAnywhere": false, "currentShapeReusableOrGenerated": "structurally reusable and consistent with both fixture occurrences (continuous single main-set, no repetitions) -- the closest match of the four workouts to its fixture counterpart",
+      "duplicatesPrescriptionOrAccountingMode": false, "duplicatesProgressionDosage": false,
+      "belongsInWorkoutDefinition": true,
+      "leadingCandidate": "existing generic breakdown is reasonable as-is; a future interval/cruise-repeat variant should likely be a different WorkoutDefinition key (mirroring fixture's TEN_K_REPETITIONS pattern), not a reshape of THRESHOLD_TEMPO"
+    }
+  ],
+  "distanceAccountingModeCorrelationNote": "AllowedDistanceAccountingModes (out of scope, CANONICAL_CONFIRMED) already splits EASY_STANDARD/LONG_RUN_STANDARD (EXACT_SESSION_TOTAL) from FARTLEK/THRESHOLD_TEMPO (ESTIMATED_SESSION_TOTAL) -- the same split the fixture shows for components-array presence. This is a structural correlation, not proof of duplication (different concerns), but suggests components necessity may be derivable from DistanceAccountingMode rather than independently authored per workout.",
+  "finalStatus": "Components ownership and Golden Fixture boundary analysis complete for all 4 workouts. No schema, code, or classification was changed."
+}

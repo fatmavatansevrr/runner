@@ -1,0 +1,30 @@
+{
+  "auditId": "REGISTRY-RES-001",
+  "generatedAtUtc": "2026-07-08T12:25:00Z",
+  "before": {
+    "location": "WorkoutProgressionValidator.Validate line 16 (pre-migration)",
+    "behavior": "RuntimeConditionValueRegistries.FirstOrDefault() used globally for every stage's Requires conditions, regardless of which combination/RulePack was in play.",
+    "harmlessOnlyBecause": "exactly one RuntimeConditionValueRegistryDefinition has ever existed in this catalog"
+  },
+  "after": {
+    "D1_WorkoutProgressionValidator": "FirstOrDefault() and all Requires-vs-registry logic deleted entirely. Now validates only local structure (stage identity, ordering, candidate existence for both shapes, phase/family eligibility, fallback validity, Requires field shape). Confirmed zero references to RuntimeConditionValueRegistry remain in this file.",
+    "D2_CandidatePublishGraphValidator": "New ValidatePinnedRegistry: combination.RulePack (exact) -> rulePack.RuntimeConditionValueRegistry (exact) -> validates Requires against exactly that registry. Failure code RUNTIME_CONDITION_VALUE_NOT_ALLOWED_BY_PINNED_REGISTRY."
+  },
+  "proof": {
+    "fixtureDescription": "Two isolated registry versions (REGISTRY_WITH_VALUE, REGISTRY_WITHOUT_VALUE) added to the snapshot in reverse-of-correct order, never added to the permanent catalog.",
+    "tests": [
+      "ExactRulePackPinnedRegistry_IsUsed_NotAnyOtherRegistryInSource",
+      "TwoRegistryVersions_ValidateIndependently",
+      "SourceOrder_DoesNotAffectRegistryChoice",
+      "InvalidConditionValue_FailsAgainstThePinnedRegistry",
+      "FirstOrDefault_IsAbsentFromTheActiveOrCandidatePath"
+    ]
+  },
+  "permanentCatalogRegistryVersionAdded": false,
+  "realRegistryUnchanged": { "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1, "contentUnchanged": true },
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Validation/PinnedRegistryResolutionTests.cs",
+    "count": 5
+  },
+  "finalStatus": "PINNED_REGISTRY_RESOLUTION: IMPLEMENTED"
+}

@@ -1,0 +1,37 @@
+{
+  "auditId": "CLOSURE-001",
+  "generatedAtUtc": "2026-07-08T12:30:00Z",
+  "before": {
+    "algorithm": "intersection: progression candidate keys INTERSECT level-modifier eligible keys, resolved via drift-prone FindWorkout(key)",
+    "longRunStandardResult": "never included -- eligible per level modifier but never a progression candidate"
+  },
+  "after": {
+    "algorithm": "union: exact WorkoutProgression.WorkoutCandidates UNION exact LevelModifier.EligibleWorkouts, resolved via exact FindWorkout(key,version)",
+    "implementation": "src/PlanCatalog.Core/Catalog/WorkoutClosureResolver.cs",
+    "longRunStandardAddedAsProgressionCandidate": false,
+    "longRunStandardReachableVia": "INTERMEDIATE_MODIFIER v2 EligibleWorkouts only"
+  },
+  "liveBundleComparison": {
+    "v1_v2_v3_workouts": ["EASY_STANDARD v2", "FARTLEK v2", "GOAL_PACE_TEN_K v1", "THRESHOLD_TEMPO v2"],
+    "v4_candidate_workouts": ["EASY_STANDARD v2", "FARTLEK v2", "GOAL_PACE_TEN_K v1", "LONG_RUN_STANDARD v2", "THRESHOLD_TEMPO v2"],
+    "onlyDifference": "LONG_RUN_STANDARD v2, added purely through eligibility, zero progression change"
+  },
+  "thirdClosureSourceNeeded": false,
+  "thirdClosureSourceReason": "Union of progression candidates + level-modifier eligible workouts was already sufficient; WorkoutClosureResolver is structured to allow a third source to be added later without disturbing the first two.",
+  "layoutCoverageValidation": {
+    "method": "CandidatePublishGraphValidator.ValidateLayoutCoverage",
+    "slotRoleFamilyMapping": { "LongRun": ["LongRun"], "EasySupport": ["Easy"], "KeySession": ["Quality", "Race"] },
+    "realCatalogV4Result": "all 3 slot roles satisfied",
+    "noSchedulingDatesOrDosage": true,
+    "failureCodes": ["LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT", "BUNDLE_MISSING_REFERENCED_WORKOUT", "WORKOUT_REFERENCE_VERSION_NOT_FOUND"]
+  },
+  "historicalEraPreserved": {
+    "mechanism": "ValidateLayoutCoverage is a no-op for legacy (schemaVersion 1) graphs, gated by WorkoutClosureResolver.IsExactShape",
+    "allSixReleasesStillVerify": true
+  },
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Publishing/BundleWorkoutClosureTests.cs",
+    "count": 9
+  },
+  "finalStatus": "SELF_CONTAINED_BUNDLE_CLOSURE: IMPLEMENTED"
+}

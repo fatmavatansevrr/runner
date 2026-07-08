@@ -1,0 +1,77 @@
+{
+  "auditId": "CROSS-HASH-001",
+  "generatedAtUtc": "2026-07-07T17:00:00Z",
+  "part3Update": "0.6.0-pilot and the deterministic-graph candidate artifacts (v2/v3/v4 chain) required ZERO new cross-release-hash exceptions -- every new identity is a first publication, every existing identity's hash is unchanged. Full scan passes using only pre-existing exact historical exceptions. See deterministic-graph-part3-completion.json.",
+  "remediationUpdate": "The 5 newly-discovered mismatches recorded below have since been remediated by WORKOUT-IMMUT-001 and PEAK-POLICY-IMMUT-001 (see published-workout-immutability-remediation.json, peak-volume-policy-immutability-remediation.json, dependency-version-cascade-audit.json). cross-release-hash-exceptions.json's canonical direction for WORKOUT_DEFINITION/PEAK_VOLUME_BAND_POLICY/PUBLISHED_TEMPLATE_BUNDLE v1 now points at the restored original hash; the mutated historical releases are registered as anomalies (reverse of this report's original framing below, preserved as the discovery record). TEMPLATE_COMBINATION v1 (COMB-IMMUT-001) is unaffected and unchanged.",
+  "requirement": "For every (documentType,key,version) artifact identity, all historical release manifests under artifacts/appsel-plan-catalog/ must pin exactly one contentHash, across all versioned artifact types plus published bundles.",
+  "majorFinding": "Repository-wide scan (run for the first time) confirms the already-known TEMPLATE_COMBINATION/TEN_K__4D__INTERMEDIATE v1 mismatch AND surfaces 5 additional, previously undetected historical defects of the same class (in-place mutation without a version bump), plus 1 fully-explained derived bundle-hash mismatch.",
+  "mismatchGroups": [
+    { "identity": "TEMPLATE_COMBINATION/TEN_K__4D__INTERMEDIATE/1", "status": "already known (COMB-IMMUT-001)", "anomalousReleases": ["0.3.0-pilot"], "canonicalHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71", "rootCause": "masterTemplate reference mutated in place" },
+    { "identity": "WORKOUT_DEFINITION/EASY_STANDARD/1", "status": "NEW — discovered by this audit", "anomalousReleases": ["1.0.0", "0.1.0-pilot"], "canonicalHash": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1", "rootCause": "catalog/workouts/easy-standard.v1.json edited in place (vocabulary reconciliation pass added allowedDistanceAccountingModes) without a version bump" },
+    { "identity": "WORKOUT_DEFINITION/FARTLEK/1", "status": "NEW — discovered by this audit", "anomalousReleases": ["1.0.0", "0.1.0-pilot"], "canonicalHash": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795", "rootCause": "same pattern, catalog/workouts/fartlek.v1.json" },
+    { "identity": "WORKOUT_DEFINITION/LONG_RUN_STANDARD/1", "status": "NEW — discovered by this audit", "anomalousReleases": ["1.0.0", "0.1.0-pilot"], "canonicalHash": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96", "rootCause": "same pattern, catalog/workouts/long-run-standard.v1.json" },
+    { "identity": "WORKOUT_DEFINITION/THRESHOLD_TEMPO/1", "status": "NEW — discovered by this audit", "anomalousReleases": ["1.0.0", "0.1.0-pilot"], "canonicalHash": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d", "rootCause": "same pattern, catalog/workouts/threshold-tempo.v1.json" },
+    { "identity": "PEAK_VOLUME_BAND_POLICY/PEAK_VOLUME_BANDS_V1/1", "status": "NEW — discovered by this audit", "anomalousReleases": ["1.0.0"], "canonicalHash": "d187758e6f8034f44d7c4c5c8dfe4a2d176d66b2ff843bf0f2bc84ae758d7f6e", "rootCause": "catalog/policies/peak-volume-bands.v1.json edited in place (band-corroboration pass) without a version bump" },
+    { "identity": "PUBLISHED_TEMPLATE_BUNDLE/TEN_K__4D__INTERMEDIATE/1", "status": "derived, fully explained — not an independent defect", "anomalousReleases": ["1.0.0", "0.1.0-pilot", "0.3.0-pilot"], "canonicalHash": "3bc63d0fe34bc166088b75e66081af8de7a5d4620f413fe23166681f86692dfe", "rootCause": "bundle hash reflects the full resolved dependency closure; necessarily differs whenever any dependency above changes" }
+  ],
+  "confirmationMethod": "Recomputed each artifact's content hash directly from today's catalog/ source using the project's own CatalogDocumentHasher/SystemTextJsonCanonicalSerializer via a throwaway console harness referencing PlanCatalog.Infrastructure directly (same code path as production). Every current-source hash matched the canonical (newer) value exactly.",
+  "remediationPerformed": "None beyond registering explicit exceptions — no immutable release directory modified, no new v2 artifacts created for workouts/peak-volume-policy (out of scope for this task; flagged for follow-up decision).",
+  "exceptionMechanism": {
+    "file": "artifacts/appsel-plan-catalog/cross-release-hash-exceptions.json",
+    "schema": "one entry per (documentType,key,version) identity; canonicalContentHash + anomalies[] each with releaseVersion/observedContentHash/reason/supersedingRelease/auditReference; no wildcards",
+    "entriesRegistered": 7,
+    "readers": [
+      "tests/PlanCatalog.Tests/TestSupport/CrossReleaseHashExceptionRegistry.cs (test-side, used by the scan test)",
+      "src/PlanCatalog.Infrastructure/Repositories/FileSystemCrossReleaseHashExceptionRegistry.cs (production-side, used by the publish-time guard)"
+    ]
+  },
+  "testsAdded": {
+    "scanTest": {
+      "file": "tests/PlanCatalog.Tests/Publishing/CrossReleaseHashConsistencyTests.cs",
+      "tests": [
+        "AllHistoricalReleases_SameArtifactIdentityAlwaysHasSameHash",
+        "ScanCoversAllExpectedArtifactTypesAndAtLeastTheKnownReleases",
+        "ExceptionRegistry_EveryAnomalyIsActuallyObservedInSomeRelease",
+        "UnregisteredMismatch_FailsTheConsistencyCheck_UsingAnIsolatedFixture"
+      ]
+    },
+    "publishTimeGuardTest": {
+      "file": "tests/PlanCatalog.Tests/Publishing/PublishTimeCrossReleaseHashGuardTests.cs",
+      "tests": [
+        "Publish_SameContentTwiceUnderDifferentReleaseVersions_NeverConflicts",
+        "Publish_WithMutatedDependencyUnderSameVersion_IsRejected_AndWritesNoPartialRelease",
+        "Publish_WithMutatedDependency_ButRegisteredAsAnException_Succeeds",
+        "RealCatalog_BuildReleasePreview_UsingRealExceptionRegistry_HasNoUnexpectedCrossReleaseMismatches"
+      ]
+    },
+    "totalAdded": 8
+  },
+  "publishTimeGuard": {
+    "preExistingSourceLevelGuard": "PublishReadinessValidator.Validate already detects a same-build duplicate (documentType,key,version) with differing hashes WITHIN one source snapshot — proven for TemplateCombinationDefinition by the pre-existing CombinationImmutabilityTests.cs. Cannot catch drift against a PREVIOUSLY PUBLISHED release.",
+    "gapClosed": "Added CatalogPublisher.ValidateCrossReleaseHashConsistency: compares the new release's artifact+bundle hashes against every already-published release's manifest via new IPublishedArtifactRepository.ListReleaseVersions(); rejects with PUBLISH_HASH_MISMATCH_FOR_SAME_KEY_VERSION unless the exact identity+release+hash is a registered exception.",
+    "writesNoPartialRelease": true,
+    "codeReused": "PUBLISH_HASH_MISMATCH_FOR_SAME_KEY_VERSION (same code as the existing source-level guard)",
+    "filesChanged": [
+      "src/PlanCatalog.Core/Ports/ICrossReleaseHashExceptionRegistry.cs (new)",
+      "src/PlanCatalog.Core/Ports/NullCrossReleaseHashExceptionRegistry.cs (new)",
+      "src/PlanCatalog.Infrastructure/Repositories/FileSystemCrossReleaseHashExceptionRegistry.cs (new)",
+      "src/PlanCatalog.Core/Ports/IPublishedArtifactRepository.cs (added ListReleaseVersions())",
+      "src/PlanCatalog.Infrastructure/Repositories/FileSystemPublishedArtifactRepository.cs (implemented ListReleaseVersions())",
+      "src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs (added optional ctor param + ValidateCrossReleaseHashConsistency)",
+      "src/PlanCatalog.Cli/Commands/InfrastructureFactory.cs (wired FileSystemCrossReleaseHashExceptionRegistry into CreatePublisher())"
+    ]
+  },
+  "regressionVerification": {
+    "build": "dotnet build -c Release — succeeded, 0 warnings, 0 errors",
+    "testSuite": "dotnet test -c Release — 171/171 passed (up from 163 after Task A)",
+    "historicalReleaseVerification": {
+      "1.0.0": "PASSED",
+      "0.1.0-pilot": "PASSED",
+      "0.2.0-pilot": "PASSED",
+      "0.3.0-pilot": "PASSED",
+      "0.4.0-pilot": "PASSED"
+    },
+    "immutableReleaseDirectoryModified": false
+  },
+  "finalStatus": "CROSS_RELEASE_HASH_CONSISTENCY: IMPLEMENTED — 5 additional pre-existing historical defects discovered and explicitly registered, not remediated further, flagged for follow-up"
+}

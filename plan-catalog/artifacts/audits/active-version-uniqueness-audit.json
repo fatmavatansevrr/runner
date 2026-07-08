@@ -1,0 +1,24 @@
+{
+  "auditId": "ACTIVE-UNIQ-001",
+  "generatedAtUtc": "2026-07-08T13:10:00Z",
+  "beforeRetirement": {
+    "nonRetiredEligibleVersions": [1, 2, 3, 4],
+    "validatorResult": "FAILED: ACTIVE_COMBINATION_VERSION_NOT_UNIQUE"
+  },
+  "afterRetirement": {
+    "nonRetiredEligibleVersions": [4],
+    "validatorResult": "PASSED",
+    "provenBy": "ActiveVersionPreparationTests.RealCatalogRetirementPlan_HasBeenExecuted_ExactlyOneEligibleVersionRemains"
+  },
+  "fullCatalogPublisherConfirmation": {
+    "combinationBundleCount": 1,
+    "combinationBundleVersion": 4
+  },
+  "historicalReadability": {
+    "sourceFilesPresent": ["ten-k-4d-intermediate.v1.json", "ten-k-4d-intermediate.v2.json", "ten-k-4d-intermediate.v3.json"],
+    "structuralValidationStillPasses": true,
+    "explicitNewBuildRequestFails": "RETIRED_COMBINATION_NOT_ELIGIBLE_FOR_NEW_RELEASE",
+    "historicalReleasesStillVerify": ["1.0.0", "0.1.0-pilot", "0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot", "0.5.0-pilot"]
+  },
+  "finalStatus": "ACTIVE_COMBINATION_VERSION_UNIQUENESS: RESOLVED for the real catalog"
+}

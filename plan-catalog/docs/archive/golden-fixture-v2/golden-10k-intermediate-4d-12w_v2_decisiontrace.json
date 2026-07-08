@@ -1,0 +1,210 @@
+{
+  "documentType": "GENERATION_TRACE",
+  "schemaVersion": 2,
+  "fixtureKey": "GOLDEN_10K_INTERMEDIATE_4D_12W",
+  "planId": "00000000-0000-0000-0000-000000000001",
+  "note": "v2: pipeline sirasi duzeltildi (dependency hatasi giderildi), eksik adimlar (core-entry readiness, preparation-gap, starting-long-run, pace-profile) eklendi, peak volume iki asamali (provisional -> final) hale getirildi. Bkz. golden fixture review v1->v2 degisiklik listesi.",
+  "steps": [
+    {
+      "step": "INPUT_SNAPSHOT",
+      "result": { "distanceFamily": "TEN_K", "confirmDate": "2026-07-30", "planStartDate": "2026-08-03", "raceDate": "2026-10-25" }
+    },
+    {
+      "step": "CURRENT_CAPACITY_RESOLVER",
+      "ruleFile": "WEEKLY_VOLUME_V1",
+      "evaluations": [
+        { "ruleId": "WEEKLY_VOLUME_ANCHOR_MAPPING", "outcome": "MATCHED",
+          "facts": { "input": "KM_21_30" }, "result": { "anchorKm": 24.0 } }
+      ]
+    },
+    {
+      "step": "LONG_RUN_COMPATIBILITY_RESOLVER",
+      "ruleFile": "LONG_RUN_V1",
+      "evaluations": [
+        { "ruleId": "LONG_RUN_RATIO_CLASSIFICATION", "outcome": "MATCHED",
+          "facts": { "longestRunKm": 9.0, "weeklyVolumeKm": 24.0, "ratio": 0.375 },
+          "result": { "band": "ACCEPTABLE", "recentLongestFactor": 0.90 } }
+      ]
+    },
+    {
+      "step": "CORE_ENTRY_READINESS_RESOLVER",
+      "note": "v2-fix: eksik adim eklendi (review madde 4).",
+      "facts": { "weeklyVolumeKm": 24, "longestRunKm": 9, "runsPerWeek": 4, "targetDistanceKm": 10,
+                 "longRunBand": "ACCEPTABLE", "recentPaceDataAvailable": true },
+      "result": { "readiness": "STANDARD", "gaps": [] }
+    },
+    {
+      "step": "PREPARATION_GAP_RESOLVER",
+      "note": "v2-fix: eksik adim eklendi (review madde 4). CORE_ENTRY_READINESS_RESOLVER 'gaps: []' dondurdugu icin runway gerekmiyor.",
+      "inputRefs": ["CORE_ENTRY_READINESS_RESOLVER"],
+      "result": { "requiredRunwayWeeks": 0, "selectedBlocks": [] }
+    },
+    {
+      "step": "TIME_ADEQUACY_RESOLVER",
+      "facts": { "availableFullWeeks": 12, "defaultCoreWeeks": 12, "requiredRunwayWeeks": 0 },
+      "result": { "timeAdequacy": "ADEQUATE", "runwayWeeks": 0 }
+    },
+    {
+      "step": "STARTING_LONG_RUN_RESOLVER",
+      "note": "v2-fix: eksik adim eklendi (review madde 8), formul aciktan gosterildi.",
+      "ruleFile": "LONG_RUN_V1",
+      "facts": {
+        "recentLongestKm": 9.0, "compatibilityFactor": 0.90, "adjustedRecentLongestKm": 8.1,
+        "weeklyVolumeShareCapKm": 8.64, "distanceLevelStartCapKm": 10.0
+      },
+      "result": { "startingLongRunKm": 8.0, "bindingConstraint": "adjustedRecentLongestKm" }
+    },
+    {
+      "step": "PHASE_ALLOCATION_RESOLVER",
+      "ruleFile": "PHASE_ALLOCATION_V1",
+      "note": "v2-fix: sirada Goal Feasibility'den ONCE calisiyor artik (dependency fix, review madde 3).",
+      "evaluations": [
+        { "ruleId": "DEFAULT_PHASE_ALLOCATION_TEN_K", "outcome": "MATCHED",
+          "facts": { "coreWeeks": 12 },
+          "result": { "FOUNDATION": 3, "BUILD": 4, "RACE_SPECIFIC": 4, "TAPER": 1 } }
+      ]
+    },
+    {
+      "step": "PROVISIONAL_PEAK_VOLUME_RESOLVER",
+      "ruleFile": "PEAK_VOLUME_V1",
+      "note": "v2-fix (review madde 3, Cozum B): peak burada 'provisional' olarak hesaplanir; Goal Feasibility ve Plan Mode bunu SONRASINDA gorebilir, ama bu adimin kendisi hicbir sonraki adima bagimli degildir (deterministik pipeline kurali korunur).",
+      "facts": {
+        "startingVolumeKm": 24.0,
+        "availableBuildSteps": 10,
+        "plannedIncrementsKm": [1, 1.5, 1.5, 2, 2, -5, 1, 2, 2, 1],
+        "note_increments": "Hafta1->2..11 arasi hacim degisimleri (7. hafta -5 = cutback, cutback-aware baseline W6=32'den W8=33'e +1 olarak hesaplandi)",
+        "cutbackWeeks": [7],
+        "percentageCaps": { "preferredMax": 0.07, "hardMax": 0.08 },
+        "absoluteIncrementCapKm": 2.5,
+        "typicalBandKm": [30, 42]
+      },
+      "result": { "unclampedReachablePeakKm": 38.0, "provisionalReachablePeakKm": 38.0 }
+    },
+    {
+      "step": "PACE_CONVERSION",
+      "ruleFile": "PACE_CONVERSION_V1",
+      "evaluations": [
+        { "ruleId": "RIEGEL_CONVERSION_5K_TO_10K", "outcome": "MATCHED",
+          "facts": { "sourceDistanceKm": 5, "sourceTimeSeconds": 1450, "profile": "INTERMEDIATE", "exponent": 1.06 },
+          "result": { "predicted10kTimeSeconds": 3023.15, "confidence": "HIGH", "resultAgeDays": 49 } }
+      ]
+    },
+    {
+      "step": "PACE_PROFILE_RESOLVER",
+      "note": "v2-fix: eksik adim eklendi (review madde 14).",
+      "result": {
+        "current10kPaceSecPerKm": 302.3,
+        "easyPaceRangeSecPerKm": [350, 375],
+        "thresholdPaceRangeSecPerKm": [315, 320],
+        "tenKPaceRangeSecPerKm": [300, 305],
+        "goalPaceSecPerKm": 300,
+        "sources": {
+          "easyPaceRangeSecPerKm": "CURRENT_FITNESS_DERIVED",
+          "thresholdPaceRangeSecPerKm": "CURRENT_FITNESS_DERIVED",
+          "tenKPaceRangeSecPerKm": "CURRENT_FITNESS_DERIVED",
+          "goalPaceSecPerKm": "GOAL"
+        }
+      }
+    },
+    {
+      "step": "GOAL_FEASIBILITY_RESOLVER",
+      "ruleFile": "GOAL_FEASIBILITY_V1",
+      "note": "v2-fix: artik PROVISIONAL_PEAK_VOLUME_RESOLVER'dan sonra calisiyor, provisionalReachablePeakKm'yi acikca referans aliyor (review madde 3). Ham oran (goalGapRatio) siniflandirma icin kullanildi, display icin ayri yuvarlandi (review madde 13).",
+      "evaluations": [
+        { "ruleId": "BASE_GAP_CLASSIFICATION", "outcome": "MATCHED",
+          "facts": { "predictedTimeSeconds": 3023.15, "goalTimeSeconds": 3000,
+                     "goalGapRatio": 0.007658, "goalGapPercentDisplay": 0.77 },
+          "result": { "classification": "REALISTIC" } },
+        { "ruleId": "TIME_ADEQUACY_MODIFIER", "outcome": "NOT_APPLIED",
+          "facts": { "timeAdequacy": "ADEQUATE" }, "result": { "modifier": "NO_CHANGE" } },
+        { "ruleId": "VOLUME_READINESS_MODIFIER", "outcome": "NOT_APPLIED",
+          "facts": { "provisionalReachablePeakKm": 38.0, "typicalBandKm": [30, 42] },
+          "result": { "modifier": "NONE_PEAK_WITHIN_BAND" } }
+      ]
+    },
+    {
+      "step": "TRAINING_SUITABILITY_RESOLVER",
+      "facts": { "warningsTriggered": [] },
+      "result": { "suitability": "SUITABLE" }
+    },
+    {
+      "step": "WARNING_GATE",
+      "ruleFile": "WARNING_POLICY_V1",
+      "evaluations": [
+        { "ruleId": "LONG_RUN_COMPATIBILITY_WARNING_CHECK", "outcome": "NOT_MATCHED",
+          "note": "v2-fix: eski adi LOW_DISTANCE_READINESS_CHECK yaniltici bulundu (review madde 16); bu kontrol yalnizca long-run/weekly-volume oranina bakar, genel 'distance readiness' degil.",
+          "facts": { "longRunBand": "ACCEPTABLE" }, "reason": "Band ACCEPTABLE, sadece HIGH_SHARE/WEAKLY_SUPPORTED/OUTLIER icin tetiklenir" },
+        { "ruleId": "INSUFFICIENT_PREPARATION_TIME_CHECK", "outcome": "NOT_MATCHED",
+          "facts": { "requiredRunwayWeeks": 0 } },
+        { "ruleId": "HIGH_GOAL_PERFORMANCE_GAP_CHECK", "outcome": "NOT_MATCHED",
+          "facts": { "goalGapPercentDisplay": 0.77, "threshold": 6.0 } }
+      ],
+      "result": { "warnings": [], "requiresAcknowledgement": false }
+    },
+    {
+      "step": "PLAN_MODE_RESOLVER",
+      "inputRefs": ["TIME_ADEQUACY_RESOLVER", "TRAINING_SUITABILITY_RESOLVER", "WARNING_GATE"],
+      "result": "STANDARD",
+      "evaluations": [
+        { "ruleId": "STANDARD_MODE_DEFAULT", "outcome": "MATCHED",
+          "facts": { "suitability": "SUITABLE", "requiredRunwayWeeks": 0, "warnings": [] },
+          "messageKey": "PLAN_MODE_STANDARD" }
+      ]
+    },
+    {
+      "step": "FINAL_PEAK_VOLUME_RESOLVER",
+      "note": "v2-fix: iki asamali peak modelinin ikinci adimi (review madde 3, Cozum B). STANDARD mode oldugu icin provisional peak degismeden onaylanir; COMPRESSED olsaydi burada azaltilirdi.",
+      "facts": { "planMode": "STANDARD", "provisionalReachablePeakKm": 38.0 },
+      "result": { "resolvedPeakKm": 38.0, "planModeAdjustment": "NONE_STANDARD_MODE", "belowTypicalPeakFlag": false }
+    },
+    {
+      "step": "LOAD_AND_PACE_DOSAGE",
+      "ruleFile": "PROGRESSION_V1",
+      "note": "v2-fix: cutback %25 -> %15.6'ya cekildi (INTERMEDIATE bandi [15,20]%, review madde 2). Hafta7->8 gecisinde postCutbackProgressionBaseline=PREVIOUS_NON_CUTBACK_VOLUME kullanildi.",
+      "evaluations": [
+        { "ruleId": "WEEKLY_INCREMENT_CAP", "outcome": "ALL_WEEKS_WITHIN_CAP",
+          "facts": { "profile": "INTERMEDIATE", "preferredCapPercent": [4, 7], "hardCapPercent": 8, "absoluteCapKmPerWeek": 2.5 },
+          "result": { "maxObservedIncrementPercent": 7.14, "maxObservedIncrementKm": 2.0 } },
+        { "ruleId": "CUTBACK_POLICY", "outcome": "APPLIED",
+          "facts": { "week": 7, "profile": "INTERMEDIATE", "preCutbackVolumeKm": 32.0, "cutbackVolumeKm": 27.0,
+                     "profileCutbackBandPercent": [15, 20] },
+          "result": { "reductionPercent": 15.63, "withinBand": true } },
+        { "ruleId": "POST_CUTBACK_BASELINE", "outcome": "APPLIED",
+          "facts": { "week8VolumeKm": 33.0, "naiveWeekOverWeekPercent": 22.2, "baselineUsed": "week6_preCutback_32.0" },
+          "result": { "adjustedIncrementPercent": 3.13, "withinCap": true } }
+      ]
+    },
+    {
+      "step": "TAPER_RESOLVER",
+      "ruleFile": "TAPER_V1",
+      "note": "v2-fix: onceki surumde reduction yuzdesi yanlis hesaplanmisti (%45.3 yerine gercek deger %54.7 olmaliydi -- review madde 1). Bu surumde training-hacmi 20.0km'ye cekilerek dogru %46.7 azaltim mevcut bant icinde saglandi; formul asagida acikca gosteriliyor.",
+      "evaluations": [
+        { "ruleId": "TAPER_REDUCTION_TEN_K", "outcome": "MATCHED",
+          "facts": { "week10VolumeKm": 37.0, "week11VolumeKm": 38.0, "preTaperReferenceKm": 37.5,
+                     "taperTrainingVolumeKm": 20.0, "reductionBandPercent": [40, 50] },
+          "formula": "reductionPercent = (preTaperReferenceKm - taperTrainingVolumeKm) / preTaperReferenceKm * 100",
+          "result": { "reductionPercent": 46.67, "withinBand": true } }
+      ]
+    },
+    {
+      "step": "FINAL_VALIDATION",
+      "ruleFile": "WARNING_POLICY_V1 (scheduling section)",
+      "note": "v2-fix: hard-session spacing artik hem hafta-ici hem haftalar-arasi kontrol ediliyor; long-run steady-finish MODERATE olarak siniflandirildigi icin (review madde 7) tum plan boyunca haftada tek HARD seans var, minimum ara 7 gun (168 saat).",
+      "evaluations": [
+        { "ruleId": "RACE_DAY_ALIGNMENT", "outcome": "PASS", "facts": { "raceDate": "2026-10-25", "week12Sunday": "2026-10-25" } },
+        { "ruleId": "RUNS_PER_WEEK_NOT_EXCEEDED", "outcome": "PASS" },
+        { "ruleId": "HARD_SESSION_SPACING_48H", "outcome": "PASS",
+          "facts": { "minimumRequiredHours": 48, "observedMinimumHoursWithinWeek": 168, "observedMinimumHoursCrossWeek": 168,
+                     "hardSessionsPerWeek": 1 } },
+        { "ruleId": "LONG_RUN_SHARE_WITHIN_BAND", "outcome": "PASS_WITH_NOTE",
+          "facts": { "observedRangePercent": [28.9, 35.2], "preferredBandPercent": [30, 36] },
+          "note": "Hafta 11: %28.9, preferred bandin (30%) hafif altinda -- kasitli: ayni hafta icinde goal-pace rehearsal zaten HARD oldugu icin long run bilerek kisaltildi (review madde 7 onerisi)." },
+        { "ruleId": "GOAL_PACE_EXPOSURE_BY_PHASE", "outcome": "PASS",
+          "facts": { "buildPhaseUsesGoalPace": false, "raceSpecificLateStageUsesGoalPace": true } },
+        { "ruleId": "WEEKLY_SCHEMA_UNIFORMITY", "outcome": "PASS",
+          "note": "v2-fix: tum haftalar artik plannedTrainingDistanceKm/plannedRaceDistanceKm/totalPlannedDistanceKm uc alanini kullaniyor (review madde 10); plannedVolumeKm alani tamamen kaldirildi." }
+      ],
+      "result": "ALL_INVARIANTS_PASS"
+    }
+  ]
+}

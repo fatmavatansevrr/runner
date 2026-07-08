@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "documentType": "LEVEL_MODIFIER",
+    "schemaVersion": 1,
+    "key": "INTERMEDIATE_MODIFIER",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "experience": "INTERMEDIATE",
+  "eligibleWorkoutKeys": ["EASY_STANDARD", "LONG_RUN_STANDARD", "FARTLEK", "THRESHOLD_TEMPO", "GOAL_PACE_TEN_K"],
+  "progressionModifier": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1",
+    "version": 1
+  }
+}

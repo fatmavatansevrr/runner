@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PlanCatalog.Contracts\PlanCatalog.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

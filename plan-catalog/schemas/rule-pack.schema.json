@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RulePackDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "RULE_PACK" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "runtimeConditionValueRegistry": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    },
+    "peakVolumeBandPolicy": {
+      "type": "object",
+      "properties": { "documentType": { "type": "string" }, "key": { "type": "string" }, "version": { "type": "integer" } },
+      "required": ["documentType", "key", "version"]
+    },
+    "policies": { "type": "array", "items": { "type": "object" } },
+    "rules": { "type": "array", "items": { "type": "object" } }
+  },
+  "required": ["metadata", "runtimeConditionValueRegistry", "peakVolumeBandPolicy", "policies", "rules"]
+}

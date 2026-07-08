@@ -1,0 +1,49 @@
+{
+  "investigationId": "COMB-IMMUT-001",
+  "generatedAtUtc": "2026-07-07T14:15:00Z",
+  "originalReportWording": "catalog/combinations/ten-k-4d-intermediate.v1.json (version bump)",
+  "wasV1MutatedInPlace": true,
+  "findings": {
+    "sourceFileBeforeCorrection": {
+      "path": "catalog/combinations/ten-k-4d-intermediate.v1.json",
+      "declaredMetadataVersion": 1,
+      "masterTemplateVersionReferenced": 2,
+      "status": "INVALID — masterTemplate reference mutated while declared version and filename remained 1"
+    },
+    "originalV1ContentHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71",
+    "historicallyPinnedBy": ["1.0.0", "0.1.0-pilot", "0.2.0-pilot"],
+    "currentPreFixV1HashIn030Pilot": "e976d10e4015981fdcdc925312502d12b92e36cc8da73d89775b672f03d0ab57",
+    "hashMismatchConfirmed": true,
+    "note": "0.3.0-pilot's release-manifest.json pinned TEMPLATE_COMBINATION/TEN_K__4D__INTERMEDIATE version=1 with hash e976d10e... — different from the hash (c6324371a3...) pinned by every earlier release for the same (documentType, key, version) tuple. This is the defect."
+  },
+  "correction": {
+    "v1Restored": true,
+    "restoredV1ContentHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71",
+    "restoredV1MatchesHistoricalHash": true,
+    "v2CreatedBefore": false,
+    "v2Created": true,
+    "v2Path": "catalog/combinations/ten-k-4d-intermediate.v2.json",
+    "v2MasterTemplateVersion": 2,
+    "v2ContentHash": "b3dab01388bfac1de820efa3649007e1bf3cfa1d4980e4070cd9cbacd15e8594 — deterministic, stable across source, bundle assembly, and every release (0.4.0-pilot); verified in artifacts/audits/combination-v2-hash-and-closure-audit.md. Differs from v1's hash because the content differs (masterTemplate.version 1 vs 2), not because of any per-release variability.",
+    "workoutFamilyTaperIntroduced": false,
+    "phaseKeyUnchanged": true
+  },
+  "releaseImpact": {
+    "1.0.0": { "combinationVersionPinned": 1, "hash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71", "masterVersionReferenced": 1, "consistentWithRestoredV1": true, "mutatedInPlace": false },
+    "0.1.0-pilot": { "combinationVersionPinned": 1, "hash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71", "masterVersionReferenced": 1, "consistentWithRestoredV1": true, "mutatedInPlace": false },
+    "0.2.0-pilot": { "combinationVersionPinned": 1, "hash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71", "masterVersionReferenced": 1, "consistentWithRestoredV1": true, "mutatedInPlace": false },
+    "0.3.0-pilot": { "combinationVersionPinned": 1, "hash": "e976d10e4015981fdcdc925312502d12b92e36cc8da73d89775b672f03d0ab57", "masterVersionReferenced": 2, "consistentWithRestoredV1": false, "mutatedInPlace": true, "handling": "Preserved unchanged (immutable release directory not rewritten); superseded via release-status ledger; a corrected pilot release created" }
+  },
+  "outcomeSelected": "C",
+  "outcomeCRationale": "0.3.0-pilot incorrectly pinned combination v1 with changed content (a mislabeled published artifact). 0.3.0-pilot's directory was preserved unchanged; a new pilot release was created pinning the correctly-versioned combination v2; 0.3.0-pilot was marked SUPERSEDED in the release-status ledger only after the corrected release verified.",
+  "replacementPilotReleaseRequired": true,
+  "filesChanged": [
+    "catalog/combinations/ten-k-4d-intermediate.v1.json (restored to original historical content)",
+    "catalog/combinations/ten-k-4d-intermediate.v2.json (new)",
+    "src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs (wording correction, AUD-007 rationale rewritten, new AUD-055)",
+    "tests/PlanCatalog.Tests/Golden/TaperPhaseFamilyEligibilityTests.cs (split single-combination test into v1/v2-aware tests, added hash tests)",
+    "tests/PlanCatalog.Tests/Publishing/CatalogPublisherTests.cs (updated for 2 bundles instead of 1)",
+    "tests/PlanCatalog.Tests/Publishing/CombinationImmutabilityTests.cs (new)"
+  ],
+  "finalImmutabilityStatus": "RESOLVED — v1 restored to historically pinned content; v2 created as a distinct versioned artifact; no historical release directory rewritten; 0.3.0-pilot preserved and superseded via ledger only."
+}

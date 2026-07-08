@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LevelModifierDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "LEVEL_MODIFIER" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "experience": { "type": "string", "enum": ["NEW", "INTERMEDIATE", "ADVANCED", "EXPERIENCED"] },
+    "eligibleWorkoutKeys": { "type": "array", "items": { "type": "string" } },
+    "eligibleWorkouts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "documentType": { "type": "string" },
+          "key": { "type": "string" },
+          "version": { "type": "integer" }
+        },
+        "required": ["documentType", "key", "version"]
+      }
+    },
+    "progressionModifier": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "PROGRESSION_MODIFIER" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" }
+      },
+      "required": ["documentType", "key", "version"]
+    }
+  },
+  "required": ["metadata", "experience", "progressionModifier"],
+  "oneOf": [
+    { "required": ["eligibleWorkoutKeys"], "not": { "required": ["eligibleWorkouts"] } },
+    { "required": ["eligibleWorkouts"], "not": { "required": ["eligibleWorkoutKeys"] } }
+  ],
+  "not": {
+    "anyOf": [
+      { "required": ["progressionProfileKey"] },
+      { "required": ["peakVolumeBandKey"] },
+      { "required": ["maximumHardSessionsPerWeek"] }
+    ]
+  }
+}

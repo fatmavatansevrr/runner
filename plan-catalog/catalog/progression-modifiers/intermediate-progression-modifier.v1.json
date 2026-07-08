@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "schemaVersion": 1,
+    "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "experience": "INTERMEDIATE",
+  "maximumComplexityTier": 2,
+  "maximumHardSessionsPerWeek": 1,
+  "mainSetDoseMultiplier": 1.0,
+  "allowGoalPaceRehearsal": true,
+  "allowSecondHardStimulus": false
+}

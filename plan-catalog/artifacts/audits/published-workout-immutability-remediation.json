@@ -1,0 +1,103 @@
+{
+  "remediationId": "WORKOUT-IMMUT-001",
+  "generatedAtUtc": "2026-07-07T19:00:00Z",
+  "scope": "4 WORKOUT_DEFINITION in-place mutations: EASY_STANDARD, FARTLEK, LONG_RUN_STANDARD, THRESHOLD_TEMPO (all v1)",
+  "remediationEntries": [
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "EASY_STANDARD",
+      "oldVersion": 1,
+      "originalHistoricalHash": "37990edcaf4f9253528bd41ae7428b4555f4c9fd95f3452930cf6db688086b80",
+      "mutatedHistoricalHashes": { "0.2.0-pilot": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1", "0.3.0-pilot": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1", "0.4.0-pilot": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1" },
+      "restoredSourceHash": "37990edcaf4f9253528bd41ae7428b4555f4c9fd95f3452930cf6db688086b80",
+      "restoredMatchesOriginal": true,
+      "replacementVersion": 2,
+      "replacementKey": "EASY_STANDARD",
+      "replacementHash": "166aa9d97968a5da94b12c00b301f8e23cd4730df5a093b6c977b43160ae0dbf",
+      "releasesAffected": ["0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot"],
+      "parentReferencesAffected": ["CatalogBundleAssembler.FindWorkout resolution (key-only, now version-aware)"],
+      "domainClassificationStatus": { "v1": "PLACEHOLDER_UNCONFIRMED (restored legacy prescriptionMode; accountingMode field absent)", "v2": "CANONICAL_CONFIRMED (prescriptionMode, accountingMode); family/eligiblePhases confirmed on both" },
+      "correctedRelease": "0.5.0-pilot",
+      "historicalExceptionReference": "artifacts/appsel-plan-catalog/cross-release-hash-exceptions.json (WORKOUT_DEFINITION/EASY_STANDARD/1)"
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "FARTLEK",
+      "oldVersion": 1,
+      "originalHistoricalHash": "8652ed9aa01a0909ab1efffdacf1e029a164bd5784b505351b7296d6a5f89482",
+      "mutatedHistoricalHashes": { "0.2.0-pilot": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795", "0.3.0-pilot": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795", "0.4.0-pilot": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795" },
+      "restoredSourceHash": "8652ed9aa01a0909ab1efffdacf1e029a164bd5784b505351b7296d6a5f89482",
+      "restoredMatchesOriginal": true,
+      "replacementVersion": 2,
+      "replacementKey": "FARTLEK",
+      "replacementHash": "6df78c0fd292791f0fd8ff149f6aba2d8765e0b1fbc6d9867d6832c0009f7c27",
+      "releasesAffected": ["0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot"],
+      "parentReferencesAffected": ["CatalogBundleAssembler.FindWorkout resolution (key-only, now version-aware)"],
+      "domainClassificationStatus": { "v1": "PLACEHOLDER_UNCONFIRMED", "v2": "CANONICAL_CONFIRMED (prescriptionMode, accountingMode); family/eligiblePhases confirmed on both" },
+      "correctedRelease": "0.5.0-pilot",
+      "historicalExceptionReference": "artifacts/appsel-plan-catalog/cross-release-hash-exceptions.json (WORKOUT_DEFINITION/FARTLEK/1)"
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "LONG_RUN_STANDARD",
+      "oldVersion": 1,
+      "originalHistoricalHash": "92d43af58804bf4f77ec2d97b85a127780b5065557ef86ccc5dbf3265f315452",
+      "mutatedHistoricalHashes": { "0.2.0-pilot": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96", "0.3.0-pilot": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96", "0.4.0-pilot": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96" },
+      "restoredSourceHash": "92d43af58804bf4f77ec2d97b85a127780b5065557ef86ccc5dbf3265f315452",
+      "restoredMatchesOriginal": true,
+      "replacementVersion": 2,
+      "replacementKey": "LONG_RUN_STANDARD",
+      "replacementHash": "4d6d0ef3683dedf85cf2f2fcdc09ca9129def078e8fac959136f569b17ba5d6f",
+      "releasesAffected": ["0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot"],
+      "parentReferencesAffected": ["CatalogBundleAssembler.FindWorkout resolution (key-only, now version-aware)"],
+      "domainClassificationStatus": { "v1": "PLACEHOLDER_UNCONFIRMED", "v2": "CANONICAL_CONFIRMED (prescriptionMode, accountingMode); family/eligiblePhases confirmed on both" },
+      "correctedRelease": "0.5.0-pilot",
+      "historicalExceptionReference": "artifacts/appsel-plan-catalog/cross-release-hash-exceptions.json (WORKOUT_DEFINITION/LONG_RUN_STANDARD/1)"
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "THRESHOLD_TEMPO",
+      "oldVersion": 1,
+      "originalHistoricalHash": "3da4f9606f91e91323e0cf5aeb6763bbad6149319f037f32d44581f5a5522621",
+      "mutatedHistoricalHashes": { "0.2.0-pilot": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d", "0.3.0-pilot": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d", "0.4.0-pilot": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d" },
+      "restoredSourceHash": "3da4f9606f91e91323e0cf5aeb6763bbad6149319f037f32d44581f5a5522621",
+      "restoredMatchesOriginal": true,
+      "replacementVersion": 2,
+      "replacementKey": "THRESHOLD_TEMPO",
+      "replacementHash": "32032852e32340672c036e3d442fa91e5d8b0b1ca7af475362a54addb065b8f3",
+      "releasesAffected": ["0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot"],
+      "parentReferencesAffected": ["CatalogBundleAssembler.FindWorkout resolution (key-only, now version-aware)"],
+      "domainClassificationStatus": { "v1": "PLACEHOLDER_UNCONFIRMED", "v2": "CANONICAL_CONFIRMED (prescriptionMode, accountingMode); family/eligiblePhases confirmed on both" },
+      "correctedRelease": "0.5.0-pilot",
+      "historicalExceptionReference": "artifacts/appsel-plan-catalog/cross-release-hash-exceptions.json (WORKOUT_DEFINITION/THRESHOLD_TEMPO/1)"
+    }
+  ],
+  "referenceResolutionFix": {
+    "defectFound": "CatalogSourceSnapshot.FindWorkout(key) used FirstOrDefault by key only — arbitrary list-order match, no version disambiguation, no retirement awareness.",
+    "fixApplied": "FindWorkout(key, retirementLedger) now resolves the highest-version non-retired candidate deterministically.",
+    "filesChanged": ["src/PlanCatalog.Core/Catalog/CatalogSourceSnapshot.cs", "src/PlanCatalog.Infrastructure/Publishing/CatalogBundleAssembler.cs"],
+    "provenDeterministic": true,
+    "provenRetirementAware": true
+  },
+  "generatedFixtureDosageCopiedIntoReusableDefinition": false,
+  "unresolvedFieldsPreservedAsPlaceholder": true,
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Golden/WorkoutArtifactImmutabilityTests.cs",
+    "count": 13
+  },
+  "filesChanged": [
+    "catalog/workouts/easy-standard.v1.json (restored)",
+    "catalog/workouts/fartlek.v1.json (restored)",
+    "catalog/workouts/long-run-standard.v1.json (restored)",
+    "catalog/workouts/threshold-tempo.v1.json (restored)",
+    "catalog/workouts/easy-standard.v2.json (new)",
+    "catalog/workouts/fartlek.v2.json (new)",
+    "catalog/workouts/long-run-standard.v2.json (new)",
+    "catalog/workouts/threshold-tempo.v2.json (new)",
+    "src/PlanCatalog.Core/Catalog/CatalogSourceSnapshot.cs",
+    "src/PlanCatalog.Infrastructure/Publishing/CatalogBundleAssembler.cs",
+    "src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs"
+  ],
+  "historicalReleaseModified": false,
+  "finalStatus": "WORKOUT_ARTIFACT_IMMUTABILITY: REMEDIATED"
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkoutProgressionDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "WORKOUT_PROGRESSION" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "distanceFamily": { "type": "string", "enum": ["FIVE_K", "TEN_K", "HALF_MARATHON", "MARATHON"] },
+    "phaseProgressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phaseKey": { "type": "string", "enum": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"] },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stageKey": { "type": "string" },
+                "relativeOrder": { "type": "integer", "minimum": 1 },
+                "workoutCandidateKeys": { "type": "array", "items": { "type": "string" } },
+                "workoutCandidates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "documentType": { "type": "string" },
+                      "key": { "type": "string" },
+                      "version": { "type": "integer" }
+                    },
+                    "required": ["documentType", "key", "version"]
+                  }
+                },
+                "minimumExposures": { "type": "integer", "minimum": 0 },
+                "maximumExposures": { "type": "integer", "minimum": 0 },
+                "compressionBehavior": { "type": "string", "enum": ["COMPRESSIBLE", "PROTECTED"] },
+                "extensionBehavior": { "type": "string", "enum": ["EXTENDABLE", "FIXED_EXPOSURE"] },
+                "requires": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "conditionType": { "type": "string" },
+                      "allowedValues": { "type": "array", "items": { "type": "string" } }
+                    },
+                    "required": ["conditionType", "allowedValues"]
+                  }
+                },
+                "fallbackStageKey": { "type": "string" }
+              },
+              "required": ["stageKey", "relativeOrder", "minimumExposures", "maximumExposures", "compressionBehavior", "extensionBehavior", "requires"],
+              "oneOf": [
+                { "required": ["workoutCandidateKeys"], "not": { "required": ["workoutCandidates"] } },
+                { "required": ["workoutCandidates"], "not": { "required": ["workoutCandidateKeys"] } }
+              ],
+              "not": { "anyOf": [{ "required": ["weekNumber"] }, { "required": ["calendarDate"] }, { "required": ["week"] }] }
+            }
+          }
+        },
+        "required": ["phaseKey", "stages"]
+      }
+    }
+  },
+  "required": ["metadata", "distanceFamily", "phaseProgressions"]
+}

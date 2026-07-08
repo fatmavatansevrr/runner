@@ -1,0 +1,65 @@
+{
+  "planId": "PART3-PLAN-001",
+  "generatedAtUtc": "2026-07-08T12:40:00Z",
+  "executed": false,
+  "candidateRoot": {
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 4,
+    "contentHash": "5c6c701b783ee04794a3d2b19aa0d6b640ea3263f89d415bff396d01a6f3daac",
+    "label": "candidate replacement root (not yet active)"
+  },
+  "candidatePredecessor": {
+    "version": 3,
+    "rationale": "Only version carrying BOTH prior corrections (TAPER phase-family fix from v2, and the corrected peak-volume-policy-bearing RulePack v2). v1 has neither fix; v2 has only the TAPER fix.",
+    "comparisonTable": [
+      { "version": 1, "masterTemplate": "TEN_K_MASTER v1", "levelModifier": "INTERMEDIATE_MODIFIER v1", "rulePack": "APPSEL_RACE_PLAN_V1 v1", "hasTaperFix": false, "hasRulePackFix": false },
+      { "version": 2, "masterTemplate": "TEN_K_MASTER v2", "levelModifier": "INTERMEDIATE_MODIFIER v1", "rulePack": "APPSEL_RACE_PLAN_V1 v1", "hasTaperFix": true, "hasRulePackFix": false },
+      { "version": 3, "masterTemplate": "TEN_K_MASTER v2", "levelModifier": "INTERMEDIATE_MODIFIER v1", "rulePack": "APPSEL_RACE_PLAN_V1 v2", "hasTaperFix": true, "hasRulePackFix": true }
+    ]
+  },
+  "exactOldRootVersionsToRetire": [
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 1 },
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 2 },
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 3 }
+  ],
+  "dependenciesNotProposedForRetirement": ["TEN_K_MASTER v1", "TEN_K_MASTER v2", "INTERMEDIATE_MODIFIER v1", "TEN_K_WORKOUT_PROGRESSION_V1 v1"],
+  "dependencyRetirementRationale": "Nothing in the retirement/publish pipeline requires a dependency to be retired merely because its only combination consumer is; they remain readable historical artifacts (Decision E). Smallest appropriate action.",
+  "retirementLedgerPreChangeSnapshot": {
+    "fileExists": false,
+    "path": "artifacts/appsel-plan-catalog/retirements.json",
+    "note": "Confirmed absent both before and after Part 2 (ActiveVersionPreparationTests.RealCatalogRetirementPlan_IsGeneratedButNotExecuted)."
+  },
+  "expectedFullCatalogBundleListAfterRetirement": {
+    "TEN_K__4D__INTERMEDIATE": ["v4 only"],
+    "otherArtifactTypes": "unchanged -- all non-combination artifact types continue to be republished individually regardless of combination retirement, per brief §15 full-catalog-packaging design"
+  },
+  "nextPilotReleaseVersion": "0.6.0-pilot",
+  "previousPilotReleaseToSupersede": "0.5.0-pilot",
+  "supersedeConditionedOnSuccessfulVerification": true,
+  "expectedDecisionLevelProductionBlockerCount": 13,
+  "expectedArtifactLevelProductionBlockerCount": 9,
+  "expectedBlockingArtifacts": [
+    "PEAK_VOLUME_BAND_POLICY/PEAK_VOLUME_BANDS_V1/v2",
+    "PROGRESSION_MODIFIER/INTERMEDIATE_PROGRESSION_MODIFIER_V1/v1",
+    "RUN_LAYOUT/RUN_LAYOUT_4D/v1",
+    "RUNTIME_CONDITION_VALUE_REGISTRY/RUNTIME_CONDITION_VALUES_V1/v1",
+    "WORKOUT_DEFINITION/EASY_STANDARD/v2",
+    "WORKOUT_DEFINITION/FARTLEK/v2",
+    "WORKOUT_DEFINITION/GOAL_PACE_TEN_K/v1",
+    "WORKOUT_DEFINITION/LONG_RUN_STANDARD/v2",
+    "WORKOUT_DEFINITION/THRESHOLD_TEMPO/v2"
+  ],
+  "domainContentResolutionInScope": false,
+  "rollbackProcedure": [
+    "If a retire CLI call fails partway: ledger is additive JSON, remove/re-run missing entries; no release touched yet.",
+    "If publish 0.6.0-pilot fails validation: CatalogPublisher.Publish never calls WriteRelease until every validation stage passes -- no partial release directory is ever written. Fix and re-run; no ledger rollback needed.",
+    "If publish succeeds but verify-release fails: do NOT delete/edit the release directory; do NOT supersede 0.5.0-pilot; fix forward with a new corrected release (e.g. 0.6.1-pilot), never retroactively alter 0.6.0-pilot.",
+    "In all cases: 0.5.0-pilot and every earlier release remain untouched and continue to verify."
+  ],
+  "confirmations": {
+    "retirementEntryWritten": false,
+    "releaseStatusLedgerEntryWritten": false,
+    "numberedReleasePublished": false,
+    "immutableReleaseDirectoryModified": false
+  }
+}

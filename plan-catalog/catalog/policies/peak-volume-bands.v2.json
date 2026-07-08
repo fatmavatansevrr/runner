@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "schemaVersion": 1,
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 2,
+    "status": "VALIDATED"
+  },
+  "entries": [
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 3, "minimumKm": 20, "maximumKm": 30 },
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 24, "maximumKm": 34 },
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 5, "minimumKm": 28, "maximumKm": 38 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 4, "minimumKm": 30, "maximumKm": 42 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 36, "maximumKm": 50 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 3, "minimumKm": 34, "maximumKm": 46 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 4, "minimumKm": 38, "maximumKm": 52 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 5, "minimumKm": 42, "maximumKm": 58 },
+    { "distanceFamily": "TEN_K", "experience": "EXPERIENCED", "runsPerWeek": 3, "minimumKm": 40, "maximumKm": 55 },
+    { "distanceFamily": "TEN_K", "experience": "EXPERIENCED", "runsPerWeek": 4, "minimumKm": 46, "maximumKm": 62 },
+    { "distanceFamily": "TEN_K", "experience": "EXPERIENCED", "runsPerWeek": 5, "minimumKm": 50, "maximumKm": 68 }
+  ]
+}

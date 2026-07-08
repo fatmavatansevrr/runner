@@ -1,0 +1,124 @@
+{
+  "auditId": "PROD-CONTRACT-001",
+  "generatedAtUtc": "2026-07-08T16:00:00Z",
+  "question": "Why did the Production negative test report 9 errors when the active root contains 13 blocking domain decisions across 9 artifacts?",
+  "answer": "One Production-readiness error represents one blocking artifact identity (DocumentType+Key+Version), not one field-level decision. errorCount(9) matches blockingArtifactCount(9) by construction, not blockingDecisionCount(13). The relationship was already correct; the defect was that the 13 nested decisions were only reachable via a concatenated free-text message string, not structured data. That defect is now fixed.",
+  "codePath": {
+    "entryPoint": "src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs BuildRelease()",
+    "steps": [
+      "eligibleCombinations -> bundles (1 bundle: TEN_K__4D__INTERMEDIATE v4)",
+      "bundles.SelectMany(BundleArtifactTuples).Distinct() -> 9 distinct (documentType,key,version) tuples",
+      "PublishReadinessValidator.ValidateContentDecisionsDetailed(tuples, channel, allowUnconfirmedContent)",
+      "for each of the 9 tuples: PilotDomainContentAudit.BlockingEntriesFor(documentType,key,version) -> 1..2 DomainContentDecision rows each (13 total)",
+      "one ContentDecisionGuardError emitted per artifact tuple with >=1 blocking entry, carrying ALL of that artifact's blocking decisions structured (post-fix) or concatenated into Message (pre-fix)",
+      "CatalogPublisher throws CatalogValidationException carrying both the legacy ValidationResult (9 Issues) and (post-fix) the structured ContentDecisionGuardResult",
+      "CLI ReleaseCommands.Publish/BuildRelease catch block prints Issues (9) and, post-fix, the structured Data object (BlockingArtifactCount=9, BlockingDecisionCount=13, Errors[9] each with nested BlockingDecisions)"
+    ],
+    "groupingKey": "(DocumentType, Key, Version) artifact identity",
+    "cardinalityRule": "one ValidationIssue / ContentDecisionGuardError per distinct blocking artifact identity"
+  },
+  "requiredTrace": [
+    { "stage": "Active root closure", "inputCount": 1, "outputCount": 1, "groupingKey": "n/a", "informationRetained": "full bundle" },
+    { "stage": "Bundle -> artifact tuples", "inputCount": 1, "outputCount": 9, "groupingKey": "Distinct() over referenced artifacts", "informationRetained": "full identity" },
+    { "stage": "Artifact tuples -> DomainContentDecision blocking entries", "inputCount": 9, "outputCount": 13, "groupingKey": "exact (documentType,key,version) match", "informationRetained": "full DomainContentDecision record, in memory" },
+    { "stage": "Blocking entries -> ValidationIssue (pre-fix)", "inputCount": 13, "outputCount": 9, "groupingKey": "(documentType,key,version)", "informationRetained": "Message text + hardcoded JsonPath='$' only; Classification/Reason/EntryId dropped" },
+    { "stage": "Blocking entries -> ContentDecisionGuardError (post-fix)", "inputCount": 13, "outputCount": 9, "groupingKey": "(documentType,key,version)", "informationRetained": "full: EntryId, FieldPath, Classification, Reason nested per error, plus BlockingArtifactCount/BlockingDecisionCount aggregate" },
+    { "stage": "ValidationIssue[]/ContentDecisionGuardResult -> CLI output", "inputCount": 9, "outputCount": 9, "groupingKey": "1:1 passthrough", "informationRetained": "identical to previous stage; no re-parsing" },
+    { "stage": "-> audit reports (BlockerScopeMeasurement)", "inputCount": 13, "outputCount": "13 decisions / 9 artifacts (2 explicitly separate numbers)", "groupingKey": "independent recomputation from PilotDomainContentAudit.Entries", "informationRetained": "full; never derived from ValidationIssue list" }
+  ],
+  "decisionInventory": [
+    { "documentType": "RUN_LAYOUT", "key": "RUN_LAYOUT_4D", "version": 1, "fieldPath": "$.slots[*].sequenceOrder", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "RUN_LAYOUT/RUN_LAYOUT_4D v1", "entryId": "AUD-017" },
+    { "documentType": "PROGRESSION_MODIFIER", "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1", "version": 1, "fieldPath": "$.maximumComplexityTier, $.maximumHardSessionsPerWeek, $.mainSetDoseMultiplier, $.allowGoalPaceRehearsal, $.allowSecondHardStimulus", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "PROGRESSION_MODIFIER/INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1", "entryId": "AUD-044" },
+    { "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY", "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1, "fieldPath": "$.conditionValueSets[PACE_SOURCE_IN,TIME_ADEQUACY_IN,CORE_ENTRY_READINESS_IN]", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "RUNTIME_CONDITION_VALUE_REGISTRY/RUNTIME_CONDITION_VALUES_V1 v1", "entryId": "AUD-048" },
+    { "documentType": "PEAK_VOLUME_BAND_POLICY", "key": "PEAK_VOLUME_BANDS_V1", "version": 2, "fieldPath": "$.entries[TEN_K,NEW|ADVANCED|EXPERIENCED,3|4|5]", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "PEAK_VOLUME_BAND_POLICY/PEAK_VOLUME_BANDS_V1 v2", "entryId": "AUD-057" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 2, "fieldPath": "$.complexityTier", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/EASY_STANDARD v2", "entryId": "AUD-206" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 2, "fieldPath": "$.components", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/EASY_STANDARD v2", "entryId": "AUD-207" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 2, "fieldPath": "$.complexityTier", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/FARTLEK v2", "entryId": "AUD-230" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 2, "fieldPath": "$.components", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/FARTLEK v2", "entryId": "AUD-231" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 1, "fieldPath": "$.eligiblePhases, $.complexityTier, $.allowedPrescriptionModes, $.components", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/GOAL_PACE_TEN_K v1", "entryId": "AUD-249" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 2, "fieldPath": "$.complexityTier", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/LONG_RUN_STANDARD v2", "entryId": "AUD-218" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 2, "fieldPath": "$.components", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/LONG_RUN_STANDARD v2", "entryId": "AUD-219" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 2, "fieldPath": "$.complexityTier", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/THRESHOLD_TEMPO v2", "entryId": "AUD-242" },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 2, "fieldPath": "$.components", "classification": "PLACEHOLDER_UNCONFIRMED", "errorGroup": "WORKOUT_DEFINITION/THRESHOLD_TEMPO v2", "entryId": "AUD-243" }
+  ],
+  "totals": {
+    "totalDecisionRows": 13,
+    "totalUniqueArtifactIdentities": 9,
+    "totalValidationErrorsCurrentContract": 9,
+    "allThirteenDecisionsUserVisibleOrMachineReadable": true,
+    "note": "True after this task's fix. Before the fix, all 13 were present only as substrings of 9 free-text Message strings (technically present, not structurally parseable)."
+  },
+  "contractOptions": {
+    "chosen": "A",
+    "description": "Artifact-grouped top-level errors with complete nested field-level decisions",
+    "expectedTotals": { "errorCount": 9, "blockingArtifactCount": 9, "blockingDecisionCount": 13 },
+    "reasonsChosen": [
+      "avoids noisy duplicate top-level errors for artifacts with multiple blocking fields",
+      "preserves artifact context per error without client-side re-grouping",
+      "matches BlockerScopeMeasurement's pre-existing artifact-level/decision-level duality",
+      "consistent with docs/README.md's decision-vs-artifact-level metrics separation",
+      "fully backward compatible with existing ValidationResult-based tests and callers",
+      "matches the repository's pre-existing architecture (grouping key was already artifact-level; only nested detail was missing)"
+    ]
+  },
+  "defectFound": {
+    "classification": "groups by artifact but loses decision detail",
+    "description": "ValidationIssue (the return type of PublishReadinessValidator.ValidateContentDecisions) is a flat record {Code,Severity,Message,JsonPath} with no field for a nested decision list. All 13 blocking decisions were concatenated into free-text Message strings; JsonPath was hardcoded to '$'. Classification, Reason, and audit-entry ID were entirely absent from the structured result.",
+    "violatesRequirement": "Do not encode all nested decision data only inside one concatenated message string."
+  },
+  "codeChanges": [
+    "src/PlanCatalog.Core/Validation/ContentDecisionGuardResult.cs (new) - ProductionReadinessBlockingDecision, ContentDecisionGuardError, ContentDecisionGuardResult records",
+    "src/PlanCatalog.Core/Validation/PublishReadinessValidator.cs - added ValidateContentDecisionsDetailed(...); ValidateContentDecisions(...) now delegates to it via ToValidationResult() (same signature/return type, same issue count)",
+    "src/PlanCatalog.Core/Validation/CatalogValidationException.cs - added optional nullable ContentDecisionGuardResult? ContentDecisionDetail property/constructor param (default null, fully backward compatible)",
+    "src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs - content-decision-guard stage now calls ValidateContentDecisionsDetailed and attaches the structured result to the thrown exception",
+    "src/PlanCatalog.Cli/Commands/ReleaseCommands.cs - BuildRelease/Publish catch blocks pass ex.ContentDecisionDetail as CliOutput.Report's data parameter instead of null",
+    "src/PlanCatalog.Cli/Commands/CliOutput.cs - NO CHANGE REQUIRED (already serializes any non-null data object as structured JSON in both text and --json modes)"
+  ],
+  "cliParsingIntroduced": false,
+  "outputAgreement": {
+    "textModeCli": { "issueLines": 9, "dataBlockPresent": true, "blockingArtifactCount": 9, "blockingDecisionCount": 13 },
+    "jsonModeCli": { "issuesCount": 9, "dataBlockingArtifactCount": 9, "dataBlockingDecisionCount": 13 },
+    "auditReports": { "blockingArtifactCount": 9, "blockingDecisionCount": 13, "computedIndependentlyVia": "BlockerScopeMeasurement, straight from PilotDomainContentAudit.Entries" },
+    "allSurfacesAgree": true
+  },
+  "releaseHandling": {
+    "newReleaseCreated": false,
+    "zeroSixPilotModified": false,
+    "zeroFivePilotResuperseded": false,
+    "reason": "Only validator diagnostics, error payload/model, CLI wiring, tests, and audit/governance documentation changed."
+  },
+  "commandsRun": [
+    "dotnet restore",
+    "dotnet build -c Release (0 warnings, 0 errors)",
+    "dotnet test -c Release (260/260: 245 pre-existing + 15 new)",
+    "publish --channel Production --allow-unconfirmed-content (text and --json) against real retirement ledger",
+    "verify-release for all 7 releases (1.0.0 .. 0.6.0-pilot) - all PASSED",
+    "CrossReleaseHashConsistencyTests + PublishTimeCrossReleaseHashGuardTests - 10/10 PASSED",
+    "git status --porcelain -- backend/ runner/backend/ (empty)",
+    "sha256sum artifacts/appsel-plan-catalog/retirements.json (d629ec93aea3f21dffbecaa501e2f43c256155f34351971dfade00c41633e1e9, unchanged)"
+  ],
+  "preExistingGranularityNote": "Two of the 13 DomainContentDecision audit rows (AUD-044, GOAL_PACE_TEN_K's entry AUD-249) each bundle multiple field paths into a single row's JsonPath string. This predates this task, is not a defect this task was asked to fix (domain-content audit granularity, not error-contract structure), and is preserved 1:1 (not modified) by this task's fix.",
+  "testsAdded": [
+    "ActiveRootClosure_ContainsExactlyThirteenBlockingDecisions",
+    "ActiveRootClosure_ContainsExactlyNineBlockingArtifacts",
+    "NoBlockerBelongsOnlyToARetiredRoot",
+    "ProductionPublish_FailsWithPublishProductionContainsUnconfirmedContent",
+    "ErrorContract_IsDeterministicAcrossRepeatedCalls",
+    "EveryOneOfTheThirteenDecisions_AppearsExactlyOnce",
+    "EveryDecision_MapsToTheCorrectOwningArtifact",
+    "NoBlockingDecision_IsLostThroughArtifactGrouping",
+    "TopLevelErrorCount_MatchesBlockingArtifactCount_NotBlockingDecisionCount",
+    "BlockingDecisionCount_EqualsThirteen",
+    "BlockingArtifactCount_EqualsNine",
+    "BackwardCompatibleValidationResult_HasOneIssuePerArtifact_MatchingDetailedErrors",
+    "MachineReadableOutput_IncludesStructuredBlockingDecisions_NotOnlyAConcatenatedMessage",
+    "ProductionPublish_WritesNoPartialRelease",
+    "FullCatalogEligibleUnionCounts_EqualActiveRootCounts_WhileV4IsTheOnlyEligibleRoot"
+  ],
+  "finalValues": {
+    "topLevelErrorCount": 9,
+    "blockingArtifactCount": 9,
+    "blockingDecisionCount": 13
+  },
+  "finalStatus": "PRODUCTION_READINESS_ERROR_CONTRACT: ARTIFACT_GROUPED_WITH_STRUCTURED_NESTED_DECISIONS"
+}

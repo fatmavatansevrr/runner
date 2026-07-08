@@ -1,0 +1,39 @@
+{
+  "auditId": "RETIRE-APPLY-001",
+  "generatedAtUtc": "2026-07-08T13:00:00Z",
+  "preChange": { "fileExists": false, "path": "artifacts/appsel-plan-catalog/retirements.json", "checksum": null },
+  "overlayPreview": {
+    "sourceIntegrityValidation": "PASSED",
+    "eligibleCombinationsUnderOverlay": ["TEN_K__4D__INTERMEDIATE v4"],
+    "publishGraphValidation": "PASSED",
+    "activeVersionUniquenessValidator": "PASSED",
+    "buildPreview": "PASSED",
+    "manifestBundleList": [{ "key": "TEN_K__4D__INTERMEDIATE", "version": 4, "hash": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b" }],
+    "manifestCombinationArtifacts": [{ "key": "TEN_K__4D__INTERMEDIATE", "version": 4 }],
+    "partialReleaseDirectoryWritten": false
+  },
+  "realEntriesApplied": [
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 1, "retiredAtUtc": "2026-07-08T07:40:54.4358331Z" },
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 2, "retiredAtUtc": "2026-07-08T07:40:56.5116376Z" },
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 3, "retiredAtUtc": "2026-07-08T07:40:58.6208197Z" }
+  ],
+  "postChangeChecksum": "d629ec93aea3f21dffbecaa501e2f43c256155f34351971dfade00c41633e1e9",
+  "dependencyArtifactsRetired": [],
+  "postWriteRevalidation": {
+    "sourceIntegrityValidation": "PASSED",
+    "validateCombinationV4": "PASSED",
+    "validateCombinationV1ExplicitRequest": "FAILED as expected: RETIRED_COMBINATION_NOT_ELIGIBLE_FOR_NEW_RELEASE",
+    "buildReleasePreview": { "combinationArtifactCount": 1, "bundleCount": 1, "bundleHash": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b" },
+    "fullTestSuite": "245/245 passing (1 test updated)",
+    "historicalReleases": "all 6 PASSED"
+  },
+  "matchesOverlayPreviewExactly": true,
+  "rollbackNeeded": false,
+  "testUpdated": {
+    "oldName": "ActiveVersionPreparationTests.RealCatalogRetirementPlan_IsGeneratedButNotExecuted",
+    "newName": "ActiveVersionPreparationTests.RealCatalogRetirementPlan_HasBeenExecuted_ExactlyOneEligibleVersionRemains",
+    "reason": "Part 2's premise (not yet executed) is obsolete now that Part 3 executed the plan"
+  },
+  "historicalArtifactsPreserved": ["catalog/combinations/ten-k-4d-intermediate.v1.json", "ten-k-4d-intermediate.v2.json", "ten-k-4d-intermediate.v3.json"],
+  "finalStatus": "Retirement ledger correctly reflects the approved Part 3 plan; matches staged overlay preview exactly."
+}

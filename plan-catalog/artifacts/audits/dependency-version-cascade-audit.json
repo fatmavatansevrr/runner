@@ -1,0 +1,64 @@
+{
+  "auditId": "CASCADE-001",
+  "generatedAtUtc": "2026-07-07T19:30:00Z",
+  "part3Update": "TEN_K__4D__INTERMEDIATE v3 (this report's root) has been superseded by v4 and retired from new-release eligibility (ledger-only). The v4 cascade followed the same immutability principles established here. See deterministic-graph-part3-completion.json.",
+  "activeDependencyGraph": {
+    "root": { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 3 },
+    "masterTemplate": { "key": "TEN_K_MASTER", "version": 2, "changed": false },
+    "layout": { "key": "RUN_LAYOUT_4D", "version": 1, "changed": false },
+    "levelModifier": { "key": "INTERMEDIATE_MODIFIER", "version": 1, "changed": false },
+    "progressionModifier": { "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1", "version": 1, "changed": false },
+    "rulePack": { "key": "APPSEL_RACE_PLAN_V1", "version": 2, "changed": true, "reason": "peakVolumeBandPolicy reference repointed to v2" },
+    "runtimeConditionValueRegistry": { "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1, "changed": false },
+    "peakVolumeBandPolicy": { "key": "PEAK_VOLUME_BANDS_V1", "version": 2, "changed": true, "reason": "restored+corrected, PEAK-POLICY-IMMUT-001" },
+    "workoutProgression": { "key": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 1, "changed": false },
+    "effectiveWorkouts": [
+      { "key": "EASY_STANDARD", "version": 2 },
+      { "key": "FARTLEK", "version": 2 },
+      { "key": "LONG_RUN_STANDARD", "version": 2 },
+      { "key": "THRESHOLD_TEMPO", "version": 2 },
+      { "key": "GOAL_PACE_TEN_K", "version": 1 }
+    ]
+  },
+  "cascadeTable": [
+    { "node": "WORKOUT_DEFINITION (4 keys)", "contentOrReferenceChanged": "restored to original (reverted mutation)", "alreadyPublished": true, "actionTaken": "v1 preserved as restored; v2 created" },
+    { "node": "TEN_K_WORKOUT_PROGRESSION_V1 v1", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped" },
+    { "node": "INTERMEDIATE_MODIFIER v1", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped" },
+    { "node": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped" },
+    { "node": "PEAK_VOLUME_BAND_POLICY PEAK_VOLUME_BANDS_V1 v1", "contentOrReferenceChanged": "restored to original", "alreadyPublished": true, "actionTaken": "v1 preserved as restored; v2 created" },
+    { "node": "RUNTIME_CONDITION_VALUES_V1 v1", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped" },
+    { "node": "RULE_PACK APPSEL_RACE_PLAN_V1 v1", "contentOrReferenceChanged": "indirect (pinned peakVolumeBandPolicy reference)", "alreadyPublished": true, "actionTaken": "v1 preserved unchanged; v2 created" },
+    { "node": "TEN_K_MASTER v1/v2", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped (untouched by this task)" },
+    { "node": "RUN_LAYOUT_4D v1", "contentOrReferenceChanged": false, "alreadyPublished": true, "actionTaken": "not bumped" },
+    { "node": "TEMPLATE_COMBINATION TEN_K__4D__INTERMEDIATE v1/v2", "contentOrReferenceChanged": "indirect (pinned rulePack reference)", "alreadyPublished": true, "actionTaken": "v1/v2 preserved unchanged; v3 created" },
+    { "node": "PUBLISHED_TEMPLATE_BUNDLE (derived)", "contentOrReferenceChanged": "content changes whenever any resolved dependency changes; not an independently-versioned source artifact", "alreadyPublished": "n/a (derived)", "actionTaken": "not treated as a versionable source artifact" }
+  ],
+  "noPublishedParentMutatedInPlace": true,
+  "newParentVersionsCreated": [
+    { "documentType": "RULE_PACK", "key": "APPSEL_RACE_PLAN_V1", "newVersion": 2, "reason": "peakVolumeBandPolicy reference repointed to corrected v2" },
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "newVersion": 3, "reason": "rulePack reference repointed to corrected v2" }
+  ],
+  "parentsNotBumped": ["WORKOUT_PROGRESSION/TEN_K_WORKOUT_PROGRESSION_V1", "LEVEL_MODIFIER/INTERMEDIATE_MODIFIER", "PROGRESSION_MODIFIER/INTERMEDIATE_PROGRESSION_MODIFIER_V1"],
+  "derivedBundleMismatchExplanation": {
+    "rootCause": "PublishedTemplateBundle.Workouts is resolved via FindWorkout(key) — key-only, no version pin anywhere in the reference chain (WorkoutProgressionDefinition/LevelModifierDefinition reference workouts by unversioned key). A combination's bundle content is therefore not a pure function of the combination's own version; it also depends on whichever workout versions exist in source at build time.",
+    "isIndependentMutableIdentityViolation": false,
+    "isFullyExplainedByArtifactLevelMutations": true,
+    "bundleTreatedAsFirstClassVersionedArtifact": false,
+    "verification": [
+      "Rebuild the active bundle (combination v3) — DependencyVersionCascadeTests.ActiveCombinationV3_ResolvesAFullyConsistentVersionedGraph",
+      "Deterministic hash — proven via repeated-computation tests on each underlying artifact",
+      "Historical bundle hashes unchanged — no historical release directory modified; verify-release confirms",
+      "Documented as derivative in cross-release-hash-exceptions.json PUBLISHED_TEMPLATE_BUNDLE entries (reasonForCanonicalDirection)"
+    ]
+  },
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Publishing/DependencyVersionCascadeTests.cs",
+    "count": 7
+  },
+  "filesChanged": [
+    "catalog/rule-packs/appsel-race-plan.v2.json (new)",
+    "catalog/combinations/ten-k-4d-intermediate.v3.json (new)",
+    "src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs"
+  ],
+  "finalStatus": "DEPENDENCY_VERSION_CASCADE: VERIFIED, NO IMPROPER PARENT MUTATION"
+}

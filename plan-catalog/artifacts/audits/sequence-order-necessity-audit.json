@@ -1,0 +1,63 @@
+{
+  "auditId": "SEQ-ORDER-001",
+  "generatedAtUtc": "2026-07-09T09:00:00Z",
+  "readOnly": true,
+  "scope": "RUN_LAYOUT_4D v1 $.slots[*].sequenceOrder",
+  "usageTrace": {
+    "field": "LayoutSlotDefinition.SequenceOrder",
+    "declaredIn": "src/PlanCatalog.Core/Models/LayoutSlotDefinition.cs:7; schema run-layout.schema.json $.slots[*].sequenceOrder (minimum 1)",
+    "writtenBy": "catalog authors, hand-written into catalog/layouts/run-layout-4d.v1.json",
+    "readBy": ["RunLayoutValidator.Validate (src/PlanCatalog.Core/Validation/RunLayoutValidator.cs:26-32)"],
+    "validationUse": "RL_SEQUENCE_ORDER_NOT_CONTIGUOUS: requires the SET of SequenceOrder values across all slots to be unique and exactly {1..N}; does not check JSON array position agreement, does not tie a specific ordinal to a specific Role",
+    "bundleUse": "republished verbatim as part of the RUN_LAYOUT artifact in every release; not special-cased by CatalogBundleAssembler",
+    "runtimeBehaviorUse": "none found; no Process A code branches on a specific SequenceOrder value, only on its shape",
+    "auditOnlyUse": "PilotDomainContentAudit.cs AUD-017, classified PLACEHOLDER_UNCONFIRMED"
+  },
+  "distinguishActualVsIntended": "The contiguity check is real and implemented, but validates shape only (a permutation of 1..N), never a specific role-to-ordinal mapping. No test, validator, or bundle-assembly logic anywhere asserts a specific role must hold a specific ordinal.",
+  "necessityAnalysis": {
+    "orderingAlreadyRepresented": {
+      "arrayListOrder": "yes, currently consistent with sequenceOrder values, but not schema-enforced to match",
+      "slotIndex": "yes, structurally available, unused by any consumer",
+      "dayPreferenceOrExplicitOrdinal": "no separate field; SequenceOrder is the only explicit ordinal",
+      "conclusion": "SequenceOrder is redundant with array order under current usage"
+    },
+    "affects": {
+      "validation": true,
+      "bundleHash": "yes, indirectly, as a mechanical consequence of being a required serialized field",
+      "layoutCompatibility": false,
+      "processBScheduling": false,
+      "documentationOnly": "yes, beyond the shape check, functions only as an authoring convention"
+    },
+    "processBSchedulingEvidence": "Golden Fixture v3 assigns scheduledDate/weekday per day independently (e.g. 2026-08-04); brief explicitly forbids catalog-level weekday assignment; no code path connects SequenceOrder to scheduledDate",
+    "canTwoRepresentationsDisagree": {
+      "answer": true,
+      "explanation": "Nothing enforces array position matches sequenceOrder value. A reordering that keeps the value SET {1,2,3,4} but assigns them to different array positions/roles would pass RL_SEQUENCE_ORDER_NOT_CONTIGUOUS silently.",
+      "currentArtifactStatus": "currently consistent (no live disagreement), but the representation-disagreement risk is unguarded"
+    },
+    "ifRemovedWhatIsLost": [
+      "RL_SEQUENCE_ORDER_NOT_CONTIGUOUS would need to be removed or re-based on array index (mechanical schema change)",
+      "no domain/training information lost -- no consumer reads the value for behavioral purposes",
+      "authoring convenience of a self-describing field independent of array position (minor ergonomic property only)"
+    ],
+    "classification": {
+      "redundant": true,
+      "redundantWith": "array order",
+      "ambiguousInCurrentSingleArtifact": false,
+      "ambiguityRiskIfSchemaUnchanged": true,
+      "technicallyRequiredByExternalConsumer": false,
+      "trueDomainRule": false,
+      "rationale": "No coaching/scheduling authority determines which numeric slot holds which role; per AUD-017's own recorded reasoning, the brief mandates shape only, not order."
+    }
+  },
+  "candidateOutcomes": [
+    { "outcome": "KEEP_REQUIRED", "fit": "possible but not well-supported" },
+    { "outcome": "KEEP_OPTIONAL", "fit": "possible middle ground" },
+    { "outcome": "DERIVE_FROM_COLLECTION_ORDER", "fit": "best fit given current evidence" },
+    { "outcome": "REPLACE_WITH_EXPLICIT_SLOT_ORDINAL", "fit": "does not resolve redundancy, only renames it" },
+    { "outcome": "MOVE_TO_PROCESS_B", "fit": "not supported -- Process A authoring-shape concern; Process B already owns real scheduling separately" },
+    { "outcome": "REMOVE", "fit": "viable, a stricter version of DERIVE_FROM_COLLECTION_ORDER" }
+  ],
+  "finalOutcomeChosen": false,
+  "noSchemaCodeOrClassificationChanged": true,
+  "finalStatus": "D1 usage trace and necessity analysis complete."
+}

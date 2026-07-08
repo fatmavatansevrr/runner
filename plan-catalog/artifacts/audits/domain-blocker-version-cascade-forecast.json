@@ -1,0 +1,79 @@
+{
+  "auditId": "VERSION-CASCADE-001",
+  "generatedAtUtc": "2026-07-08T18:45:00Z",
+  "readOnly": true,
+  "activeGraph": {
+    "root": "TEN_K__4D__INTERMEDIATE v4",
+    "masterTemplate": "TEN_K_MASTER v3",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v2",
+    "layout": "RUN_LAYOUT_4D v1",
+    "levelModifier": "INTERMEDIATE_MODIFIER v2",
+    "progressionModifier": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "runtimeConditionValueRegistry": "RUNTIME_CONDITION_VALUES_V1 v1",
+    "peakVolumeBandPolicy": "PEAK_VOLUME_BANDS_V1 v2"
+  },
+  "outcomeModel": {
+    "outcomeA": "Confirmation, value unchanged: audit-only classification change (PLACEHOLDER_UNCONFIRMED -> CANONICAL_CONFIRMED or EXPLICIT_PRODUCT_DEFAULT). No artifact JSON changes, no content hash change, no new artifact version, no parent cascade, no new combination version, no new release strictly required.",
+    "outcomeB": "Correction, value changes: leaf artifact content changes, requiring a new immutable artifact version and triggering the parent-reference cascade.",
+    "note": "This forecast does not assume every audit-classification change requires an artifact version -- both outcomes are reported per decision since values are not chosen in this task."
+  },
+  "perDecisionForecast": [
+    { "decisionId": "D1", "leafArtifact": "RUN_LAYOUT_4D v1", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "RUN_LAYOUT_4D v2", "parentReferencesChanged": ["TEN_K__4D__INTERMEDIATE v4.layout"], "expectedParentCascade": "TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D2", "leafArtifact": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2", "parentReferencesChanged": ["INTERMEDIATE_MODIFIER v2.progressionModifier"], "expectedParentCascade": "INTERMEDIATE_MODIFIER v3 -> TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D3", "leafArtifact": "RUNTIME_CONDITION_VALUES_V1 v1", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "RUNTIME_CONDITION_VALUES_V1 v2", "parentReferencesChanged": ["APPSEL_RACE_PLAN_V1 v2.runtimeConditionValueRegistry"], "expectedParentCascade": "APPSEL_RACE_PLAN_V1 v3 -> TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D4", "leafArtifact": "PEAK_VOLUME_BANDS_V1 v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "PEAK_VOLUME_BANDS_V1 v3", "parentReferencesChanged": ["APPSEL_RACE_PLAN_V1 v2.peakVolumeBandPolicy"], "expectedParentCascade": "APPSEL_RACE_PLAN_V1 v3 (shared with D3 if resolved together) -> TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D5", "leafArtifact": "EASY_STANDARD v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "EASY_STANDARD v3", "parentReferencesChanged": ["INTERMEDIATE_MODIFIER v2.eligibleWorkouts", "possibly TEN_K_WORKOUT_PROGRESSION_V1 v2.workoutCandidates"], "expectedParentCascade": "INTERMEDIATE_MODIFIER v3 (and/or TEN_K_WORKOUT_PROGRESSION_V1 v3 -> TEN_K_MASTER v4) -> TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D6", "leafArtifact": "EASY_STANDARD v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "EASY_STANDARD v3 (shared with D5 if resolved together)", "parentReferencesChanged": ["same as D5"], "expectedParentCascade": "same as D5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D7", "leafArtifact": "FARTLEK v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "FARTLEK v3", "parentReferencesChanged": ["INTERMEDIATE_MODIFIER v2.eligibleWorkouts", "possibly TEN_K_WORKOUT_PROGRESSION_V1 v2.workoutCandidates"], "expectedParentCascade": "same shape as D5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D8", "leafArtifact": "FARTLEK v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "FARTLEK v3 (shared with D7 if resolved together)", "parentReferencesChanged": ["same as D7"], "expectedParentCascade": "same as D7", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D9", "leafArtifact": "LONG_RUN_STANDARD v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "LONG_RUN_STANDARD v3", "parentReferencesChanged": ["INTERMEDIATE_MODIFIER v2.eligibleWorkouts ONLY (confirmed absent from workoutCandidates)"], "expectedParentCascade": "INTERMEDIATE_MODIFIER v3 -> TEN_K__4D__INTERMEDIATE v5 (no TEN_K_WORKOUT_PROGRESSION_V1/TEN_K_MASTER cascade needed)", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D10", "leafArtifact": "LONG_RUN_STANDARD v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "LONG_RUN_STANDARD v3 (shared with D9 if resolved together)", "parentReferencesChanged": ["same as D9"], "expectedParentCascade": "same as D9", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D11", "leafArtifact": "THRESHOLD_TEMPO v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "THRESHOLD_TEMPO v3", "parentReferencesChanged": ["INTERMEDIATE_MODIFIER v2.eligibleWorkouts", "possibly TEN_K_WORKOUT_PROGRESSION_V1 v2.workoutCandidates"], "expectedParentCascade": "same shape as D5", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D12", "leafArtifact": "THRESHOLD_TEMPO v2", "auditOnlyOrContentChanging": "either", "nextVersionIfContentChanges": "THRESHOLD_TEMPO v3 (shared with D11 if resolved together)", "parentReferencesChanged": ["same as D11"], "expectedParentCascade": "same as D11", "rootNewVersionNeeded": "only under outcome B", "newPilotReleaseRequired": "only under outcome B" },
+    { "decisionId": "D13", "leafArtifact": "GOAL_PACE_TEN_K v1", "auditOnlyOrContentChanging": "either (or a third path: removal from active closure without a new GOAL_PACE_TEN_K version)", "nextVersionIfContentChanges": "GOAL_PACE_TEN_K v2", "parentReferencesChanged": ["TEN_K_WORKOUT_PROGRESSION_V1 v2.workoutCandidates (RACE_SPECIFIC phase)"], "expectedParentCascade": "TEN_K_WORKOUT_PROGRESSION_V1 v3 -> TEN_K_MASTER v4 -> TEN_K__4D__INTERMEDIATE v5", "rootNewVersionNeeded": "only under outcome B or removal path", "newPilotReleaseRequired": "only under outcome B or removal path" }
+  ],
+  "efficiencyNote": {
+    "description": "Multiple Outcome-B decisions resolved in the same pass collapse onto a single new parent version rather than one per decision.",
+    "examples": [
+      "D3 + D4 both consumed by APPSEL_RACE_PLAN_V1 -> one APPSEL_RACE_PLAN_V1 v3, not two",
+      "D5 + D6 (same EASY_STANDARD artifact) -> one EASY_STANDARD v3, not two; same for D7+D8, D9+D10, D11+D12",
+      "any subset of {D5,D7,D9,D11} and/or {D6,D8,D10,D12} changing together cascades to INTERMEDIATE_MODIFIER once (v3), not once per workout",
+      "regardless of how many of the 13 decisions resolve as Outcome B in one publish wave, TEN_K__4D__INTERMEDIATE needs at most one new version (v5)"
+    ]
+  },
+  "worstCaseCascade": {
+    "allThirteenResolvedAsOutcomeB": [
+      "RUN_LAYOUT_4D v2",
+      "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2",
+      "RUNTIME_CONDITION_VALUES_V1 v2",
+      "PEAK_VOLUME_BANDS_V1 v3",
+      "APPSEL_RACE_PLAN_V1 v3",
+      "EASY_STANDARD v3",
+      "FARTLEK v3",
+      "LONG_RUN_STANDARD v3",
+      "THRESHOLD_TEMPO v3",
+      "GOAL_PACE_TEN_K v2",
+      "INTERMEDIATE_MODIFIER v3",
+      "TEN_K_WORKOUT_PROGRESSION_V1 v3 (conditional)",
+      "TEN_K_MASTER v4 (conditional)",
+      "TEN_K__4D__INTERMEDIATE v5 (exactly one)"
+    ],
+    "newPilotReleasesRequired": 1,
+    "newProductionReleasesEnabled": "only once all 13 decisions across the closure are non-PLACEHOLDER_UNCONFIRMED"
+  },
+  "batchCascadeSummary": [
+    { "batch": "B1", "touches": ["RUN_LAYOUT_4D -> v5 root"], "rootVersionNeeded": "if content changes", "newPilotReleaseRequired": "if content changes" },
+    { "batch": "B2", "touches": ["4 workout artifacts -> INTERMEDIATE_MODIFIER (and possibly TEN_K_WORKOUT_PROGRESSION_V1/TEN_K_MASTER) -> v5 root"], "rootVersionNeeded": "if any content changes", "newPilotReleaseRequired": "if any content changes" },
+    { "batch": "B3", "touches": ["INTERMEDIATE_PROGRESSION_MODIFIER_V1 -> INTERMEDIATE_MODIFIER -> v5 root"], "rootVersionNeeded": "if content changes", "newPilotReleaseRequired": "if content changes" },
+    { "batch": "B4", "touches": ["same 4 workout artifacts as B2 -> INTERMEDIATE_MODIFIER -> v5 root"], "rootVersionNeeded": "if any content changes", "newPilotReleaseRequired": "if any content changes" },
+    { "batch": "B5", "touches": ["RUNTIME_CONDITION_VALUES_V1 -> APPSEL_RACE_PLAN_V1 -> v5 root"], "rootVersionNeeded": "if content changes", "newPilotReleaseRequired": "if content changes" },
+    { "batch": "B6", "touches": ["PEAK_VOLUME_BANDS_V1 -> APPSEL_RACE_PLAN_V1 (shared with B5 if run together) -> v5 root"], "rootVersionNeeded": "if content changes", "newPilotReleaseRequired": "if content changes" },
+    { "batch": "B7", "touches": ["GOAL_PACE_TEN_K -> TEN_K_WORKOUT_PROGRESSION_V1 -> TEN_K_MASTER -> v5 root"], "rootVersionNeeded": "if content changes (or removal path)", "newPilotReleaseRequired": "if content changes (or removal path)" }
+  ],
+  "recommendation": "Stage resolution work into research/decision batches per domain-blocker-resolution-plan.md's execution order, but publish as one combined wave once all desired resolutions for that wave are finalized -- mirroring Part 2's approach of bundling multiple technical migrations into one v4 candidate rather than one root version per fix.",
+  "recommendedPilotPublishPoint": "Not before every decision intended for the next wave reaches a stable classification (CANONICAL_CONFIRMED, EXPLICIT_PRODUCT_DEFAULT, or a recorded removal); a whole batch should complete before cutting a new Pilot release, to avoid an unnecessary intermediate root version.",
+  "recommendedProductionPublishPoint": "Only after all 13 decisions across all 7 batches are resolved -- the Production guard rejects the release based on blockingArtifactCount > 0 for the closure regardless of which specific decisions remain.",
+  "noArtifactMutated": true,
+  "finalStatus": "Version-cascade forecast complete for all 13 decisions and all 7 batches; no artifact was mutated."
+}

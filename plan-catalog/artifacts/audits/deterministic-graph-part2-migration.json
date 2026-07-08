@@ -1,0 +1,101 @@
+{
+  "migrationId": "PART2-001",
+  "generatedAtUtc": "2026-07-08T12:00:00Z",
+  "part3Update": "Retirement and republication have since been executed per this plan: TEN_K__4D__INTERMEDIATE v1/v2/v3 retired (ledger-only), v4 published as 0.6.0-pilot's sole bundle with the exact predicted hash. See deterministic-graph-part3-completion.json.",
+  "purpose": "The same root combination version always resolves the same exact versioned dependencies and produces the same bundle, even after newer artifact versions are later added to the source catalog.",
+  "part1ContradictionCheck": "No corrected fact from Part 1 was contradicted by the current repository. All four corrected facts were followed exactly.",
+  "milestoneSummary": {
+    "A_ValidationLayerSeparation": "DONE",
+    "B_ExactWorkoutReferenceModel": "DONE",
+    "C_RulePackOwnership": "DONE",
+    "D_PinnedRegistryResolution": "DONE",
+    "E_SelfContainedBundleClosure": "DONE",
+    "F_ImmutableCandidateVersionCascade": "DONE",
+    "G_ActiveVersionPolicyPreparation": "DONE",
+    "H_CandidateBlockerMeasurement": "DONE"
+  },
+  "migrationEntries": [
+    {
+      "artifactType": "WORKOUT_PROGRESSION",
+      "key": "TEN_K_WORKOUT_PROGRESSION_V1",
+      "oldVersion": 1,
+      "candidateVersion": 2,
+      "oldReferenceShape": "workoutCandidateKeys: string[] (unversioned)",
+      "newReferenceShape": "workoutCandidates: VersionedCatalogReference[] (exact key+version)",
+      "oldHash": "a4856b47bf385ad29c148412480620b2584ddf7b0e0fa177664dc3455baf6281",
+      "candidateHash": "a7bf02812e9931322be7625f3e26a8d3217100a9c7d7df190adedd4dd48f23f4",
+      "parentCascade": "TEN_K_MASTER v3 (workoutProgression reference repointed)",
+      "domainClassificationImpact": "TECHNICAL_ONLY (reference-shape change only; pinned versions match what legacy auto-selection already resolved today, so no domain content changed)",
+      "retirementActionDeferredToPart3": "Retire TEN_K_WORKOUT_PROGRESSION_V1 v1 once v2 is confirmed as the sole active predecessor chain (see part3-retirement-and-release-plan.md)",
+      "expectedReleaseImpact": "None in Part 2 (no release published). In Part 3, a new Pilot release will pin this candidate."
+    },
+    {
+      "artifactType": "LEVEL_MODIFIER",
+      "key": "INTERMEDIATE_MODIFIER",
+      "oldVersion": 1,
+      "candidateVersion": 2,
+      "oldReferenceShape": "eligibleWorkoutKeys: string[] (unversioned)",
+      "newReferenceShape": "eligibleWorkouts: VersionedCatalogReference[] (exact key+version)",
+      "oldHash": "c5e9d601f2756495c921676cb323872539eb65f901135b1240e27034861bff34",
+      "candidateHash": "1dda5d17b444710581afda274fae41534d8c619056235453455a76a3ed152770",
+      "parentCascade": "TEN_K__4D__INTERMEDIATE v4 (levelModifier reference repointed)",
+      "domainClassificationImpact": "TECHNICAL_ONLY (reference-shape change only; same 5 keys, pinned to their current confirmed versions)",
+      "retirementActionDeferredToPart3": "Retire INTERMEDIATE_MODIFIER v1 once v2 is confirmed as the sole active predecessor chain",
+      "expectedReleaseImpact": "None in Part 2. Part 3 will pin this candidate in the next Pilot release."
+    },
+    {
+      "artifactType": "PLAN_TEMPLATE",
+      "key": "TEN_K_MASTER",
+      "oldVersion": 2,
+      "candidateVersion": 3,
+      "oldReferenceShape": "requiredRules: VersionedCatalogReference[] (exact, competing RulePack selection)",
+      "newReferenceShape": "requiredRuleKeys: string[] (semantic key requirement only) + workoutProgression repointed to v2",
+      "oldHash": "9ac7f07666a26ec95080592534cf92e5892d6f0853566cc0ffb4d28e527be4b0",
+      "candidateHash": "e2ede6a030b3ea1a09b798c2c21840702375bffc2e489bc58f31d51f407e66bb",
+      "parentCascade": "TEN_K__4D__INTERMEDIATE v4 (masterTemplate reference repointed)",
+      "domainClassificationImpact": "TECHNICAL_ONLY (ownership/architecture decision, not a domain-content decision — see rule-pack-ownership-audit.md Milestone C5)",
+      "retirementActionDeferredToPart3": "Retire TEN_K_MASTER v2 once v3 is confirmed as the sole active predecessor chain (v1 already superseded, remains historical)",
+      "expectedReleaseImpact": "None in Part 2. Part 3 will pin this candidate."
+    },
+    {
+      "artifactType": "TEMPLATE_COMBINATION",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "oldVersion": 3,
+      "candidateVersion": 4,
+      "oldReferenceShape": "masterTemplate=v2, levelModifier=v1, rulePack=v2 (schemaVersion 1, unchanged)",
+      "newReferenceShape": "masterTemplate=v3 (candidate), levelModifier=v2 (candidate), rulePack=v2 (unchanged, already correct), layout=v1 (unchanged)",
+      "oldHash": "064078f0c8ee4c974dfd8946231999539f004ed17656c051b462085327c10cfb",
+      "candidateHash": "5c6c701b783ee04794a3d2b19aa0d6b640ea3263f89d415bff396d01a6f3daac",
+      "parentCascade": "none (root)",
+      "domainClassificationImpact": "TECHNICAL_ONLY (reference repointing only)",
+      "retirementActionDeferredToPart3": "Retire v1/v2/v3 once v4 is confirmed as the sole active version (see part3-retirement-and-release-plan.md) — this is the ACTIVE_COMBINATION_VERSION_NOT_UNIQUE resolution",
+      "expectedReleaseImpact": "Part 3 will publish the next Pilot release (0.6.0-pilot per repository reality) pinning v4 as the sole eligible bundle for this key, after v1/v2/v3 are retired"
+    }
+  ],
+  "unmodifiedByDesign": [
+    { "artifactType": "RULE_PACK", "key": "APPSEL_RACE_PLAN_V1", "version": 2, "hash": "4ea4270573074714993942feb25b25d93aa00aec6ba4c7ad8896aadb91670300", "reason": "combination v4 continues to reference the already-existing, already-correct RulePack v2 — no serialized content changed, so no new version was created (per explicit Milestone F instruction)." },
+    { "artifactType": "RUNTIME_CONDITION_VALUE_REGISTRY", "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1, "reason": "content unaffected by this migration; no new version created." },
+    { "artifactType": "RUN_LAYOUT", "key": "RUN_LAYOUT_4D", "version": 1, "reason": "content unaffected; combination v4 continues to reference it unchanged." },
+    { "artifactType": "PROGRESSION_MODIFIER", "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1", "version": 1, "reason": "content unaffected; INTERMEDIATE_MODIFIER v2 continues to reference it unchanged." }
+  ],
+  "unexpectedDiscovery": {
+    "description": "CatalogGraphValidator's GRAPH_DUPLICATE_LEVEL_MODIFIER_EXPERIENCE / GRAPH_DUPLICATE_PROGRESSION_MODIFIER_EXPERIENCE checks grouped by Experience across ALL versions of ALL keys, incorrectly flagging two immutable versions of the SAME key as if they were two different, conflicting keys. Never triggered before because no LevelModifierDefinition/ProgressionModifierDefinition key had ever had a second version.",
+    "fix": "Group by distinct Key within each Experience group, not by document/version.",
+    "files": ["src/PlanCatalog.Core/Validation/CatalogGraphValidator.cs"]
+  },
+  "filesChanged": {
+    "schemas": ["schemas/workout-progression.schema.json", "schemas/level-modifier.schema.json", "schemas/plan-template.schema.json"],
+    "models": ["src/PlanCatalog.Core/Models/WorkoutProgressionStageDefinition.cs", "src/PlanCatalog.Core/Models/LevelModifierDefinition.cs", "src/PlanCatalog.Core/Models/PlanTemplateDefinition.cs"],
+    "validation": ["src/PlanCatalog.Core/Validation/SchemaVersionShapeValidator.cs (new)", "src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs (new)", "src/PlanCatalog.Core/Validation/ActiveVersionUniquenessValidator.cs (new)", "src/PlanCatalog.Core/Validation/CatalogGraphValidator.cs", "src/PlanCatalog.Core/Validation/TemplateCombinationValidator.cs", "src/PlanCatalog.Core/Validation/WorkoutProgressionValidator.cs", "src/PlanCatalog.Core/Validation/PlanTemplateValidator.cs", "src/PlanCatalog.Core/Validation/LevelModifierValidator.cs"],
+    "catalog": ["src/PlanCatalog.Core/Catalog/CatalogSourceSnapshot.cs", "src/PlanCatalog.Core/Catalog/WorkoutClosureResolver.cs (new)"],
+    "audit": ["src/PlanCatalog.Core/Audit/BlockerScopeMeasurement.cs (new)"],
+    "infrastructure": ["src/PlanCatalog.Infrastructure/Publishing/CatalogBundleAssembler.cs", "src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs"],
+    "cli": ["src/PlanCatalog.Cli/Commands/ReleaseCommands.cs", "src/PlanCatalog.Cli/Commands/ValidateCommands.cs"],
+    "catalogSourceArtifacts": ["catalog/workout-progressions/ten-k-workout-progression.v2.json", "catalog/level-modifiers/intermediate-modifier.v2.json", "catalog/templates/ten-k-master.v3.json", "catalog/combinations/ten-k-4d-intermediate.v4.json"]
+  },
+  "noReleasePublished": true,
+  "noArtifactRetired": true,
+  "noImmutableReleaseDirectoryModified": true,
+  "backendUntouched": true,
+  "processBImplemented": false
+}

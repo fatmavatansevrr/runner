@@ -1,0 +1,47 @@
+{
+  "auditId": "EXACTREF-001",
+  "generatedAtUtc": "2026-07-08T12:10:00Z",
+  "scope": ["LevelModifierDefinition.EligibleWorkoutKeys", "WorkoutProgressionStageDefinition.WorkoutCandidateKeys"],
+  "fieldsIntentionallyNotMigrated": [
+    "PlanTemplateDefinition.WorkoutProgression (already VersionedCatalogReference)",
+    "LevelModifierDefinition.ProgressionModifier (already VersionedCatalogReference)",
+    "RulePackDefinition.RuntimeConditionValueRegistry / PeakVolumeBandPolicy / Policies / Rules (already VersionedCatalogReference)"
+  ],
+  "newFields": [
+    { "type": "WorkoutProgressionStageDefinition", "oldField": "WorkoutCandidateKeys: IReadOnlyList<string>", "newField": "WorkoutCandidates: IReadOnlyList<VersionedCatalogReference>" },
+    { "type": "LevelModifierDefinition", "oldField": "EligibleWorkoutKeys: IReadOnlySet<string>", "newField": "EligibleWorkouts: IReadOnlyList<VersionedCatalogReference>" }
+  ],
+  "schemaVersionExclusivityMechanism": {
+    "chosen": "unified C# model with nullable dual fields + SchemaVersionShapeValidator (source-integrity layer) + JSON Schema oneOf (defense-in-depth)",
+    "rejectedAlternatives": ["separate C# record types per schema version", "upcaster/compatibility reader"],
+    "rejectionRationale": "This codebase's dominant invariant layer is its C# validators, not JSON Schema (no document schema sets additionalProperties:false). Separate types would fragment CatalogSourceSnapshot and every consumer into type-switch branches for a two-field-scope migration.",
+    "historicalJsonMutated": false
+  },
+  "exactLookupApis": [
+    "CatalogSourceSnapshot.FindWorkout(string key, int version) -- exact, no auto-selection",
+    "CatalogSourceSnapshot.GetRequiredWorkout(string key, int version) -- exact, throws if missing"
+  ],
+  "legacyResolutionRetainedFor": [
+    "CatalogBundleAssembler legacy (schemaVersion 1) branch",
+    "WorkoutProgressionValidator/LevelModifierValidator legacy-field existence checks",
+    "historical-release reading/verification"
+  ],
+  "legacyResolutionNeverUsedForCandidateAssembly": true,
+  "determinismProof": {
+    "unitTests": ["ExactWorkoutReferenceSchemaTests.AddingHigherWorkoutVersion_DoesNotChangeAPinnedGraph", "BundleWorkoutClosureTests.BundleConstruction_RequiresNoLatestVersionLookup"],
+    "liveProof": "Candidate bundle TEN_K__4D__INTERMEDIATE v4 built twice via CLI build-bundle; byte-identical output both times."
+  },
+  "hashVerification": [
+    { "artifact": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 1, "hash": "a4856b47bf385ad29c148412480620b2584ddf7b0e0fa177664dc3455baf6281", "status": "unchanged" },
+    { "artifact": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 2, "hash": "a7bf02812e9931322be7625f3e26a8d3217100a9c7d7df190adedd4dd48f23f4", "status": "new" },
+    { "artifact": "INTERMEDIATE_MODIFIER", "version": 1, "hash": "c5e9d601f2756495c921676cb323872539eb65f901135b1240e27034861bff34", "status": "unchanged" },
+    { "artifact": "INTERMEDIATE_MODIFIER", "version": 2, "hash": "1dda5d17b444710581afda274fae41534d8c619056235453455a76a3ed152770", "status": "new" }
+  ],
+  "domainContentImpact": "none -- candidate pins the same versions legacy auto-selection already resolves today (EASY_STANDARD v2, FARTLEK v2, THRESHOLD_TEMPO v2, GOAL_PACE_TEN_K v1); classified TECHNICAL_ONLY",
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Validation/ExactWorkoutReferenceSchemaTests.cs",
+    "count": 8,
+    "additionalCoverage": ["tests/PlanCatalog.Tests/Publishing/BundleWorkoutClosureTests.cs", "tests/PlanCatalog.Tests/Publishing/CandidateArtifactTests.cs"]
+  },
+  "finalStatus": "EXACT_WORKOUT_REFERENCE_MODEL: IMPLEMENTED"
+}

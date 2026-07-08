@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProgressionModifierDefinition",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "PROGRESSION_MODIFIER" },
+        "schemaVersion": { "type": "integer" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"]
+    },
+    "experience": { "type": "string", "enum": ["NEW", "INTERMEDIATE", "ADVANCED", "EXPERIENCED"] },
+    "maximumComplexityTier": { "type": "integer", "minimum": 1 },
+    "maximumHardSessionsPerWeek": { "type": "integer", "minimum": 0 },
+    "mainSetDoseMultiplier": { "type": "number", "exclusiveMinimum": 0 },
+    "allowGoalPaceRehearsal": { "type": "boolean" },
+    "allowSecondHardStimulus": { "type": "boolean" }
+  },
+  "required": ["metadata", "experience", "maximumComplexityTier", "maximumHardSessionsPerWeek", "mainSetDoseMultiplier", "allowGoalPaceRehearsal", "allowSecondHardStimulus"]
+}

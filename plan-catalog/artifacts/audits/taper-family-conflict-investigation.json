@@ -1,0 +1,70 @@
+{
+  "generatedAtUtc": "2026-07-07T13:45:00Z",
+  "title": "TEN_K_MASTER TAPER phase workout-family eligibility conflict",
+  "status": "RESOLVED_CANONICALLY",
+  "conflict": {
+    "statement": "TEN_K_MASTER TAPER eligibleWorkoutFamilies omitted QUALITY and RACE even though approved Golden Fixture v3 Week 12 contains both a QUALITY activation workout and a RACE workout in the TAPER phase. The master definition was corrected to allow EASY, LONG_RUN, QUALITY, and RACE.",
+    "artifactPath": "catalog/templates/ten-k-master.v1.json (original) / catalog/templates/ten-k-master.v2.json (corrected)",
+    "jsonPath": "$.phases[3].eligibleWorkoutFamilies (phaseKey=TAPER)",
+    "originalValue": ["EASY", "LONG_RUN"],
+    "correctedValue": ["EASY", "LONG_RUN", "QUALITY", "RACE"]
+  },
+  "goldenFixtureV3Evidence": [
+    {
+      "path": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json $.weeks[11].days[0].workout",
+      "workoutKey": "RACE_PACE_REPEATS",
+      "family": "QUALITY",
+      "weekPhaseKey": "TAPER",
+      "weekNumber": 12
+    },
+    {
+      "path": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json $.weeks[11].days[3].workout",
+      "workoutKey": "RACE_DAY",
+      "family": "RACE",
+      "weekPhaseKey": "TAPER",
+      "weekNumber": 12,
+      "dayType": "RACE"
+    }
+  ],
+  "validatorsConsuming": [
+    {
+      "validator": "WorkoutProgressionValidator",
+      "check": "WP_CANDIDATE_FAMILY_NOT_ELIGIBLE_FOR_PHASE",
+      "location": "src/PlanCatalog.Core/Validation/WorkoutProgressionValidator.cs",
+      "note": "The only validator that reads PhaseDefinition.EligibleWorkoutFamilies. TemplateCombinationValidator and CatalogGraphValidator do not consult it directly."
+    }
+  ],
+  "modelingRulePreserved": {
+    "workoutFamilyEnumUnchanged": true,
+    "workoutFamilyValues": ["EASY", "LONG_RUN", "QUALITY", "RACE"],
+    "noTaperValueIntroducedIntoWorkoutFamily": true,
+    "phaseKeyEnumUnchanged": true,
+    "phaseKeyValues": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"]
+  },
+  "versioningDecision": {
+    "reason": "TEN_K_MASTER v1 (contentHash c6cb0c0b4ebcfbdf946d97c9f03f1b8ec384abb68b8f0fa274a64a2eab9e5214) is already PUBLISHED and immutable in releases 1.0.0, 0.1.0-pilot, and 0.2.0-pilot.",
+    "action": "Created catalog/templates/ten-k-master.v2.json with the corrected TAPER family set; left v1 untouched.",
+    "dependencyGraphUpdate": "catalog/combinations/ten-k-4d-intermediate.v1.json $.masterTemplate.version changed from 1 to 2.",
+    "historicalReleasesUnaffected": true
+  },
+  "artifactVersionParity": {
+    "tenKMaster": {
+      "fixtureReference": 2,
+      "catalogVersionAfterThisTask": 2,
+      "note": "Incidentally matches after this correction; not a deliberate parity-forcing action — a new version was mandatory regardless due to immutability."
+    },
+    "appselRacePlanV1": {
+      "fixtureReference": 3,
+      "catalogVersionAfterThisTask": 1,
+      "semanticImpact": "unknown — rule pack policies/rules arrays are empty in this pilot, so no observable behavioral difference between v1/v2/v3 is evidenced",
+      "blocksThisCorrection": false,
+      "requiredFutureDecision": "Dedicated review of what APPSEL_RACE_PLAN_V1 v2/v3 changed and whether this pilot's rule pack needs a version bump.",
+      "upgradedInThisTask": false
+    }
+  },
+  "affectedBundlesReleases": {
+    "combination": "TEN_K__4D__INTERMEDIATE",
+    "existingReleasesContainingOldMasterOnly": ["1.0.0", "0.1.0-pilot", "0.2.0-pilot"],
+    "newReleaseRequired": true
+  }
+}

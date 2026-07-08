@@ -1,0 +1,61 @@
+documentType: RULE_FILE
+schemaVersion: 1
+ruleFileKey: PROGRESSION_V1
+evidenceLevel: EVIDENCE_INFORMED
+sourceRefs: [S2, S6]
+crossValidatedAgainst:
+  - "Pfitzinger 'core ramp' guidance: low-to-moderate 0.3-0.6 mi/week increments"
+note: >
+  Sabit '%10 kuralı' kullanılmaz. Frandsen et al. 2025 (5205 koşucu kohortu),
+  haftalık toplam artış oranından çok TEK SEANS mesafesinin son 30 gündeki
+  en uzun koşuya göre ani sıçramasıyla overuse injury artışı ilişkisini
+  gösterdi. Bu bir deterministik eşik değil, konservatif guardrail temelidir.
+
+profilePercentageCaps:
+  # {preferred: [min, max] normal artış aralığı, hardCap: asla aşılmaz}
+  NEW:          { preferred: [0.03, 0.05], hardCap: 0.06 }
+  INTERMEDIATE: { preferred: [0.04, 0.07], hardCap: 0.08 }
+  ADVANCED:     { preferred: [0.05, 0.08], hardCap: 0.10 }
+  EXPERIENCED:  { preferred: [0.05, 0.09], hardCap: 0.10 }
+
+absoluteWeeklyIncrementCapKm:
+  # runsPerWeek -> mutlak azami haftalık km artışı
+  2: 1.0
+  3: 1.75      # 1.5-2 aralığının ortası, tek sayı olarak resolver'da kullanılır
+  4: 2.5
+  5: 3.25
+
+singleSessionSpikeGuardrail:
+  comparisonWindowDays: 30
+  warningThresholdRatio: 1.10   # plannedSessionDistance <= longestCompletedLast30Days * 1.10
+  behavior:
+    hardCap: false
+    requiresConservativeResolution: true
+    warningCode: SINGLE_SESSION_OUTLIER
+
+progressionFormula: >
+  plannedIncrementKm = min(
+    previousVolumeKm * profilePercentageCaps[profile].preferred.max,
+    absoluteWeeklyIncrementCapKm[runsPerWeek],
+    reachablePeakRemainingSlope
+  )
+  nextWeekVolumeKm = applyCutbackIfNeeded(previousVolumeKm + plannedIncrementKm)
+
+cutbackPolicy:
+  # Her N haftada bir yük azaltma haftası (recovery/deload)
+  everyNWeeks: 4
+  appliesToPhases: [BUILD, RACE_SPECIFIC]
+  skipIfPhaseWeeksBelow: 3   # çok kısa phase'lerde cutback zorunlu değildir
+  # v1.1-fix: cutback yüzdesi profile'a göre farklılaşır (genel %20-30 bandı
+  # golden fixture review'unda fazla agresif bulundu ve profile bazlı
+  # bantlara ayrıldı).
+  reductionRatioByProfile:
+    NEW:          [0.10, 0.15]
+    INTERMEDIATE: [0.15, 0.20]
+    ADVANCED:     [0.15, 0.22]
+    EXPERIENCED:  [0.15, 0.22]
+  # Cutback sonrası ilk hafta icin progression baseline: cutback haftasinin
+  # kendisi degil, cutback ONCESI son hacim kullanilir (previousNonCutbackVolume).
+  # Aksi halde cutback sonrasi normal ilerleme hard-cap'i yanlislikla ihlal
+  # ediyormus gibi gorunur (golden fixture review'unda tespit edildi).
+  postCutbackProgressionBaseline: PREVIOUS_NON_CUTBACK_VOLUME

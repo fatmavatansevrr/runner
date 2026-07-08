@@ -1,0 +1,63 @@
+documentType: RULE_FILE
+schemaVersion: 2
+ruleFileKey: PROGRESSION_V2
+evidenceLevel: EVIDENCE_INFORMED
+sourceRefs: [S2, S6]
+note: >
+  Weekly percentage progression is a planning constraint, not an injury predictor.
+  Single-session spike is evaluated separately against historical and earlier planned
+  sessions. All thresholds are conservative product guardrails.
+
+profilePercentageCaps:
+  NEW:          { preferred: [0.03, 0.05], hardCap: 0.06 }
+  INTERMEDIATE: { preferred: [0.04, 0.07], hardCap: 0.08 }
+  ADVANCED:     { preferred: [0.05, 0.08], hardCap: 0.10 }
+  EXPERIENCED:  { preferred: [0.05, 0.09], hardCap: 0.10 }
+
+absoluteWeeklyIncrementCapKm:
+  2: 1.0
+  3: 1.75
+  4: 2.5
+  5: 3.25
+
+reachablePeakRemainingSlope:
+  formula: (targetPeakKm - currentVolumeKm) / remainingPositiveBuildTransitions
+  excludes: [CUTBACK_TRANSITION, TAPER_TRANSITION]
+
+progressionFormula: |
+  plannedIncrementKm = min(
+    previousStructuralBaselineKm * preferredMaxPercentage,
+    absoluteWeeklyIncrementCapKm,
+    reachablePeakRemainingSlopeKm
+  )
+
+  nextWeekVolumeKm = previousStructuralBaselineKm + plannedIncrementKm
+
+singleSessionSpikeGuardrail:
+  comparisonWindowDays: 30
+  planGenerationBaseline: MAX_OF_HISTORICAL_AND_PRIOR_PLANNED_WITHIN_WINDOW
+  adaptationBaseline: COMPLETED_SESSIONS_ONLY
+  warningThresholdRatio: 1.10
+  hardCap: false
+  requiresConservativeResolution: true
+  warningCode: PLANNED_SINGLE_SESSION_SPIKE
+
+cutbackPolicy:
+  cadenceMode: PHASE_AWARE
+  triggers:
+    afterConsecutiveLoadingWeeks: 3
+    beforeHigherSpecificityPhase: true
+  skipIfTaperWithinWeeks: 2
+  appliesToPhases: [BUILD, RACE_SPECIFIC]
+  reductionRatioByProfile:
+    NEW:          [0.10, 0.15]
+    INTERMEDIATE: [0.15, 0.20]
+    ADVANCED:     [0.15, 0.22]
+    EXPERIENCED:  [0.15, 0.22]
+  postCutbackProgressionBaseline: PREVIOUS_NON_CUTBACK_VOLUME
+  cutbackTypes: [PERIODIC_CUTBACK, PHASE_TRANSITION_DELOAD]
+
+postCutbackValidation:
+  structuralIncrementUses: PREVIOUS_NON_CUTBACK_VOLUME
+  reportActualWeekOverWeekDelta: true
+  requireWithinStructuralHardCap: true

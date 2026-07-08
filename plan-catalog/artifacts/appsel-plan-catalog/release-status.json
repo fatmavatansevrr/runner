@@ -1,0 +1,44 @@
+[
+  {
+    "releaseVersion": "1.0.0",
+    "status": "SUPERSEDED",
+    "reason": "Predates domain-content decision audit; contains unclassified/uncorrected placeholder peak-volume and dosage values, and was published before the PLACEHOLDER_UNCONFIRMED publish guard existed. See artifacts/audits/ten-k-pilot-domain-decision-audit.md.",
+    "supersededByVersion": "0.1.0-pilot",
+    "recordedAtUtc": "2026-07-07T08:20:28.6592057Z"
+  },
+  {
+    "releaseVersion": "0.1.0-pilot",
+    "status": "SUPERSEDED",
+    "reason": "Superseded by 0.2.0-pilot after TEN_K/INTERMEDIATE/4D domain-content reconciliation against Golden Fixture v3 (PrescriptionMode/DistanceAccountingMode vocabulary correction, 4 workout definitions upgraded to CANONICAL_CONFIRMED, phase preferred-weeks and peak-volume corroborated by a second source).",
+    "supersededByVersion": "0.2.0-pilot",
+    "recordedAtUtc": "2026-07-07T11:16:55.3263295Z"
+  },
+  {
+    "releaseVersion": "0.2.0-pilot",
+    "status": "SUPERSEDED",
+    "reason": "Replaced by 0.3.0-pilot, which includes the canonical TEN_K_MASTER v2 TAPER phase-family eligibility correction.",
+    "supersededByVersion": "0.3.0-pilot",
+    "recordedAtUtc": "2026-07-07T11:58:02.3525916Z"
+  },
+  {
+    "releaseVersion": "0.3.0-pilot",
+    "status": "SUPERSEDED",
+    "reason": "0.3.0-pilot\u0027s release manifest mislabeled TEN_K__4D__INTERMEDIATE combination version 1 with content that actually referenced TEN_K_MASTER v2 (a source-side immutability defect: the v1 combination file had been mutated in place instead of being properly versioned). 0.4.0-pilot corrects this: combination v1 is restored to its exact historical content and combination v2 is a distinct, correctly-versioned artifact referencing TEN_K_MASTER v2.",
+    "supersededByVersion": "0.4.0-pilot",
+    "recordedAtUtc": "2026-07-07T12:31:16.0518871Z"
+  },
+  {
+    "releaseVersion": "0.4.0-pilot",
+    "status": "SUPERSEDED",
+    "reason": "Replaced by 0.5.0-pilot, which remediates 5 previously-undiscovered in-place mutations (4 WORKOUT_DEFINITION v1 artifacts and PEAK_VOLUME_BAND_POLICY v1) found by the repository-wide cross-release hash consistency scan. 0.4.0-pilot itself did not contain these mutations differently than earlier releases (it inherited them unchanged from 0.2.0-pilot/0.1.0-pilot) but is superseded because 0.5.0-pilot is now the corrected active pilot release, pinning combination v3 (RulePack v2, peak-volume-policy v2, workout v2s).",
+    "supersededByVersion": "0.5.0-pilot",
+    "recordedAtUtc": "2026-07-07T15:06:08.8578051Z"
+  },
+  {
+    "releaseVersion": "0.5.0-pilot",
+    "status": "SUPERSEDED",
+    "reason": "Replaced by 0.6.0-pilot, which completes the deterministic dependency-graph migration (Parts 1-3): TEN_K__4D__INTERMEDIATE v1/v2/v3 retired from new-release eligibility (ledger-only, no source mutation); v4 (exact-versioned dependency graph, self-contained union workout closure including LONG_RUN_STANDARD) is now the sole active root. See artifacts/audits/deterministic-graph-part3-completion.md.",
+    "supersededByVersion": "0.6.0-pilot",
+    "recordedAtUtc": "2026-07-08T08:01:25.2932004Z"
+  }
+]

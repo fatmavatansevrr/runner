@@ -1,0 +1,40 @@
+{
+  "auditId": "PLACEHOLDER-SCOPE-001",
+  "generatedAtUtc": "2026-07-08T13:20:00Z",
+  "recomputedFromFinalPostRetirementGraph": true,
+  "activeRoot": { "key": "TEN_K__4D__INTERMEDIATE", "version": 4 },
+  "method": "PlanCatalog.Core.Audit.BlockerScopeMeasurement -- groups PilotDomainContentAudit.Entries (Classification==PlaceholderUnconfirmed) by exact (documentType,key,version) identity",
+  "decisionLevelMetrics": {
+    "totalCatalogPlaceholderDecisionCount": { "value": 36, "query": "TotalCatalogPlaceholderDecisionCount()", "retiredRootsExcluded": false, "activeRootVersion": null, "dependencyClosureUsed": null },
+    "eligibleReleaseUnionBlockingDecisionCount": { "value": 13, "query": "ScopedDecisionCount(union of every non-retired combination's exact bundle-dependency tuples)", "retiredRootsExcluded": true, "activeRootVersion": "TEN_K__4D__INTERMEDIATE v4 (only eligible combination)", "dependencyClosureUsed": "v4's full exact dependency closure" },
+    "activeRootClosureBlockingDecisionCount": { "value": 13, "query": "ScopedDecisionCount(TEN_K__4D__INTERMEDIATE v4 exact bundle-dependency tuples)", "retiredRootsExcluded": true, "activeRootVersion": "TEN_K__4D__INTERMEDIATE v4", "dependencyClosureUsed": ["TEN_K_MASTER v3", "TEN_K_WORKOUT_PROGRESSION_V1 v2", "RUN_LAYOUT_4D v1", "INTERMEDIATE_MODIFIER v2", "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1", "APPSEL_RACE_PLAN_V1 v2", "RUNTIME_CONDITION_VALUES_V1 v1", "PEAK_VOLUME_BANDS_V1 v2", "EASY_STANDARD v2", "FARTLEK v2", "GOAL_PACE_TEN_K v1", "LONG_RUN_STANDARD v2", "THRESHOLD_TEMPO v2"] },
+    "historicalOnlyPlaceholderDecisionCount": { "value": 23, "query": "TotalCatalogPlaceholderDecisionCount() - ScopedDecisionCount(eligibleReleaseUnion)", "retiredRootsExcluded": true }
+  },
+  "artifactLevelMetrics": {
+    "totalCatalogBlockingArtifactCount": { "value": 17, "query": "TotalCatalogBlockingArtifactCount()" },
+    "eligibleReleaseUnionBlockingArtifactCount": { "value": 9, "query": "ScopedArtifactCount(eligible union)" },
+    "activeRootClosureBlockingArtifactCount": { "value": 9, "query": "ScopedArtifactCount(v4 closure)" },
+    "historicalOnlyBlockingArtifactCount": { "value": 8, "query": "HistoricalOnlyArtifactCount(eligible union)" }
+  },
+  "preRetirementComparison": {
+    "eligibleReleaseUnionBlockingDecisionCount": 24,
+    "eligibleReleaseUnionBlockingArtifactCount": 13,
+    "note": "Before retirement, eligible union spanned v1+v2+v3+v4's combined closures (24 decisions/13 artifacts). After retirement, it collapses to exactly v4's closure (13/9) because only one combination remains eligible."
+  },
+  "eligibleUnionEqualsActiveRootPostRetirement": true,
+  "productionReadinessGuidance": {
+    "targetedActiveRootPublishing": "activeRootClosureBlockingDecisionCount (13)",
+    "fullCatalogProductionPublishing": "eligibleReleaseUnionBlockingDecisionCount (13, currently identical to active-root since only one root is eligible)",
+    "mustNeverUse": "totalCatalogPlaceholderDecisionCount (36) as an active-root or Production blocker count"
+  },
+  "staleWordingCorrections": [
+    { "file": "ten-k-pilot-domain-review-summary.md", "before": "36 blocking placeholders remain in the dependency closure (flat, undifferentiated)", "after": "three explicitly separated numbers: total-catalog (36), eligible-release-union (13, post-retirement), active-root-closure (13)" },
+    { "file": "ten-k-pilot-domain-review-summary.md", "before": "catalog/combinations/ten-k-4d-intermediate.v1.json now points its masterTemplate reference at v2 (stale)", "after": "v1 -> TEN_K_MASTER v1 (unchanged); v2 -> TEN_K_MASTER v2; v3 -> TEN_K_MASTER v2 + APPSEL_RACE_PLAN_V1 v2; v4 (active) -> TEN_K_MASTER v3 + APPSEL_RACE_PLAN_V1 v2" }
+  ],
+  "decisionCountsNeverComparedToArtifactCounts": true,
+  "productionReadinessErrorContractUpdate": {
+    "note": "activeRootClosureBlockingArtifactCount (9) equals the Production negative publish test's top-level error count exactly, because the Production readiness guard groups errors by artifact identity, not by decision. activeRootClosureBlockingDecisionCount (13) must never be compared to the error count.",
+    "seeReport": "artifacts/audits/production-readiness-error-contract-audit.md"
+  },
+  "finalStatus": "PLACEHOLDER_SCOPE_ACCURACY: CORRECTED"
+}

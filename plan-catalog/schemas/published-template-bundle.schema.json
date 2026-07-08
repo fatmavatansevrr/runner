@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PublishedTemplateBundle",
+  "type": "object",
+  "properties": {
+    "bundleKey": { "type": "string" },
+    "bundleVersion": { "type": "integer", "minimum": 1 },
+    "combination": { "$ref": "#/$defs/artifactReference" },
+    "masterTemplate": { "$ref": "#/$defs/artifactReference" },
+    "layout": { "$ref": "#/$defs/artifactReference" },
+    "levelModifier": { "$ref": "#/$defs/artifactReference" },
+    "workoutProgression": { "$ref": "#/$defs/artifactReference" },
+    "progressionModifier": { "$ref": "#/$defs/artifactReference" },
+    "rulePack": { "$ref": "#/$defs/artifactReference" },
+    "runtimeConditionValueRegistry": { "$ref": "#/$defs/artifactReference" },
+    "peakVolumeBandPolicy": { "$ref": "#/$defs/artifactReference" },
+    "workouts": { "type": "array", "items": { "$ref": "#/$defs/artifactReference" } },
+    "bundleContentHash": { "type": "string" }
+  },
+  "required": [
+    "bundleKey", "bundleVersion", "combination", "masterTemplate", "layout", "levelModifier",
+    "workoutProgression", "progressionModifier", "rulePack", "runtimeConditionValueRegistry",
+    "peakVolumeBandPolicy", "workouts", "bundleContentHash"
+  ],
+  "$defs": {
+    "artifactReference": {
+      "type": "object",
+      "properties": {
+        "documentType": { "type": "string" },
+        "key": { "type": "string" },
+        "version": { "type": "integer" },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "key", "version", "contentHash"]
+    }
+  }
+}

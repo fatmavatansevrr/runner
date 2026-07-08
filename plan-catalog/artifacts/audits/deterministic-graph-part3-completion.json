@@ -1,0 +1,223 @@
+{
+  "auditId": "PART3-COMPLETE-001",
+  "generatedAtUtc": "2026-07-08T14:15:00Z",
+  "part2AcceptanceGateRevalidation": {
+    "candidateRoot": { "key": "TEN_K__4D__INTERMEDIATE", "version": 4, "predecessor": 3, "match": true },
+    "bundleHash": { "expected": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b", "actual": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b", "match": true },
+    "blockerCounts": { "expected": { "decisions": 13, "artifacts": 9 }, "actual": { "decisions": 13, "artifacts": 9 }, "match": true },
+    "historicalReleases": { "expectedCount": 6, "allVerifyPassed": true },
+    "buildTest": { "buildErrors": 0, "testsPassed": 245, "testsTotal": 245 },
+    "repositoryDriftSinceP2": false,
+    "nextVersionPathUnambiguous": true
+  },
+  "retirementLedger": {
+    "preChangeChecksum": null,
+    "preChangeState": "file did not exist",
+    "postChangeChecksum": "d629ec93aea3f21dffbecaa501e2f43c256155f34351971dfade00c41633e1e9",
+    "entries": [
+      { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 1, "retiredAtUtc": "2026-07-08T07:40:54.4358331Z" },
+      { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 2, "retiredAtUtc": "2026-07-08T07:40:56.5116376Z" },
+      { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 3, "retiredAtUtc": "2026-07-08T07:40:58.6208197Z" }
+    ],
+    "dependencyArtifactsRetired": 0
+  },
+  "historicalArtifactPreservation": {
+    "confirmedUnmodifiedUnmovedUndeleted": true,
+    "onlyDeletionInPart3": "docs/pending/golden-fixture-v3/progression_rules_v2.yaml (proven byte-identical duplicate)",
+    "catalogArtifactsDeleted": 0
+  },
+  "overlayRetirementPreview": {
+    "sourceIntegrityValidation": "PASSED",
+    "eligibleCombinationsUnderOverlay": ["TEN_K__4D__INTERMEDIATE v4"],
+    "candidatePublishGraphValidator": "PASSED",
+    "activeVersionUniquenessValidator": "PASSED",
+    "buildPreview": { "result": "PASSED", "bundleCount": 1, "version": 4, "hashMatch": true },
+    "partialOutputWritten": false
+  },
+  "activeVersionUniqueness": {
+    "beforeRetirement": { "result": "FAILED", "code": "ACTIVE_COMBINATION_VERSION_NOT_UNIQUE", "eligibleVersionCount": 4 },
+    "afterRetirement": { "result": "PASSED", "eligibleVersionCount": 1, "eligibleVersion": 4 }
+  },
+  "fullCatalogBundleList": {
+    "expected": ["TEN_K__4D__INTERMEDIATE v4"],
+    "actual": ["TEN_K__4D__INTERMEDIATE v4"],
+    "match": true
+  },
+  "finalExactDependencyGraph": {
+    "root": "TEN_K__4D__INTERMEDIATE v4",
+    "masterTemplate": "TEN_K_MASTER v3",
+    "layout": "RUN_LAYOUT_4D v1",
+    "levelModifier": "INTERMEDIATE_MODIFIER v2",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v2",
+    "progressionModifier": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "runtimeConditionValueRegistry": "RUNTIME_CONDITION_VALUES_V1 v1",
+    "peakVolumeBandPolicy": "PEAK_VOLUME_BANDS_V1 v2",
+    "workouts": ["EASY_STANDARD v2", "FARTLEK v2", "GOAL_PACE_TEN_K v1", "LONG_RUN_STANDARD v2", "THRESHOLD_TEMPO v2"]
+  },
+  "finalActiveBundleHash": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b",
+  "repeatedBuildStability": { "buildsCompared": 4, "allByteIdentical": true },
+  "longRunStandardConfirmation": {
+    "presentInPublishedBundle": true,
+    "presentInProgressionCandidates": false,
+    "reachableVia": "INTERMEDIATE_MODIFIER v2.eligibleWorkouts"
+  },
+  "blockerMetrics": {
+    "decisionLevel": {
+      "totalCatalog": 36,
+      "eligibleReleaseUnion": 13,
+      "activeRootClosure": 13,
+      "historicalOnly": 23,
+      "eligibleUnionEqualsActiveRoot": true,
+      "preRetirementEligibleReleaseUnion": 24
+    },
+    "artifactLevel": {
+      "totalCatalog": 17,
+      "eligibleReleaseUnion": 9,
+      "activeRootClosure": 9,
+      "historicalOnly": 8,
+      "eligibleUnionEqualsActiveRoot": true,
+      "preRetirementEligibleReleaseUnion": 13
+    },
+    "productionBlockerCounts": { "activeRoot": { "decisions": 13, "artifacts": 9 }, "fullCatalog": { "decisions": 13, "artifacts": 9 } }
+  },
+  "staleWordingCorrections": {
+    "file": "artifacts/audits/ten-k-pilot-domain-review-summary.md",
+    "corrections": [
+      "false 'combination v1 masterTemplate now points at v2' claim replaced with accurate v1-v4 version mapping table",
+      "flat '36 blocking placeholders' replaced with three explicitly separated scope numbers (36/13/13)"
+    ]
+  },
+  "governanceReadme": {
+    "path": "plan-catalog/docs/README.md",
+    "beforeSections": 2,
+    "beforeLines": 46,
+    "afterSections": 27,
+    "requiredTopicsCovered": 25,
+    "requiredTopicsTotal": 25
+  },
+  "duplicatePendingFilesRemoved": {
+    "removed": [
+      { "path": "docs/pending/golden-fixture-v3/progression_rules_v2.yaml", "sha256": "77c80851a1e4834cdb88d6a4746c1b80e4feb06a874abda33b4415e0c4d31598", "canonicalEquivalent": "docs/canonical/golden-fixture-v3/progression_rules_v2.yaml", "hashMatch": true }
+    ],
+    "preservedNonIdentical": [
+      "docs/pending/golden-fixture-v3/README.md",
+      "docs/pending/golden-fixture-v3/golden-10k-intermediate-4d-12w_v3.md"
+    ]
+  },
+  "newRelease": {
+    "version": "0.6.0-pilot",
+    "path": "artifacts/appsel-plan-catalog/0.6.0-pilot/",
+    "manifestPath": "artifacts/appsel-plan-catalog/0.6.0-pilot/release-manifest.json",
+    "bundlePath": "artifacts/appsel-plan-catalog/0.6.0-pilot/bundles/TEN_K__4D__INTERMEDIATE.v4.json",
+    "manifestContentHash": "7dea958a281576de9fc4ff3b7775cfafd3b016c691c7387cb4c4880a914d2ff2",
+    "verifyReleaseResult": "PASSED"
+  },
+  "everyHistoricalReleaseVerification": {
+    "releases": ["1.0.0", "0.1.0-pilot", "0.2.0-pilot", "0.3.0-pilot", "0.4.0-pilot", "0.5.0-pilot", "0.6.0-pilot"],
+    "allPassed": true
+  },
+  "crossReleaseHashConsistency": {
+    "testsRun": ["CrossReleaseHashConsistencyTests", "PublishTimeCrossReleaseHashGuardTests"],
+    "testCount": 10,
+    "allPassed": true,
+    "newExceptionsRequired": 0
+  },
+  "productionNegativeTest": {
+    "command": "publish --version 0.6.0-pilot-prod-negative-test --channel Production --allow-unconfirmed-content",
+    "result": "FAILED as expected",
+    "errorCount": 9,
+    "errorFamily": "PUBLISH_PRODUCTION_CONTAINS_UNCONFIRMED_CONTENT",
+    "matchesActiveRootClosureBlockingArtifactCount": true,
+    "partialReleaseDirectoryCreated": false
+  },
+  "finalReleaseStatusChain": {
+    "entries": [
+      { "releaseVersion": "1.0.0", "supersededByVersion": "0.1.0-pilot" },
+      { "releaseVersion": "0.1.0-pilot", "supersededByVersion": "0.2.0-pilot" },
+      { "releaseVersion": "0.2.0-pilot", "supersededByVersion": "0.3.0-pilot" },
+      { "releaseVersion": "0.3.0-pilot", "supersededByVersion": "0.4.0-pilot" },
+      { "releaseVersion": "0.4.0-pilot", "supersededByVersion": "0.5.0-pilot" },
+      { "releaseVersion": "0.5.0-pilot", "supersededByVersion": "0.6.0-pilot" }
+    ],
+    "activeRelease": "0.6.0-pilot",
+    "acyclic": true,
+    "noDanglingTargets": true,
+    "noDuplicateEntries": true
+  },
+  "rollback": {
+    "wasNeeded": false,
+    "reason": "Every staged check (overlay preview, post-write revalidation, pre-publish final check, post-publish verification, cross-release scan, Production negative test) passed on the first attempt, matching predictions exactly at every step.",
+    "procedureDocumented": true,
+    "procedureExercised": false
+  },
+  "filesChanged": [
+    "artifacts/appsel-plan-catalog/retirements.json",
+    "artifacts/appsel-plan-catalog/release-status.json",
+    "artifacts/appsel-plan-catalog/0.6.0-pilot/ (new release directory)",
+    "plan-catalog/docs/README.md",
+    "docs/pending/golden-fixture-v3/progression_rules_v2.yaml (deleted)",
+    "artifacts/audits/ten-k-pilot-domain-review-summary.md",
+    "artifacts/audits/ten-k-pilot-domain-decision-audit.json",
+    "artifacts/audits/ten-k-pilot-domain-decision-audit.md",
+    "artifacts/audits/full-catalog-retirement-packaging-audit.json",
+    "artifacts/audits/full-catalog-retirement-packaging-audit.md",
+    "artifacts/audits/cross-release-hash-consistency-audit.json",
+    "artifacts/audits/cross-release-hash-consistency-audit.md",
+    "artifacts/audits/dependency-version-cascade-audit.json",
+    "artifacts/audits/dependency-version-cascade-audit.md",
+    "artifacts/audits/deterministic-graph-part2-migration.json",
+    "artifacts/audits/deterministic-graph-part2-migration.md",
+    "artifacts/audits/golden-fixture-v3-integrity.json",
+    "artifacts/audits/golden-fixture-v3-integrity.md",
+    "tests/PlanCatalog.Tests/Validation/ActiveVersionPreparationTests.cs",
+    "artifacts/audits/deterministic-graph-part3-completion.json (new)",
+    "artifacts/audits/deterministic-graph-part3-completion.md (new)",
+    "artifacts/audits/placeholder-scope-audit.json (new)",
+    "artifacts/audits/placeholder-scope-audit.md (new)",
+    "artifacts/audits/retirement-ledger-application.json (new)",
+    "artifacts/audits/retirement-ledger-application.md (new)",
+    "artifacts/audits/active-version-uniqueness-audit.json (new)",
+    "artifacts/audits/active-version-uniqueness-audit.md (new)",
+    "artifacts/audits/zero-six-pilot-release-audit.json (new)",
+    "artifacts/audits/zero-six-pilot-release-audit.md (new)"
+  ],
+  "testsAddedOrUpdated": {
+    "updated": ["ActiveVersionPreparationTests.RealCatalogRetirementPlan_HasBeenExecuted_ExactlyOneEligibleVersionRemains (replaces RealCatalogRetirementPlan_IsGeneratedButNotExecuted)"],
+    "added": [],
+    "totalSuite": { "passed": 245, "total": 245 }
+  },
+  "finalBuildTestTotals": { "buildWarnings": 0, "buildErrors": 0, "testsPassed": 245, "testsTotal": 245 },
+  "confirmations": {
+    "noPublishedArtifactMutated": true,
+    "noHistoricalSourceArtifactDeleted": true,
+    "noUnrelatedDomainValueInvented": true,
+    "backendUntouched": true,
+    "noProcessBLogicAdded": true
+  },
+  "deviationsFromSpec": "None. One recomputation (rather than reuse) of the expected artifact-level blocker count was performed as explicitly instructed, and it numerically confirmed Part 2's original prediction of 9.",
+  "productionReadinessErrorContractFollowUp": {
+    "auditReport": "artifacts/audits/production-readiness-error-contract-audit.md",
+    "topLevelErrorCount": 9,
+    "blockingArtifactCount": 9,
+    "blockingDecisionCount": 13,
+    "rule": "one Production-readiness error per blocking artifact identity, never per field-level decision",
+    "defectFixedInFollowUp": "nested field-level decisions were previously reachable only via a concatenated message string; now structured via ContentDecisionGuardResult",
+    "releaseCreatedByFollowUp": false,
+    "zeroSixPilotModifiedByFollowUp": false
+  },
+  "finalStatuses": {
+    "SOURCE_INTEGRITY_VS_PUBLISH_ELIGIBILITY": "SEPARATED_AND_VERIFIED",
+    "ACTIVE_COMBINATION_VERSION_UNIQUENESS": "RESOLVED",
+    "EXACT_DEPENDENCY_VERSIONING": "ENFORCED",
+    "RULE_PACK_OWNERSHIP": "RESOLVED",
+    "RUNTIME_REGISTRY_RESOLUTION": "PINNED",
+    "SELF_CONTAINED_BUNDLE_CLOSURE": "PROVEN",
+    "PLACEHOLDER_SCOPE_ACCURACY": "CORRECTED",
+    "GOVERNANCE_COMPLETENESS": "EXPANDED_25_OF_25",
+    "RELEASE_ATOMICITY": "CONFIRMED",
+    "HISTORICAL_RELEASE_VERIFICATION": "SEVEN_OF_SEVEN_PASSED",
+    "CROSS_RELEASE_HASH_CONSISTENCY": "PASSED_ZERO_NEW_EXCEPTIONS",
+    "PART3_COMPLETE": "YES"
+  }
+}

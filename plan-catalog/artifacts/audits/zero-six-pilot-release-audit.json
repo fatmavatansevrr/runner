@@ -1,0 +1,52 @@
+{
+  "auditId": "ZERO-SIX-001",
+  "generatedAtUtc": "2026-07-08T14:00:00Z",
+  "release": {
+    "version": "0.6.0-pilot",
+    "channel": "Pilot",
+    "path": "artifacts/appsel-plan-catalog/0.6.0-pilot/",
+    "verifyReleaseResult": "PASSED"
+  },
+  "bundleList": [
+    { "documentType": "PUBLISHED_TEMPLATE_BUNDLE", "key": "TEN_K__4D__INTERMEDIATE", "version": 4, "contentHash": "0a574a7abcefaed04b54844ba06d6ae047286f43562b7c540e3a30ad695f401b" }
+  ],
+  "combinationArtifactList": [
+    { "documentType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 4, "contentHash": "5c6c701b783ee04794a3d2b19aa0d6b640ea3263f89d415bff396d01a6f3daac" }
+  ],
+  "noRetiredVersionBundlePresent": true,
+  "v4DependencyGraph": {
+    "masterTemplate": "TEN_K_MASTER v3",
+    "layout": "RUN_LAYOUT_4D v1",
+    "levelModifier": "INTERMEDIATE_MODIFIER v2",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v2",
+    "progressionModifier": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "runtimeConditionValueRegistry": "RUNTIME_CONDITION_VALUES_V1 v1",
+    "peakVolumeBandPolicy": "PEAK_VOLUME_BANDS_V1 v2",
+    "workouts": ["EASY_STANDARD v2", "FARTLEK v2", "GOAL_PACE_TEN_K v1", "LONG_RUN_STANDARD v2", "THRESHOLD_TEMPO v2"]
+  },
+  "matchesPart2AcceptanceBaseline": true,
+  "longRunStandardConfirmation": {
+    "presentInPublishedBundle": true,
+    "presentInProgressionCandidates": false,
+    "reachableVia": "INTERMEDIATE_MODIFIER v2.eligibleWorkouts"
+  },
+  "productionNegativeTest": {
+    "command": "publish --version 0.6.0-pilot-prod-negative-test --channel Production --allow-unconfirmed-content",
+    "result": "FAILED as expected",
+    "errorCount": 9,
+    "errorFamily": "PUBLISH_PRODUCTION_CONTAINS_UNCONFIRMED_CONTENT",
+    "matchesActiveRootClosureBlockingArtifactCount": true,
+    "partialReleaseDirectoryCreated": false
+  },
+  "productionReadinessErrorContractClarification": {
+    "errorCount": 9,
+    "blockingArtifactCount": 9,
+    "blockingDecisionCount": 13,
+    "rule": "one Production-readiness error per blocking artifact identity, not per field-level decision",
+    "defectFixed": "the 13 nested decisions were previously reachable only via a concatenated message string; now surfaced structurally via ContentDecisionGuardResult",
+    "releaseModified": false,
+    "seeReport": "artifacts/audits/production-readiness-error-contract-audit.md"
+  },
+  "finalStatus": "0.6.0-pilot published, verified, and matches the Part 2 candidate graph exactly."
+}

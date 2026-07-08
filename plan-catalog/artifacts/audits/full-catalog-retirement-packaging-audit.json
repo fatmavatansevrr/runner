@@ -1,0 +1,63 @@
+{
+  "auditId": "RETIRE-PKG-001",
+  "generatedAtUtc": "2026-07-07T16:00:00Z",
+  "part3Update": "The fix validated here with isolated fixtures is now exercised for real: TEN_K__4D__INTERMEDIATE v1/v2/v3 were retired via the real retirement ledger, and 0.6.0-pilot contains exactly one TEN_K__4D__INTERMEDIATE bundle (v4). See retirement-ledger-application.json and zero-six-pilot-release-audit.json.",
+  "question": "Does CatalogPublisher's full-catalog packaging path exclude a RETIRED combination itself (not just a retired dependency) from new releases?",
+  "findingBeforeFix": "NO — confirmed defect. CatalogPublisher.BuildRelease iterated every combination in the full catalog source snapshot with no eligibility filter; CatalogBundleAssembler.Assemble only checked retirement of a combination's 8 dependency objects, never the combination's own Metadata.",
+  "callPathTable": [
+    { "stage": "Source enumeration", "implementation": "FileSystemCatalogSourceRepository.LoadSnapshot", "retirementConsulted": false, "behaviorForRetiredCombinationBeforeFix": "Loaded unconditionally — correct by design, this layer must not filter." },
+    { "stage": "Combination eligibility filtering (pre-bundle)", "implementation": "CatalogPublisher.BuildRelease (stamped.Combinations.Select(...))", "retirementConsulted": false, "behaviorForRetiredCombinationBeforeFix": "DEFECT: every combination got a bundle assembled and included in the new release regardless of its own retirement status." },
+    { "stage": "Domain/graph validation", "implementation": "CatalogGraphValidator.Validate -> TemplateCombinationValidator.Validate", "retirementConsulted": "only for progressionModifier dependency (TC_PROGRESSION_MODIFIER_RETIRED)", "behaviorForRetiredCombinationBeforeFix": "Did not block a retired combination itself." },
+    { "stage": "Bundle assembly", "implementation": "CatalogBundleAssembler.Assemble", "retirementConsulted": "only for the 8 dependencyMetadata objects", "behaviorForRetiredCombinationBeforeFix": "DEFECT: combination.Metadata itself never checked." },
+    { "stage": "Release manifest / file packaging", "implementation": "CatalogPublisher.BuildReleaseFiles / AllMetadata", "retirementConsulted": false, "behaviorForRetiredCombinationBeforeFix": "Republished the retired combination's source file and bundle into the new release, indistinguishable from an active one." },
+    { "stage": "CLI explicit single-bundle request", "implementation": "ReleaseCommands.BuildBundle -> CatalogBundleAssembler.Assemble", "retirementConsulted": "same as bundle assembly", "behaviorForRetiredCombinationBeforeFix": "Would silently succeed for an explicitly-requested retired combination." }
+  ],
+  "fixApplied": {
+    "files": [
+      "src/PlanCatalog.Infrastructure/Publishing/CatalogBundleAssembler.cs — added combination.Metadata retirement check before dependency resolution; throws InvalidOperationException prefixed RETIRED_COMBINATION_NOT_ELIGIBLE_FOR_NEW_RELEASE",
+      "src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs — filters stamped.Combinations into eligibleCombinations (non-retired) before bundle assembly, manifest artifact listing, and release file packaging via stampedForRelease = stamped with { Combinations = eligibleCombinations }"
+    ],
+    "mechanismReused": "IRetirementLedger (existing port, no duplicate mechanism introduced)",
+    "sourceFilesDeleted": false,
+    "schemaAndGraphValidationScope": "unchanged — still runs against the full unfiltered snapshot for audit/correctness purposes"
+  },
+  "testsAdded": {
+    "file": "tests/PlanCatalog.Tests/Publishing/FullCatalogRetirementPackagingTests.cs",
+    "isolation": "in-memory ICatalogSourceRepository fake built from CombinationFixture plus a second independently-keyed combination (RETIREMENT_TEST_COMBINATION); never touches real catalog/ or real retirements.json",
+    "tests": [
+      "BuildRelease_WithNoRetiredCombinations_PackagesBothAsBundlesAndArtifacts",
+      "BuildRelease_WithOneCombinationRetired_ExcludesItFromBundlesAndArtifacts_ButKeepsTheOtherActive",
+      "Publish_WithOneCombinationRetired_WritesReleaseWithOnlyTheActiveCombinationBundle",
+      "BuildBundle_ExplicitlyRequestingARetiredCombination_ThrowsWithSuggestedCode",
+      "BuildBundle_ExplicitlyRequestingANonRetiredCombination_StillSucceeds",
+      "RetiredCombinationSourceFile_IsNotDeleted_AndRemainsInSnapshot",
+      "HistoricalRelease_BuiltBeforeRetirement_StillVerifiesAfterCombinationIsLaterRetired"
+    ],
+    "countAdded": 7,
+    "allPassing": true
+  },
+  "regressionVerification": {
+    "build": "dotnet build -c Release — succeeded, 0 warnings, 0 errors",
+    "testSuite": "dotnet test -c Release — 163/163 passed (up from 156)",
+    "historicalReleaseVerification": {
+      "1.0.0": "PASSED",
+      "0.1.0-pilot": "PASSED",
+      "0.2.0-pilot": "PASSED",
+      "0.3.0-pilot": "PASSED",
+      "0.4.0-pilot": "PASSED"
+    },
+    "realCatalogFullBuildPreview": "build-release preview against the real catalog/ tree still produces exactly 2 PUBLISHED_TEMPLATE_BUNDLE artifacts (TEN_K__4D__INTERMEDIATE v1 and v2) — unchanged, because artifacts/appsel-plan-catalog/retirements.json does not exist and nothing is currently retired in real data. Confirms the fix is a true no-op for current production data.",
+    "realCatalogDataModified": false,
+    "realCombinationRetiredForTesting": false
+  },
+  "invariantsEnforced": [
+    "A retired combination remains in source/historical releases for audit — unaffected, no source deletion or discovery-level filtering",
+    "A retired combination may still be used to verify historical releases — proven by HistoricalRelease_BuiltBeforeRetirement_StillVerifiesAfterCombinationIsLaterRetired",
+    "A retired combination must NOT produce a bundle in any newly built release — enforced by CatalogPublisher.BuildRelease's eligibleCombinations filter",
+    "A retired combination must not appear as an active/newly-published root combination — excluded from new release's Artifacts and Bundles",
+    "A retired combination must not be selected by default — full-catalog packaging silently skips it",
+    "Explicit requests for a retired combination fail clearly — RETIRED_COMBINATION_NOT_ELIGIBLE_FOR_NEW_RELEASE from CatalogBundleAssembler.Assemble",
+    "No duplicate retirement mechanism introduced — reuses existing IRetirementLedger exclusively"
+  ],
+  "finalStatus": "FULL_CATALOG_RETIREMENT_FILTERING: FIXED"
+}

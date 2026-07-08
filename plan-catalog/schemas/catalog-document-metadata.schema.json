@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://appsel.dev/plan-catalog/schemas/catalog-document-metadata.schema.json",
+  "title": "CatalogDocumentMetadata",
+  "type": "object",
+  "properties": {
+    "documentType": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "key": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+    "contentHash": { "type": "string" }
+  },
+  "required": ["documentType", "schemaVersion", "key", "version", "status"],
+  "additionalProperties": false
+}

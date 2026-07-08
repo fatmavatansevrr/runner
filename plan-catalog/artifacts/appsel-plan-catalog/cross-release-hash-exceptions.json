@@ -1,0 +1,237 @@
+{
+  "$comment": "Narrow, explicit, immutable registry of known pre-existing cross-release content-hash mismatches for a given (documentType, key, version) artifact identity. This file does NOT normalize or rewrite any hash — it records exactly which historical releases pinned a different hash than the canonical one, and why. CrossReleaseHashConsistencyTest fails for any mismatch NOT listed here exactly (same documentType/key/version/releaseVersion/observedContentHash). No wildcards. See artifacts/audits/cross-release-hash-consistency-audit.md and artifacts/audits/published-workout-immutability-remediation.md / peak-volume-policy-immutability-remediation.md for the remediation that changed the canonical direction of the WORKOUT_DEFINITION/PEAK_VOLUME_BAND_POLICY/PUBLISHED_TEMPLATE_BUNDLE entries below.",
+  "exceptions": [
+    {
+      "documentType": "TEMPLATE_COMBINATION",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 1,
+      "canonicalContentHash": "c6324371a352a78d744583ee6bd0d36bd434b9214ff46d5ecf107e2656876c71",
+      "anomalies": [
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "e976d10e4015981fdcdc925312502d12b92e36cc8da73d89775b672f03d0ab57",
+          "reason": "The combination's masterTemplate reference was mutated in place (v1 -> v2) without a version bump before 0.3.0-pilot was published, so 0.3.0-pilot pinned a mutated content hash for the same declared (TEMPLATE_COMBINATION, TEN_K__4D__INTERMEDIATE, 1) identity.",
+          "supersedingRelease": "0.4.0-pilot",
+          "auditReference": "artifacts/audits/combination-immutability-investigation.md (COMB-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "EASY_STANDARD",
+      "version": 1,
+      "canonicalContentHash": "37990edcaf4f9253528bd41ae7428b4555f4c9fd95f3452930cf6db688086b80",
+      "reasonForCanonicalDirection": "catalog/workouts/easy-standard.v1.json has been RESTORED to its exact original, earliest-published content (matching 1.0.0 and 0.1.0-pilot) as part of WORKOUT-IMMUT-001 remediation. The corrected/intended content (allowedDistanceAccountingModes, DISTANCE prescription mode) now lives on the genuinely new easy-standard.v2.json artifact, never under v1.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1",
+          "reason": "0.2.0-pilot pinned WORKOUT_DEFINITION/EASY_STANDARD v1 with mutated content (the domain-content vocabulary reconciliation pass edited the v1 source file in place instead of creating v2). Restored and superseded by WORKOUT-IMMUT-001.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above; 0.3.0-pilot republished the same mutated v1 content.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "8ddedec6ac61b25c1febdb6b1b839a045eb685a8c7a90558abea0c3d2029a3d1",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above; 0.4.0-pilot republished the same mutated v1 content (0.4.0-pilot's own remediation task only concerned the TEMPLATE_COMBINATION defect, not this one).",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "FARTLEK",
+      "version": 1,
+      "canonicalContentHash": "8652ed9aa01a0909ab1efffdacf1e029a164bd5784b505351b7296d6a5f89482",
+      "reasonForCanonicalDirection": "catalog/workouts/fartlek.v1.json has been RESTORED to its exact original, earliest-published content — see easy-standard entry above for the full explanation; same pattern.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795",
+          "reason": "0.2.0-pilot pinned WORKOUT_DEFINITION/FARTLEK v1 with mutated content, same pattern as EASY_STANDARD.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "c6a27cc2ebc53fdffd397054e6aa50df06f865ed1b558c0ddd1a944a653c7795",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "LONG_RUN_STANDARD",
+      "version": 1,
+      "canonicalContentHash": "92d43af58804bf4f77ec2d97b85a127780b5065557ef86ccc5dbf3265f315452",
+      "reasonForCanonicalDirection": "catalog/workouts/long-run-standard.v1.json has been RESTORED to its exact original, earliest-published content — see easy-standard entry above; same pattern.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96",
+          "reason": "0.2.0-pilot pinned WORKOUT_DEFINITION/LONG_RUN_STANDARD v1 with mutated content, same pattern as EASY_STANDARD.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "d428aed1d6c9ac29e6c4471e92812ee1cdb86785f5ef8bc099d81a65fd69fe96",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "WORKOUT_DEFINITION",
+      "key": "THRESHOLD_TEMPO",
+      "version": 1,
+      "canonicalContentHash": "3da4f9606f91e91323e0cf5aeb6763bbad6149319f037f32d44581f5a5522621",
+      "reasonForCanonicalDirection": "catalog/workouts/threshold-tempo.v1.json has been RESTORED to its exact original, earliest-published content — see easy-standard entry above; same pattern.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d",
+          "reason": "0.2.0-pilot pinned WORKOUT_DEFINITION/THRESHOLD_TEMPO v1 with mutated content, same pattern as EASY_STANDARD.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "48504242ac8fbf94bce10acf3628bdcadcf72cb548b0e1dfc10ebe61c189bb1d",
+          "reason": "Same pre-existing in-place mutation as the 0.2.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/published-workout-immutability-remediation.md (WORKOUT-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "PEAK_VOLUME_BAND_POLICY",
+      "key": "PEAK_VOLUME_BANDS_V1",
+      "version": 1,
+      "canonicalContentHash": "c6eb3bc444fa7fe1e6624f75328bd31623b0855226c46213cd91172c228fb762",
+      "reasonForCanonicalDirection": "catalog/policies/peak-volume-bands.v1.json has been RESTORED to its exact original, earliest-published (1.0.0) content — INTERMEDIATE rows 26-40/30-45/34-50km. The corrected/confirmed rows (22-32/30-42/36-50km) now live on the genuinely new peak-volume-bands.v2.json artifact, never under v1.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.1.0-pilot",
+          "observedContentHash": "d187758e6f8034f44d7c4c5c8dfe4a2d176d66b2ff843bf0f2bc84ae758d7f6e",
+          "reason": "0.1.0-pilot pinned PEAK_VOLUME_BAND_POLICY/PEAK_VOLUME_BANDS_V1 v1 with mutated content (the INTERMEDIATE band-corroboration pass edited the v1 source file in place instead of creating v2). Restored and superseded by PEAK-POLICY-IMMUT-001.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/peak-volume-policy-immutability-remediation.md (PEAK-POLICY-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "d187758e6f8034f44d7c4c5c8dfe4a2d176d66b2ff843bf0f2bc84ae758d7f6e",
+          "reason": "Same pre-existing in-place mutation as the 0.1.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/peak-volume-policy-immutability-remediation.md (PEAK-POLICY-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "d187758e6f8034f44d7c4c5c8dfe4a2d176d66b2ff843bf0f2bc84ae758d7f6e",
+          "reason": "Same pre-existing in-place mutation as the 0.1.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/peak-volume-policy-immutability-remediation.md (PEAK-POLICY-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "d187758e6f8034f44d7c4c5c8dfe4a2d176d66b2ff843bf0f2bc84ae758d7f6e",
+          "reason": "Same pre-existing in-place mutation as the 0.1.0-pilot anomaly above.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/peak-volume-policy-immutability-remediation.md (PEAK-POLICY-IMMUT-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "PUBLISHED_TEMPLATE_BUNDLE",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 1,
+      "canonicalContentHash": "b6420adb860c491bb64bd104dfb80631b8b619a1ecd6935f156974d3a549f243",
+      "reasonForCanonicalDirection": "PublishedTemplateBundle is a DERIVED artifact, not an independently-versioned source catalog identity (its BundleVersion is always inherited from its root TemplateCombinationDefinition's version). Its content depends on FindWorkout's key-only, highest-non-retired-version resolution, so its hash necessarily changes whenever ANY dependency's resolvable content changes, even though the bundle's own 'identity' (bundleKey+bundleVersion=1) never changed. Do not treat this as an independent source-artifact-level immutability violation — it is fully explained by the WORKOUT_DEFINITION and PEAK_VOLUME_BAND_POLICY entries above. All five historical releases pinned a different bundle-v1 hash from each other AND from today's freshly-rebuilt canonical value, because each release boundary saw a different combination of underlying dependency states (see dependency-version-cascade-audit.md for the full derivation chain).",
+      "anomalies": [
+        {
+          "releaseVersion": "1.0.0",
+          "observedContentHash": "3c673588c5d21ad052a2cd38b6ec53f78ec23f40ecbdb239345a325ac3e16ccf",
+          "reason": "Built before FindWorkout resolved a second (v2) workout version for any of the 4 affected keys — this bundle predates the vocabulary-reconciliation-era mutation entirely, but its own hash still differs from today's canonical because today's fresh rebuild resolves the newly-created, intentionally corrected workout v2 artifacts (FindWorkout picks the highest non-retired version by key).",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        },
+        {
+          "releaseVersion": "0.1.0-pilot",
+          "observedContentHash": "ed997d55831437bcbce8c345bb2074e4c9ff6ba2ad7f62e048a65d8c37dee734",
+          "reason": "Built after the peak-volume-policy v1 mutation but before the workout v1 mutations; also predates workout v2's existence, so it differs from today's canonical for the same reason as the 1.0.0 anomaly.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        },
+        {
+          "releaseVersion": "0.2.0-pilot",
+          "observedContentHash": "3bc63d0fe34bc166088b75e66081af8de7a5d4620f413fe23166681f86692dfe",
+          "reason": "Built with the mutated (pre-restoration) workout v1 and peak-volume-policy v1 content.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        },
+        {
+          "releaseVersion": "0.3.0-pilot",
+          "observedContentHash": "6974e592f34807b10f75f8fccb8cc5568003b6c81074f9ee8030d7a414c0967d",
+          "reason": "Built with the mutated (pre-restoration) workout v1 and peak-volume-policy v1 content, plus the separately-registered TEMPLATE_COMBINATION v1 mutation (COMB-IMMUT-001).",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/combination-immutability-investigation.md (COMB-IMMUT-001)"
+        },
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "3bc63d0fe34bc166088b75e66081af8de7a5d4620f413fe23166681f86692dfe",
+          "reason": "Built with the mutated (pre-restoration) workout v1 and peak-volume-policy v1 content (0.4.0-pilot's own remediation only concerned the TEMPLATE_COMBINATION defect, not these).",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "PUBLISHED_TEMPLATE_BUNDLE",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 2,
+      "canonicalContentHash": "d0f23f4f9ebbd972b8ae97be97a509076050f28e25ca8fe7891808c4fcd3fc75",
+      "reasonForCanonicalDirection": "Same derived-artifact reasoning as bundle v1 above — see that entry's reasonForCanonicalDirection.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.4.0-pilot",
+          "observedContentHash": "1858d88fb272f17d9815df7c40a5133dac8f765ad2d01964d863439e58c9c467",
+          "reason": "0.4.0-pilot is the only release that ever published combination v2's bundle; it was built with the mutated (pre-restoration) workout v1 and peak-volume-policy v1 content.",
+          "supersedingRelease": "0.5.0-pilot",
+          "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        }
+      ]
+    }
+  ]
+}

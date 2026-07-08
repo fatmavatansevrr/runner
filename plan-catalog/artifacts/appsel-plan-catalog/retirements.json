@@ -1,0 +1,20 @@
+[
+  {
+    "documentType": "TEMPLATE_COMBINATION",
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 1,
+    "retiredAtUtc": "2026-07-08T07:40:54.4358331Z"
+  },
+  {
+    "documentType": "TEMPLATE_COMBINATION",
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 2,
+    "retiredAtUtc": "2026-07-08T07:40:56.5116376Z"
+  },
+  {
+    "documentType": "TEMPLATE_COMBINATION",
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 3,
+    "retiredAtUtc": "2026-07-08T07:40:58.6208197Z"
+  }
+]
