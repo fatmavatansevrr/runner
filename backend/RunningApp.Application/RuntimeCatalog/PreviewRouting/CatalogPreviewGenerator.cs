@@ -1,6 +1,7 @@
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
+using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 
 namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 
@@ -29,6 +30,16 @@ namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 /// first. The success path is still fully implemented and tested (via the
 /// gate's internal-dry-run entry point) so Phase 4E.2 has a working
 /// foundation the moment a candidate is actually published.
+///
+/// Backend Integration Phase 4F.4 — after candidate eligibility and runtime-
+/// condition resolution both succeed, this class performs a DARK internal
+/// invocation of <see cref="ICatalogPlanSkeletonOrchestrator"/> (Phase 4F.3):
+/// the resulting <see cref="GeneratedCatalogPlanSkeleton"/> is built and
+/// fully validated for its correctness side effect only (an invalid/failed
+/// materialization aborts preview generation) and is then discarded — never
+/// stored on <see cref="CatalogPreviewSnapshot"/>, never included in the
+/// snapshot's content hash, never returned to any public DTO. See
+/// PHASE4F_4_DARK_INTERNAL_SKELETON_WIRING_INTO_CATALOG_PREVIEW.md.
 /// </summary>
 public interface ICatalogPreviewGenerator
 {
@@ -43,12 +54,45 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
 
     private readonly ICatalogCandidateEligibilityGate _gate;
     private readonly RuntimeConditionResolutionService _orchestration;
+    private readonly ICatalogPlanSkeletonOrchestrator _skeletonOrchestrator;
 
+    /// <summary>
+    /// Public, DI-facing constructor — signature intentionally unchanged
+    /// since Phase 4E.1. Composes a default <see cref="ICatalogPlanSkeletonOrchestrator"/>
+    /// from its own pure, stateless, dependency-free Phase 4F.3 collaborators
+    /// (no DbContext/HttpContext/clock/catalog-loader dependency among them)
+    /// rather than taking it as a fourth constructor parameter: that
+    /// interface, and everything Phase 4F.3 built around it, is deliberately
+    /// `internal` to this assembly (Phase 4F.3's own boundary decision), and
+    /// RunningApp.Api (the only DI-registration caller) has no
+    /// InternalsVisibleTo grant onto RunningApp.Application — a public
+    /// constructor cannot expose an internal parameter type (CS0051).
+    /// Building it once here, per Scoped <see cref="CatalogPreviewGenerator"/>
+    /// instance, is equivalent in effect to a Scoped DI registration without
+    /// requiring one.
+    /// </summary>
     public CatalogPreviewGenerator(ICatalogCandidateEligibilityGate gate, RuntimeConditionResolutionService orchestration)
+        : this(gate, orchestration, DefaultSkeletonOrchestrator())
+    {
+    }
+
+    /// <summary>Test-only seam (Phase 4F.4) letting RunningApp.IntegrationTests substitute a fake/spy <see cref="ICatalogPlanSkeletonOrchestrator"/> without widening this type's public constructor surface.</summary>
+    internal CatalogPreviewGenerator(
+        ICatalogCandidateEligibilityGate gate,
+        RuntimeConditionResolutionService orchestration,
+        ICatalogPlanSkeletonOrchestrator skeletonOrchestrator)
     {
         _gate = gate;
         _orchestration = orchestration;
+        _skeletonOrchestrator = skeletonOrchestrator;
     }
+
+    private static ICatalogPlanSkeletonOrchestrator DefaultSkeletonOrchestrator() => new CatalogPlanSkeletonOrchestrator(
+        new CatalogPhaseAllocationResolver(),
+        new CatalogRunLayoutResolver(),
+        new CatalogStageToWeekContextFactory(),
+        new CatalogStageToWeekMaterializer(),
+        new GeneratedCatalogPlanSkeletonValidator());
 
     public async Task<CatalogPreviewSnapshot> GenerateAsync(GeneratePreviewRequest request, DateOnly asOfDate, CancellationToken ct = default)
     {
@@ -89,6 +133,18 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         }
 
         ApplyNotEvaluatedGovernancePolicy(results);
+
+        // ── Backend Integration Phase 4F.4: dark internal skeleton materialization ──
+        // Runs only after candidate eligibility (line above the resolver call)
+        // and runtime-condition resolution (incl. governance policy) have both
+        // succeeded — every input below is already authoritative and frozen;
+        // nothing is reloaded, reselected, or rerun. The orchestrator context
+        // and result are local to this method only: never attached to the
+        // snapshot, never hashed, never returned. This call's only observable
+        // effect is: (a) nothing, on success: preview construction continues
+        // unchanged; (b) an aborted, typed preview-generation failure if the
+        // candidate's live catalog data cannot produce a valid skeleton.
+        BuildDarkInternalSkeleton(candidate, asOfDate);
 
         var trace = BuildDecisionTrace(results);
         var createdAtUtc = DateTime.UtcNow;
@@ -155,6 +211,57 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                         $"{result.ConditionType} could not be evaluated (reasonCode={result.ReasonCode}, " +
                         $"category={category}). Catalog preview generation failed.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Backend Integration Phase 4F.4 — builds the Phase 4F.3 orchestration
+    /// context exclusively from <paramref name="candidate"/> (already loaded
+    /// and PUBLISHED-gated by <see cref="_gate"/>) and <paramref name="asOfDate"/>
+    /// (already fixed by the caller) and invokes <see cref="_skeletonOrchestrator"/>.
+    /// StartDate mirrors AsOfDate, exactly matching <see cref="BuildInputSnapshot"/>'s
+    /// own documented Phase 4E.1 simplification — no new date policy is
+    /// introduced. The result is deliberately discarded: this call's only
+    /// contract is "throw a typed failure if the candidate's live catalog
+    /// data cannot produce a valid skeleton," never "return usable content."
+    /// Every one of the 8 typed Phase 4F.3 orchestration exceptions is mapped
+    /// onto the pre-existing <see cref="PlanPreviewGenerationFailedException"/>
+    /// (never a new public error code — the existing preview-generation
+    /// failure taxonomy already preserves the distinction) with the original
+    /// exception preserved as <c>InnerException</c> and no internal phase/
+    /// layout detail included in any message a client could ever see (see
+    /// GlobalExceptionHandler: 500-status messages are never echoed to the
+    /// client).
+    /// </summary>
+    private void BuildDarkInternalSkeleton(PlanCatalogCandidateSummary candidate, DateOnly asOfDate)
+    {
+        var skeletonContext = new CatalogPlanSkeletonOrchestrationContext
+        {
+            Candidate = candidate,
+            ExpectedCandidateKey = candidate.CandidateKey,
+            ExpectedCandidateVersion = candidate.CandidateVersion,
+            ExpectedMasterTemplate = candidate.MasterTemplate,
+            ExpectedRunLayout = candidate.Layout,
+            StartDate = asOfDate,
+            AsOfDate = asOfDate,
+        };
+
+        try
+        {
+            _skeletonOrchestrator.Build(skeletonContext);
+        }
+        catch (Exception ex) when (ex is CatalogPhaseAllocationSourceMissingException
+            or CatalogPhaseAllocationInvalidException
+            or CatalogPhaseAllocationTotalMismatchException
+            or CatalogMasterTemplateReferenceMismatchException
+            or CatalogRunLayoutReferenceMismatchException
+            or CatalogRunLayoutSlotInvalidException
+            or CatalogSkeletonContextInvalidException
+            or CatalogPlanSkeletonOrchestrationFailedException)
+        {
+            throw new PlanPreviewGenerationFailedException(
+                $"CATALOG_INTERNAL_SKELETON_MATERIALIZATION_FAILED: internal skeleton materialization failed " +
+                $"for candidate '{candidate.CandidateKey}' v{candidate.CandidateVersion}': {ex.Message}", ex);
         }
     }
 

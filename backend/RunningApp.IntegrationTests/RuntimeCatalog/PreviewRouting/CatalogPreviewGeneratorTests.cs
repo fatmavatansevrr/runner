@@ -10,6 +10,7 @@ using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
+using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using RunningApp.Domain.Enums;
 using Xunit;
 
@@ -53,6 +54,14 @@ public sealed class CatalogPreviewGeneratorTests
     private static RuntimeConditionResolutionService RealOrchestration() =>
         new(new TimeAdequacyResolver(), new PaceSourceResolver(), new CoreEntryReadinessResolver(), new GoalFeasibilityResolver());
 
+    /// <summary>Backend Integration Phase 4F.4 — the real, fully-composed Phase 4F.3 orchestrator, exactly as production DI wires it (see Program.cs).</summary>
+    private static ICatalogPlanSkeletonOrchestrator RealSkeletonOrchestrator() => new CatalogPlanSkeletonOrchestrator(
+        new CatalogPhaseAllocationResolver(),
+        new CatalogRunLayoutResolver(),
+        new CatalogStageToWeekContextFactory(),
+        new CatalogStageToWeekMaterializer(),
+        new GeneratedCatalogPlanSkeletonValidator());
+
     private static GeneratePreviewRequest PilotRequest(DateOnly raceDate) => new()
     {
         GoalType = GoalType.Race,
@@ -71,7 +80,7 @@ public sealed class CatalogPreviewGeneratorTests
     {
         var asOfDate = new DateOnly(2026, 1, 5);
         var raceDate = asOfDate.AddDays(84); // exactly 12 weeks -> meets ten-k-master.v6's defaultWeeks (ADEQUATE)
-        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration());
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration(), RealSkeletonOrchestrator());
 
         var snapshot = await generator.GenerateAsync(PilotRequest(raceDate), asOfDate);
 
@@ -105,7 +114,7 @@ public sealed class CatalogPreviewGeneratorTests
     {
         // Item 3/4: the real gate (not the dry-run wrapper) enforces PUBLISHED-only
         // eligibility -- the resolver pipeline is never even reached.
-        var generator = new CatalogPreviewGenerator(RealGate(), RealOrchestration());
+        var generator = new CatalogPreviewGenerator(RealGate(), RealOrchestration(), RealSkeletonOrchestrator());
 
         await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() =>
             generator.GenerateAsync(PilotRequest(new DateOnly(2026, 4, 1)), new DateOnly(2026, 1, 5)));
@@ -118,7 +127,7 @@ public sealed class CatalogPreviewGeneratorTests
         // snapshot missing RaceDate -- CatalogPreviewGenerator must convert this
         // into an explicit typed failure, never let a raw framework exception
         // escape and never silently continue.
-        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration());
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration(), RealSkeletonOrchestrator());
         var requestWithoutRaceDate = PilotRequest(new DateOnly(2026, 4, 1));
         requestWithoutRaceDate.RaceDate = null;
 

@@ -7,6 +7,7 @@ using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog.Schedule;
+using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using RunningApp.Application.Services;
 using RunningApp.Persistence;
 
@@ -54,7 +55,14 @@ public static class TestPlanServicesFactory
         var orchestration = new RuntimeConditionResolutionService(
             new TimeAdequacyResolver(), new PaceSourceResolver(), new CoreEntryReadinessResolver(), new GoalFeasibilityResolver());
 
-        var catalogPreviewGenerator = new CatalogPreviewGenerator(gate, orchestration);
+        var skeletonOrchestrator = new CatalogPlanSkeletonOrchestrator(
+            new CatalogPhaseAllocationResolver(),
+            new CatalogRunLayoutResolver(),
+            new CatalogStageToWeekContextFactory(),
+            new CatalogStageToWeekMaterializer(),
+            new GeneratedCatalogPlanSkeletonValidator());
+
+        var catalogPreviewGenerator = new CatalogPreviewGenerator(gate, orchestration, skeletonOrchestrator);
 
         var catalogConfirmationService = new CatalogPlanConfirmationService(
             context,

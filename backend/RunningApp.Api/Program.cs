@@ -170,6 +170,17 @@ builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.
     RunningApp.Application.RuntimeCatalog.PreviewRouting.PilotGenerationRouteDecider>();
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.ICatalogCandidateEligibilityGate,
     RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogCandidateEligibilityGate>();
+
+// Backend Integration Phase 4F.4: CatalogPreviewGenerator now also dark-invokes
+// the Phase 4F.3 internal skeleton orchestrator (ICatalogPlanSkeletonOrchestrator)
+// after eligibility/resolver success (see CatalogPreviewGenerator.BuildDarkInternalSkeleton).
+// That type and its resolver/factory/materializer/validator collaborators remain
+// deliberately `internal` to RunningApp.Application (Phase 4F.3's own boundary) --
+// no explicit DI registration is added here, since doing so would require making
+// them public and RunningApp.Api has no InternalsVisibleTo grant. Instead,
+// CatalogPreviewGenerator's public constructor composes a default orchestrator
+// internally (a pure, stateless, dependency-free composition, safe to build once
+// per Scoped CatalogPreviewGenerator instance) — see that class's own doc comment.
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.ICatalogPreviewGenerator,
     RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogPreviewGenerator>();
 

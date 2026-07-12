@@ -24,8 +24,19 @@ public sealed class Phase4F3LiveBoundaryRegressionTests
     private static AppDbContext NewContext() =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
+    /// <summary>
+    /// Backend Integration Phase 4F.4 note: this assertion's scope narrowed
+    /// (not weakened) once dark skeleton wiring landed. It no longer means
+    /// "no orchestrator wiring exists anywhere" (Phase 4F.4 deliberately adds
+    /// that — see Phase4F4DarkSkeletonWiringTests). It still means, and still
+    /// verifies, that <see cref="CatalogPreviewGenerator"/>'s PUBLIC/DI-facing
+    /// constructor surface (what <c>GetConstructors()</c> sees by default —
+    /// public instance constructors only) never grew a new parameter: the
+    /// orchestrator is composed internally by an internal constructor overload
+    /// instead (see that class's own doc comment), so this remains true.
+    /// </summary>
     [Fact]
-    public void CatalogPreviewGenerator_ConstructorDependencies_DoNotIncludeOrchestratorType()
+    public void CatalogPreviewGenerator_PublicConstructorSurface_DoesNotTakeOrchestratorAsAParameter()
     {
         var ctors = typeof(CatalogPreviewGenerator).GetConstructors();
         Assert.Single(ctors);
