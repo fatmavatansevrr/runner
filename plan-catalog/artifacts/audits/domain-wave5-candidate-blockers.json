@@ -1,0 +1,45 @@
+{
+  "auditId": "WAVE5-CANDIDATE-BLOCKERS-001",
+  "generatedAtUtc": "2026-07-08T19:25:00Z",
+  "readOnly": true,
+  "measurementMethod": "BlockerScopeMeasurement.ScopedDecisionCount / ScopedArtifactCount over each root's exact dependency closure, computed via DomainWave5D2ResolutionTests.CandidateClosure_RemovesD2FromWave5Candidate and the pre-existing DomainWave3ComplexityRemovalTests — never hardcoded independently of PilotDomainContentAudit.Entries.",
+  "roots": [
+    {
+      "root": "TEN_K__4D__INTERMEDIATE v4 (active)",
+      "decisionLevelBlockerCount": 13,
+      "artifactLevelBlockerCount": 9,
+      "unaffectedByThisTask": true,
+      "reason": "v4 references INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1 (unchanged, immutable); D2 remains PLACEHOLDER_UNCONFIRMED for that version."
+    },
+    {
+      "root": "TEN_K__4D__INTERMEDIATE v5 (Wave 2 candidate)",
+      "decisionLevelBlockerCount": 8,
+      "artifactLevelBlockerCount": 8,
+      "unaffectedByThisTask": true,
+      "reason": "Preserved unchanged; still references INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1."
+    },
+    {
+      "root": "TEN_K__4D__INTERMEDIATE v6 (Wave 3 candidate)",
+      "decisionLevelBlockerCount": 4,
+      "artifactLevelBlockerCount": 4,
+      "unaffectedByThisTask": true,
+      "reason": "Preserved unchanged; still references INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1. Remaining blocking artifacts: GOAL_PACE_TEN_K v1, INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1, PEAK_VOLUME_BANDS_V1 v2, RUNTIME_CONDITION_VALUES_V1 v1 (D13, D2, D4, D3)."
+    },
+    {
+      "root": "TEN_K__4D__INTERMEDIATE v7 (Wave 5 / D2 candidate, new)",
+      "decisionLevelBlockerCount": 3,
+      "artifactLevelBlockerCount": 3,
+      "reductionFromPredecessor": "4 -> 3 (Wave 3 v6 -> Wave 5 v7): exactly 1 D2 decision removed",
+      "remainingBlockingArtifacts": [
+        { "documentType": "GOAL_PACE_TEN_K", "version": 1, "decisionId": "D13" },
+        { "documentType": "PEAK_VOLUME_BAND_POLICY", "key": "PEAK_VOLUME_BANDS_V1", "version": 2, "decisionId": "D4" },
+        { "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY", "key": "RUNTIME_CONDITION_VALUES_V1", "version": 1, "decisionId": "D3" }
+      ],
+      "d2AbsentFromClosure": true
+    }
+  ],
+  "exactD2DecisionRemoved": "D2 (INTERMEDIATE_PROGRESSION_MODIFIER_V1 dosage/settings: maximumComplexityTier removed; maximumHardSessionsPerWeek=1, mainSetDoseMultiplier=1.00, allowGoalPaceRehearsal=true, allowSecondHardStimulus=false all resolved to non-blocking classifications on v2)",
+  "exactRemainingDecisions": ["D3", "D4", "D13"],
+  "wave4Status": "NOT_IMPLEMENTED — no domain-wave4-* audit files or AddWave4* entries exist in PilotDomainContentAudit.cs as of this task; TEN_K__4D__INTERMEDIATE v6 (Wave 3) was therefore the correct starting point.",
+  "finalStatus": "Blocker measurement complete: exactly one decision-level and one artifact-level blocker removed by resolving D2; D3/D4/D13 remain, matching the expected outcome for a repository where Wave 4 has not yet been implemented."
+}

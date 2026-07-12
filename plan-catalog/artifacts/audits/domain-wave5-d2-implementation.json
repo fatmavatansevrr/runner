@@ -1,0 +1,62 @@
+{
+  "auditId": "WAVE5-D2-IMPLEMENTATION-001",
+  "generatedAtUtc": "2026-07-08T19:10:00Z",
+  "readOnly": true,
+  "schemaEvolution": {
+    "artifact": "schemas/progression-modifier.schema.json",
+    "change": "maximumComplexityTier removed from top-level 'required'; conditional allOf added requiring it only when metadata.schemaVersion == 1, and forbidding it (via 'not: required') when schemaVersion >= 2",
+    "failureCode": "LEGACY_MAXIMUM_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA",
+    "legacyReadable": true,
+    "noReplacementFieldIntroduced": true
+  },
+  "modelChange": {
+    "artifact": "src/PlanCatalog.Core/Models/ProgressionModifierDefinition.cs",
+    "change": "MaximumComplexityTier changed from required int to optional int?"
+  },
+  "validatorChange": {
+    "artifact": "src/PlanCatalog.Core/Validation/ProgressionModifierValidator.cs",
+    "change": "schemaVersion >= 2 rejects a present MaximumComplexityTier (LEGACY_MAXIMUM_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA); schemaVersion == 1 keeps the pre-existing PM_COMPLEXITY_TIER_TOO_LOW >= 1 check unchanged"
+  },
+  "approvedValuesApplied": {
+    "maximumHardSessionsPerWeek": 1,
+    "mainSetDoseMultiplier": 1.00,
+    "allowGoalPaceRehearsal": true,
+    "allowSecondHardStimulus": false,
+    "appliedTo": "catalog/progression-modifiers/intermediate-progression-modifier.v2.json",
+    "valuesUnchangedFromV1": true,
+    "onlyChangeIsFieldRemoval": true
+  },
+  "noValuesCreatedForOtherLevelsOrDayCounts": {
+    "NEW": false, "ADVANCED": false, "EXPERIENCED": false, "5DayOr6DayIntermediate": false, "otherRaceDistances": false
+  },
+  "artifactsCreated": [
+    "catalog/progression-modifiers/intermediate-progression-modifier.v2.json (schemaVersion 2, version 2, DRAFT)",
+    "catalog/level-modifiers/intermediate-modifier.v5.json (cascade: progressionModifier -> v2)",
+    "catalog/combinations/ten-k-4d-intermediate.v7.json (cascade: levelModifier -> v5; masterTemplate/layout/rulePack unchanged from v6)"
+  ],
+  "artifactsUnchanged": [
+    "catalog/progression-modifiers/intermediate-progression-modifier.v1.json (immutable, PUBLISHED across all 7 historical releases)",
+    "catalog/level-modifiers/intermediate-modifier.v1.json through v4.json",
+    "catalog/combinations/ten-k-4d-intermediate.v1.json through v6.json",
+    "catalog/templates/ten-k-master.v5.json (unchanged, referenced as-is)",
+    "catalog/layouts/run-layout-4d.v2.json (unchanged, referenced as-is)",
+    "catalog/rule-packs/appsel-race-plan.v2.json (unchanged, referenced as-is)",
+    "all workout definitions (unchanged, referenced as-is)"
+  ],
+  "activationReadiness": {
+    "publishOccurred": false,
+    "retirementOccurred": false,
+    "activationOccurred": false,
+    "supersedeOccurred": false,
+    "candidateStatus": "DRAFT, unpublished",
+    "wouldRequireForActivation": [
+      "Resolution of D3 (RUNTIME_CONDITION_VALUES_V1 vocabulary) and D4 (PEAK_VOLUME_BANDS_V1 non-intermediate rows) and D13 (GOAL_PACE_TEN_K) before a Production release can be enabled for this closure (blockingArtifactCount > 0 for those three artifacts still gates Production per CatalogPublisher's guard)",
+      "An explicit product/release decision to cut a new Pilot release pinning TEN_K__4D__INTERMEDIATE v7 (not performed in this task per instruction not to publish/activate)"
+    ],
+    "recommendation": "Do not publish or activate this candidate yet; it resolves exactly one of four remaining blocking decisions (D2) in the Wave 3 candidate closure. Combine with D3/D4/D13 resolution in a future wave before considering a Pilot cut, mirroring the Wave 2/3 pattern of batching multiple resolved decisions into one release."
+  },
+  "noProcessBLogicAdded": true,
+  "backendUntouched": true,
+  "noMutationOfPublishedOrPriorDraftArtifacts": true,
+  "finalStatus": "D2 implementation complete: MaximumComplexityTier removed via versioned schema evolution; MaximumHardSessionsPerWeek/MainSetDoseMultiplier/AllowGoalPaceRehearsal/AllowSecondHardStimulus applied unchanged from their existing v1 values on new v2 artifact; immutable cascade created through v7 candidate root; no publish/retire/activate/supersede action taken."
+}

@@ -1,0 +1,128 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.Exceptions;
+using RunningApp.Application.RuntimeCatalog;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
+using RunningApp.Application.RuntimeCatalog.Resolvers;
+using RunningApp.Domain.Enums;
+using Xunit;
+
+namespace RunningApp.IntegrationTests.RuntimeCatalog.PreviewRouting;
+
+/// <summary>
+/// Backend Integration Phase 4E.1 — exercises the full catalog preview
+/// generation pipeline (eligibility gate → resolver orchestration → immutable
+/// snapshot) against the REAL plan-catalog source tree, using the gate's
+/// internal-dry-run entry point (bypassing the PUBLISHED-only check, exactly
+/// as documented on ICatalogCandidateEligibilityGate/CatalogPreviewGenerator)
+/// since the real TEN_K__4D__INTERMEDIATE v10 candidate is DRAFT. Proves the
+/// success path is fully implemented and that every resolver in one preview
+/// shares a single AsOfDate, and that a public (non-dry-run) request against
+/// the same DRAFT candidate fails loud with a typed error instead of ever
+/// reaching SQL.
+/// </summary>
+public sealed class CatalogPreviewGeneratorTests
+{
+    /// <summary>Delegates public-preview loads straight to the internal-dry-run entry point — test-only, mirrors this phase's own documented "tests or an explicitly internal dry-run path" carve-out.</summary>
+    private sealed class DryRunEligibilityGate : ICatalogCandidateEligibilityGate
+    {
+        private readonly ICatalogCandidateEligibilityGate _inner;
+        public DryRunEligibilityGate(ICatalogCandidateEligibilityGate inner) => _inner = inner;
+
+        public Task<PlanCatalogCandidateSummary> LoadForPublicPreviewAsync(string candidateKey, int candidateVersion, CancellationToken ct = default) =>
+            _inner.LoadForInternalDryRunAsync(candidateKey, candidateVersion, ct);
+
+        public Task<PlanCatalogCandidateSummary> LoadForInternalDryRunAsync(string candidateKey, int candidateVersion, CancellationToken ct = default) =>
+            _inner.LoadForInternalDryRunAsync(candidateKey, candidateVersion, ct);
+    }
+
+    private static ICatalogCandidateEligibilityGate RealGate()
+    {
+        var bundleLoader = new PlanCatalogBundleLoader(
+            Options.Create(new PlanCatalogOptions { CatalogRootPath = Path.Combine(TestPlanServicesFactory.RepoRoot(), "plan-catalog", "catalog") }),
+            NullLogger<PlanCatalogBundleLoader>.Instance);
+        return new CatalogCandidateEligibilityGate(bundleLoader);
+    }
+
+    private static RuntimeConditionResolutionService RealOrchestration() =>
+        new(new TimeAdequacyResolver(), new PaceSourceResolver(), new CoreEntryReadinessResolver(), new GoalFeasibilityResolver());
+
+    private static GeneratePreviewRequest PilotRequest(DateOnly raceDate) => new()
+    {
+        GoalType = GoalType.Race,
+        GoalDistance = GoalDistance.TenK,
+        Level = RunningBackground.RunningRegularly,
+        DaysPerWeek = 4,
+        Unit = DistanceUnit.Km,
+        RaceDate = raceDate,
+        // TargetFinishTimeSeconds intentionally omitted: GoalFeasibilityResolver
+        // short-circuits to Evaluated/NOT_REQUESTED immediately, so this request
+        // reaches a fully Evaluated pipeline (no NotEvaluated results at all).
+    };
+
+    [Fact]
+    public async Task GenerateAsync_ViaDryRunGate_ProducesFullyEvaluatedSnapshot_SharingOneAsOfDate()
+    {
+        var asOfDate = new DateOnly(2026, 1, 5);
+        var raceDate = asOfDate.AddDays(84); // exactly 12 weeks -> meets ten-k-master.v6's defaultWeeks (ADEQUATE)
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration());
+
+        var snapshot = await generator.GenerateAsync(PilotRequest(raceDate), asOfDate);
+
+        // Item 10: a single shared AsOfDate reached every resolver in the pipeline.
+        Assert.Equal(asOfDate, snapshot.AsOfDate);
+        Assert.Equal(asOfDate, snapshot.NormalizedInput.StartDate);
+
+        // Item 11: the snapshot freezes candidate identity, dependency identity,
+        // resolver results, decision trace, generation source, and both timestamps.
+        Assert.Equal("TEN_K__4D__INTERMEDIATE", snapshot.CandidateKey);
+        Assert.Equal(10, snapshot.CandidateVersion);
+        Assert.Equal("DRAFT", snapshot.CandidateStatusAtGenerationTime);
+        Assert.Equal(GenerationSource.Catalog, snapshot.GenerationSource);
+        Assert.Equal("PILOT_TEN_K_INTERMEDIATE_4D_MATCH", snapshot.RouteReason);
+        Assert.Equal(4, snapshot.ResolverResults.Count);
+        Assert.All(snapshot.ResolverResults, r => Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, r.Status));
+        Assert.Equal("ADEQUATE", snapshot.ResolverResults.Single(r => r.ConditionType == "TIME_ADEQUACY_IN").OutputValue);
+        Assert.Equal("NOT_REQUESTED", snapshot.ResolverResults.Single(r => r.ConditionType == "GOAL_FEASIBILITY_IN").OutputValue);
+        Assert.Equal(4, snapshot.DecisionTrace.Steps.Count);
+        Assert.Empty(snapshot.SelectedStageKeys);
+        Assert.Empty(snapshot.FallbackStagesUsed);
+        Assert.Null(snapshot.GeneratedPreviewPlanPayload);
+        Assert.False(string.IsNullOrWhiteSpace(snapshot.ContentHash));
+        Assert.True(snapshot.ExpiresAtUtc > snapshot.CreatedAtUtc);
+        Assert.Equal(8, snapshot.ReferencedArtifacts.Count);
+        Assert.Equal(6, snapshot.ReferencedArtifacts["masterTemplate"].Version);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_PublicPathAgainstRealDraftCandidate_ThrowsCatalogCandidateNotPublished_NeverProducesASnapshot()
+    {
+        // Item 3/4: the real gate (not the dry-run wrapper) enforces PUBLISHED-only
+        // eligibility -- the resolver pipeline is never even reached.
+        var generator = new CatalogPreviewGenerator(RealGate(), RealOrchestration());
+
+        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() =>
+            generator.GenerateAsync(PilotRequest(new DateOnly(2026, 4, 1)), new DateOnly(2026, 1, 5)));
+    }
+
+    [Fact]
+    public async Task GenerateAsync_RaceGoalMissingRaceDate_ThrowsPlanPreviewGenerationFailed_NotARawArgumentException()
+    {
+        // Item 9: TimeAdequacyResolver throws ArgumentException for a Race-goal
+        // snapshot missing RaceDate -- CatalogPreviewGenerator must convert this
+        // into an explicit typed failure, never let a raw framework exception
+        // escape and never silently continue.
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration());
+        var requestWithoutRaceDate = PilotRequest(new DateOnly(2026, 4, 1));
+        requestWithoutRaceDate.RaceDate = null;
+
+        await Assert.ThrowsAsync<PlanPreviewGenerationFailedException>(() =>
+            generator.GenerateAsync(requestWithoutRaceDate, new DateOnly(2026, 1, 5)));
+    }
+}

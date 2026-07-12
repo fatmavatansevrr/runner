@@ -1,0 +1,102 @@
+{
+  "auditId": "WAVE5-D2-FIELD-INVENTORY-001",
+  "generatedAtUtc": "2026-07-08T19:00:00Z",
+  "readOnly": true,
+  "scope": "D2 exact field/consumer trace for INTERMEDIATE_PROGRESSION_MODIFIER_V1 (Task A)",
+  "fields": [
+    {
+      "field": "maximumComplexityTier",
+      "currentType": "int (schemaVersion 1: required); int? (schemaVersion 2+: forbidden)",
+      "schemaRequirement": "required only when metadata.schemaVersion == 1; forbidden when >= 2",
+      "currentValueV1": 2,
+      "writtenBy": ["catalog/progression-modifiers/intermediate-progression-modifier.v1.json (authoring)"],
+      "readBy": ["ProgressionModifierValidator.Validate (PM_COMPLEXITY_TIER_TOO_LOW / LEGACY_MAXIMUM_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA)"],
+      "runtimeImpact": "None outside structural validation. Not read by TemplateCombinationValidator, any bundle assembler, or any other consumer. complexityTier was already removed from WorkoutDefinition in Wave 3, so no target field for a 'complexity cap' exists anywhere in the reusable catalog.",
+      "isTargetOfAnyConsumer": false,
+      "scopeEncodedToday": "Level-global by artifact key (INTERMEDIATE_PROGRESSION_MODIFIER_V1), but only ever referenced by one LevelModifier (INTERMEDIATE_MODIFIER) and therefore only one combination family (TEN_K__4D__INTERMEDIATE)",
+      "duplicatedElsewhere": false,
+      "currentAuditClassification": "PLACEHOLDER_UNCONFIRMED (v1, AUD-044, unchanged/historical)"
+    },
+    {
+      "field": "maximumHardSessionsPerWeek",
+      "currentType": "int (required, minimum 0)",
+      "schemaRequirement": "required, minimum 0",
+      "currentValueV1": 1,
+      "writtenBy": ["catalog/progression-modifiers/intermediate-progression-modifier.v1.json (authoring)"],
+      "readBy": [
+        "ProgressionModifierValidator.Validate (PM_HARD_SESSION_CAP_NEGATIVE; PM_HARD_SESSION_CAP_EXCEEDS_SINGLE_STIMULUS when AllowSecondHardStimulus=false)",
+        "TemplateCombinationValidator.Validate (TC_KEY_SESSION_COUNT_EXCEEDS_CAP: layout.Slots.Count(KEY_SESSION) > progressionModifier.MaximumHardSessionsPerWeek)"
+      ],
+      "runtimeImpact": "Structural CEILING check only — TemplateCombinationValidator uses strict '>' against the layout's KEY_SESSION slot count. No consumer anywhere in this repository asserts equality or a minimum; zero KEY_SESSION slots never fails this check.",
+      "isTargetOfAnyConsumer": true,
+      "treatedAsTargetByAnyConsumer": false,
+      "scopeEncodedToday": "Same as maximumComplexityTier — level-global by key, single actual referrer (TEN_K/INTERMEDIATE/4-day)",
+      "duplicatedElsewhere": false,
+      "currentAuditClassification": "PLACEHOLDER_UNCONFIRMED (v1, AUD-044, unchanged/historical)"
+    },
+    {
+      "field": "mainSetDoseMultiplier",
+      "currentType": "decimal (required, exclusiveMinimum 0)",
+      "schemaRequirement": "required, > 0",
+      "currentValueV1": 1.0,
+      "writtenBy": ["catalog/progression-modifiers/intermediate-progression-modifier.v1.json (authoring)"],
+      "readBy": ["ProgressionModifierValidator.Validate (PM_DOSE_MULTIPLIER_NOT_POSITIVE, > 0 check only)"],
+      "runtimeImpact": "None beyond the positivity check. Transported through PublishedTemplateBundle only by reference (bundle carries CatalogArtifactReference, not inline field values); no code in this repository (Process A) multiplies any duration/distance/repetition value by it. Process B (runner/backend) was not inspected or modified — out of scope.",
+      "isTargetOfAnyConsumer": false,
+      "unusedConfirmed": true,
+      "scopeEncodedToday": "Same as above",
+      "duplicatedElsewhere": false,
+      "currentAuditClassification": "PLACEHOLDER_UNCONFIRMED (v1, AUD-044, unchanged/historical)"
+    },
+    {
+      "field": "allowGoalPaceRehearsal",
+      "currentType": "bool (required)",
+      "schemaRequirement": "required",
+      "currentValueV1": true,
+      "writtenBy": ["catalog/progression-modifiers/intermediate-progression-modifier.v1.json (authoring)"],
+      "readBy": ["None — no validator or bundle assembler branches on this value"],
+      "runtimeImpact": "None. Not already runtime-guarded anywhere in this repository; the separate GOAL_PACE_REHEARSAL stage eligibility guard (GOAL_FEASIBILITY_IN) lives independently in TEN_K_WORKOUT_PROGRESSION_V1's stage.Requires and does not read this flag.",
+      "isTargetOfAnyConsumer": false,
+      "alreadyRuntimeGuardedElsewhere": false,
+      "writeOnlyConfirmed": true,
+      "clarificationNote": "This field-level entry was already accurate (readBy=none) in the original Wave 5 report; the inconsistency corrected in the clarification pass was the OWNERSHIP LABEL in domain-wave5-d2-ownership.md (RUNTIME_GUARD_ONLY -> TECHNICAL_METADATA/PRODUCT_CAPABILITY_DECLARATION), not this field-trace entry. See domain-wave5-d2-clarification.md.",
+      "scopeEncodedToday": "Same as above",
+      "duplicatedElsewhere": false,
+      "currentAuditClassification": "PLACEHOLDER_UNCONFIRMED (v1, AUD-044, unchanged/historical)"
+    },
+    {
+      "field": "allowSecondHardStimulus",
+      "currentType": "bool (required)",
+      "schemaRequirement": "required",
+      "currentValueV1": false,
+      "writtenBy": ["catalog/progression-modifiers/intermediate-progression-modifier.v1.json (authoring)"],
+      "readBy": ["ProgressionModifierValidator.Validate (PM_HARD_SESSION_CAP_EXCEEDS_SINGLE_STIMULUS: forbids MaximumHardSessionsPerWeek > 1 when this is false)"],
+      "runtimeImpact": "Structural cross-field consistency check only. Applied via the single ProgressionModifierDefinition instance that has exactly one current referrer (INTERMEDIATE_MODIFIER -> TEN_K__4D__INTERMEDIATE) — i.e. applied per-combination in practice today, not literally level-wide across multiple day-counts/distances, because no other combination currently references this artifact.",
+      "isTargetOfAnyConsumer": true,
+      "appliedLevelWideOrCombinationSpecific": "Level-global by schema key, but combination-specific in actual current reuse (single referrer)",
+      "scopeEncodedToday": "Same as above",
+      "duplicatedElsewhere": false,
+      "currentAuditClassification": "PLACEHOLDER_UNCONFIRMED (v1, AUD-044, unchanged/historical)"
+    }
+  ],
+  "consumerTraceSummary": {
+    "onlyStructuralConsumers": ["ProgressionModifierValidator", "TemplateCombinationValidator"],
+    "noGeneratorOrProcessBLogicInThisRepository": true,
+    "maximumHardSessionsPerWeekTreatedAsTarget": false,
+    "allowGoalPaceRehearsalAlreadyRuntimeGuarded": false,
+    "allowSecondHardStimulusAppliedLevelWideOrCombinationSpecific": "combination-specific in actual reuse; level-global only by schema key shape",
+    "mainSetDoseMultiplierTarget": "unused/no target found in this repository"
+  },
+  "sourceFilesRead": [
+    "schemas/progression-modifier.schema.json",
+    "src/PlanCatalog.Core/Models/ProgressionModifierDefinition.cs",
+    "src/PlanCatalog.Core/Models/LevelModifierDefinition.cs",
+    "src/PlanCatalog.Core/Validation/ProgressionModifierValidator.cs",
+    "src/PlanCatalog.Core/Validation/TemplateCombinationValidator.cs",
+    "src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs",
+    "src/PlanCatalog.Contracts/Bundles/PublishedTemplateBundle.cs",
+    "tests/PlanCatalog.Tests/TestSupport/CombinationFixture.cs",
+    "catalog/progression-modifiers/intermediate-progression-modifier.v1.json"
+  ],
+  "finalStatus": "Field/consumer trace complete for all 5 D2 fields; no implementation performed prior to this trace."
+}

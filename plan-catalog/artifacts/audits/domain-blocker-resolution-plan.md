@@ -123,3 +123,22 @@ Require **both** of:
   whether any test currently asserts the field's presence.
 
 ## Final status: resolution plan complete — 7 batches, recommended order established, no decision resolved.
+## Wave 2 execution update
+
+Wave 2 implemented D1, D6, D8, D10, and D12 as draft candidate root `TEN_K__4D__INTERMEDIATE v5`. Current active root `TEN_K__4D__INTERMEDIATE v4` remains active and unchanged.
+
+The candidate leaves D2, D3, D4, D5, D7, D9, D11, and D13 unresolved. No release was published, no root was retired, and no activation was executed.
+
+## Wave 3 execution update
+
+Wave 3 implemented D5, D7, D9, and D11 by removing the redundant legacy `complexityTier` field from reusable `WorkoutDefinition` schemaVersion 3 artifacts. This was recorded as a technical-only removal, not as a selected running-domain value.
+
+D8 and D12 were evidence-reviewed and retained as non-blocking `EXPLICIT_PRODUCT_DEFAULT` decisions with values unchanged. The new draft candidate root is `TEN_K__4D__INTERMEDIATE v6`; current active root `v4` remains active. No release was published, no root was retired, and no activation was executed.
+
+## Wave 5 execution update (batch B3, D2)
+
+Wave 5 implemented D2: removed the legacy `maximumComplexityTier` field from `ProgressionModifier` (new schemaVersion 2, mirroring the Wave 3 pattern), and applied the approved `maximumHardSessionsPerWeek=1`, `mainSetDoseMultiplier=1.00`, `allowGoalPaceRehearsal=true`, `allowSecondHardStimulus=false` values — all unchanged in value from v1. The new draft candidate root is `TEN_K__4D__INTERMEDIATE v7`, built from predecessor candidate `v6` (preserved unchanged). Current active root `v4` remains active and unchanged. D3, D4, and D13 remain unresolved. No release was published, no root was retired, and no activation was executed.
+
+## D3 execution update (batch B5)
+
+D3 implemented: replaced the invented `PACE_SOURCE_IN`/`TIME_ADEQUACY_IN`/`CORE_ENTRY_READINESS_IN` allowed-value vocabularies on `RUNTIME_CONDITION_VALUES_V1` (new version 2) with explicit product-approved canonical values, backed by an explicit recorded Process A/Process B ownership decision (this Process A registry is the sole canonical owner; Process B may map inputs into these values but may not invent additional codes). `GOAL_FEASIBILITY_IN`/`PLAN_MODE_IN` (already `CANONICAL_CONFIRMED`) were left byte-identical. The new draft candidate root is `TEN_K__4D__INTERMEDIATE v8`, built from predecessor candidate `v7` (preserved unchanged). Current active root `v4` remains active and unchanged. D4 and D13 remain unresolved — not touched in this pass. No release was published, no root was retired, and no activation was executed.

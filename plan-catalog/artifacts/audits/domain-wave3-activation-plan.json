@@ -1,0 +1,18 @@
+{
+  "audit": "domain-wave3-activation-plan",
+  "generatedAt": "2026-07-08",
+  "currentActiveRoot": "TEN_K__4D__INTERMEDIATE v4",
+  "draftCandidateRoot": "TEN_K__4D__INTERMEDIATE v6",
+  "actionsTaken": {
+    "publish": false,
+    "activate": false,
+    "retire": false,
+    "supersede": false,
+    "backendOrProcessB": false
+  },
+  "nextRequiredBeforeActivation": [
+    "Resolve or explicitly accept the remaining four candidate blockers",
+    "Run publish-readiness review for v6",
+    "Create release artifacts only in an explicit publish wave"
+  ]
+}

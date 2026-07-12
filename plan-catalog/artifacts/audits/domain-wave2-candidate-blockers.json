@@ -1,0 +1,34 @@
+{
+  "auditId": "DOMAIN-WAVE2-CANDIDATE-BLOCKERS-001",
+  "decisionLevel": {
+    "totalCatalogPlaceholderDecisionCount": 40,
+    "eligibleReleaseUnionBlockingDecisionCount": 13,
+    "currentActiveRootClosureBlockingDecisionCount": 13,
+    "candidateRootClosureBlockingDecisionCount": 8,
+    "historicalOnlyPlaceholderDecisionCountAgainstCandidate": 32
+  },
+  "artifactLevel": {
+    "totalCatalogBlockingArtifactCount": 21,
+    "eligibleReleaseUnionBlockingArtifactCount": 9,
+    "currentActiveRootClosureBlockingArtifactCount": 9,
+    "candidateRootClosureBlockingArtifactCount": 8,
+    "historicalOnlyBlockingArtifactCountAgainstCandidate": 13
+  },
+  "removedFromCandidateClosure": [
+    "D1 RUN_LAYOUT_4D $.slots[*].sequenceOrder",
+    "D6 EASY_STANDARD $.components",
+    "D8 FARTLEK $.components",
+    "D10 LONG_RUN_STANDARD $.components",
+    "D12 THRESHOLD_TEMPO $.components"
+  ],
+  "unresolvedInCandidateClosure": [
+    "D2 INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1",
+    "D3 RUNTIME_CONDITION_VALUES_V1 v1",
+    "D4 PEAK_VOLUME_BANDS_V1 v2",
+    "D5 EASY_STANDARD v3 $.complexityTier",
+    "D7 FARTLEK v3 $.complexityTier",
+    "D9 LONG_RUN_STANDARD v3 $.complexityTier",
+    "D11 THRESHOLD_TEMPO v3 $.complexityTier",
+    "D13 GOAL_PACE_TEN_K v1"
+  ]
+}

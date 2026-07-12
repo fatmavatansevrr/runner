@@ -1,6 +1,6 @@
 # Golden Fixture v3 — Integrity Verification
 
-Generated: 2026-07-08T07:46:23.6788117Z
+Generated: 2026-07-08T11:06:54.4810705Z
 
 **Overall status: PASSED**
 

@@ -25,9 +25,41 @@
           "sequenceOrder": { "type": "integer", "minimum": 1 },
           "role": { "type": "string", "enum": ["KEY_SESSION", "EASY_SUPPORT", "LONG_RUN"] }
         },
-        "required": ["sequenceOrder", "role"]
+        "required": ["role"]
       }
     }
   },
-  "required": ["metadata", "runsPerWeek", "slots"]
+  "required": ["metadata", "runsPerWeek", "slots"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "schemaVersion": { "const": 1 }
+            },
+            "required": ["schemaVersion"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "slots": {
+            "items": {
+              "required": ["sequenceOrder", "role"]
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "slots": {
+            "items": {
+              "not": { "required": ["sequenceOrder"] }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

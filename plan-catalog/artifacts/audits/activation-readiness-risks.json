@@ -1,0 +1,143 @@
+{
+  "auditId": "ACTIVATION-READINESS-RISKS-001",
+  "generatedAtUtc": "2026-07-09T16:00:00Z",
+  "readOnly": true,
+  "purpose": "Living, wave-agnostic aggregator of non-blocking-but-activation-relevant risk notes. Created because a repository-wide search found TD-D3-001/AUD-406 was NOT visible from any existing activation-plan/activation-readiness/release-readiness reporting artifact prior to this file's creation -- see visibilityPreCheck below. Must be reviewed before any future publish/activate/release action against TEN_K__4D__INTERMEDIATE v8 or any descendant candidate, regardless of blocker/decision status.",
+  "visibilityPreCheck": {
+    "performedFor": "TD-D3-001 / AUD-406",
+    "searchedArtifacts": [
+      "artifacts/audits/domain-wave2-activation-plan.{json,md} (predates D3; no reference)",
+      "artifacts/audits/domain-wave3-activation-plan.{json,md} (predates D3; no reference)",
+      "artifacts/audits/domain-wave5-d2-implementation.json 'activationReadiness' section (predates D3 follow-up; no reference)",
+      "artifacts/audits/production-readiness-error-contract-audit.{json,md} (historical v4 error-contract analysis; not a living per-candidate checklist; no reference)"
+    ],
+    "result": "NOT_VISIBLE_BEFORE_THIS_FILE",
+    "actionTaken": "Created this new dedicated aggregator file and seeded it with TD-D3-001, cross-referenced to its original source (domain-d3-followup.{json,md} and audit entry AUD-406). Did not modify domain-d3-followup.*, AUD-406, or any Wave 5/D2 report -- D3 is not reopened."
+  },
+  "risks": [
+    {
+      "id": "TD-D3-001",
+      "recordedInPass": "D3 follow-up (RUNTIME_CONDITION_VALUES_V1 v2 consumer trace)",
+      "source": "artifacts/audits/domain-d3-followup.json; artifacts/audits/domain-d3-followup.md; audit entry AUD-406 in src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs",
+      "statement": "Before publishing or activating TEN_K__4D__INTERMEDIATE v8 or any descendant candidate, Process B/runtime mapping must be explicitly verified against RUNTIME_CONDITION_VALUES_V1 v2 canonical values (PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN) and confirmed to no longer expect/emit the old v1 strings (RACE_RESULT, TIME_TRIAL, NOT_PROVIDED, TIGHT, UNKNOWN).",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "TEN_K__4D__INTERMEDIATE v8 onward (inherited by v9, v10, and any further descendant, since no pass since D3 has touched RUNTIME_CONDITION_VALUES_V1)",
+      "status": "OPEN"
+    },
+    {
+      "id": "TD-WAVE5-001",
+      "recordedInPass": "Wave 5 / D2 clarification pass; revisited in D13 (Wave 8)",
+      "source": "artifacts/audits/domain-wave5-d2-clarification.json (technicalDebt.d13RevisitResult); artifacts/audits/domain-wave5-d2-clarification.md",
+      "statement": "No automated cross-check exists between ProgressionModifier.AllowGoalPaceRehearsal and whether the reachable WorkoutProgression actually contains a goal-pace-rehearsal stage/candidate. As of D13, this is no longer hypothetical: TEN_K__4D__INTERMEDIATE v10's candidate graph now contains a real, reachable GOAL_PACE_TEN_K v2 candidate in the GOAL_PACE_REHEARSAL stage, gated only by GOAL_FEASIBILITY_IN -- never by AllowGoalPaceRehearsal. Current state is consistent (flag=true, candidate exists), so this is not a live defect, but no guard would catch a future divergence (e.g. flag set to false while the candidate remains reachable). Before activation, confirm this remains consistent, or implement the recommended TemplateCombinationValidator cross-check if the flag is ever changed.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "TEN_K__4D__INTERMEDIATE v7 onward (inherited by v8, v9, v10, and any further descendant)",
+      "status": "OPEN"
+    },
+    {
+      "id": "TD-BACKEND-001",
+      "recordedInPass": "Backend / Process B activation review",
+      "source": "artifacts/audits/backend-process-b-activation-review.json; artifacts/audits/backend-process-b-activation-review.md",
+      "statement": "Backend (runner/backend, RunningApp.*) has ZERO integration with plan-catalog: no code path loads any plan-catalog bundle/document, and the seeded PlanTemplate database contains only 3 rows (all 5K/Beginner, no 10K/Intermediate/4-day). PlanServices.GeneratePreviewAsync + PlaceholderPlanGenerationEngine is explicitly documented in its own source as a 'Phase 1 placeholder' with 'no real generation logic'. A generate-preview request for TEN_K/Intermediate/4-day would silently fall back to an arbitrary 5K/Beginner template today (FallbackUsed=true) rather than fail loudly. This supersedes/subsumes TD-D3-001 and TD-WAVE5-001 as the more fundamental blocker: those two risks presuppose a reachable integration point that does not yet exist.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any TEN_K__4D__INTERMEDIATE version (this is a backend-side gap, not specific to any catalog version)",
+      "status": "OPEN"
+    },
+    {
+      "id": "TD-REGISTRY-001",
+      "title": "CORE_ENTRY_READINESS registry/fixture vocabulary mismatch",
+      "recordedInPass": "Phase 4A.1 — Canonical Artifact Import + Registry Risk Capture (independently rediscovered; first observed in D3 follow-up work per source cross-reference below)",
+      "source": "catalog/registries/runtime-condition-values.v2.json; docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json (step CORE_ENTRY_READINESS_RESOLVER); PHASE4A_RUNTIME_RESOLVER_DECISION_SET_CORRIGENDUM.md section 6; docs/canonical/appsel-v1-canonical-decisions.md section C.2",
+      "statement": "The runtime condition registry defines CORE_ENTRY_READINESS_IN values as READY / CAUTION / NOT_READY, but the golden fixture decision trace contains readiness=\"STANDARD\". This anomaly was also observed in earlier D3 follow-up work and has now been independently rediscovered during Phase 4A Corrigendum. It must be resolved before implementing CORE_ENTRY_READINESS_IN resolver logic or relying on readiness conditions in runtime generation.",
+      "classification": "REGISTRY_FIXTURE_CONFLICT",
+      "severity": "BLOCKS_RESOLVER_IMPLEMENTATION",
+      "affectedAreas": [
+        "RUNTIME_CONDITION_VALUES_V1 v2",
+        "golden fixture decision trace",
+        "CORE_ENTRY_READINESS_IN resolver",
+        "future runtime generation"
+      ],
+      "requiredResolution": [
+        "Decide whether STANDARD is a legacy fixture-only value that maps to READY.",
+        "Or update registry to include STANDARD.",
+        "Or update fixture to use READY / CAUTION / NOT_READY.",
+        "Do not implement resolver behavior until this is resolved."
+      ],
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any TEN_K__4D__INTERMEDIATE version (registry/fixture-level, not specific to any catalog candidate version)",
+      "status": "OPEN"
+    },
+    {
+      "id": "TD-PACESOURCE-001",
+      "title": "PACE_SOURCE_IN ESTIMATED path is registry-valid but never emitted",
+      "recordedInPass": "Phase 4D.2.5 — Pace Source Evidence/Risk Alignment (deferral originally made and documented in Phase 4D.2 — PACE_SOURCE_IN Resolver Implementation)",
+      "source": "backend/RunningApp.Application/RuntimeCatalog/Resolvers/PaceSourceResolver.cs; catalog/registries/runtime-condition-values.v2.json; PHASE4D_2_PACE_SOURCE_RESOLVER_IMPLEMENTATION.md",
+      "statement": "The runtime condition registry defines PACE_SOURCE_IN.ESTIMATED as a valid value, but Backend Integration Phase 4D.2's PaceSourceResolver deliberately never emits it: no approved estimation methodology was found anywhere in the repository for deriving a pace source from runningBackground / recentWeeklyVolumeKm / recentLongestRunKm / recentRunsPerWeek alone. As a result, a user who supplies training-volume evidence but no recent race result and no target finish time currently resolves to NONE, not ESTIMATED. This is acceptable while the resolver remains unwired from live generation, but it is activation-relevant: before PACE_SOURCE_IN output is ever consumed by real plan generation, product must decide how this user population should be classified.",
+      "classification": "DEFERRED_REGISTRY_VALUE_NOT_EMITTED",
+      "severity": "ACTIVATION_RISK",
+      "affectedAreas": [
+        "RUNTIME_CONDITION_VALUES_V1 v2 (PACE_SOURCE_IN.ESTIMATED)",
+        "PaceSourceResolver",
+        "future runtime generation / pace-source-dependent logic"
+      ],
+      "requiredResolution": [
+        "Approve and document a V1 estimation methodology for ESTIMATED (e.g. from training-volume evidence), and implement it in PaceSourceResolver; or",
+        "Explicitly decide V1 will not use ESTIMATED at all and update registry/docs accordingly (e.g. mark it reserved-for-future-version); or",
+        "Keep ESTIMATED reserved but explicitly confirm product/UX accepts NONE as the outcome for training-volume-only users.",
+        "Do not implement an unapproved estimation method to close this risk."
+      ],
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any candidate whose runtime generation would consume PACE_SOURCE_IN (not specific to any catalog candidate version)",
+      "status": "OPEN",
+      "implementationNote": "Backend Integration Phase 4D.5.1 (cross-risk finding, discovered during Phase 4D.5 orchestration testing): if the ESTIMATED path described above is later implemented, OR PaceSourceResolver's output priority (currently RECENT_RACE > TARGET_TIME > NONE) changes for any other reason, re-verify GoalFeasibilityResolver behavior for the combination PACE_SOURCE_IN=NONE with targetFinishTimeSeconds present. Reason: as of Phase 4D.5, GoalFeasibilityResolver's own PACE_SOURCE_NONE_TARGET_TIME_REQUESTED branch is unreachable through real RuntimeConditionResolutionService.ResolveAll orchestration, because PaceSourceResolver already emits TARGET_TIME (not NONE) whenever targetFinishTimeSeconds exists -- GOAL_FEASIBILITY_IN never sees PACE_SOURCE_IN=NONE while a target time is also present under the current pipeline. This is a behavioral dependency between the two resolvers' logic, not a type-system guarantee -- nothing prevents a future change to PaceSourceResolver's priority order (e.g. if ESTIMATED is introduced ahead of TARGET_TIME, or the priority order is otherwise revised) from making this branch reachable again with different semantics than originally intended. See PHASE4D_5_RUNTIME_CONDITION_RESOLVER_ORCHESTRATION_SERVICE.md ('a new finding') and PHASE4D_5_1_PACESOURCE_GOALFEASIBILITY_CROSS_RISK_NOTE.md for full detail. This note does not change PaceSourceResolver or GoalFeasibilityResolver behavior -- it only records the dependency for future re-verification."
+    },
+    {
+      "id": "TD-PACESOURCE-002",
+      "title": "AsOfDate preview/confirm lifecycle semantics not wired",
+      "recordedInPass": "Phase 4D.2.5 — Pace Source Evidence/Risk Alignment (field originally added in Phase 4D.2 — PACE_SOURCE_IN Resolver Implementation)",
+      "source": "backend/RunningApp.Application/RuntimeCatalog/Resolvers/RuntimeResolverContext.cs; backend/RunningApp.Application/RuntimeCatalog/Resolvers/PaceSourceResolver.cs; PHASE4D_2_PACE_SOURCE_RESOLVER_IMPLEMENTATION.md",
+      "statement": "PaceSourceResolver computes recent-race-evidence age (and the associated recency-confidence metadata) relative to RuntimeResolverContext.AsOfDate, an explicit evaluation-date field added in Phase 4D.2 specifically so the resolver never reads the wall clock directly. However, the live preview/confirm request lifecycle does not yet supply or persist an AsOfDate anywhere -- no code populates this field outside of tests. Before any future phase wires PaceSourceResolver into live generation, product/engineering must decide: does AsOfDate get fixed at preview-generation time and then reused unchanged at confirm (for preview/confirm consistency), or does it get recomputed fresh at confirm time (allowing recency to reflect any delay between preview and confirm)? No repository evidence resolves this question either way.",
+      "classification": "UNWIRED_CONTEXT_FIELD_LIFECYCLE_UNDECIDED",
+      "severity": "ACTIVATION_RISK",
+      "affectedAreas": [
+        "RuntimeResolverContext.AsOfDate",
+        "PaceSourceResolver recency metadata",
+        "future preview/confirm lifecycle wiring"
+      ],
+      "requiredResolution": [
+        "Decide whether confirm reuses the preview's AsOfDate or recomputes it independently.",
+        "Wire whichever behavior is chosen into the live preview/confirm flow when PaceSourceResolver is eventually connected to generation.",
+        "Do not silently default to wall-clock time at confirm without an explicit product decision."
+      ],
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any candidate whose runtime generation would consume PACE_SOURCE_IN recency metadata (not specific to any catalog candidate version)",
+      "status": "OPEN",
+      "implementationNote": "Backend Integration Phase 4E.1.1 (governance clarification pass): Phase 4E.1 computed AsOfDate exactly once per preview (DateOnly.FromDateTime(DateTime.UtcNow), never re-read per resolver) and threaded it unchanged through the pilot resolver pipeline and into the frozen CatalogPreviewSnapshot.AsOfDate field -- see PHASE4E_1_CATALOG_PREVIEW_ROUTING_AND_IMMUTABLE_RESOLUTION_SNAPSHOT.md section 7. This satisfies the preview-side half of PaceSourceResolver's own AsOfDate contract, but does NOT touch this TD's actual closure criteria, all three of which are about CONFIRM: whether confirm reuses the preview's AsOfDate unchanged or recomputes it independently, and wiring that decision in. Phase 4E.1 does not wire catalog generation into confirm at all (by design), so none of the three requiredResolution items are satisfied yet. Intended closure path: Phase 4E.2, which must read the frozen AsOfDate from the stored CatalogPreviewSnapshot at confirm time and make (and wire) an explicit reuse-vs-recompute decision -- never silently default to wall-clock time at confirm. This TD may legitimately remain OPEN even after Phase 4E.2 ships if that phase implements snapshot-reuse mechanically without an explicit, recorded product decision on which policy (reuse vs. recompute) is correct. Backend Integration Phase 4E.2 acceptance-finalization pass addendum (appended, not replacing the above; status NOT changed to closed -- reconciled per PHASE4E_2_CLAUDE_SAFETY_AUDIT.md section 17 and PHASE4E_2_FINAL_ACCEPTANCE_REPORT.md): CatalogPlanConfirmationService.BuildPlan now explicitly reads StartedAt from snapshot.AsOfDate and never recomputes it from DateTime.UtcNow (ConfirmedAtUtc is kept strictly separate, technical-only). RESOLVED by this: (a) preview freezes AsOfDate exactly once; (b) confirm code, where wired, does not recompute AsOfDate; (c) confirm does not rerun resolver orchestration to derive AsOfDate or anything else; (d) an immutable preview/confirm snapshot-consistency boundary now exists in code. UNRESOLVED, and NOT covered by this TD's own tracked closure criteria: persistable stage-to-week schedule generation (GeneratedPreviewPlanPayload is still always null -- BuildPlan's AsOfDate-reuse code is not reachable in production because the step-11 persistability guard rejects every real snapshot first, so the reuse decision has never been exercised against real traffic); calendar-day alignment (does not exist); production concurrent-confirmation safety (no DB-level preview-to-plan uniqueness invariant exists -- tracked as a Blocking Defect in PHASE4E_2_CLAUDE_SAFETY_AUDIT.md section 15, not part of this TD's own scope); and public catalog activation (still blocked by the PUBLISHED-only eligibility gate, independently of this TD). This TD is NOT closed: its own three requiredResolution items are substantively addressed by (a)-(d) above, but the repository's established convention (see TD-CORE-READINESS-001's own precedent) is not to mechanically close a risk whose implementation has not yet been exercised against real, live traffic -- the AsOfDate-reuse code path in BuildPlan has never actually run against a real confirm request. Re-review for closure once a future phase makes GeneratedPreviewPlanPayload reachable and this code path is genuinely exercised."
+    },
+    {
+      "id": "TD-CORE-READINESS-001",
+      "title": "CORE_ENTRY_READINESS_IN thresholds are not approved",
+      "recordedInPass": "Phase 4D.3 — CORE_ENTRY_READINESS_IN Resolver Implementation",
+      "source": "backend/RunningApp.Application/RuntimeCatalog/Resolvers/CoreEntryReadinessResolver.cs; docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json (step CORE_ENTRY_READINESS_RESOLVER); PHASE4A_RUNTIME_RESOLVER_DECISION_SET_CORRIGENDUM.md section 6; docs/canonical/appsel-v1-canonical-decisions.md section B.5; PHASE4D_3_CORE_ENTRY_READINESS_THRESHOLDS_DECISION_REQUIRED.md; PHASE4D_3_1_CORE_ENTRY_READINESS_THRESHOLD_DECISION_AND_RESOLVER_ACTIVATION.md; EV-008",
+      "statement": "CORE_ENTRY_READINESS_IN registry values exist (READY / CAUTION / NOT_READY). Phase 4B provides optional evidence fields (recentWeeklyVolumeKm, recentLongestRunKm, recentRunsPerWeek) that could in principle feed a readiness classification. No approved threshold mapping was found anywhere in the repository to convert those fields into READY / CAUTION / NOT_READY: the only evidenced threshold set (golden-fixture-v3's CORE_ENTRY_READINESS_RESOLVER, rule TEN_K_STANDARD_ENTRY: minimumWeeklyVolumeKm=20, minimumLongestRunKm=8, minimumRunsPerWeek=3) is a single pass/fail gate with no failing example and no CAUTION/NOT_READY boundary evidenced at all, its output (\"STANDARD\") is not even a valid registry value for this condition type (see TD-REGISTRY-001), and Phase 4A.2 already classified this exact threshold set's scope as 'D — not approved / DECISION_REQUIRED'. Backend Integration Phase 4D.3 therefore implemented CoreEntryReadinessResolver as an always-NotEvaluated placeholder — it never emitted READY, CAUTION, NOT_READY, or STANDARD under any input.",
+      "classification": "UNAPPROVED_THRESHOLD_MAPPING",
+      "severity": "ACTIVATION_RISK",
+      "affectedAreas": [
+        "RUNTIME_CONDITION_VALUES_V1 v2 (CORE_ENTRY_READINESS_IN)",
+        "CoreEntryReadinessResolver",
+        "future runtime generation / readiness-dependent logic"
+      ],
+      "requiredResolution": [
+        "Approve V1 READY/CAUTION/NOT_READY readiness thresholds, with an explicit, evidenced boundary for all three values (not just a single pass gate); or",
+        "Explicitly decide CORE_ENTRY_READINESS_IN will remain NotEvaluated/unused in V1; or",
+        "Update registry/docs accordingly if the intended shape differs from a three-tier classification.",
+        "Do not implement guessed thresholds to close this risk."
+      ],
+      "resolutionNote": "Backend Integration Phase 4D.3.1: product owner explicitly approved V1 READY/CAUTION/NOT_READY thresholds as an internal canonical decision (recorded as EV-008 in evidence-log.json; full mapping in PHASE4D_3_1_CORE_ENTRY_READINESS_THRESHOLD_DECISION_AND_RESOLVER_ACTIVATION.md). CoreEntryReadinessResolver now implements real classification logic (READY: weekly>=15 AND longest>=6; NOT_READY: weekly<8 OR longest<4; CAUTION: otherwise, including partial-evidence cases; both-missing: NOT_READY only in a GoalType=Race context, else NotEvaluated). recentRunsPerWeek remains metadata-only per the same owner decision, never a hard gate. STANDARD is still never emitted -- confirmed by test. This risk is NOT mechanically closed (consistent with this file's existing convention of never closing a risk outright, e.g. TD-WAVE5-001's own 'revisited, not closed' precedent) because a residual risk remains: the resolver is still not wired into live generation, and its output has not yet been exercised against real, live user traffic. Re-review before any future wiring of this resolver into generation.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any candidate whose runtime generation would consume CORE_ENTRY_READINESS_IN (not specific to any catalog candidate version)",
+      "status": "OPEN"
+    }
+  ],
+  "howToUse": "Before any publish/activate/release action against TEN_K__4D__INTERMEDIATE v8 or a descendant, review every entry in `risks` regardless of the candidate's blocker/decision count. This file is additive across passes -- future passes should append new risk entries here rather than creating a new aggregator.",
+  "finalStatus": "7 risks recorded (TD-D3-001, TD-WAVE5-001, TD-BACKEND-001, TD-REGISTRY-001, TD-PACESOURCE-001, TD-PACESOURCE-002, TD-CORE-READINESS-001), all OPEN. TD-BACKEND-001 is the most fundamental: no backend/plan-catalog integration exists at all. TD-REGISTRY-001 (added Phase 4A.1) is UNRELATED to and unaffected by TD-CORE-READINESS-001 -- it tracks the golden-fixture STANDARD vocabulary defect specifically, still unresolved. TD-PACESOURCE-001 and TD-PACESOURCE-002 (added Phase 4D.2.5) are activation risks on the already-implemented PaceSourceResolver. TD-CORE-READINESS-001 (added Phase 4D.3, thresholds approved and resolver activated in Phase 4D.3.1 per EV-008 -- see its resolutionNote) now tracks only the residual risk that CoreEntryReadinessResolver, though implementing real owner-approved V1 logic, remains unwired from live generation."
+}

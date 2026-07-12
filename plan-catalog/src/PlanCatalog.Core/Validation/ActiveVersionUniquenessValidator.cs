@@ -1,5 +1,6 @@
 using PlanCatalog.Core.Models;
 using PlanCatalog.Core.Ports;
+using PlanCatalog.Core.Enums;
 
 namespace PlanCatalog.Core.Validation;
 
@@ -19,7 +20,8 @@ public static class ActiveVersionUniquenessValidator
         var issues = new List<ValidationIssue>();
 
         var eligibleByKey = combinations
-            .Where(c => !retirement.IsRetired(c.Metadata.DocumentType, c.Metadata.Key, c.Metadata.Version))
+            .Where(c => c.Metadata.Status != CatalogStatus.Draft
+                && !retirement.IsRetired(c.Metadata.DocumentType, c.Metadata.Key, c.Metadata.Version))
             .GroupBy(c => c.Metadata.Key);
 
         foreach (var group in eligibleByKey)

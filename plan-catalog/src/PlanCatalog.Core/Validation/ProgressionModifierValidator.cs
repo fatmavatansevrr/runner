@@ -8,7 +8,15 @@ public static class ProgressionModifierValidator
     {
         var issues = new List<ValidationIssue>();
 
-        if (modifier.MaximumComplexityTier < 1)
+        if (modifier.Metadata.SchemaVersion >= 2)
+        {
+            if (modifier.MaximumComplexityTier is not null)
+            {
+                issues.Add(new ValidationIssue("LEGACY_MAXIMUM_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA", ValidationSeverity.Error,
+                    "maximumComplexityTier is a legacy field and must be omitted from ProgressionModifier schemaVersion 2+.", "$.maximumComplexityTier"));
+            }
+        }
+        else if (modifier.MaximumComplexityTier is null or < 1)
         {
             issues.Add(new ValidationIssue("PM_COMPLEXITY_TIER_TOO_LOW", ValidationSeverity.Error,
                 "MaximumComplexityTier must be >= 1.", "$.maximumComplexityTier"));

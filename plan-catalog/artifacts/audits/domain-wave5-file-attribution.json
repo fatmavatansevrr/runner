@@ -1,0 +1,293 @@
+{
+  "auditId": "WAVE5-FILE-ATTRIBUTION-001",
+  "generatedAtUtc": "2026-07-09T09:10:00Z",
+  "readOnly": true,
+  "measuredVia": "git status --short -- plan-catalog (run after this clarification pass's own new files were created, so counts include this pass's 2 new report pairs)",
+  "summary": {
+    "totalChangedFilesUnderPlanCatalog": 90,
+    "modifiedTrackedFiles": 27,
+    "untrackedFiles": 63,
+    "wave5CreatedTrackedFilesModified": 10,
+    "wave5CreatedUntrackedFiles": 20,
+    "preExistingUntrackedFilesFromWave2Or3": 43,
+    "temporaryOrPreviewFilesFound": 0,
+    "temporaryFilesRemoved": 0,
+    "temporaryFilesRetained": 0,
+    "permanentPreviewReleaseDirectoryRemains": false,
+    "releaseLedgerStateChanged": false,
+    "releaseStatusLedgerChanged": false,
+    "retirementLedgerChanged": false,
+    "supersedeStateChanged": false,
+    "crossReleaseHashExceptionsChanged": false
+  },
+  "wave5TrackedFilesModified": [
+    { "path": "plan-catalog/schemas/progression-modifier.schema.json", "purpose": "D2: conditional allOf removing maximumComplexityTier requirement for schemaVersion>=2" },
+    { "path": "plan-catalog/src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs", "purpose": "D2: added AUD-330..336 Wave 5 entries; clarification pass appended WAVE5-CLARIFICATION note to AUD-333 (append-only)" },
+    { "path": "plan-catalog/src/PlanCatalog.Core/Models/ProgressionModifierDefinition.cs", "purpose": "D2: MaximumComplexityTier made nullable; doc-comment scope caveat" },
+    { "path": "plan-catalog/src/PlanCatalog.Core/Validation/ProgressionModifierValidator.cs", "purpose": "D2: schemaVersion-branch rejecting legacy field on v2+" },
+    { "path": "plan-catalog/tests/PlanCatalog.Tests/Architecture/DeprecatedFieldRegressionTests.cs", "purpose": "D2: added nullable-legacy-only guard test" },
+    { "path": "plan-catalog/tests/PlanCatalog.Tests/Golden/PilotCatalogStructuralTests.cs", "purpose": "D2: version-qualified a Single() lookup that became ambiguous after v2 was added" },
+    { "path": "plan-catalog/artifacts/audits/domain-blocker-resolution-plan.json", "purpose": "D2 + clarification: appended wave5ExecutionUpdate block" },
+    { "path": "plan-catalog/artifacts/audits/domain-blocker-resolution-plan.md", "purpose": "D2: appended Wave 5 execution update section" },
+    { "path": "plan-catalog/artifacts/audits/domain-blocker-version-cascade-forecast.json", "purpose": "D2: appended wave5ActualCascade block" },
+    { "path": "plan-catalog/artifacts/audits/domain-blocker-version-cascade-forecast.md", "purpose": "D2: appended Wave 5 actual cascade section" }
+  ],
+  "previouslyUnattributedTrackedFiles": [
+    {
+      "path": "plan-catalog/artifacts/audits/active-v4-domain-blocker-inventory.json",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 + Wave 3",
+      "classification": "pre-existing Wave 2/3 work",
+      "evidence": "git diff shows two appended JSON keys, `wave2CandidateState` and `wave3CandidateState`, each explicitly named and containing that wave's own candidate-root/blocker-count data (e.g. TEN_K__4D__INTERMEDIATE v5 for Wave 2, v6 for Wave 3). No `wave5CandidateState` key exists -- this file was never touched by Wave 5 or its clarification passes.",
+      "purpose": "Manually authored per-wave candidate-state annotations on the active-root blocker inventory.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/artifacts/audits/active-v4-domain-blocker-inventory.md",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 + Wave 3",
+      "classification": "pre-existing Wave 2/3 work",
+      "evidence": "Markdown counterpart of the .json file above; same wave2/wave3-only content.",
+      "purpose": "Markdown rendering of the wave2/wave3 candidate-state annotations.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/artifacts/audits/golden-fixture-v3-integrity.json",
+      "modifiedByWave5": "mechanically, as a test side-effect",
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Generated artifact -- not attributable to a single wave",
+      "classification": "generated artifact",
+      "evidence": "git diff shows ONLY the `generatedAtUtc` timestamp line changed (2026-07-08T07:46:23 -> 2026-07-08T11:06:54); zero content change. `GoldenFixtureIntegrityReportWriter.Write()` is called by `tests/PlanCatalog.Tests/Publishing/DomainContentAuditReportWriterTests.cs`-adjacent test infrastructure and by any `dotnet test` run that exercises that writer, unconditionally overwriting this file with a fresh timestamp every time. It reads only `docs/canonical/golden-fixture-v3/` (unaffected by D2), so its content is deterministic and wave-independent; only the timestamp churns.",
+      "purpose": "Auto-generated Golden Fixture v3 integrity check report; rewritten as a side effect of running the test suite.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/artifacts/audits/golden-fixture-v3-integrity.md",
+      "modifiedByWave5": "mechanically, as a test side-effect",
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Generated artifact -- not attributable to a single wave",
+      "classification": "generated artifact",
+      "evidence": "Same as the .json file: only the `Generated:` timestamp line changed.",
+      "purpose": "Markdown counterpart, same generation mechanism.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/artifacts/audits/ten-k-pilot-domain-decision-audit.json",
+      "modifiedByWave5": "mechanically, as a test side-effect (content reflects Wave 5 source state)",
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 + Wave 3 content, mechanically regenerated to also include Wave 5 entries",
+      "classification": "generated artifact",
+      "evidence": "`tests/PlanCatalog.Tests/Publishing/DomainContentAuditReportWriterTests.cs` calls `DomainContentAuditReportWriter.Write(RepoRoot())`, which unconditionally overwrites this file from the live `PilotDomainContentAudit.Entries` in-memory list every `dotnet test` run. The diff includes AUD-300 through AUD-336 (Wave 2/3/5 entries) and the corrected AUD-333 text (`WAVE5-CLARIFICATION` string is present in the current on-disk file, confirmed via grep), and the `generatedAtUtc` timestamp (2026-07-09T12:17:20Z) is from this session. This file is not a manually authored Wave 5 report -- it is mechanical infrastructure output that reflects whatever `PilotDomainContentAudit.Entries` looks like at the moment any `dotnet test` invocation last ran, regardless of which turn or wave triggered that run.",
+      "purpose": "Auto-generated full domain-content-decision dump; rewritten as a side effect of running the test suite.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/artifacts/audits/ten-k-pilot-domain-decision-audit.md",
+      "modifiedByWave5": "mechanically, as a test side-effect (content reflects Wave 5 source state)",
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 + Wave 3 content, mechanically regenerated to also include Wave 5 entries",
+      "classification": "generated artifact",
+      "evidence": "Same writer/mechanism as the .json file.",
+      "purpose": "Markdown counterpart, same generation mechanism.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/schemas/run-layout.schema.json",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (D1)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff removes `sequenceOrder` from the unconditional `required` list and adds a schemaVersion-conditional `allOf` (schemaVersion 1 requires it, else forbidden) -- exact structural match to D1's approved resolution (`AUD-300`: 'WAVE2 D1: schemaVersion 2 removes the independently-authored sequenceOrder field').",
+      "purpose": "RunLayout schema evolution for D1 (sequenceOrder removal).",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/schemas/workout-definition.schema.json",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (component vocabulary) + Wave 3 (complexityTier removal)",
+      "classification": "pre-existing Wave 2/3 work",
+      "evidence": "Diff shows two independent changes: (1) `componentType` enum narrowed from [WARM_UP,MAIN_SET,COOL_DOWN,RECOVERY,STRIDES] to [WARM_UP,MAIN_SET,RECOVERY,COOL_DOWN] with `additionalProperties:false` -- matches Wave 2 D6/D8/D10/D12 component vocabulary; (2) `complexityTier` moved from unconditional `required` to a schemaVersion-conditional `allOf` (required for [1,2], forbidden for 3+) -- matches Wave 3 D5/D7/D9/D11 exactly, and is the template Wave 5 itself reused for the ProgressionModifier schema.",
+      "purpose": "WorkoutDefinition schema evolution for D6/D8/D10/D12 (Wave 2) and D5/D7/D9/D11 (Wave 3).",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Catalog/CatalogSourceSnapshot.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (draft-candidate coexistence infrastructure)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff adds `x.Metadata.Status != CatalogStatus.Draft` to the legacy `FindWorkout(string key)` auto-selection filter, preventing DRAFT candidate workout versions from being picked up by the legacy (unversioned) resolution path. This became necessary the moment the first DRAFT candidate workouts (v3, Wave 2's EASY_STANDARD/FARTLEK/LONG_RUN_STANDARD/THRESHOLD_TEMPO) were authored alongside PUBLISHED v1/v2 workouts of the same key.",
+      "purpose": "Prevent DRAFT candidate artifacts from corrupting legacy highest-version auto-selection.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Models/LayoutSlotDefinition.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (D1)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "`SequenceOrder` changed from required `int` to optional `int?` -- the model-level counterpart of the D1 schema change above.",
+      "purpose": "Model support for D1 (sequenceOrder removal).",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Models/WorkoutDefinition.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (Components optional) + Wave 3 (ComplexityTier nullable)",
+      "classification": "pre-existing Wave 2/3 work",
+      "evidence": "`Components` changed from required list to optional (`IReadOnlyList<WorkoutComponentDefinition>?`) -- Wave 2 D6/D8/D10/D12; `ComplexityTier` changed from required `int` to optional `int?` -- Wave 3 D5/D7/D9/D11. Both changes are the exact model-level pattern Wave 5 reused for `ProgressionModifierDefinition.MaximumComplexityTier`.",
+      "purpose": "Model support for Wave 2 component-optionality and Wave 3 complexityTier removal.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Validation/ActiveVersionUniquenessValidator.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (draft-candidate coexistence infrastructure)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff excludes `CatalogStatus.Draft` combinations from the eligible-for-uniqueness-check set, so DRAFT candidate combinations (v5, v6, v7) can coexist with the PUBLISHED/VALIDATED active combination (v4) without tripping an active-version-uniqueness violation. Required starting with Wave 2's first draft candidate (v5).",
+      "purpose": "Allow DRAFT candidate combinations to coexist with the active combination.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Validation/RunLayoutValidator.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (D1)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff adds a schemaVersion-conditional branch: schemaVersion 1 still requires contiguous unique sequenceOrder; schemaVersion 2+ forbids the field entirely via a new `LEGACY_SEQUENCE_ORDER_NOT_ALLOWED_IN_NEW_SCHEMA` code -- the exact D1 resolution pattern, and the direct template for Wave 3's `LEGACY_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA` and Wave 5's `LEGACY_MAXIMUM_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA`.",
+      "purpose": "Enforce D1 sequenceOrder removal at the schemaVersion boundary.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Core/Validation/WorkoutDefinitionValidator.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (component validation) + Wave 3 (complexityTier removal)",
+      "classification": "pre-existing Wave 2/3 work",
+      "evidence": "Diff adds `ValidateComponents` with an explicit code comment/message reading '...is not in the shared Wave 2 vocabulary' (verbatim string match), plus a schemaVersion>=3 branch rejecting `complexityTier` via `LEGACY_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA` -- Wave 3's exact resolution, and the direct template Wave 5 copied for `ProgressionModifierValidator`.",
+      "purpose": "Enforce Wave 2 component vocabulary and Wave 3 complexityTier removal.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Infrastructure/Publishing/CatalogPublisher.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (draft-candidate coexistence infrastructure)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff adds `ExcludeDraftArtifacts()`, filtering every document collection down to non-Draft status before stamping-for-publish -- required so that publishing the active graph never accidentally force-publishes an in-progress DRAFT candidate artifact that happens to share a key with a published one.",
+      "purpose": "Prevent DRAFT candidate artifacts from being force-published.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/src/PlanCatalog.Infrastructure/Publishing/CatalogStamper.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (draft-candidate coexistence infrastructure)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Diff changes `StampAsPublished` to preserve `CatalogStatus.Draft` status instead of unconditionally flipping every document to Published -- this is exactly the mechanism Wave 5's own `build-bundle TEN_K__4D__INTERMEDIATE --version 7` validation relied on (bundle assembly stamps the whole snapshot but must not silently publish DRAFT candidate artifacts).",
+      "purpose": "Preserve DRAFT status through the stamping step used by build-bundle.",
+      "keep": true
+    },
+    {
+      "path": "plan-catalog/tests/PlanCatalog.Tests/Golden/WorkoutArtifactImmutabilityTests.cs",
+      "modifiedByWave5": false,
+      "preExistingBeforeWave5": true,
+      "attributedWaveOrTask": "Wave 2 (draft-candidate coexistence infrastructure)",
+      "classification": "pre-existing Wave 2 work",
+      "evidence": "Assertion loosened from an exact `Assert.Equal(2, ...)` version count to `Assert.True(... >= 2)` plus explicit v1/v2 presence checks -- accommodates the growing number of coexisting draft versions (v3 added by Wave 2, v4 added by Wave 3) without weakening the underlying immutability guarantee (v1 and v2 must still both exist).",
+      "purpose": "Accommodate additional draft workout versions in the immutability test.",
+      "keep": true
+    }
+  ],
+  "wave5CreatedUntrackedFilesList": [
+    "plan-catalog/catalog/progression-modifiers/intermediate-progression-modifier.v2.json",
+    "plan-catalog/catalog/level-modifiers/intermediate-modifier.v5.json",
+    "plan-catalog/catalog/combinations/ten-k-4d-intermediate.v7.json",
+    "plan-catalog/tests/PlanCatalog.Tests/Validation/DomainWave5D2ResolutionTests.cs",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-field-inventory.json",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-field-inventory.md",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-ownership.json",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-ownership.md",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-implementation.json",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-implementation.md",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-evidence-classification.json",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-evidence-classification.md",
+    "plan-catalog/artifacts/audits/domain-wave5-version-cascade.json",
+    "plan-catalog/artifacts/audits/domain-wave5-version-cascade.md",
+    "plan-catalog/artifacts/audits/domain-wave5-candidate-blockers.json",
+    "plan-catalog/artifacts/audits/domain-wave5-candidate-blockers.md",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-clarification.json",
+    "plan-catalog/artifacts/audits/domain-wave5-d2-clarification.md",
+    "plan-catalog/artifacts/audits/domain-wave5-file-attribution.json",
+    "plan-catalog/artifacts/audits/domain-wave5-file-attribution.md"
+  ],
+  "preExistingUntrackedFilesByWave": {
+    "wave2": {
+      "count": 22,
+      "reports": [
+        "domain-wave2-activation-plan.json", "domain-wave2-activation-plan.md",
+        "domain-wave2-candidate-blockers.json", "domain-wave2-candidate-blockers.md",
+        "domain-wave2-component-vocabulary.json", "domain-wave2-component-vocabulary.md",
+        "domain-wave2-implementation.json", "domain-wave2-implementation.md",
+        "domain-wave2-schema-migration.json", "domain-wave2-schema-migration.md",
+        "domain-wave2-version-cascade.json", "domain-wave2-version-cascade.md"
+      ],
+      "test": ["tests/PlanCatalog.Tests/Validation/DomainWave2ResolutionTests.cs"],
+      "catalog": [
+        "catalog/combinations/ten-k-4d-intermediate.v5.json", "catalog/layouts/run-layout-4d.v2.json",
+        "catalog/level-modifiers/intermediate-modifier.v3.json", "catalog/templates/ten-k-master.v4.json",
+        "catalog/workout-progressions/ten-k-workout-progression.v3.json",
+        "catalog/workouts/easy-standard.v3.json", "catalog/workouts/fartlek.v3.json",
+        "catalog/workouts/long-run-standard.v3.json", "catalog/workouts/threshold-tempo.v3.json"
+      ]
+    },
+    "wave3": {
+      "count": 21,
+      "reports": [
+        "domain-wave3-activation-plan.json", "domain-wave3-activation-plan.md",
+        "domain-wave3-candidate-blockers.json", "domain-wave3-candidate-blockers.md",
+        "domain-wave3-complexity-removal.json", "domain-wave3-complexity-removal.md",
+        "domain-wave3-d8-d12-evidence-review.json", "domain-wave3-d8-d12-evidence-review.md",
+        "domain-wave3-schema-migration.json", "domain-wave3-schema-migration.md",
+        "domain-wave3-version-cascade.json", "domain-wave3-version-cascade.md"
+      ],
+      "test": ["tests/PlanCatalog.Tests/Validation/DomainWave3ComplexityRemovalTests.cs"],
+      "catalog": [
+        "catalog/combinations/ten-k-4d-intermediate.v6.json", "catalog/level-modifiers/intermediate-modifier.v4.json",
+        "catalog/templates/ten-k-master.v5.json", "catalog/workout-progressions/ten-k-workout-progression.v4.json",
+        "catalog/workouts/easy-standard.v4.json", "catalog/workouts/fartlek.v4.json",
+        "catalog/workouts/long-run-standard.v4.json", "catalog/workouts/threshold-tempo.v4.json"
+      ]
+    }
+  },
+  "attributionNote": "Wave 2 and Wave 3 files were already present, uncommitted, in the working tree at the start of this session's first turn (before any D2 work began) -- they represent prior, already-completed wave implementations that were never committed to git. This clarification pass did not create, modify, or delete any Wave 2/3 file.",
+  "previouslyUnattributedSummary": {
+    "count": 17,
+    "byClassification": {
+      "preExistingWave2Work": 8,
+      "preExistingWave2AndWave3MixedWork": 3,
+      "generatedArtifactTestSideEffect": 4,
+      "preExistingWave2Or3ManualAudit": 2,
+      "wave4Work": 0,
+      "wave5WorkMissedByPriorAttribution": 0,
+      "unrelatedLocalChange": 0,
+      "unknown": 0
+    },
+    "allAreExpectedSourceChanges": true,
+    "reasoning": "Every one of the 17 files is either (a) the underlying Wave 2/Wave 3 implementation code that the already-attributed Wave 5 files build on top of, or (b) a mechanically test-regenerated report with no meaningful hand-authored content beyond a timestamp/reflected-source-state. None show evidence of being an accidental local change, an unrelated experiment, or an unattributable/unknown edit.",
+    "shouldEventuallyBeCommitted": true,
+    "reasonUncommittedBeforeWave5Known": false,
+    "reasonUncommittedBeforeWave5Explanation": "Not knowable from repository evidence. `git log` shows only 5 commits, the latest being 'plan-catalog-added' (the initial snapshot). No commit messages, comments, or other artifacts in the repository state or explain why Wave 2/3/5 work was left uncommitted rather than committed at the end of each wave. Stated as unknown rather than guessed.",
+    "requiredForV7CandidateValidation": true,
+    "requiredForV7Explanation": "validate-combination for v5/v6/v7 and build-bundle for v7 (run in the original Wave 5 pass and re-confirmed as still passing before this clarification report was written) structurally depend on this code: WorkoutDefinitionValidator's schemaVersion>=3 complexityTier rejection and WorkoutDefinition.ComplexityTier nullability are required for EASY_STANDARD/FARTLEK/LONG_RUN_STANDARD/THRESHOLD_TEMPO v4 (referenced by v7's INTERMEDIATE_MODIFIER v5) to validate; RunLayoutValidator's schemaVersion-conditional sequenceOrder check and LayoutSlotDefinition.SequenceOrder nullability are required for RUN_LAYOUT_4D v2 (referenced by v7) to validate; ActiveVersionUniquenessValidator's and CatalogSourceSnapshot's Draft-exclusion are required for v4 (active) and v5/v6/v7 (draft) to coexist without a uniqueness violation; CatalogStamper's Draft-status preservation is required for build-bundle to correctly stamp a DRAFT candidate's bundle without falsely marking its DRAFT-status dependencies Published.",
+    "revertingWouldBreakValidation": true,
+    "revertingExplanation": "Reverting any of the schema/model/validator files listed above to their prior (pre-Wave-2/3) shape would reintroduce required fields (sequenceOrder, complexityTier, components) that v5/v6/v7's actual JSON artifacts no longer populate, causing schema and/or ProgressionModifier-analogous LEGACY_*_NOT_ALLOWED-style validators to fail those combinations' validate-combination runs. This was not empirically tested by reverting (per instruction not to revert or delete anything) -- the conclusion is drawn from direct code/data dependency analysis, not from an executed revert."
+  },
+  "deletionsPerformed": [],
+  "finalStatus": "File attribution complete: 90 total changed files under plan-catalog/ (27 modified tracked, 63 untracked). All 27 tracked modified files now attributed: 10 to Wave 5 (already attributed in the prior pass), and the remaining 17 traced to pre-existing Wave 2/Wave 3 implementation work (13 files) or mechanical test-side-effect regeneration of Wave 2/3/5 report content (4 files: golden-fixture-v3-integrity.{json,md}, ten-k-pilot-domain-decision-audit.{json,md}). No Wave 4 evidence found. No unrelated local changes found. No files require removal. 43 untracked files remain attributed to pre-existing Wave 2/3 work (unchanged from the prior pass)."
+}

@@ -1,0 +1,102 @@
+{
+  "auditId": "D3-FOLLOWUP-001",
+  "generatedAtUtc": "2026-07-09T14:00:00Z",
+  "readOnly": true,
+  "scope": "Focused D3 follow-up: consumer/reader trace for RUNTIME_CONDITION_VALUES_V1 v2 (PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN). D3 vocabulary itself is NOT changed by this pass.",
+  "d3Status": "CLOSED (unchanged) -- this pass adds evidence and a technical-debt note only; no vocabulary edit was made, no repository evidence proved a direct inconsistency requiring one.",
+  "consumerTrace": {
+    "declarationSites": {
+      "enum": "src/PlanCatalog.Contracts/Enums/RuntimeConditionType.cs (PaceSourceIn, TimeAdequacyIn, CoreEntryReadinessIn)",
+      "registryArtifacts": ["catalog/registries/runtime-condition-values.v1.json", "catalog/registries/runtime-condition-values.v2.json"],
+      "model": "src/PlanCatalog.Core/Models/RuntimeConditionValueRegistryDefinition.cs, RuntimeConditionValueSet"
+    },
+    "structuralValidators": {
+      "RuntimeConditionValueRegistryValidator": "validates the registry document's own shape only: no duplicate condition types, non-empty allowedValues, UPPER_SNAKE_CASE format. Runs regardless of whether any other artifact references a given conditionType -- this is registry self-validation, not consumption by a downstream artifact.",
+      "CandidatePublishGraphValidator.ValidatePinnedRegistry": "the only cross-check mechanism: for a selected combination, iterates every workout-progression stage's `Requires` list and verifies each declared RuntimeConditionType + its allowed-value subset is present in the pinned registry. This is the sole path by which a condition type could be considered 'actively validated' by candidate content -- and it is a no-op for any condition type that no stage.Requires ever references."
+    },
+    "candidateContentSearch": {
+      "searchedPaths": ["catalog/workout-progressions/*.json (v1-v4)", "catalog/rule-packs/*.json (v1-v3)", "catalog/templates/*.json", "catalog/workouts/*.json"],
+      "referencesToPaceSourceIn": 0,
+      "referencesToTimeAdequacyIn": 0,
+      "referencesToCoreEntryReadinessIn": 0,
+      "onlyReferencedConditionTypeInAnyStageRequires": "GOAL_FEASIBILITY_IN (TEN_K_WORKOUT_PROGRESSION_V1, RACE_SPECIFIC.GOAL_PACE_REHEARSAL stage only)",
+      "conclusion": "Zero references anywhere in catalog/ outside the registry artifacts themselves. Confirmed by direct grep of all workout-progression, rule-pack, template, and workout JSON files."
+    },
+    "bundleImpact": {
+      "publishedTemplateBundleShape": "carries only CatalogArtifactReference (documentType/key/version/contentHash) for RuntimeConditionValueRegistry -- never inlines conditionValueSets or allowedValues.",
+      "conclusion": "The D3 change alters the referenced registry's version/hash in the bundle (v1 hash -> v2 hash), but no vocabulary string appears in generated bundle JSON."
+    },
+    "eligibilityRuleSelectionPhaseSelectionDosageImpact": "None found. Process A's own architecture documentation (RuntimeConditionType.cs doc comment: 'Process A never evaluates them') and the absence of any stage.Requires reference confirm no eligibility, rule-selection, phase-selection, or dosage logic reads these three condition types anywhere in this repository."
+  },
+  "fieldClassification": [
+    { "field": "PACE_SOURCE_IN", "classification": "DECLARED_BUT_CURRENTLY_UNUSED", "reasoning": "Declared in registry v1/v2; structurally self-validated; zero references in any stage.Requires or other catalog artifact; no bundle inlining; no eligibility/rule/phase/dosage consumer found." },
+    { "field": "TIME_ADEQUACY_IN", "classification": "DECLARED_BUT_CURRENTLY_UNUSED", "reasoning": "Same evidence as PACE_SOURCE_IN." },
+    { "field": "CORE_ENTRY_READINESS_IN", "classification": "DECLARED_BUT_CURRENTLY_UNUSED", "reasoning": "Same evidence as PACE_SOURCE_IN." }
+  ],
+  "candidateUsageEvidenceForV8": {
+    "combination": "TEN_K__4D__INTERMEDIATE v8",
+    "referencedRulePack": "APPSEL_RACE_PLAN_V1 v3 -> runtimeConditionValueRegistry RUNTIME_CONDITION_VALUES_V1 v2",
+    "referencedWorkoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v4 (via TEN_K_MASTER v5)",
+    "concreteValueUsageFound": false,
+    "statement": "The vocabulary is currently declared and structurally validated by RUNTIME_CONDITION_VALUES_V1 v2, but is NOT behaviorally consumed by the TEN_K__4D__INTERMEDIATE v8 pilot candidate or any of its referenced artifacts. No stage, rule, workout, or template references PACE_SOURCE_IN, TIME_ADEQUACY_IN, or CORE_ENTRY_READINESS_IN."
+  },
+  "oldToNewSemanticAssessment": {
+    "PACE_SOURCE_IN": {
+      "v1": ["RACE_RESULT", "TIME_TRIAL", "ESTIMATED", "NOT_PROVIDED"],
+      "v2": ["NONE", "RECENT_RACE", "ESTIMATED", "TARGET_TIME"],
+      "unchanged": ["ESTIMATED"],
+      "likelyRenames": ["RACE_RESULT -> RECENT_RACE (plausible 1:1 rename, similar meaning)", "NOT_PROVIDED -> NONE (plausible 1:1 rename, similar meaning)"],
+      "removedWithNoDirectReplacement": ["TIME_TRIAL"],
+      "newConcept": ["TARGET_TIME (pace derived from an explicit stated goal time -- not represented in v1 at all)"],
+      "classification": "MIXED_RENAME_SEMANTIC_CHANGE",
+      "confidence": "Based on plain-reading of identifier names and the approved v2 definitions supplied for this task; v1's original authors never documented explicit meanings beyond the bare enum strings (AUD-048: 'invented for schema completeness'), so this is the best available evidence, not a confirmed historical mapping."
+    },
+    "TIME_ADEQUACY_IN": {
+      "v1": ["ADEQUATE", "TIGHT", "INSUFFICIENT"],
+      "v2": ["ADEQUATE", "COMPRESSED", "INSUFFICIENT"],
+      "unchanged": ["ADEQUATE", "INSUFFICIENT"],
+      "likelyRenames": ["TIGHT -> COMPRESSED (same cardinality, same relative ordering, plausible 1:1 rename)"],
+      "removedWithNoDirectReplacement": [],
+      "newConcept": [],
+      "classification": "PURE_RENAME",
+      "confidence": "Same 3-value structure preserved exactly; only the middle value's string changed."
+    },
+    "CORE_ENTRY_READINESS_IN": {
+      "v1": ["READY", "NOT_READY", "UNKNOWN"],
+      "v2": ["READY", "CAUTION", "NOT_READY"],
+      "unchanged": ["READY", "NOT_READY"],
+      "likelyRenames": [],
+      "removedWithNoDirectReplacement": ["UNKNOWN (an epistemic/missing-data state)"],
+      "newConcept": ["CAUTION (a substantive conditional-entry state, not a missing-data state -- semantically different from UNKNOWN, not a rename of it)"],
+      "classification": "SEMANTIC_CHANGE",
+      "confidence": "UNKNOWN and CAUTION represent different concepts (indeterminate-data vs. conditional-entry-allowed); this is not a rename even though cardinality is preserved."
+    },
+    "overallAssessment": "MIXED_RENAME_SEMANTIC_CHANGE -- not a uniform pure rename across all three condition types. TIME_ADEQUACY_IN is a pure rename; PACE_SOURCE_IN and CORE_ENTRY_READINESS_IN each combine renames with genuine semantic changes (dropped/added concepts)."
+  },
+  "processBBackendContractRisk": {
+    "inspectionScope": "plan-catalog/ only, per instruction; runner/backend and Process B implementation were NOT inspected or modified",
+    "verifiedFromRepoEvidence": false,
+    "status": "UNKNOWN_FROM_REPO_EVIDENCE",
+    "relevantEvidenceFound": {
+      "goldenFixtureV3DecisionTrace": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json contains Process-B-internal resolver output: capacitySnapshot.paceSource='RECENT_RACE' (canonical-debug*.json), TIME_ADEQUACY_RESOLVER.result.timeAdequacy='ADEQUATE', CORE_ENTRY_READINESS_RESOLVER...result.readiness='STANDARD'.",
+      "interpretationCaveat": "Per AUD-048's pre-existing, unchanged caution: these are Process-B-internal resolver output labels with no stated/documented mapping to this Process A registry's RuntimeConditionType conditions -- naming similarity is suggestive, not dispositive.",
+      "paceSourceObservation": "'RECENT_RACE' now textually matches the new v2 PACE_SOURCE_IN value exactly; it did NOT match v1's 'RACE_RESULT'. This is a directional data point, not proof of an explicit contract.",
+      "timeAdequacyObservation": "'ADEQUATE' matches both v1 and v2 (unchanged value) -- no differential signal either way.",
+      "readinessObservation": "'STANDARD' matches NEITHER v1 (READY/NOT_READY/UNKNOWN) NOR v2 (READY/CAUTION/NOT_READY) CORE_ENTRY_READINESS_IN vocabulary. This mismatch pre-dates and is unaffected by the D3 change -- it was already true under v1."
+    },
+    "conclusion": "Cannot verify from plan-catalog evidence whether Process B/backend consumers are documented as expecting the old v1 code strings, or whether they already align with v2, or neither. Stated as UNKNOWN_FROM_REPO_EVIDENCE per instruction, not guessed."
+  },
+  "technicalDebtNote": {
+    "id": "TD-D3-001",
+    "title": "Process B/runtime mapping to RUNTIME_CONDITION_VALUES_V1 v2 unverified; D3 vocabulary currently unconsumed by any candidate artifact",
+    "statement": "Before publishing or activating TEN_K__4D__INTERMEDIATE v8 or any descendant candidate, Process B/runtime mapping must be explicitly verified against the v2 canonical values: PACE_SOURCE_IN (NONE, RECENT_RACE, ESTIMATED, TARGET_TIME), TIME_ADEQUACY_IN (ADEQUATE, COMPRESSED, INSUFFICIENT), CORE_ENTRY_READINESS_IN (READY, CAUTION, NOT_READY). Confirm Process B no longer emits or expects the old v1 strings (RACE_RESULT, TIME_TRIAL, NOT_PROVIDED, TIGHT, UNKNOWN).",
+    "blockingToday": false,
+    "reasonNotBlocking": "The D3 Process A vocabulary itself is correctly normalized per the approved decision and is self-consistent (schema-valid, structurally validated, no candidate artifact currently references or depends on any specific value). This note is an activation-readiness risk, not a reopening of D3.",
+    "doesNotReopenD3": true,
+    "recordedAsAuditEntry": "AUD-406 (TECHNICAL_ONLY, non-blocking)"
+  },
+  "d4D13Touched": false,
+  "publishActivateRetireSupersedeOccurred": false,
+  "filesOutsidePlanCatalogTouched": false,
+  "finalStatus": "D3 follow-up complete: vocabulary unchanged (no evidence of direct inconsistency found); all three condition types classified DECLARED_BUT_CURRENTLY_UNUSED; TD-D3-001 recorded; Process B contract status recorded as UNKNOWN_FROM_REPO_EVIDENCE."
+}

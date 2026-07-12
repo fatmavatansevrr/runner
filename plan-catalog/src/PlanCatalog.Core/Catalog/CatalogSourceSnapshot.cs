@@ -1,6 +1,7 @@
 using PlanCatalog.Contracts.References;
 using PlanCatalog.Core.Models;
 using PlanCatalog.Core.Ports;
+using PlanCatalog.Core.Enums;
 
 namespace PlanCatalog.Core.Catalog;
 
@@ -51,7 +52,9 @@ public sealed record CatalogSourceSnapshot
     {
         var retirement = retirementLedger ?? NullRetirementLedger.Instance;
         return Workouts
-            .Where(x => x.Metadata.Key == key && !retirement.IsRetired(x.Metadata.DocumentType, x.Metadata.Key, x.Metadata.Version))
+            .Where(x => x.Metadata.Key == key
+                && x.Metadata.Status != CatalogStatus.Draft
+                && !retirement.IsRetired(x.Metadata.DocumentType, x.Metadata.Key, x.Metadata.Version))
             .OrderByDescending(x => x.Metadata.Version)
             .FirstOrDefault();
     }

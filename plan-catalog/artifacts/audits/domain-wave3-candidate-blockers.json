@@ -1,0 +1,21 @@
+{
+  "audit": "domain-wave3-candidate-blockers",
+  "generatedAt": "2026-07-08",
+  "measurements": {
+    "activeV4Blockers": 13,
+    "candidateV5Blockers": 8,
+    "candidateV6Blockers": 4
+  },
+  "removedByWave3": [
+    "EASY_STANDARD v3 $.complexityTier",
+    "FARTLEK v3 $.complexityTier",
+    "LONG_RUN_STANDARD v3 $.complexityTier",
+    "THRESHOLD_TEMPO v3 $.complexityTier"
+  ],
+  "remainingCandidateV6Blockers": [
+    "GOAL_PACE_TEN_K v1 authored workout content",
+    "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1 dosage and complexity settings",
+    "RUNTIME_CONDITION_VALUES_V1 v1 authored allowed-value lists",
+    "PEAK_VOLUME_BANDS_V1 v2 non-intermediate authored rows"
+  ]
+}

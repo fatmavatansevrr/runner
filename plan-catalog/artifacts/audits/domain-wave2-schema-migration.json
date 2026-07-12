@@ -1,0 +1,30 @@
+{
+  "auditId": "DOMAIN-WAVE2-SCHEMA-MIGRATION-001",
+  "runLayout": {
+    "legacySchemaVersion": 1,
+    "newSchemaVersion": 2,
+    "legacyField": "slots[*].sequenceOrder",
+    "newBehavior": "sequenceOrder absent; order derived from slots array position",
+    "compatibility": "schemaVersion 1 remains readable; schemaVersion 2 rejects sequenceOrder",
+    "failureCode": "LEGACY_SEQUENCE_ORDER_NOT_ALLOWED_IN_NEW_SCHEMA"
+  },
+  "workoutDefinition": {
+    "legacySchemaVersion": 1,
+    "newSchemaVersion": 2,
+    "componentsRequired": false,
+    "componentsWhenPresent": {
+      "minItems": 1,
+      "vocabulary": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"],
+      "additionalPropertiesAllowed": false,
+      "order": "authored array order"
+    },
+    "semanticFailureCodes": [
+      "COMPONENTS_REQUIRED_FOR_STRUCTURED_WORKOUT",
+      "COMPONENT_SEQUENCE_INVALID",
+      "COMPONENT_TYPE_NOT_ALLOWED",
+      "COMPONENTS_NOT_ALLOWED_FOR_CONTINUOUS_WORKOUT",
+      "COMPONENTS_EMPTY"
+    ],
+    "tradeoff": "No existing structural-family discriminator exists, so validation uses narrow key-specific rules for the five approved decisions rather than adding a new unresolved taxonomy field."
+  }
+}

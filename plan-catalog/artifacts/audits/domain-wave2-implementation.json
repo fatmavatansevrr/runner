@@ -1,0 +1,49 @@
+{
+  "auditId": "DOMAIN-WAVE2-IMPLEMENTATION-001",
+  "generatedAtUtc": "2026-07-08T10:45:00Z",
+  "scope": ["D1", "D6", "D8", "D10", "D12"],
+  "currentActiveRoot": "TEN_K__4D__INTERMEDIATE v4",
+  "candidateRoot": "TEN_K__4D__INTERMEDIATE v5",
+  "candidateStatus": "DRAFT",
+  "approvedDecisionsImplemented": {
+    "D1_SEQUENCE_ORDER": "RUN_LAYOUT_4D schemaVersion 2 omits sequenceOrder; order derives from slots array position.",
+    "D6_EASY_COMPONENTS": "EASY_STANDARD v3 omits components under optional-components model.",
+    "D8_FARTLEK_COMPONENTS": "FARTLEK v3 uses WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN.",
+    "D10_LONG_RUN_COMPONENTS": "LONG_RUN_STANDARD v3 omits components under optional-components model.",
+    "D12_THRESHOLD_COMPONENTS": "THRESHOLD_TEMPO v3 uses WARM_UP, MAIN_SET, COOL_DOWN."
+  },
+  "classifications": [
+    { "decisionId": "D1", "classification": "TECHNICAL_ONLY", "reason": "Array position is a structural ordering mechanism, not a running-domain claim." },
+    { "decisionId": "D6", "classification": "TECHNICAL_ONLY", "reason": "Components omission is schema/ownership behavior for a continuous workout, not dosage." },
+    { "decisionId": "D8", "classification": "CANONICAL_CONFIRMED", "reason": "Approved canonical structural sequence using shared vocabulary; no generated prescription values copied." },
+    { "decisionId": "D10", "classification": "TECHNICAL_ONLY", "reason": "Components omission is schema/ownership behavior for a continuous long run, not dosage." },
+    { "decisionId": "D12", "classification": "CANONICAL_CONFIRMED", "reason": "Approved continuous-tempo structural sequence using shared vocabulary; RECOVERY excluded." }
+  ],
+  "candidateBundleHash": "cc894e866be081fb3b44171a27f2bee94375240c1fd6c6042255e3c393014732",
+  "determinism": {
+    "buildCount": 3,
+    "outputSha256": "FBB8AF981B77EEFC29543FA5FCDEF2F7405525AA9B89A8CF501B7B5B044CF678",
+    "byteIdentical": true
+  },
+  "validationSummary": {
+    "dotnetRestore": "PASS",
+    "dotnetBuildRelease": "PASS",
+    "dotnetTestRelease": "PASS 266/266",
+    "sourceIntegrityValidate": "PASS",
+    "activeCombinationV4Validate": "PASS",
+    "candidateCombinationV5Validate": "PASS",
+    "historicalReleaseVerification": "PASS all 7 releases; superseded releases emit warnings only",
+    "crossReleaseHashConsistencyPreview": "PASS",
+    "zeroSixPilotVerification": "PASS"
+  },
+  "negativeConfirmations": {
+    "releasePublished": false,
+    "retirementApplied": false,
+    "activationApplied": false,
+    "publishedArtifactMutated": false,
+    "historicalArtifactDeleted": false,
+    "backendChanged": false,
+    "processBLogicAdded": false,
+    "generatedPrescriptionValuesAdded": false
+  }
+}

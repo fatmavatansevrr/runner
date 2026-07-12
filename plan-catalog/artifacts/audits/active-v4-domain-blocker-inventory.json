@@ -41,5 +41,26 @@
     "POSSIBLY_REDUNDANT_FIELD": 1
   },
   "noRunningDomainDecisionMisclassifiedAsTechnical": true,
+  "wave2CandidateState": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v5",
+    "candidateStatus": "DRAFT",
+    "currentActiveRootRemains": "TEN_K__4D__INTERMEDIATE v4",
+    "currentActiveRootClosureBlockingDecisionCount": 13,
+    "currentActiveRootClosureBlockingArtifactCount": 9,
+    "candidateRootClosureBlockingDecisionCount": 8,
+    "candidateRootClosureBlockingArtifactCount": 8,
+    "removedFromCandidateClosure": ["D1", "D6", "D8", "D10", "D12"],
+    "activationExecuted": false
+  },
+  "wave3CandidateState": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v6",
+    "candidateStatus": "DRAFT",
+    "currentActiveRootRemains": "TEN_K__4D__INTERMEDIATE v4",
+    "candidateRootClosureBlockingDecisionCount": 4,
+    "candidateRootClosureBlockingArtifactCount": 4,
+    "removedFromWave2CandidateClosure": ["D5", "D7", "D9", "D11"],
+    "complexityTierRemovedNotReclassified": true,
+    "activationExecuted": false
+  },
   "finalStatus": "Inventory complete: 13/13 rows, 9/9 artifacts confirmed, no repository drift."
 }

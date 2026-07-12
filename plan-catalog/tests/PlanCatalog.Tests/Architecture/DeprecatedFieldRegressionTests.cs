@@ -34,6 +34,15 @@ public sealed class DeprecatedFieldRegressionTests
     }
 
     [Fact]
+    public void ProgressionModifierDefinition_MaximumComplexityTierIsNullableLegacyOnly()
+    {
+        var property = typeof(ProgressionModifierDefinition).GetProperty("MaximumComplexityTier");
+        Assert.NotNull(property);
+        Assert.True(Nullable.GetUnderlyingType(property!.PropertyType) is not null,
+            "MaximumComplexityTier must be nullable — required only for legacy (schemaVersion 1) ProgressionModifier documents.");
+    }
+
+    [Fact]
     public void WorkoutProgressionStageDefinition_ContainsNoConcreteWeekField()
     {
         var names = typeof(WorkoutProgressionStageDefinition).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name);

@@ -1,0 +1,20 @@
+{
+  "auditId": "DOMAIN-WAVE2-COMPONENT-VOCABULARY-001",
+  "sharedInternalVocabulary": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"],
+  "userFacingLabels": {
+    "WARM_UP": "Warm-up",
+    "MAIN_SET": "Main Set",
+    "RECOVERY": "Recovery",
+    "COOL_DOWN": "Cool-down"
+  },
+  "excluded": ["STRIDES", "FARTLEK_MAIN_SET", "VARIABLE_EFFORT_BLOCK", "FARTLEK_RECOVERY", "TEMPO_MAIN_SET"],
+  "approvedSequences": {
+    "FARTLEK v3": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"],
+    "THRESHOLD_TEMPO v3": ["WARM_UP", "MAIN_SET", "COOL_DOWN"]
+  },
+  "continuousWorkouts": {
+    "EASY_STANDARD v3": "components omitted",
+    "LONG_RUN_STANDARD v3": "components omitted"
+  },
+  "noPrescriptionValues": true
+}

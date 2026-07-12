@@ -64,5 +64,46 @@
       "schema and compatibility impact analysis (schema files affected, published-artifact shape impact, test assertions on the field)"
     ]
   },
-  "finalStatus": "Resolution plan complete: 7 batches, recommended execution order established, no decision resolved."
+  "wave2ExecutionUpdate": {
+    "implementedDecisionIds": ["D1", "D6", "D8", "D10", "D12"],
+    "implementedAsDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v5",
+    "currentActiveRootUnchanged": "TEN_K__4D__INTERMEDIATE v4",
+    "remainingCandidateDecisionIds": ["D2", "D3", "D4", "D5", "D7", "D9", "D11", "D13"],
+    "releasePublished": false,
+    "retirementApplied": false
+  },
+  "wave3ExecutionUpdate": {
+    "implementedDecisionIds": ["D5", "D7", "D9", "D11"],
+    "implementationType": "removed redundant field; no replacement taxonomy or value selection",
+    "evidenceReviewUpdatedDecisionIds": ["D8", "D12"],
+    "d8D12Classification": "EXPLICIT_PRODUCT_DEFAULT",
+    "implementedAsDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v6",
+    "currentActiveRootUnchanged": "TEN_K__4D__INTERMEDIATE v4",
+    "remainingCandidateBlockerCount": 4,
+    "releasePublished": false,
+    "retirementApplied": false
+  },
+  "wave5ExecutionUpdate": {
+    "implementedDecisionIds": ["D2"],
+    "implementationType": "field-level: removed maximumComplexityTier (no replacement); applied approved maximumHardSessionsPerWeek/mainSetDoseMultiplier/allowGoalPaceRehearsal/allowSecondHardStimulus values unchanged from v1",
+    "implementedAsDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v7",
+    "currentActiveRootUnchanged": "TEN_K__4D__INTERMEDIATE v4",
+    "predecessorCandidatePreserved": "TEN_K__4D__INTERMEDIATE v6",
+    "remainingCandidateBlockerCount": 3,
+    "remainingDecisionIds": ["D3", "D4", "D13"],
+    "releasePublished": false,
+    "retirementApplied": false
+  },
+  "d3ExecutionUpdate": {
+    "implementedDecisionIds": ["D3"],
+    "implementationType": "field-level: replaced invented allowed-value vocabularies for PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN with explicit product-approved canonical values, backed by an explicit recorded Process A/Process B ownership decision (Process A registry is sole canonical owner). GOAL_FEASIBILITY_IN and PLAN_MODE_IN left unchanged (already CANONICAL_CONFIRMED).",
+    "implementedAsDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v8",
+    "currentActiveRootUnchanged": "TEN_K__4D__INTERMEDIATE v4",
+    "predecessorCandidatePreserved": "TEN_K__4D__INTERMEDIATE v7",
+    "remainingCandidateBlockerCount": 2,
+    "remainingDecisionIds": ["D4", "D13"],
+    "releasePublished": false,
+    "retirementApplied": false
+  },
+  "finalStatus": "Resolution plan complete: 7 batches, recommended execution order established; D2 (batch B3) implemented as of Wave 5, D3 (batch B5) implemented in this pass."
 }

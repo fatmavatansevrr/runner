@@ -23,12 +23,22 @@ public static class RunLayoutValidator
                 $"Slot count {layout.Slots.Count} does not equal RunsPerWeek {layout.RunsPerWeek}.", "$.slots"));
         }
 
-        var sequenceOrders = layout.Slots.Select(s => s.SequenceOrder).OrderBy(x => x).ToList();
-        var expected = Enumerable.Range(1, layout.Slots.Count).ToList();
-        if (sequenceOrders.Distinct().Count() != sequenceOrders.Count || !sequenceOrders.SequenceEqual(expected))
+        if (layout.Metadata.SchemaVersion == 1)
         {
-            issues.Add(new ValidationIssue("RL_SEQUENCE_ORDER_NOT_CONTIGUOUS", ValidationSeverity.Error,
-                "SequenceOrder values must be unique and contiguous starting at 1.", "$.slots"));
+            var sequenceOrders = layout.Slots.Select(s => s.SequenceOrder).ToList();
+            var expected = Enumerable.Range(1, layout.Slots.Count).Cast<int?>().ToList();
+            if (sequenceOrders.Any(s => s is null)
+                || sequenceOrders.Distinct().Count() != sequenceOrders.Count
+                || !sequenceOrders.OrderBy(x => x).SequenceEqual(expected))
+            {
+                issues.Add(new ValidationIssue("RL_SEQUENCE_ORDER_NOT_CONTIGUOUS", ValidationSeverity.Error,
+                    "Legacy schemaVersion 1 SequenceOrder values must be unique and contiguous starting at 1.", "$.slots"));
+            }
+        }
+        else if (layout.Slots.Any(s => s.SequenceOrder is not null))
+        {
+            issues.Add(new ValidationIssue("LEGACY_SEQUENCE_ORDER_NOT_ALLOWED_IN_NEW_SCHEMA", ValidationSeverity.Error,
+                "schemaVersion 2+ run layouts derive ordering from the slots array and must not author sequenceOrder.", "$.slots"));
         }
 
         var longRunCount = layout.Slots.Count(s => s.Role == SlotRole.LongRun);

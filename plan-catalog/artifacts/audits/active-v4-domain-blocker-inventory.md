@@ -71,3 +71,14 @@ No running-domain decision (D2, D4) was classified as technical merely to unbloc
 remain `RUNNING_DOMAIN_RULE` and are flagged as requiring the strongest evidence standard.
 
 ## Final status: inventory complete, 13/13 rows produced, 9/9 artifacts confirmed, no drift.
+## Wave 2 candidate note
+
+Wave 2 creates draft candidate root `TEN_K__4D__INTERMEDIATE v5` and does not activate it. Current active root `TEN_K__4D__INTERMEDIATE v4` remains unchanged at 13 blocking decisions across 9 blocking artifacts.
+
+The draft v5 candidate closure measures 8 blocking decisions across 8 blocking artifacts. Exactly D1, D6, D8, D10, and D12 are removed from the candidate closure; D2, D3, D4, D5, D7, D9, D11, and D13 remain blocking. No release was published and no retirement was applied.
+
+## Wave 3 candidate note
+
+Wave 3 creates draft candidate root `TEN_K__4D__INTERMEDIATE v6` and does not activate it. Current active root `TEN_K__4D__INTERMEDIATE v4` remains unchanged.
+
+The draft v6 candidate closure measures 4 blocking decisions across 4 blocking artifacts. D5, D7, D9, and D11 are removed from the candidate closure by removing the redundant legacy `complexityTier` field from new `WorkoutDefinition` schemaVersion 3 artifacts. No release was published and no retirement was applied.

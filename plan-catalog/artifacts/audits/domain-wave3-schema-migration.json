@@ -1,0 +1,18 @@
+{
+  "audit": "domain-wave3-schema-migration",
+  "generatedAt": "2026-07-08",
+  "schema": "schemas/workout-definition.schema.json",
+  "changes": [
+    "schemaVersion 1/2: complexityTier remains required and minimum 1",
+    "schemaVersion 3+: complexityTier is rejected",
+    "components rules from Wave 2 are unchanged"
+  ],
+  "modelCompatibility": {
+    "WorkoutDefinition.ComplexityTier": "nullable legacy-read property",
+    "serialization": "null values are omitted by canonical serializer"
+  },
+  "validator": {
+    "legacyMissingOrBelowOneCode": "WD_COMPLEXITY_TIER_TOO_LOW",
+    "newSchemaLegacyFieldCode": "LEGACY_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA"
+  }
+}

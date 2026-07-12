@@ -3,6 +3,7 @@ using PlanCatalog.Contracts.Enums;
 using PlanCatalog.Contracts.Manifests;
 using PlanCatalog.Contracts.References;
 using PlanCatalog.Core.Catalog;
+using PlanCatalog.Core.Enums;
 using PlanCatalog.Core.Ports;
 using PlanCatalog.Core.Validation;
 
@@ -65,7 +66,8 @@ public sealed class CatalogPublisher(
             throw new CatalogValidationException("Domain/graph validation", domainResult);
         }
 
-        var stamped = CatalogStamper.StampAsPublished(serializer, hasher, snapshot);
+        var publishableSnapshot = ExcludeDraftArtifacts(snapshot);
+        var stamped = CatalogStamper.StampAsPublished(serializer, hasher, publishableSnapshot);
 
         var readiness = PublishReadinessValidator.Validate(stamped, schemaResult, domainResult);
         if (!readiness.IsValid)
@@ -254,6 +256,20 @@ public sealed class CatalogPublisher(
             .Concat(snapshot.PeakVolumeBandPolicies.Select(x => x.Metadata))
             .Concat(snapshot.RulePacks.Select(x => x.Metadata))
             .Concat(snapshot.Combinations.Select(x => x.Metadata));
+
+    private static CatalogSourceSnapshot ExcludeDraftArtifacts(CatalogSourceSnapshot snapshot) => snapshot with
+    {
+        PlanTemplates = snapshot.PlanTemplates.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        RunLayouts = snapshot.RunLayouts.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        LevelModifiers = snapshot.LevelModifiers.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        WorkoutProgressions = snapshot.WorkoutProgressions.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        ProgressionModifiers = snapshot.ProgressionModifiers.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        Workouts = snapshot.Workouts.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        RuntimeConditionValueRegistries = snapshot.RuntimeConditionValueRegistries.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        PeakVolumeBandPolicies = snapshot.PeakVolumeBandPolicies.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        RulePacks = snapshot.RulePacks.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        Combinations = snapshot.Combinations.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList()
+    };
 
     private Dictionary<string, string> BuildReleaseFiles(
         CatalogSourceSnapshot stamped,

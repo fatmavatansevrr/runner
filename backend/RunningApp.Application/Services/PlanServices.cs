@@ -5,6 +5,7 @@ using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.PlanGeneration;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Domain.Entities;
 using RunningApp.Domain.Enums;
 using RunningApp.Persistence;
@@ -22,6 +23,9 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
 {
     private readonly AppDbContext _context;
     private readonly IPlanGenerationEngine _planGenerationEngine;
+    private readonly IGenerationRouteDecider _routeDecider;
+    private readonly ICatalogPreviewGenerator _catalogPreviewGenerator;
+    private readonly ICatalogPlanConfirmationService _catalogConfirmationService;
 
     private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
     {
@@ -30,13 +34,42 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) }
     };
 
+    // Lightweight options for peeking at GenerationSource only — does not need
+    // full snake_case enum deserialization since GenerationSource is a plain string.
+    private static readonly JsonSerializerOptions GenerationSourcePeekOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    };
+
     private readonly ILogger<PlanServices> _logger;
 
-    public PlanServices(AppDbContext context, IPlanGenerationEngine planGenerationEngine, ILogger<PlanServices> logger)
+    /// <summary>
+    /// Backend Integration Phase 4E.1: adds the route decider and catalog
+    /// preview generator. Both are REQUIRED constructor dependencies (this
+    /// codebase's established explicit-DI convention, no hidden defaults) —
+    /// existing test call sites must now supply them explicitly.
+    ///
+    /// Backend Integration Phase 4E.2: adds the catalog confirmation service.
+    /// This does NOT add any routing/generation dependency to the confirm path:
+    /// <see cref="ICatalogPlanConfirmationService"/> has no dependency on
+    /// <see cref="IGenerationRouteDecider"/>, <see cref="ICatalogPreviewGenerator"/>,
+    /// resolvers, or <c>StageEligibilityEvaluator</c>.
+    /// </summary>
+    public PlanServices(
+        AppDbContext context,
+        IPlanGenerationEngine planGenerationEngine,
+        ILogger<PlanServices> logger,
+        IGenerationRouteDecider routeDecider,
+        ICatalogPreviewGenerator catalogPreviewGenerator,
+        ICatalogPlanConfirmationService catalogConfirmationService)
     {
         _context = context;
         _planGenerationEngine = planGenerationEngine;
         _logger = logger;
+        _routeDecider = routeDecider;
+        _catalogPreviewGenerator = catalogPreviewGenerator;
+        _catalogConfirmationService = catalogConfirmationService;
     }
 
     public async Task<GeneratePreviewResponse> GeneratePreviewAsync(Guid internalUserId, GeneratePreviewRequest request, CancellationToken ct = default)
@@ -47,12 +80,52 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             throw new ArgumentException($"DaysPerWeek must be between 1 and 7, but was {request.DaysPerWeek}.");
         }
 
+        // ── Phase 4B fitness-evidence input validation ──────────────────────
+        // Conservative shape checks only (positive-if-provided). No product
+        // thresholds: does not reject low volume/short runs, does not compare
+        // race-date recency, does not implement any readiness/adequacy logic.
+        if (request.RecentLongestRunKm is <= 0)
+        {
+            throw new ArgumentException($"RecentLongestRunKm must be positive if provided, but was {request.RecentLongestRunKm}.");
+        }
+        if (request.RecentWeeklyVolumeKm is <= 0)
+        {
+            throw new ArgumentException($"RecentWeeklyVolumeKm must be positive if provided, but was {request.RecentWeeklyVolumeKm}.");
+        }
+        if (request.RecentRunsPerWeek is <= 0)
+        {
+            throw new ArgumentException($"RecentRunsPerWeek must be positive if provided, but was {request.RecentRunsPerWeek}.");
+        }
+        if (request.RecentRaceDistanceKm is <= 0)
+        {
+            throw new ArgumentException($"RecentRaceDistanceKm must be positive if provided, but was {request.RecentRaceDistanceKm}.");
+        }
+        if (request.RecentRaceFinishTimeSeconds is <= 0)
+        {
+            throw new ArgumentException($"RecentRaceFinishTimeSeconds must be positive if provided, but was {request.RecentRaceFinishTimeSeconds}.");
+        }
+
         // ── Sanitized input logging (no PII) ────────────────────────────────
         _logger.LogInformation(
             "GeneratePreview: goalType={GoalType}, goalDistance={GoalDistance}, level={Level}, " +
             "daysPerWeek={DaysPerWeek}, preferredDays={PreferredDays}, unit={Unit}",
             request.GoalType, request.GoalDistance, request.Level,
             request.DaysPerWeek, request.PreferredDays ?? "(null)", request.Unit);
+
+        // ── Backend Integration Phase 4E.1: route decision, computed once, ──
+        // before any generation begins. There is no "try catalog, catch,
+        // fall back to SQL" anywhere below -- if the route is CATALOG, the
+        // legacy SQL path (steps 1-4 below) is never reached, and any
+        // catalog-flow failure propagates as a typed exception, final.
+        var routeDecision = _routeDecider.Decide(request);
+        _logger.LogInformation(
+            "GeneratePreview: routeDecision.Source={Source}, routeDecision.RouteReason={RouteReason}",
+            routeDecision.Source, routeDecision.RouteReason);
+
+        if (routeDecision.Source == GenerationSource.Catalog)
+        {
+            return await GenerateCatalogPreviewAsync(internalUserId, request, routeDecision, ct);
+        }
 
         // 1. Select a seeded template for the user's goals (placeholder engine; see IPlanGenerationEngine)
         var selection = await _planGenerationEngine.SelectTemplateAsync(request, ct);
@@ -157,8 +230,104 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         return previewResponse;
     }
 
+    /// <summary>
+    /// Backend Integration Phase 4E.1 — the catalog pilot preview path.
+    /// Computes AsOfDate exactly once (UTC-based: the only timezone
+    /// convention evidenced anywhere in this class, e.g. the existing
+    /// DateTime.UtcNow-based "next Monday" computation in the legacy flow
+    /// below -- no per-user timezone policy exists in this backend to defer
+    /// to instead) and passes it through the entire resolver pipeline via
+    /// <see cref="ICatalogPreviewGenerator"/>. Persists the resulting
+    /// <see cref="CatalogPreviewSnapshot"/> into the existing
+    /// <c>PlanPreview.PreviewPayloadJson</c> column (per this phase's own
+    /// preference for that column over a new persistence structure) --
+    /// NOTE this is a structurally different JSON shape than the legacy
+    /// flow's <see cref="GeneratePreviewResponse"/> serialization; see the
+    /// minimal, explicitly-documented compatibility guard in
+    /// <see cref="ConfirmPlanAsync"/> that prevents a catalog-sourced
+    /// preview from being mis-processed as a legacy one. Phase 4E.1 does
+    /// NOT make a catalog-sourced preview confirmable -- see
+    /// PHASE4E_1_CATALOG_PREVIEW_ROUTING_AND_IMMUTABLE_RESOLUTION_SNAPSHOT.md.
+    /// </summary>
+    private async Task<GeneratePreviewResponse> GenerateCatalogPreviewAsync(
+        Guid internalUserId, GeneratePreviewRequest request, GenerationRouteDecision routeDecision, CancellationToken ct)
+    {
+        var asOfDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // No try/catch here: CatalogCandidateNotPublishedException,
+        // CatalogDependencyNotRuntimeEligibleException, CatalogPilotNotAvailableException,
+        // RuntimeConditionRequiredInputMissingException, RuntimeConditionUnsupportedException,
+        // RuntimeConditionDependencyUnresolvedException, and PlanPreviewGenerationFailedException
+        // all propagate unchanged -- none is caught and converted into a
+        // legacy-SQL fallback or a partially-generated plan.
+        var snapshot = await _catalogPreviewGenerator.GenerateAsync(request, asOfDate, ct);
+
+        var previewResponse = new GeneratePreviewResponse
+        {
+            PreviewId = Guid.NewGuid(),
+            TemplateId = snapshot.CandidateKey,
+            GoalType = request.GoalType,
+            GoalDistance = request.GoalDistance,
+            Level = request.Level,
+            DaysPerWeek = request.DaysPerWeek,
+            Unit = request.Unit,
+            // Empty: stage-to-week scheduling remains unimplemented (every
+            // prior Phase 4D resolver phase's own explicit boundary). The
+            // full frozen resolution snapshot -- including AsOfDate,
+            // candidate/dependency identities, and every resolver result --
+            // is what gets persisted below, not a generated plan payload.
+            Weeks = new List<PreviewWeekDto>(),
+            FallbackUsed = false,
+            FallbackReason = null,
+        };
+
+        var previewEntity = new PlanPreview
+        {
+            Id = previewResponse.PreviewId,
+            InternalUserId = internalUserId,
+            TemplateId = snapshot.CandidateKey,
+            RequestPayloadJson = JsonSerializer.Serialize(request, SerializerOptions),
+            // Deliberately the CatalogPreviewSnapshot's own JSON shape, NOT a
+            // GeneratePreviewResponse -- see this method's own doc comment.
+            PreviewPayloadJson = JsonSerializer.Serialize(snapshot, SerializerOptions),
+            ExpiresAt = snapshot.ExpiresAtUtc,
+            CreatedAt = snapshot.CreatedAtUtc,
+        };
+
+        _context.PlanPreviews.Add(previewEntity);
+        await _context.SaveChangesAsync(ct);
+
+        return previewResponse;
+    }
+
     public async Task<ConfirmPlanResponse> ConfirmPlanAsync(Guid internalUserId, ConfirmPlanRequest request, CancellationToken ct = default)
     {
+        // ── Backend Integration Phase 4E.2: catalog dispatch via stored GenerationSource ──
+        // Load preview first (without user filter yet, so we can peek at
+        // GenerationSource before deciding the dispatch path). This does NOT
+        // re-run IGenerationRouteDecider — dispatch is based solely on what
+        // was stored in the preview row at generation time.
+        var previewForDispatch = await _context.PlanPreviews
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.PreviewId, ct);
+
+        if (previewForDispatch != null && IsCatalogSourcedPreview(previewForDispatch.PreviewPayloadJson))
+        {
+            // Catalog path: delegate ALL validation, integrity, idempotency,
+            // and persistence to CatalogPlanConfirmationService. Nothing below
+            // this branch is reached for a catalog-sourced preview.
+            // IGenerationRouteDecider is NOT called.
+            _logger.LogInformation(
+                "ConfirmPlan: preview {PreviewId} is CATALOG-sourced — delegating to CatalogPlanConfirmationService.",
+                request.PreviewId);
+            return await _catalogConfirmationService.ConfirmAsync(internalUserId, request.PreviewId, ct);
+        }
+
+        // ── Legacy SQL confirm path — entirely unchanged from pre-Phase 4E.1 ──
+        // Only reached for GenerationSource=LEGACY_SQL previews (or previews
+        // that pre-date the GenerationSource field). The catalog dispatch above
+        // is the first and only place GenerationSource is consulted.
+
         // 1. Fetch preview (read-only: confirm never mutates the preview row)
         var preview = await _context.PlanPreviews
             .AsNoTracking()
@@ -199,6 +368,18 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         if (previewData == null || requestData == null)
         {
             throw new InvalidOperationException("Failed to load plan preview data.");
+        }
+
+        // Defensive guard: a catalog-sourced preview that somehow slipped
+        // through the dispatch above would leave Weeks empty and crash below.
+        // This should never occur in practice (the dispatch above handles all
+        // catalog previews), but if it does, throw a typed error rather than
+        // crashing with an unhandled InvalidOperationException.
+        if (previewData.Weeks.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Plan preview '{request.PreviewId}' has no week data. This may indicate a dispatch error — " +
+                "catalog-sourced previews should have been handled by the catalog confirm path.");
         }
 
         // 4. Create active TrainingPlan.
@@ -596,4 +777,45 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         public int DurationMin { get; set; }
         public string? Intensity { get; set; }
     }
+
+    /// <summary>
+    /// Backend Integration Phase 4E.2: lightweight peek at the stored
+    /// <c>PreviewPayloadJson</c> to decide dispatch without fully deserializing
+    /// the snapshot. Returns <c>true</c> iff the JSON contains a top-level
+    /// <c>generation_source</c> (snake_case, as serialized by
+    /// <see cref="GenerateCatalogPreviewAsync"/>) field whose value is
+    /// <c>"CATALOG"</c> (case-insensitive).
+    ///
+    /// This does NOT re-run <see cref="IGenerationRouteDecider"/>. It reads
+    /// only the already-stored value. A missing or non-CATALOG value means
+    /// the legacy SQL confirm path should handle the preview.
+    ///
+    /// Internally catches JSON exceptions (returns false on malformed JSON —
+    /// the catalog confirm service will reject the preview with a proper typed
+    /// error if needed, since it only runs after this returns true).
+    /// </summary>
+    private static bool IsCatalogSourcedPreview(string? payloadJson)
+    {
+        if (string.IsNullOrWhiteSpace(payloadJson))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(payloadJson);
+            // Try both snake_case (catalog shape) and camelCase (legacy shape).
+            if (doc.RootElement.TryGetProperty("generation_source", out var gs) ||
+                doc.RootElement.TryGetProperty("generationSource", out gs))
+            {
+                return gs.ValueKind == JsonValueKind.String &&
+                       string.Equals(gs.GetString(), RunningApp.Application.RuntimeCatalog.PreviewRouting.GenerationSource.Catalog,
+                           StringComparison.OrdinalIgnoreCase);
+            }
+            return false;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 }
+

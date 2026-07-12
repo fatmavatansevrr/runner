@@ -1,0 +1,60 @@
+{
+  "auditId": "WAVE5-VERSION-CASCADE-001",
+  "generatedAtUtc": "2026-07-08T19:20:00Z",
+  "readOnly": true,
+  "priorLatestDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v6 (Wave 3, unchanged, preserved)",
+  "newDraftCandidateRoot": "TEN_K__4D__INTERMEDIATE v7 (Wave 5, DRAFT, unpublished)",
+  "activeRootUnchanged": "TEN_K__4D__INTERMEDIATE v4",
+  "newVersionsCreated": [
+    "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2 (schemaVersion 2; maximumComplexityTier removed; other 4 fields unchanged from v1)",
+    "INTERMEDIATE_MODIFIER v5 (cascade: progressionModifier reference -> v2; eligibleWorkouts unchanged from v4)",
+    "TEN_K__4D__INTERMEDIATE v7 (cascade: levelModifier reference -> v5; masterTemplate/layout/rulePack unchanged from v6)"
+  ],
+  "artifactsExplicitlyNotBumped": [
+    "TEN_K_MASTER (stays v5)",
+    "RUN_LAYOUT_4D (stays v2)",
+    "APPSEL_RACE_PLAN_V1 (stays v2)",
+    "RUNTIME_CONDITION_VALUES_V1 (stays v1)",
+    "PEAK_VOLUME_BANDS_V1 (stays v2)",
+    "TEN_K_WORKOUT_PROGRESSION_V1 (stays v4)",
+    "EASY_STANDARD, LONG_RUN_STANDARD, FARTLEK, THRESHOLD_TEMPO (stay v4)",
+    "GOAL_PACE_TEN_K (stays v1)"
+  ],
+  "candidateDependencyGraph": {
+    "root": "TEN_K__4D__INTERMEDIATE v7",
+    "masterTemplate": "TEN_K_MASTER v5",
+    "layout": "RUN_LAYOUT_4D v2",
+    "levelModifier": "INTERMEDIATE_MODIFIER v5",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v4",
+    "progressionModifier": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "runtimeConditionValueRegistry": "RUNTIME_CONDITION_VALUES_V1 v1",
+    "peakVolumeBandPolicy": "PEAK_VOLUME_BANDS_V1 v2",
+    "workouts": ["EASY_STANDARD v4", "LONG_RUN_STANDARD v4", "FARTLEK v4", "THRESHOLD_TEMPO v4", "GOAL_PACE_TEN_K v1"]
+  },
+  "priorDraftCandidatesPreservedUnchanged": ["TEN_K__4D__INTERMEDIATE v5 (Wave 2)", "TEN_K__4D__INTERMEDIATE v6 (Wave 3)"],
+  "publishedOrHistoricalArtifactsUntouched": true,
+  "determinism": {
+    "buildBundleCommand": "build-bundle TEN_K__4D__INTERMEDIATE --version 7",
+    "runsPerformed": 3,
+    "byteIdenticalOutput": true,
+    "bundleContentHash": "e10b65f7aa82b9b59ac045efcd0df0335a157b3c65acbf280810885ebab393e4",
+    "stableAcrossThreeRuns": true
+  },
+  "noPublishRetireActivateSupersedeAction": true,
+  "clarificationPassAddendum": {
+    "tenKMasterV5Origin": "Created in Wave 3 (AUD-321) to repoint TEN_K_MASTER's exact WorkoutProgression reference to TEN_K_WORKOUT_PROGRESSION_V1 v4 after the complexityTier removal cascade. It is UNCHANGED by Wave 5 -- reused as-is in the v7 candidate graph.",
+    "referenceOwnershipTrace": {
+      "doesTenKMasterReferenceIntermediateModifier": false,
+      "doesTenKMasterReferenceProgressionModifier": false,
+      "doesCombinationReferenceLevelModifierIndependentlyOfMaster": true,
+      "evidence": "PlanTemplateDefinition (TEN_K_MASTER) has exactly 4 fields beyond metadata: DistanceFamily, CoreCycle, SupportedRunsPerWeek, Phases, WorkoutProgression, RequiredRules/RequiredRuleKeys -- no LevelModifier or ProgressionModifier reference exists on this type at all (src/PlanCatalog.Core/Models/PlanTemplateDefinition.cs). TemplateCombinationDefinition directly and independently owns MasterTemplate, Layout, LevelModifier, and RulePack as 4 separate sibling references (src/PlanCatalog.Core/Models/TemplateCombinationDefinition.cs) -- LevelModifier is never reached via MasterTemplate.",
+      "exactReferenceOwnerOfTheChangedLink": "TemplateCombinationDefinition.LevelModifier (i.e. TEN_K__4D__INTERMEDIATE's own 'levelModifier' field, changed from INTERMEDIATE_MODIFIER v4 in v6 to INTERMEDIATE_MODIFIER v5 in v7)"
+    },
+    "masterBumpRequired": false,
+    "masterBumpRequiredReasoning": "TEN_K_MASTER does not own, directly or transitively, the LevelModifier/ProgressionModifier reference that changed. The D2 cascade path is entirely: INTERMEDIATE_PROGRESSION_MODIFIER_V1 (leaf) -> INTERMEDIATE_MODIFIER.progressionModifier -> TEN_K__4D__INTERMEDIATE.levelModifier. TEN_K_MASTER sits on a disjoint reference path (WorkoutProgression only) and correctly required no new version for this task.",
+    "cascadeDefectFound": false,
+    "cascadeComplete": true
+  },
+  "finalStatus": "Version cascade complete: 3 new immutable artifact versions created, exact-reference-only changes at each level, all prior candidates and all published releases untouched. Clarification pass confirmed no cascade defect: TEN_K_MASTER does not own the changed LevelModifier reference and correctly required no bump."
+}

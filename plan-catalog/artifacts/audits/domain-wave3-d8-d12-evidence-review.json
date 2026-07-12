@@ -1,0 +1,24 @@
+{
+  "audit": "domain-wave3-d8-d12-evidence-review",
+  "generatedAt": "2026-07-08",
+  "findings": [
+    {
+      "decision": "D8",
+      "artifact": "FARTLEK v4 $.components",
+      "value": "WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN",
+      "classification": "EXPLICIT_PRODUCT_DEFAULT",
+      "blocking": false,
+      "reason": "Approved product default; fixture evidence supports the shape but does not directly canonize reusable catalog component ordering."
+    },
+    {
+      "decision": "D12",
+      "artifact": "THRESHOLD_TEMPO v4 $.components",
+      "value": "WARM_UP, MAIN_SET, COOL_DOWN",
+      "classification": "EXPLICIT_PRODUCT_DEFAULT",
+      "blocking": false,
+      "reason": "Approved product default; fixture evidence supports continuous-tempo structure but does not directly canonize reusable catalog component ordering."
+    }
+  ],
+  "valuesChanged": false,
+  "blockersRecreated": false
+}

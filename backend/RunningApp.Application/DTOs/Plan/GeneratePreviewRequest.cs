@@ -26,5 +26,29 @@ public class GeneratePreviewRequest
     public int? CustomDurationWeeks { get; set; }
     public int? CustomTargetTimeSeconds { get; set; }
 
+    // ── Backend Integration Phase 4B: runtime fitness-evidence input contract ──
+    // All nullable/optional. Not read by any resolver or generation code today
+    // (PlaceholderPlanGenerationEngine ignores them entirely) — they exist so a
+    // future Phase 4C resolver implementation has real user evidence available
+    // once it is wired up. See PHASE4B_RUNTIME_INPUT_CONTRACT_FOR_FITNESS_EVIDENCE.md.
+    // paceEvidenceType/paceEvidenceDate are explicitly withheld (Phase 4A.3 scope
+    // decision) pending the PACE_SOURCE_IN evidence-hierarchy mapping — do not add them here.
 
+    /// <summary>User-reported longest run in the last ~30 days, in km.</summary>
+    public double? RecentLongestRunKm { get; set; }
+
+    /// <summary>User-reported recent typical weekly running volume, in km.</summary>
+    public double? RecentWeeklyVolumeKm { get; set; }
+
+    /// <summary>User-reported recent typical runs per week.</summary>
+    public int? RecentRunsPerWeek { get; set; }
+
+    /// <summary>Distance of the user's most recent race result, in km.</summary>
+    public double? RecentRaceDistanceKm { get; set; }
+
+    /// <summary>Finish time of the user's most recent race result, in seconds.</summary>
+    public int? RecentRaceFinishTimeSeconds { get; set; }
+
+    /// <summary>Date of the user's most recent race result.</summary>
+    public DateOnly? RecentRaceDate { get; set; }
 }

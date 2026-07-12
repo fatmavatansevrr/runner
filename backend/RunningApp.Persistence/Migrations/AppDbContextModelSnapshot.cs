@@ -332,6 +332,9 @@ namespace RunningApp.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ConfirmedPlanId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -340,6 +343,9 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<Guid?>("InternalUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool?>("IsInvalidated")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PreviewPayloadJson")
                         .IsRequired()
@@ -353,6 +359,9 @@ namespace RunningApp.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ConfirmedPlanId")
+                        .HasDatabaseName("IX_PlanPreviews_ConfirmedPlanId");
 
                     b.HasIndex("InternalUserId")
                         .HasDatabaseName("IX_PlanPreviews_InternalUserId");
@@ -475,6 +484,24 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<bool>("CanMarkNotToday")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("CatalogIntensityKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogSlotRole")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogStageKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogWorkoutFamily")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogWorkoutKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogWorkoutVersion")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -560,6 +587,66 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CanonicalDistanceFamily")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogCandidateKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogCandidateStatusAtGenerationTime")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogCandidateVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogLayoutKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogLayoutVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogLevelModifierKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogLevelModifierVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogPeakVolumeBandPolicyKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogPeakVolumeBandPolicyVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogProgressionModifierKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogProgressionModifierVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogRulePackKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogRulePackVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogRuntimeConditionRegistryKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogRuntimeConditionRegistryVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogTemplateKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogTemplateVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogWorkoutProgressionKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogWorkoutProgressionVersion")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -620,6 +707,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<string>("RaceName")
                         .HasColumnType("text");
 
+                    b.Property<double?>("RequestedTargetDistanceKm")
+                        .HasColumnType("double precision");
+
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -664,6 +754,9 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<double>("ActualVolumeKm")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("CatalogPhaseKey")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -888,6 +981,11 @@ namespace RunningApp.Persistence.Migrations
 
             modelBuilder.Entity("RunningApp.Domain.Entities.PlanPreview", b =>
                 {
+                    b.HasOne("RunningApp.Domain.Entities.TrainingPlan", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedPlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("RunningApp.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("InternalUserId")

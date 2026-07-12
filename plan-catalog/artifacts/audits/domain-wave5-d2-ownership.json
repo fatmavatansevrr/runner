@@ -1,0 +1,41 @@
+{
+  "auditId": "WAVE5-D2-OWNERSHIP-001",
+  "generatedAtUtc": "2026-07-08T19:05:00Z",
+  "readOnly": true,
+  "scope": "D2 ownership classification (Task B)",
+  "isIntermediateProgressionModifierV1GloballyShared": false,
+  "referrerCheck": {
+    "levelModifiersReferencingThisArtifact": ["INTERMEDIATE_MODIFIER (all versions v1-v5)"],
+    "combinationsReachingThisArtifact": ["TEN_K__4D__INTERMEDIATE (all versions v1-v7)"],
+    "otherCombinationFamiliesFound": [],
+    "conclusion": "Exactly one referrer chain exists today; reuse boundary equals the actual TEN_K/INTERMEDIATE/4-day scope exactly."
+  },
+  "canScopeByCombinationDayCountWithoutAmbiguity": true,
+  "fieldOwnership": [
+    { "field": "maximumComplexityTier", "classification": "UNUSED_OR_DEAD_FIELD", "reasoning": "No consumer target exists after Wave 3 removed complexityTier from WorkoutDefinition. Removed, not relocated." },
+    { "field": "maximumHardSessionsPerWeek", "classification": "LEVEL_GLOBAL (schema shape) / actual current reuse: COMBINATION_SPECIFIC (TEN_K+INTERMEDIATE+4-day, sole referrer)", "reasoning": "Consumed only as a structural ceiling by TemplateCombinationValidator against this exact combination's layout. Kept on ProgressionModifierDefinition (Shape 1) because current reuse boundary matches the modifier's actual scope exactly; no broader consumer exists to justify moving it." },
+    { "field": "mainSetDoseMultiplier", "classification": "TECHNICAL_METADATA / UNUSED_OR_DEAD_FIELD for computation", "reasoning": "Present as an authored capability value but not consumed by any calculation in this repository. Kept as level-capability field per Shape 1/Shape 3 guidance (approved default, not restructured)." },
+    { "field": "allowGoalPaceRehearsal", "classification": "TECHNICAL_METADATA / PRODUCT_CAPABILITY_DECLARATION (UNCONSUMED)", "classificationSupersedes": "RUNTIME_GUARD_ONLY (Wave 5 original — CORRECTED in clarification pass, see domain-wave5-d2-clarification.md)", "reasoning": "CORRECTED: RUNTIME_GUARD_ONLY was a mislabel — that category implies an actual runtime guard reads the field, but a repository-wide search confirms zero readers exist (confirmed by DomainWave5D2ResolutionTests.AllowGoalPaceRehearsal_HasNoReaderAnywhereInThisRepository). It is write-only authoring metadata today: not read by any validator, publisher, or bundle assembler; the real GOAL_PACE_REHEARSAL eligibility guard (GOAL_FEASIBILITY_IN) is independently encoded on the workout-progression stage and is unaffected by this flag's value. Kept as a level capability flag; no runtime behavior added." },
+    { "field": "allowSecondHardStimulus", "classification": "LEVEL_GLOBAL (schema shape) / actual current reuse: COMBINATION_SPECIFIC (TEN_K+INTERMEDIATE+4-day, sole referrer)", "reasoning": "Same reasoning as maximumHardSessionsPerWeek — the two fields are cross-validated together (PM_HARD_SESSION_CAP_EXCEEDS_SINGLE_STIMULUS) and share the same reuse boundary." }
+  ],
+  "reuseProtection": {
+    "executableGuardAdded": true,
+    "guardType": "test",
+    "guardName": "PlanCatalog.Tests.Validation.DomainWave5D2ResolutionTests.IntermediateProgressionModifierV2_ReuseIsExecutablyGuarded_NoUnapprovedCombinationFamilyReferrer",
+    "guardDescription": "Walks every combination in the catalog that resolves (via its LevelModifier) to INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2 and asserts DistanceFamily=TenK, RunsPerWeek=4, Experience=Intermediate, and combination key=TEN_K__4D__INTERMEDIATE. Fails the moment an unrelated combination family gains a reachable reference to this artifact.",
+    "guardScope": "Process A only (test, not a production runtime validator) — chosen over a new production CandidatePublishGraphValidator/TemplateCombinationValidator rule to avoid a broader architecture change for a boundary that has no current violation to protect against and only one artifact affected.",
+    "priorWeakGuard": "OnlyOneLevelModifierReferencesIntermediateProgressionModifierV1_OwnershipReuseBoundaryConfirmed (retained) only checks LevelModifier.Metadata.Key equality, which is trivially true regardless of combination family since the key is invariant across versions — insufficient alone, now supplemented by the new test."
+  },
+  "levelGlobalOwnershipSafe": true,
+  "levelGlobalOwnershipSafetyReasoning": "Hard-stop condition 3 (level-global field that 'cannot safely represent the current TEN_K/INTERMEDIATE/4-day scope') does not apply: INTERMEDIATE_PROGRESSION_MODIFIER_V1 has exactly one referrer today, so its schema-level 'global' shape and its actual reuse boundary are identical. No narrower existing architectural owner (e.g. a combination-specific or weekly-structure-policy artifact type) exists in this repository to move these fields to, and inventing one would violate the instruction not to create a speculative subsystem.",
+  "implementationShapeSelected": "Shape 1 — keep all surviving fields on ProgressionModifierDefinition/INTERMEDIATE_PROGRESSION_MODIFIER_V1, because their current actual reuse scope matches the artifact's boundary exactly.",
+  "narrowerOwnerConsidered": true,
+  "narrowerOwnerFound": false,
+  "fieldsMovedToNarrowerOwner": [],
+  "mitigationForFutureGeneralizationRisk": "Documentation added at three levels (XML doc comment on ProgressionModifierDefinition, DomainContentDecision entries AUD-331/AUD-334, and this ownership report) explicitly stating the TEN_K/INTERMEDIATE/4-day scope boundary and that MaximumHardSessionsPerWeek=1 / AllowSecondHardStimulus=false must not be silently assumed for any future 3-day, 5-day, or other-distance INTERMEDIATE combination that might later reference this same artifact key without new evidence.",
+  "hardStopConditionsEvaluated": {
+    "condition3_levelGlobalUnsafeForCurrentScope": false,
+    "notes": "Evaluated and found NOT triggered — see levelGlobalOwnershipSafetyReasoning above."
+  },
+  "finalStatus": "Ownership decision complete: Shape 1 selected, no field moved, no hard stop triggered."
+}

@@ -11,8 +11,12 @@ public static class CatalogStamper
 {
     public static CatalogSourceSnapshot StampAsPublished(ICanonicalJsonSerializer serializer, IContentHasher hasher, CatalogSourceSnapshot snapshot)
     {
-        CatalogDocumentMetadata Stamp<T>(T document, Func<T, CatalogDocumentMetadata> getMetadata) =>
-            getMetadata(document) with { Status = CatalogStatus.Published, ContentHash = Hashing.CatalogDocumentHasher.ComputeContentHash(serializer, hasher, document) };
+        CatalogDocumentMetadata Stamp<T>(T document, Func<T, CatalogDocumentMetadata> getMetadata)
+        {
+            var metadata = getMetadata(document);
+            var status = metadata.Status == CatalogStatus.Draft ? CatalogStatus.Draft : CatalogStatus.Published;
+            return metadata with { Status = status, ContentHash = Hashing.CatalogDocumentHasher.ComputeContentHash(serializer, hasher, document) };
+        }
 
         return new CatalogSourceSnapshot
         {

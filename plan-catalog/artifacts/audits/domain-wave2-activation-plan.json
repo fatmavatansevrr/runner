@@ -1,0 +1,29 @@
+{
+  "auditId": "DOMAIN-WAVE2-ACTIVATION-PLAN-001",
+  "executeNow": false,
+  "candidateRoot": {
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 5,
+    "bundleHash": "cc894e866be081fb3b44171a27f2bee94375240c1fd6c6042255e3c393014732",
+    "predecessor": "TEN_K__4D__INTERMEDIATE v4"
+  },
+  "candidateDependencyGraph": {
+    "masterTemplate": "TEN_K_MASTER v4",
+    "layout": "RUN_LAYOUT_4D v2",
+    "levelModifier": "INTERMEDIATE_MODIFIER v3",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v3",
+    "progressionModifier": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "runtimeConditionValueRegistry": "RUNTIME_CONDITION_VALUES_V1 v1",
+    "peakVolumeBandPolicy": "PEAK_VOLUME_BANDS_V1 v2",
+    "workouts": ["EASY_STANDARD v3", "FARTLEK v3", "GOAL_PACE_TEN_K v1", "LONG_RUN_STANDARD v3", "THRESHOLD_TEMPO v3"]
+  },
+  "currentActiveCounts": { "decisions": 13, "artifacts": 9 },
+  "candidateCounts": { "decisions": 8, "artifacts": 8 },
+  "rootToRetireLater": "TEN_K__4D__INTERMEDIATE v4",
+  "nextPilotReleaseVersion": "0.7.0-pilot",
+  "previousPilotReleaseToSupersede": "0.6.0-pilot",
+  "productionNegativeTestAfterActivation": "Production publish must still fail because candidate has 8 blocking decisions.",
+  "rollback": "Do not delete old artifacts. Revert activation by restoring v4 as sole publish-eligible root in the retirement/status ledgers and superseding only after a verified replacement exists.",
+  "historicalArtifactsDeleted": false
+}

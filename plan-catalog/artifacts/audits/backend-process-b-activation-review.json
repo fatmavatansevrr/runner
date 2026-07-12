@@ -1,0 +1,109 @@
+{
+  "auditId": "BACKEND-PROCESS-B-ACTIVATION-REVIEW-001",
+  "generatedAtUtc": "2026-07-09T20:00:00Z",
+  "readOnly": true,
+  "scope": "Diagnostic review of backend/ (RunningApp.*) against TEN_K__4D__INTERMEDIATE v10. Read-only investigation. No backend files modified. No plan-catalog artifacts modified.",
+  "headlineFinding": "Backend contains ZERO integration with plan-catalog. There is no code path that loads a plan-catalog bundle, JSON artifact, or any document keyed by TEN_K__4D__INTERMEDIATE, GOAL_PACE_TEN_K, or any RUNTIME_CONDITION_VALUE. Backend generates previews exclusively from its own SQL database (PlanTemplates table, EF Core), seeded with exactly 3 rows, all 5K/Beginner. This makes most of the requested TD-D3-001/TD-WAVE5-001/schedule-safety questions not-yet-applicable rather than pass/fail -- the integration they presuppose does not exist yet.",
+  "question1_bundleLoading": {
+    "canBackendLoadV10": false,
+    "evidence": "grep -rli 'plan-catalog|plancatalog|TEN_K__4D__INTERMEDIATE|GOAL_PACE|RUNTIME_CONDITION' across backend/**/*.cs and *.json returned zero matches (excluding bin/obj).",
+    "catalogBundleVersionCurrentlyConsumed": "NONE -- no version of any plan-catalog bundle is consumed.",
+    "isBackendPinnedToAnOlderCandidate": false,
+    "pinnedToOlderCandidateReasoning": "Not pinned to an older version; never referenced any plan-catalog version at all.",
+    "dataSource": "SEEDED_DATABASE_ROWS",
+    "dataSourceDetail": "RunningApp.Domain.Entities.PlanTemplate has a free-form 'DataJson' string column ('serialized template weeks/days') in its own bespoke schema (templateId/version/goalType/goalDistance/level/daysPerWeek/unit/weeks[].days[].{slotIndex,dayType,distanceKm,durationMin,intensity}) -- structurally unrelated to any plan-catalog document type. Exactly 3 rows are seeded (baked into EF Core migrations, e.g. 20260624105830_InitialCreate.cs and carried through every subsequent migration snapshot): habit_5k_beginner_3day_km_v1, habit_5k_beginner_4day_km_v1, race_5k_beginner_3day_km_v1. All three are goalDistance=five_k, level=beginner. No 10K, no Intermediate, no 4-day-10K row exists anywhere in the seed data.",
+    "selectionLogic": "PlaceholderPlanGenerationEngine.SelectTemplateAsync (src: RunningApp.Application/PlanGeneration/PlaceholderPlanGenerationEngine.cs) looks for an exact (GoalType, GoalDistance, Level, DaysPerWeek) match; if none found, it falls back to the FIRST seeded row (in whatever order EF returns) and reports FallbackUsed=true with an explicit reason string. A request for goal=Race, distance=TenK, level=(closest to Intermediate), daysPerWeek=4 would never match and would silently receive an arbitrary 5K/Beginner fallback template today."
+  },
+  "question2_runtimeConditionMappingTdD3001": {
+    "result": "NOT_APPLICABLE_NO_INTEGRATION_EXISTS",
+    "reasoning": "PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN, and RuntimeConditionType as a concept do not exist anywhere in backend/ (zero grep matches for any of the three condition-type names, v1 or v2 values, in any *.cs file). Backend does not emit v2 canonical values because it never emits any RuntimeConditionType-shaped value at all. It also does not emit the old v1 strings (RACE_RESULT/TIME_TRIAL/NOT_PROVIDED/TIGHT/UNKNOWN) for the same reason. TD-D3-001 cannot be verified as 'satisfied' or 'violated' -- it is UNVERIFIABLE_BECAUSE_UNIMPLEMENTED.",
+    "readinessStandardInvestigation": {
+      "producedWhere": "NOT IN BACKEND. The string readiness=\"STANDARD\" was found only in plan-catalog/docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json, a Golden Fixture example/reference document that lives under plan-catalog/docs, not in any backend source file.",
+      "fieldItBelongsTo": "In that fixture document, it is CORE_ENTRY_READINESS_RESOLVER.evaluations[0].result.readiness -- a fixture-internal resolver output field, not a backend field. grep -rn '\"STANDARD\"' and grep -rn 'readiness' across backend/**/*.cs returned zero matches.",
+      "conflictsWithCoreEntryReadinessInV2": "No conflict is possible because backend does not implement CORE_ENTRY_READINESS_IN at all. Within the fixture document itself (unaffected by this review), 'STANDARD' matches neither v1 (READY/NOT_READY/UNKNOWN) nor v2 (READY/CAUTION/NOT_READY) -- a pre-existing, already-documented fixture-vs-registry mismatch (see AUD-048, domain-d3-followup.md), not a new backend finding.",
+      "harmlessLegacyOrBug": "N/A_TO_BACKEND -- this is a plan-catalog-fixture-internal question, already tracked as part of TD-D3-001's evidence in domain-d3-followup.md; no backend code produces or consumes this value."
+    }
+  },
+  "question3_scheduleGenerationProof": {
+    "backendHasConcreteScheduleGeneration": true,
+    "scheduleGenerationDetail": "PlanServices.GeneratePreviewAsync (RunningApp.Application/Services/PlanServices.cs) DOES turn a selected PlanTemplate's DataJson into a concrete weekly preview: it deserializes weeks/days, computes real calendar dates starting from the next Monday, and maps each day's slotIndex to a specific weekday via ResolvePreferredDays. This is real, working schedule-generation code -- but it operates entirely on the backend's own DataJson schema, never on any plan-catalog WorkoutProgression/RunLayout/ProgressionModifier document.",
+    "canGoalPaceTenKAppearInAGeneratedPlan": false,
+    "reasoning": "GOAL_PACE_TEN_K is a plan-catalog WORKOUT_DEFINITION key. Backend's TemplateJsonData.days[].dayType is a free string compared against no plan-catalog vocabulary; the only 3 seeded templates contain dayType values 'easy', 'interval', 'long_run' -- 'goal_pace' (or any equivalent) does not appear in any seeded DataJson. Since GOAL_PACE_TEN_K cannot be selected as a template (no 10K/Intermediate template exists) and no seeded template's day content contains a goal-pace dayType, GOAL_PACE_TEN_K CANNOT currently appear in any backend-generated plan.",
+    "proofMethod": "Static evidence (grep across all seeded DataJson strings in migrations + AppDbContext.cs for 'goal_pace'/'GOAL_PACE_TEN_K': zero matches), not a runtime-executed test, since there is no reachable code path to exercise for this specific workout.",
+    "weeksPhasesContainingGoalPace": "NONE -- GOAL_PACE_TEN_K is unused by runtime despite being present in the plan-catalog catalog.",
+    "secondHardDayGenerated": "NOT_APPLICABLE -- no goal-pace day is ever generated to create a conflict.",
+    "longRunSeparateFromGoalPace": "UNKNOWN_FROM_CODE_EVIDENCE for the eventual real integration; for the CURRENT 5K/Beginner-only flow, long_run is a distinct dayType from easy/interval and is never merged with any hard-goal-pace concept (which doesn't exist in this schema).",
+    "taperProtection": "UNKNOWN_FROM_CODE_EVIDENCE -- no seeded template contains a taper-labeled week (all 3 seeded templates have only 1 week of data: weekNumber=1, weekType='build'); no taper week-generation logic was found to inspect."
+  },
+  "question4_hardSessionSafetyTdWave5001": {
+    "maximumHardSessionsPerWeek": {
+      "classification": "UNKNOWN_FROM_CODE_EVIDENCE",
+      "reasoning": "This field does not exist anywhere in backend's domain model, DTOs, or services (zero grep matches for 'maximumHardSessionsPerWeek' or 'MaximumHardSessionsPerWeek'). It is neither actively enforced nor declared-but-unused in backend -- it is simply absent, because backend has no concept of a ProgressionModifier at all."
+    },
+    "allowSecondHardStimulus": {
+      "classification": "UNKNOWN_FROM_CODE_EVIDENCE",
+      "reasoning": "Same as above -- zero references anywhere in backend."
+    },
+    "allowGoalPaceRehearsal": {
+      "classification": "UNKNOWN_FROM_CODE_EVIDENCE",
+      "reasoning": "Same as above -- zero references anywhere in backend. TD-WAVE5-001's question ('can goal-pace candidates be generated even when allowGoalPaceRehearsal=false') is not answerable in backend terms because backend has no allowGoalPaceRehearsal flag and, per question 3, cannot currently generate a goal-pace day regardless of any flag."
+    },
+    "runtimeGuardGapReportedSeparately": true,
+    "note": "This is a DIFFERENT and more fundamental gap than TD-WAVE5-001 as originally framed (which assumed a reachable goal-pace candidate in a real generation engine). The actual current state is that backend has neither the flag nor the candidate reachability it would guard -- both are absent, not merely unguarded."
+  },
+  "question5_endToEndPreviewSmokeTest": {
+    "attempted": "STATIC_EVIDENCE_REVIEW_ONLY",
+    "reasoning": "A live HTTP/DB smoke test was not executed: RunningApp.IntegrationTests requires a real database context (CustomWebApplicationFactory, jsonb-typed DataJson column per migration 20260701075716) and no request payload could exercise TEN_K__4D__INTERMEDIATE v10 regardless of whether the test infrastructure were started, because (per question 1) no such template exists to select. Running the existing test suite would not exercise this candidate at all -- it was not run, to avoid claiming irrelevant test activity as evidence.",
+    "simulatedRequest": "GoalType=Race, GoalDistance=TenK, Level=(no exact backend equivalent to INTERMEDIATE exists -- RunningBackground is {NewToRunning, UsedToRun, RunningRegularly}), DaysPerWeek=4",
+    "predictedOutcomeFromCodeReading": "PlaceholderPlanGenerationEngine.SelectTemplateAsync would find no exact match (no TenK row exists) and would return FallbackUsed=true with the FIRST seeded template (a 5K/Beginner/3-day habit plan) -- silently substituting a materially different plan for the requested 10K/Intermediate/4-day pilot, with no error surfaced to the caller beyond the FallbackReason string (which callers may or may not display).",
+    "previewSucceeds": "UNKNOWN_FROM_CODE_EVIDENCE (not executed)",
+    "weeksGenerated": "UNKNOWN_FROM_CODE_EVIDENCE (not executed; would be 1 week if the fallback template is selected, since all 3 seeded templates contain only 1 week of DataJson)",
+    "fourRunDaysRespected": "UNKNOWN_FROM_CODE_EVIDENCE (not executed; the fallback 5K/Beginner/3-day template has 3 days, not 4, so daysPerWeek=4 would not be honored by the fallback)",
+    "goalPacePhaseScoping": "NOT_APPLICABLE -- goal-pace cannot appear (question 3)",
+    "secondHardSessionCheck": "NOT_APPLICABLE -- no hard-session concept exists to check"
+  },
+  "question6_outputApiCompatibility": {
+    "missingEnumOrStringCases": [
+      { "concept": "GOAL_PACE_TEN_K (workout key)", "backendRepresentation": "NONE", "detail": "TrainingDayType {Easy, Interval, Tempo, LongRun, Rest, RecoveryEasy} has no case for a goal-pace-specific workout. Closest lossy fits are Tempo or Interval; no exact mapping exists." },
+      { "concept": "GOAL_PACE_REHEARSAL (stage key)", "backendRepresentation": "NONE", "detail": "Backend has no concept of a WorkoutProgression stage at all." },
+      { "concept": "KEY_SESSION (slot role)", "backendRepresentation": "NONE", "detail": "TrainingDayType conflates workout type and slot role into one flat enum with no 'key session' designation." },
+      { "concept": "EASY_SUPPORT (slot role)", "backendRepresentation": "PARTIAL", "detail": "TrainingDayType.Easy / RecoveryEasy cover the workout-type dimension but there is no 'this is an EASY_SUPPORT slot' role concept distinct from any other easy run." },
+      { "concept": "LONG_RUN (slot role / family)", "backendRepresentation": "PRESENT", "detail": "TrainingDayType.LongRun exists and is used in all 3 seeded templates (dayType='long_run')." },
+      { "concept": "Phase names (FOUNDATION/BUILD/RACE_SPECIFIC/TAPER)", "backendRepresentation": "PARTIAL", "detail": "TrainingWeekType enum {Base, Build, Recovery, Peak, Taper, RaceWeek} conceptually overlaps (Base~FOUNDATION, Build~BUILD, Peak~RACE_SPECIFIC, Taper~TAPER) but no exact 1:1 naming or mapping code exists between the two vocabularies; only 'build' is actually populated in any of the 3 seeded rows (all single-week templates)." },
+      { "concept": "Workout intensity labels (e.g. GOAL_PACE intensity descriptor)", "backendRepresentation": "FREE_STRING", "detail": "Intensity is a free-form nullable string field (TrainingDay.Intensity, seen populated with zone labels like 'z2'/'z4') on every relevant entity/DTO -- structurally ABLE to carry a new label like 'goal_pace' without a schema change, but no mapping/translation code exists to populate it from a plan-catalog IntensityDescriptor today." }
+    ],
+    "conclusion": "Missing/partial mappings confirmed for GOAL_PACE_TEN_K, GOAL_PACE_REHEARSAL, KEY_SESSION, and (partially) EASY_SUPPORT and phase names. LONG_RUN and free-text Intensity are structurally representable today."
+  },
+  "finalClassification": "BACKEND_BLOCKED_BY_SCHEDULE_GENERATION",
+  "finalClassificationReasoning": "Not classified as BACKEND_BLOCKED_BY_RUNTIME_MAPPING specifically, because the runtime-condition-mapping question (TD-D3-001) is not merely unmapped but entirely unimplemented -- a symptom of the same root cause. The most accurate single label is BACKEND_BLOCKED_BY_SCHEDULE_GENERATION: backend's schedule-generation code path (PlanServices.GeneratePreviewAsync + PlaceholderPlanGenerationEngine) is explicitly documented in its own source as a 'Phase 1 placeholder' with 'no real generation logic', reads from a database schema structurally unrelated to plan-catalog, and has zero seeded content for TEN_K/Intermediate/4-day at all. No amount of plan-catalog-side work can make v10 backend-ready until this integration is built. BACKEND_READY_FOR_PILOT_SMOKE_TEST and BACKEND_READY_WITH_MANUAL_ACTIVATION_RISKS are both ruled out because there is no code path to smoke-test against v10 at all, not merely unresolved risk.",
+  "filesInspected": [
+    "backend/RunningApp.Application/PlanGeneration/IPlanGenerationEngine.cs",
+    "backend/RunningApp.Application/PlanGeneration/PlaceholderPlanGenerationEngine.cs",
+    "backend/RunningApp.Application/Services/PlanServices.cs",
+    "backend/RunningApp.Application/DTOs/Plan/GeneratePreviewRequest.cs",
+    "backend/RunningApp.Application/DTOs/Plan/GeneratePreviewResponse.cs",
+    "backend/RunningApp.Application/DTOs/Plan/PlanDetailsResponse.cs",
+    "backend/RunningApp.Application/DTOs/Home/HomeResponse.cs",
+    "backend/RunningApp.Application/DTOs/TrainingDay/TrainingDayDetailResponse.cs",
+    "backend/RunningApp.Domain/Entities/PlanTemplate.cs",
+    "backend/RunningApp.Domain/Entities/TrainingDay.cs",
+    "backend/RunningApp.Domain/Entities/TrainingWeek.cs",
+    "backend/RunningApp.Domain/Enums/TrainingDayType.cs",
+    "backend/RunningApp.Domain/Enums/RunningBackground.cs",
+    "backend/RunningApp.Domain/Enums/GoalDistance.cs",
+    "backend/RunningApp.Domain/Enums/GoalType.cs",
+    "backend/RunningApp.Persistence/AppDbContext.cs",
+    "backend/RunningApp.Persistence/Migrations/20260624105830_InitialCreate.cs (and all subsequent migration snapshots, for seed data)",
+    "backend/RunningApp.IntegrationTests/*.cs (directory listing only)",
+    "backend/RunningApp.Api/Controllers/*.cs (directory listing only)"
+  ],
+  "filesChanged": [],
+  "backendBuildResult": { "ran": true, "command": "dotnet build -c Release (in backend/)", "result": "SUCCESS, 0 warnings, 0 errors" },
+  "backendTestsRun": false,
+  "backendTestsRunReasoning": "RunningApp.IntegrationTests requires a live database context and exercises only the existing 5K/Beginner-seeded flow; no test in the suite touches TEN_K__4D__INTERMEDIATE, GOAL_PACE_TEN_K, or any plan-catalog vocabulary (confirmed absent by grep). Running it would not produce evidence relevant to this review's questions, so it was not run, to avoid presenting irrelevant test execution as validation of the reviewed candidate.",
+  "backendFilesChanged": [],
+  "planCatalogFilesChanged": ["artifacts/audits/backend-process-b-activation-review.json", "artifacts/audits/backend-process-b-activation-review.md"],
+  "noPublishActivateRetireSupersedeOccurred": true,
+  "noPlanCatalogArtifactModified": true,
+  "noBackendFileModified": true
+}

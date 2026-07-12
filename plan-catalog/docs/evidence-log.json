@@ -1,0 +1,98 @@
+[
+  {
+    "evidenceId": "EV-001",
+    "relatedResolver": "GOAL_FEASIBILITY_IN",
+    "relatedCanonicalDecision": "doc13-section-12.4",
+    "source": "Riegel, P.S. (1981). Athletic Records and Human Endurance.",
+    "qualityLabel": "PRIMARY_SCIENTIFIC",
+    "supports": "recentRaceResult to target-distance performance projection",
+    "conflictsWithCanonical": false,
+    "status": "ACCEPTED_AS_SUPPORTING_EVIDENCE",
+    "dateAdded": "2026-07-10",
+    "notes": "Projection supports evidence-based comparison, but does not guarantee goal feasibility. Corroborated in-repo: plan-catalog/docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json step PACE_CONVERSION, ruleId RIEGEL_CONVERSION_5K_TO_10K, already uses the Riegel formula for a 5K->10K time projection (predicted10kTimeSeconds=3023.15, confidence=HIGH, resultAgeDays=49). This entry documents the external scientific source of a technique the repo's own tier-1 canonical fixture already relies on; it does not introduce a new technique."
+  },
+  {
+    "evidenceId": "EV-002",
+    "relatedResolver": "PACE_SOURCE_IN",
+    "relatedCanonicalDecision": "doc13-section-12.1",
+    "source": "UNKNOWN_OR_UNVERIFIED — no Daniels/VDOT documentation or official VDOT source file found anywhere in this repository (searched plan-catalog/docs, plan-catalog/catalog, plan-catalog/artifacts, backend/ for \"VDOT\" and \"Daniels\"; zero matches).",
+    "qualityLabel": "UNKNOWN_OR_UNVERIFIED",
+    "supports": "recent or estimated performance as pace evidence",
+    "conflictsWithCanonical": false,
+    "status": "PROPOSED",
+    "dateAdded": "2026-07-10",
+    "notes": "Per task instruction: exact citation not available in repo evidence, so no bibliographic detail was invented. Left as PROPOSED pending either (a) an actual VDOT/Daniels source being added to the repo, or (b) product confirming a different citation. Not used to support or alter any threshold."
+  },
+  {
+    "evidenceId": "EV-003",
+    "relatedResolver": "CORE_ENTRY_READINESS_IN",
+    "relatedCanonicalDecision": "weekly-volume anchor / recent load decision",
+    "source": "UNKNOWN_OR_UNVERIFIED — no training-load/acute:chronic-workload-ratio literature file found anywhere in this repository; general sports-science convention of a rolling 4-week (28-day) recent-load window is widely known but no specific citation could be verified as actually inspected in-repo.",
+    "qualityLabel": "UNKNOWN_OR_UNVERIFIED",
+    "supports": "recentWeeklyVolumeKm as last-4-weeks average",
+    "conflictsWithCanonical": false,
+    "status": "PROPOSED",
+    "dateAdded": "2026-07-10",
+    "notes": "Use as load/readiness anchor only, not as injury prediction. NOTE: the repo's own tier-1 canonical evidence (golden-fixture-v3 decisiontrace, step CORE_ENTRY_READINESS_RESOLVER / CURRENT_CAPACITY_RESOLVER) already uses a single-value weeklyVolumeKm anchor (24.0, sourced from a banded onboarding input KM_21_30), not an explicit rolling 4-week average — so this evidence entry is a candidate for future refinement, not a confirmed match to current repo behavior. Left PROPOSED; no bibliographic detail invented."
+  },
+  {
+    "evidenceId": "EV-004",
+    "relatedResolver": "CORE_ENTRY_READINESS_IN",
+    "relatedCanonicalDecision": "activity/readiness screening boundary",
+    "source": "UNKNOWN_OR_UNVERIFIED — no ACSM preparticipation screening document or citation found anywhere in this repository.",
+    "qualityLabel": "UNKNOWN_OR_UNVERIFIED",
+    "supports": "framing readiness as activity/readiness screening, not medical diagnosis",
+    "conflictsWithCanonical": false,
+    "status": "PROPOSED",
+    "dateAdded": "2026-07-10",
+    "notes": "General framing only (readiness screening vs. medical diagnosis) is a reasonable product-safety default, but no specific ACSM document was located or inspected in this repository, so no bibliographic detail was invented. Left PROPOSED pending either an actual source being added to the repo or product confirmation."
+  },
+  {
+    "evidenceId": "EV-005",
+    "relatedResolver": "MULTIPLE",
+    "relatedCanonicalDecision": "appsel-v1-canonical-decisions",
+    "source": "plan-catalog/docs/canonical/appsel-v1-canonical-decisions.md",
+    "qualityLabel": "INTERNAL_CANONICAL_DECISION",
+    "supports": "product threshold source of truth for resolver reconciliation",
+    "conflictsWithCanonical": true,
+    "status": "PROPOSED",
+    "dateAdded": "2026-07-10",
+    "notes": "This artifact imports conversation-provided Appsel V1 canonical decisions into the repository as a durable source; runtime registry (runtime-condition-values.v2.json) and golden fixtures (docs/canonical/golden-fixture-v3/) are NOT yet reconciled against it. conflictsWithCanonical=true because the imported GOAL_FEASIBILITY_IN 5-class model conflicts with the registry's 4-value set, and the imported CORE_ENTRY_READINESS_IN framing does not resolve the registry-vs-fixture STANDARD anomaly (tracked separately as risk TD-REGISTRY-001 in activation-readiness-risks.json). Status left PROPOSED, not ACCEPTED_AS_INTERNAL_CANONICAL_SOURCE, because no reconciliation phase has yet run to accept/resolve the conflicts this document itself lists in its section C. Do not treat this entry as marking the registry conflicts resolved."
+  },
+  {
+    "evidenceId": "EV-006",
+    "relatedResolver": "MULTIPLE",
+    "relatedCanonicalDecision": "phase4a3-owner-scope-approval",
+    "source": "PHASE4A_3_OWNER_SCOPE_APPROVAL_FOR_RESOLVER_VOCABULARY.md",
+    "qualityLabel": "INTERNAL_CANONICAL_DECISION",
+    "supports": "V1 scope decision to keep runtime registry simple while preserving richer product bands as trace metadata",
+    "conflictsWithCanonical": false,
+    "status": "ACCEPTED_AS_SUPPORTING_EVIDENCE",
+    "dateAdded": "2026-07-10",
+    "notes": "STATUS HISTORY: PROPOSED (Phase 4A.3 initial) -> ACCEPTED_AS_SUPPORTING_EVIDENCE (Phase 4A.3 initial) -> downgraded to PROPOSED by the Phase 4A.3 Owner Approval Provenance Clarification pass (OWNER_APPROVAL_NOT_EVIDENCED at that time) -> upgraded back to ACCEPTED_AS_SUPPORTING_EVIDENCE here following explicit product-owner approval recorded 2026-07-10: quoted verbatim, 'V1 icin runtime registry simple kalacak. Onayliyorum.' See the 'Addendum -- explicit owner approval recorded (2026-07-10)' section in PHASE4A_3_OWNER_SCOPE_APPROVAL_FOR_RESOLVER_VOCABULARY.md for full attribution and exact scope covered. This approval covers the V1 vocabulary-richness scope decision only -- it does NOT close TD-REGISTRY-001 (the separate CORE_ENTRY_READINESS_IN/STANDARD fixture defect, which remains OPEN pending a future golden-fixture-v4 correction) and does NOT broaden or change EV-005's status (EV-005 remains PROPOSED, covering the full unreconciled canonical-decisions import, which is a distinct, broader question than this scoped V1 approval)."
+  },
+  {
+    "evidenceId": "EV-007",
+    "relatedResolver": "PACE_SOURCE_IN",
+    "relatedCanonicalDecision": "pace-source-recency-reference-date",
+    "source": "plan-catalog/docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.decisiontrace.json (steps INPUT_SNAPSHOT and PACE_CONVERSION)",
+    "qualityLabel": "INTERNAL_CANONICAL_DECISION",
+    "supports": "PACE_SOURCE_IN recency-age reference date is the plan confirm/evaluation date, not the plan start date",
+    "conflictsWithCanonical": false,
+    "status": "ACCEPTED_AS_SUPPORTING_EVIDENCE",
+    "dateAdded": "2026-07-11",
+    "notes": "Direct repo evidence (not inferred): golden-fixture-v3's INPUT_SNAPSHOT step carries two DISTINCT date fields -- confirmDate='2026-07-30' and planStartDate='2026-08-03' -- and the same fixture's later PACE_CONVERSION step (RIEGEL_CONVERSION_5K_TO_10K evaluation) records ageReferenceDate='2026-07-30', i.e. confirmDate, not planStartDate. This directly contradicts an earlier suggested assumption (recency age relative to startDate) surfaced during Phase 4D.2 task framing, and was the basis for adding RuntimeResolverContext.AsOfDate (Backend Integration Phase 4D.2) as an explicit, internal evaluation-date field rather than deriving recency from StartDate or from the system clock. AsOfDate is NOT a new public API field -- nothing in the live request/response contract populates it, and PaceSourceResolver never reads DateTime.UtcNow internally (confirmed by direct inspection of PaceSourceResolver.cs and RuntimeResolverContext.cs). This entry documents the evidence-log-elevation of that Phase 4D.2 finding per the Phase 4D.2.5 alignment pass; it does not itself implement any preview/confirm lifecycle wiring for AsOfDate -- that remains unimplemented (see PHASE4D_2_5_PACE_SOURCE_EVIDENCE_AND_RISK_ALIGNMENT.md and, if applicable, TD-PACESOURCE-002)."
+  },
+  {
+    "evidenceId": "EV-008",
+    "relatedResolver": "CORE_ENTRY_READINESS_IN",
+    "relatedCanonicalDecision": "core-entry-readiness-v1-thresholds",
+    "source": "Backend Integration Phase 4D.3.1 owner decision (conversation-provided, recorded verbatim in PHASE4D_3_1_CORE_ENTRY_READINESS_THRESHOLD_DECISION_AND_RESOLVER_ACTIVATION.md)",
+    "qualityLabel": "INTERNAL_CANONICAL_DECISION",
+    "supports": "V1 CORE_ENTRY_READINESS_IN READY/CAUTION/NOT_READY threshold mapping (RecentWeeklyVolumeKm/RecentLongestRunKm gates; RecentRunsPerWeek metadata-only, never a hard gate)",
+    "conflictsWithCanonical": false,
+    "status": "ACCEPTED_AS_SUPPORTING_EVIDENCE",
+    "dateAdded": "2026-07-11",
+    "notes": "References and supersedes-in-scope EV-005/TD-CORE-READINESS-001's prior finding that no approved threshold mapping existed. This entry records an explicit, owner-approved INTERNAL PRODUCT DECISION (not external scientific sourcing -- none is claimed or invented): READY requires RecentWeeklyVolumeKm>=15 AND RecentLongestRunKm>=6; NOT_READY if RecentWeeklyVolumeKm<8 OR RecentLongestRunKm<4 (checked before READY, so a low value on either field overrides a high value on the other); CAUTION otherwise when both fields are present, or when exactly one of the two is present (partial evidence); both fields missing resolves to NOT_READY only in a GoalType=Race context, otherwise NotEvaluated. RecentRunsPerWeek is explicitly metadata/supporting evidence only in V1 -- never a hard gate for any output value, per the same owner decision. Implemented in CoreEntryReadinessResolver (Backend Integration Phase 4D.3.1). Does NOT close TD-REGISTRY-001 (the separate CORE_ENTRY_READINESS_IN/STANDARD golden-fixture defect, unrelated to this threshold question, remains OPEN) and does NOT change EV-005's own status (EV-005 remains PROPOSED -- it covers the full unreconciled Appsel V1 canonical-decisions import, a broader and distinct question than this scoped V1 threshold decision). TD-CORE-READINESS-001 is updated (not closed outright) to reference this entry -- see activation-readiness-risks.json for its current resolution-note status."
+  }
+]

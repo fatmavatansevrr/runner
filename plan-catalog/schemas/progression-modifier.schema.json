@@ -22,5 +22,28 @@
     "allowGoalPaceRehearsal": { "type": "boolean" },
     "allowSecondHardStimulus": { "type": "boolean" }
   },
-  "required": ["metadata", "experience", "maximumComplexityTier", "maximumHardSessionsPerWeek", "mainSetDoseMultiplier", "allowGoalPaceRehearsal", "allowSecondHardStimulus"]
+  "required": ["metadata", "experience", "maximumHardSessionsPerWeek", "mainSetDoseMultiplier", "allowGoalPaceRehearsal", "allowSecondHardStimulus"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "schemaVersion": { "enum": [1] }
+            },
+            "required": ["schemaVersion"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "required": ["maximumComplexityTier"]
+      },
+      "else": {
+        "not": {
+          "required": ["maximumComplexityTier"]
+        }
+      }
+    }
+  ]
 }

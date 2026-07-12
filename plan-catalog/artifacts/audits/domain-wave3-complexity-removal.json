@@ -1,0 +1,25 @@
+{
+  "audit": "domain-wave3-complexity-removal",
+  "generatedAt": "2026-07-08",
+  "scope": "Remove legacy complexityTier from reusable WorkoutDefinition draft candidate path only.",
+  "decision": {
+    "approvedAction": "Remove complexityTier with no replacement taxonomy, derived value, or moved field.",
+    "classification": "TECHNICAL_ONLY",
+    "failureCode": "LEGACY_COMPLEXITY_TIER_NOT_ALLOWED_IN_NEW_SCHEMA"
+  },
+  "leafArtifactsCreated": [
+    "catalog/workouts/easy-standard.v4.json",
+    "catalog/workouts/fartlek.v4.json",
+    "catalog/workouts/long-run-standard.v4.json",
+    "catalog/workouts/threshold-tempo.v4.json"
+  ],
+  "verification": {
+    "newWorkoutSchemaVersion": 3,
+    "legacySchemaVersionsRequireComplexityTier": [1, 2],
+    "newArtifactsOmitComplexityTier": true,
+    "replacementFieldsIntroduced": false,
+    "runtimeConsumerFound": false
+  },
+  "outOfScopePreserved": ["D2", "D3", "D4", "D13"],
+  "publishActionsTaken": []
+}

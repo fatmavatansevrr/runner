@@ -6,6 +6,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Backend Integration Phase 4E.1: lets RunningApp.IntegrationTests directly
+         unit-test CatalogPreviewGenerator's internal NotEvaluated governance-policy
+         mapping (ApplyNotEvaluatedGovernancePolicy) without reflection. No production
+         behavior change; visibility only. -->
+    <InternalsVisibleTo Include="RunningApp.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
   </ItemGroup>
 

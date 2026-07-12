@@ -49,7 +49,7 @@ public sealed class PilotCatalogStructuralTests
     public void RunLayout4D_HasExactlyOneLongRunAndOneKeySession()
     {
         var snapshot = LoadPilotSnapshot();
-        var layout = snapshot.RunLayouts.Single(l => l.Metadata.Key == "RUN_LAYOUT_4D");
+        var layout = snapshot.RunLayouts.Single(l => l.Metadata.Key == "RUN_LAYOUT_4D" && l.Metadata.Version == 1);
 
         Assert.Equal(1, layout.Slots.Count(s => s.Role == SlotRole.LongRun));
         Assert.Equal(1, layout.Slots.Count(s => s.Role == SlotRole.KeySession));
@@ -67,7 +67,7 @@ public sealed class PilotCatalogStructuralTests
     public void ProgressionModifier_BelongsToIntermediateExperience()
     {
         var snapshot = LoadPilotSnapshot();
-        var progressionModifier = snapshot.ProgressionModifiers.Single(p => p.Metadata.Key == "INTERMEDIATE_PROGRESSION_MODIFIER_V1");
+        var progressionModifier = snapshot.ProgressionModifiers.Single(p => p.Metadata.Key == "INTERMEDIATE_PROGRESSION_MODIFIER_V1" && p.Metadata.Version == 1);
 
         Assert.Equal(RunningExperience.Intermediate, progressionModifier.Experience);
     }
@@ -100,7 +100,7 @@ public sealed class PilotCatalogStructuralTests
     public void RuntimeConditionVocabulary_UsedByProgression_IsValid()
     {
         var snapshot = LoadPilotSnapshot();
-        var registry = snapshot.RuntimeConditionValueRegistries.Single(r => r.Metadata.Key == "RUNTIME_CONDITION_VALUES_V1");
+        var registry = snapshot.RuntimeConditionValueRegistries.Single(r => r.Metadata.Key == "RUNTIME_CONDITION_VALUES_V1" && r.Metadata.Version == 1);
         var progression = snapshot.WorkoutProgressions.Single(p => p.Metadata.Key == "TEN_K_WORKOUT_PROGRESSION_V1" && p.Metadata.Version == 1);
 
         var usedConditions = progression.PhaseProgressions.SelectMany(p => p.Stages).SelectMany(s => s.Requires);

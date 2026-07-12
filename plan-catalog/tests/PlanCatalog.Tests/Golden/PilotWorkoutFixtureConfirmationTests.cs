@@ -48,7 +48,7 @@ public sealed class PilotWorkoutFixtureConfirmationTests
     public void GoalPaceTenK_HasNoFixtureEvidence_RemainsUnconfirmedLegacyValue()
     {
         var snapshot = LoadSnapshot();
-        var workout = snapshot.Workouts.Single(w => w.Metadata.Key == "GOAL_PACE_TEN_K");
+        var workout = snapshot.Workouts.Single(w => w.Metadata.Key == "GOAL_PACE_TEN_K" && w.Metadata.Version == 1);
 
         // No Golden Fixture v3 evidence exists for this key (it does not appear in the fixture's
         // workoutKeys at all) — it must not have been migrated to a guessed DISTANCE/MIXED value,

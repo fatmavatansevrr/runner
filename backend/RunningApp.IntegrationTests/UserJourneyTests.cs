@@ -21,7 +21,8 @@ namespace RunningApp.IntegrationTests;
 /// DTOs, so these tests verify the actual wire contract the Flutter app
 /// consumes, not just that the C# compiles.
 /// </summary>
-public class UserJourneyTests : IClassFixture<CustomWebApplicationFactory>
+[Collection(ApiIntegrationTestCollection.Name)]
+public class UserJourneyTests
 {
     private readonly HttpClient _client;
     private readonly CustomWebApplicationFactory _factory;
@@ -301,9 +302,13 @@ public class UserJourneyTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(System.Net.HttpStatusCode.OK, bootstrap.StatusCode);
     }
 
-    // ─── Fallback path: unsupported goal combo + multi-word enum casing ────
+    // ─── Backend Integration Phase 0: unsupported goal combo => explicit 404, no silent fallback ────
+    // Was: GeneratePreview_UnsupportedGoalCombo_UsesFallback_AndPersistsSnakeCaseEnumsThroughConfirm.
+    // PlaceholderPlanGenerationEngine no longer falls back to an arbitrary seeded template for an
+    // unsupported (GoalType, GoalDistance, Level, DaysPerWeek) combination — it now fails loudly with
+    // PLAN_TEMPLATE_NOT_FOUND instead of silently substituting an unrelated plan.
     [Fact]
-    public async Task GeneratePreview_UnsupportedGoalCombo_UsesFallback_AndPersistsSnakeCaseEnumsThroughConfirm()
+    public async Task GeneratePreview_UnsupportedGoalCombo_ReturnsPlanTemplateNotFound_NoSilentFallback()
     {
         await ResetAsync();
 
@@ -316,17 +321,12 @@ public class UserJourneyTests : IClassFixture<CustomWebApplicationFactory>
             unit = "km",
         };
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", unsupportedRequest);
-        Assert.True(preview["fallback_used"]!.GetValue<bool>());
-        Assert.False(string.IsNullOrWhiteSpace(preview["fallback_reason"]!.GetValue<string>()));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview", unsupportedRequest);
 
-        await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
 
-        var home = await _client.GetJsonAsync("/api/v1/plans/active/home");
-        // The plan keeps the user's original (unsupported) goal/level even
-        // though the day-by-day structure fell back to a seeded template.
-        Assert.Equal("half_marathon", home["active_plan"]!["goal_distance"]!.GetValue<string>());
-        Assert.Equal("running_regularly", home["active_plan"]!["level"]!.GetValue<string>());
+        var error = await response.Content.ReadFromJsonAsync<JsonNode>();
+        Assert.Equal("PLAN_TEMPLATE_NOT_FOUND", error!["errorCode"]!.GetValue<string>());
     }
 
     // ─── Test 11: Confirm race plan => CustomGoalType null, HabitPlanType null ──

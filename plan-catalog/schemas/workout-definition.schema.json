@@ -22,16 +22,41 @@
     "allowedDistanceAccountingModes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["EXACT_SESSION_TOTAL", "ESTIMATED_SESSION_TOTAL", "EMBEDDED_COMPONENTS"] } },
     "components": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "properties": {
           "sequenceOrder": { "type": "integer", "minimum": 1 },
-          "componentType": { "type": "string", "enum": ["WARM_UP", "MAIN_SET", "COOL_DOWN", "RECOVERY", "STRIDES"] },
+          "componentType": { "type": "string", "enum": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"] },
           "intensityDescriptor": { "type": "string" }
         },
-        "required": ["sequenceOrder", "componentType", "intensityDescriptor"]
+        "required": ["sequenceOrder", "componentType", "intensityDescriptor"],
+        "additionalProperties": false
       }
     }
   },
-  "required": ["metadata", "family", "complexityTier", "eligiblePhases", "allowedPrescriptionModes", "components"]
+  "required": ["metadata", "family", "eligiblePhases", "allowedPrescriptionModes"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "schemaVersion": { "enum": [1, 2] }
+            },
+            "required": ["schemaVersion"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "required": ["complexityTier"]
+      },
+      "else": {
+        "not": {
+          "required": ["complexityTier"]
+        }
+      }
+    }
+  ]
 }

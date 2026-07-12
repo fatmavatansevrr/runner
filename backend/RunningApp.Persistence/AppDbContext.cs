@@ -176,6 +176,13 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         // ── Shadow FK constraints (no navigation properties) ─────────────────
+        modelBuilder.Entity<PlanPreview>()
+            .HasOne<TrainingPlan>()
+            .WithMany()
+            .HasForeignKey(p => p.ConfirmedPlanId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<NotTodayDecision>()
             .HasOne<TrainingPlan>()
             .WithMany()
@@ -265,6 +272,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PlanPreview>()
             .HasIndex(p => p.InternalUserId)
             .HasDatabaseName("IX_PlanPreviews_InternalUserId");
+
+        // Phase 4E.2: index on ConfirmedPlanId for efficient idempotency lookups.
+        modelBuilder.Entity<PlanPreview>()
+            .HasIndex(p => p.ConfirmedPlanId)
+            .HasDatabaseName("IX_PlanPreviews_ConfirmedPlanId");
+
 
         modelBuilder.Entity<WorkoutLog>()
             .HasIndex(w => w.TrainingDayId);

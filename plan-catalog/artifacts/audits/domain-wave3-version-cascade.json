@@ -1,0 +1,25 @@
+{
+  "audit": "domain-wave3-version-cascade",
+  "generatedAt": "2026-07-08",
+  "predecessorCandidateRoot": "TEN_K__4D__INTERMEDIATE v5",
+  "newCandidateRoot": "TEN_K__4D__INTERMEDIATE v6",
+  "createdArtifacts": [
+    "WORKOUT_DEFINITION EASY_STANDARD v4",
+    "WORKOUT_DEFINITION FARTLEK v4",
+    "WORKOUT_DEFINITION LONG_RUN_STANDARD v4",
+    "WORKOUT_DEFINITION THRESHOLD_TEMPO v4",
+    "LEVEL_MODIFIER INTERMEDIATE_MODIFIER v4",
+    "WORKOUT_PROGRESSION TEN_K_WORKOUT_PROGRESSION_V1 v4",
+    "PLAN_TEMPLATE TEN_K_MASTER v5",
+    "TEMPLATE_COMBINATION TEN_K__4D__INTERMEDIATE v6"
+  ],
+  "v6References": {
+    "masterTemplate": "TEN_K_MASTER v5",
+    "layout": "RUN_LAYOUT_4D v2",
+    "levelModifier": "INTERMEDIATE_MODIFIER v4",
+    "rulePack": "APPSEL_RACE_PLAN_V1 v2",
+    "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v4",
+    "workouts": ["EASY_STANDARD v4", "FARTLEK v4", "LONG_RUN_STANDARD v4", "THRESHOLD_TEMPO v4", "GOAL_PACE_TEN_K v1"]
+  },
+  "unchanged": ["No v5 draft artifact was mutated", "No publish, activation, retirement, or supersede action was taken"]
+}

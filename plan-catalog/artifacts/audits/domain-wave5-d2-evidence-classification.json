@@ -1,0 +1,16 @@
+{
+  "auditId": "WAVE5-D2-EVIDENCE-CLASSIFICATION-001",
+  "generatedAtUtc": "2026-07-08T19:15:00Z",
+  "readOnly": true,
+  "note": "AUD-044 (v1) is left untouched — a historical, immutable record. D2 is resolved with new, field-level entries on v2 only, because the approved decision set assigns a DIFFERENT classification to each field; a single bundled classification would overstate or understate evidence for at least one field.",
+  "fieldClassifications": [
+    { "entryId": "AUD-330", "field": "maximumComplexityTier", "version": 2, "classification": "TECHNICAL_ONLY", "reasoning": "Field removal; no domain-content claim remains." },
+    { "entryId": "AUD-331", "field": "maximumHardSessionsPerWeek", "version": 2, "value": 1, "classification": "CANONICAL_CONFIRMED", "repoEquivalentOfTaskLabel": "EVIDENCE_BACKED", "reasoning": "Golden Fixture v3 directly corroborates exactly one hard session/week for this exact (TEN_K, INTERMEDIATE, 4-day) combination, which is this artifact's entire current reuse scope. Documented explicitly as a ceiling, not a target/minimum." },
+    { "entryId": "AUD-332", "field": "mainSetDoseMultiplier", "version": 2, "value": 1.0, "classification": "EXPLICIT_PRODUCT_DEFAULT", "reasoning": "1.00 is an approved identity baseline, not independently sourced as a universal dose-scaling ratio; not scientifically validated." },
+    { "entryId": "AUD-333", "field": "allowGoalPaceRehearsal", "version": 2, "value": true, "classification": "EXPLICIT_PRODUCT_DEFAULT", "reasoning": "Approved principle/capability flag; PRINCIPLE_FLAG / RUNTIME_GUARDED metadata recorded; independent runtime guards remain required and unimplemented in this task." },
+    { "entryId": "AUD-334", "field": "allowSecondHardStimulus", "version": 2, "value": false, "classification": "CANONICAL_CONFIRMED", "repoEquivalentOfTaskLabel": "EVIDENCE_BACKED", "reasoning": "Consistent with the fixture's single-hard-stimulus week and the existing PM_HARD_SESSION_CAP_EXCEEDS_SINGLE_STIMULUS cross-check; explicitly scoped to TEN_K/INTERMEDIATE/4-day, not generalized." }
+  ],
+  "aggregateClassificationNote": "This repository's ContentDecisionStatus enum (CanonicalConfirmed, ExplicitProductDefault, PlaceholderUnconfirmed, TechnicalOnly) is applied at field/JsonPath granularity, not at the artifact level — see DomainContentDecision doc comment. D2's 5 fields therefore carry 3 distinct classifications (TechnicalOnly x1, CanonicalConfirmed x2, ExplicitProductDefault x2) across 5 separate entries; the artifact as a whole is never labeled a single aggregate status, avoiding overstating evidence for the two ExplicitProductDefault fields.",
+  "noBlockerRecreated": true,
+  "finalStatus": "D2 evidence classification complete; no field left as PLACEHOLDER_UNCONFIRMED on the new v2 artifact."
+}

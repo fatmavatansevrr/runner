@@ -16,13 +16,14 @@ public class GeneratePreviewResponse
     public List<PreviewWeekDto> Weeks { get; set; } = new();
 
     /// <summary>
-    /// True when no seeded template exactly matched the request and the
-    /// engine fell back to a default template. Debug/development-only
-    /// signal — production UI is not required to surface this.
+    /// Always false as of Phase 0 (safe template selection): a request with
+    /// no exact matching seeded template now fails with
+    /// <c>PLAN_TEMPLATE_NOT_FOUND</c> instead of generating a preview from an
+    /// unrelated fallback template. Field kept for API back-compatibility.
     /// </summary>
     public bool FallbackUsed { get; set; }
 
-    /// <summary>Human-readable explanation of the fallback, if any.</summary>
+    /// <summary>Always null as of Phase 0 — see <see cref="FallbackUsed"/>.</summary>
     public string? FallbackReason { get; set; }
 }
 

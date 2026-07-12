@@ -42,6 +42,8 @@ Used on application launch to determine the state of the user. Checks if user pr
 #### `POST /api/v1/plans/generate-preview`
 Generates a draft training plan preview based on user parameters, before committing it to the database.
 
+- **Note on template coverage**: only combinations matching a seeded plan template exactly (`goal_type` + `goal_distance` + `level` + `days_per_week`) are supported — see `MVP_LIMITATIONS.md` §3. An unsupported combination now returns `404 PLAN_TEMPLATE_NOT_FOUND` (see §4 below) instead of silently substituting an unrelated template.
+
 - **Request Body**:
   ```json
   {
@@ -420,6 +422,7 @@ exception handler:
 | errorCode | HTTP status | Thrown by |
 |---|---|---|
 | `NOT_FOUND` | 404 | `NotFoundAppException` (e.g. missing preview, plan, training day, decision) |
+| `PLAN_TEMPLATE_NOT_FOUND` | 404 | `PlanTemplateNotAvailableException` — `generate-preview` requested a (`goal_type`,`goal_distance`,`level`,`days_per_week`) combination with no exact seeded template match. No fallback template is substituted. |
 | `CONFLICT` | 409 | `ConflictAppException` (e.g. an expired plan preview) |
 | `VALIDATION_ERROR` | 400 | `ArgumentException` (e.g. invalid `month` query parameter) |
 | `INTERNAL_ERROR` | 500 | anything else — the real exception is logged server-side with the same `correlationId`, never echoed to the client |

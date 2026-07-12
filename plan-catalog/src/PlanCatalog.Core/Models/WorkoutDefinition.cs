@@ -8,7 +8,8 @@ public sealed record WorkoutDefinition
     public required CatalogDocumentMetadata Metadata { get; init; }
 
     public required WorkoutFamily Family { get; init; }
-    public required int ComplexityTier { get; init; }
+
+    public int? ComplexityTier { get; init; }
 
     public required IReadOnlyList<PhaseKey> EligiblePhases { get; init; }
 
@@ -21,5 +22,5 @@ public sealed record WorkoutDefinition
     /// </summary>
     public IReadOnlyList<DistanceAccountingMode>? AllowedDistanceAccountingModes { get; init; }
 
-    public required IReadOnlyList<WorkoutComponentDefinition> Components { get; init; }
+    public IReadOnlyList<WorkoutComponentDefinition>? Components { get; init; }
 }

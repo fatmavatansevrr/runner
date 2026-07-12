@@ -37,8 +37,8 @@ To minimize database seeding footprint, only a small subset of plan templates ar
   1. `habit_5k_beginner_3day_km_v1` (Habit 5K plan, 3 days/week, beginner level)
   2. `habit_5k_beginner_4day_km_v1` (Habit 5K plan, 4 days/week, beginner level)
   3. `race_5k_beginner_3day_km_v1` (Race 5K plan, 3 days/week, beginner level)
-- **Effect**: If an onboarding user selects a Marathon or Half Marathon goal, or chooses an advanced running level, the backend plan generator defaults to picking `habit_5k_beginner_3day_km_v1` as a fallback. 
-- *Note: While onboarding inputs work end-to-end, only 5K Beginner configurations yield a plan that matches the parameters exactly.*
+- **Effect** (updated by Backend Integration Phase 0 — "safe template selection"): If an onboarding user selects a Marathon or Half Marathon goal, or chooses an advanced running level, `POST /api/v1/plans/generate-preview` returns `404 PLAN_TEMPLATE_NOT_FOUND`. It no longer silently substitutes `habit_5k_beginner_3day_km_v1` (or any other seeded template) for a request it doesn't exactly match.
+- *Note: While onboarding inputs work end-to-end, only the 3 seeded 5K Beginner configurations (habit 3-day, habit 4-day, race 3-day) yield a plan today; every other combination fails loudly at generate-preview instead of silently returning a mismatched plan.*
 
 ---
 

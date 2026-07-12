@@ -75,5 +75,68 @@
   "recommendedPilotPublishPoint": "Not before every decision intended for the next wave reaches a stable classification (CANONICAL_CONFIRMED, EXPLICIT_PRODUCT_DEFAULT, or a recorded removal); a whole batch should complete before cutting a new Pilot release, to avoid an unnecessary intermediate root version.",
   "recommendedProductionPublishPoint": "Only after all 13 decisions across all 7 batches are resolved -- the Production guard rejects the release based on blockingArtifactCount > 0 for the closure regardless of which specific decisions remain.",
   "noArtifactMutated": true,
-  "finalStatus": "Version-cascade forecast complete for all 13 decisions and all 7 batches; no artifact was mutated."
+  "wave2ActualCascade": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v5",
+    "candidateStatus": "DRAFT",
+    "newVersions": [
+      "RUN_LAYOUT_4D v2",
+      "EASY_STANDARD v3",
+      "FARTLEK v3",
+      "LONG_RUN_STANDARD v3",
+      "THRESHOLD_TEMPO v3",
+      "INTERMEDIATE_MODIFIER v3",
+      "TEN_K_WORKOUT_PROGRESSION_V1 v3",
+      "TEN_K_MASTER v4",
+      "TEN_K__4D__INTERMEDIATE v5"
+    ],
+    "additionalCascadeBeyondInitialLikelyList": ["TEN_K_WORKOUT_PROGRESSION_V1 v3", "TEN_K_MASTER v4"],
+    "additionalCascadeReason": "Exact workoutCandidates in TEN_K_WORKOUT_PROGRESSION_V1 v2 reference EASY_STANDARD, FARTLEK, and THRESHOLD_TEMPO v2.",
+    "releasePublished": false,
+    "retirementApplied": false
+  },
+  "wave3ActualCascade": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v6",
+    "candidateStatus": "DRAFT",
+    "newVersions": [
+      "EASY_STANDARD v4",
+      "FARTLEK v4",
+      "LONG_RUN_STANDARD v4",
+      "THRESHOLD_TEMPO v4",
+      "INTERMEDIATE_MODIFIER v4",
+      "TEN_K_WORKOUT_PROGRESSION_V1 v4",
+      "TEN_K_MASTER v5",
+      "TEN_K__4D__INTERMEDIATE v6"
+    ],
+    "reason": "Remove legacy complexityTier from reusable WorkoutDefinition schemaVersion 3 and cascade exact references to the new draft workout versions.",
+    "releasePublished": false,
+    "retirementApplied": false,
+    "predecessorCandidatePreserved": "TEN_K__4D__INTERMEDIATE v5"
+  },
+  "wave5ActualCascade": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v7",
+    "candidateStatus": "DRAFT",
+    "newVersions": [
+      "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2",
+      "INTERMEDIATE_MODIFIER v5",
+      "TEN_K__4D__INTERMEDIATE v7"
+    ],
+    "reason": "D2 resolution: removed legacy maximumComplexityTier from ProgressionModifier schemaVersion 2 (mirroring the Wave 3 WorkoutDefinition pattern); applied approved dosage values (unchanged from v1) and cascaded exact references.",
+    "releasePublished": false,
+    "retirementApplied": false,
+    "predecessorCandidatePreserved": "TEN_K__4D__INTERMEDIATE v6"
+  },
+  "d3ActualCascade": {
+    "candidateRoot": "TEN_K__4D__INTERMEDIATE v8",
+    "candidateStatus": "DRAFT",
+    "newVersions": [
+      "RUNTIME_CONDITION_VALUES_V1 v2",
+      "APPSEL_RACE_PLAN_V1 v3",
+      "TEN_K__4D__INTERMEDIATE v8"
+    ],
+    "reason": "D3 resolution: replaced invented PACE_SOURCE_IN/TIME_ADEQUACY_IN/CORE_ENTRY_READINESS_IN vocabularies with explicit product-approved canonical values on a new RuntimeConditionValueRegistry version; cascaded exact reference through RulePack v3 (peakVolumeBandPolicy unchanged at v2, D4 not resolved) to a new candidate root.",
+    "releasePublished": false,
+    "retirementApplied": false,
+    "predecessorCandidatePreserved": "TEN_K__4D__INTERMEDIATE v7"
+  },
+  "finalStatus": "Version-cascade forecast complete for all 13 decisions and all 7 batches; D2's actual cascade (Wave 5) and D3's actual cascade (this pass) both matched their respective B3/B5 forecasts; no artifact was mutated."
 }

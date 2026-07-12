@@ -106,3 +106,34 @@ because the Production guard rejects the release if `blockingArtifactCount > 0` 
 of which specific decisions remain (see `production-readiness-error-contract-audit.md`).
 
 ## Final status: version-cascade forecast complete for all 13 decisions and all 7 batches; no artifact was mutated.
+## Wave 2 actual cascade
+
+Wave 2 created draft candidate root `TEN_K__4D__INTERMEDIATE v5`.
+
+New versions: `RUN_LAYOUT_4D v2`, `EASY_STANDARD v3`, `FARTLEK v3`, `LONG_RUN_STANDARD v3`, `THRESHOLD_TEMPO v3`, `INTERMEDIATE_MODIFIER v3`, `TEN_K_WORKOUT_PROGRESSION_V1 v3`, `TEN_K_MASTER v4`, `TEN_K__4D__INTERMEDIATE v5`.
+
+The actual cascade includes `TEN_K_WORKOUT_PROGRESSION_V1 v3` and `TEN_K_MASTER v4` because the active exact workout progression referenced `EASY_STANDARD`, `FARTLEK`, and `THRESHOLD_TEMPO` by exact v2 workout versions. No release was published and no retirement was applied.
+
+## Wave 3 actual cascade
+
+Wave 3 created draft candidate root `TEN_K__4D__INTERMEDIATE v6` from predecessor candidate `v5`.
+
+New versions: `EASY_STANDARD v4`, `FARTLEK v4`, `LONG_RUN_STANDARD v4`, `THRESHOLD_TEMPO v4`, `INTERMEDIATE_MODIFIER v4`, `TEN_K_WORKOUT_PROGRESSION_V1 v4`, `TEN_K_MASTER v5`, `TEN_K__4D__INTERMEDIATE v6`.
+
+The cascade exists solely to remove the legacy workout `complexityTier` field and preserve exact references to the new workout artifacts. No release was published and no retirement was applied.
+
+## Wave 5 actual cascade
+
+Wave 5 created draft candidate root `TEN_K__4D__INTERMEDIATE v7` from predecessor candidate `v6` (preserved unchanged).
+
+New versions: `INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2`, `INTERMEDIATE_MODIFIER v5`, `TEN_K__4D__INTERMEDIATE v7`.
+
+This matches the original D2/B3 forecast exactly (`INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2` → `INTERMEDIATE_MODIFIER v3` → `TEN_K__4D__INTERMEDIATE v5`, adjusted for the actual next-available version numbers after Waves 2 and 3 already consumed v3/v4/v5/v6). No release was published and no retirement was applied.
+
+## D3 actual cascade
+
+This pass created draft candidate root `TEN_K__4D__INTERMEDIATE v8` from predecessor candidate `v7` (preserved unchanged).
+
+New versions: `RUNTIME_CONDITION_VALUES_V1 v2`, `APPSEL_RACE_PLAN_V1 v3`, `TEN_K__4D__INTERMEDIATE v8`.
+
+This matches the original D3/B5 forecast (`RUNTIME_CONDITION_VALUES_V1 v2` → `APPSEL_RACE_PLAN_V1 v3` → `TEN_K__4D__INTERMEDIATE v5`, adjusted for the actual next-available version numbers after Waves 2/3/5 already consumed v3–v7). `peakVolumeBandPolicy` on the new RulePack v3 is unchanged at v2 (D4 not resolved in this pass). No release was published and no retirement was applied.

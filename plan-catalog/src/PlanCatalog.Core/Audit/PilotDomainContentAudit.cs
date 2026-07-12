@@ -79,6 +79,27 @@ public static class PilotDomainContentAudit
         ProductionPublishAllowed = true
     };
 
+    private static DomainContentDecision ExplicitDefault(
+        string id, string group, string documentType, string key, int version, string jsonPath, string currentValue,
+        string sourceFile, string reason, IReadOnlyList<string> validators) => new()
+    {
+        EntryId = id,
+        Group = group,
+        DocumentType = documentType,
+        Key = key,
+        Version = version,
+        JsonPath = jsonPath,
+        CurrentValue = currentValue,
+        Classification = ContentDecisionStatus.ExplicitProductDefault,
+        SourceFile = sourceFile,
+        SourceSectionOrReason = reason,
+        IsBlocking = false,
+        RequiredDecision = null,
+        AffectedValidators = validators,
+        AffectedBundlesOrReleases = [Combination],
+        ProductionPublishAllowed = true
+    };
+
     private static DomainContentDecision Technical(
         string id, string group, string documentType, string key, int version, string jsonPath, string currentValue,
         string sourceFile, IReadOnlyList<string> validators, string? reason = null) => new()
@@ -191,6 +212,12 @@ public static class PilotDomainContentAudit
 
         // ===================== workout-definitions =====================
         AddWorkoutDefinitionEntries(entries);
+        AddWave2DomainBlockerResolutionEntries(entries);
+        AddWave3ComplexityRemovalEntries(entries);
+        AddWave5D2ResolutionEntries(entries);
+        AddD3RuntimeConditionRegistryResolutionEntries(entries);
+        AddD4PeakVolumeBandResolutionEntries(entries);
+        AddD13GoalPaceTenKResolutionEntries(entries);
 
         // ===================== progression-modifier (INTERMEDIATE_PROGRESSION_MODIFIER_V1) =====================
         entries.Add(Placeholder("AUD-044", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 1,
@@ -289,6 +316,325 @@ public static class PilotDomainContentAudit
             "Required future decision: a dedicated review must determine what APPSEL_RACE_PLAN_V1 v2/v3 actually added/changed and whether this pilot's rule pack needs a version bump; explicitly out of scope here per instruction not to upgrade APPSEL_RACE_PLAN_V1 in this task."));
 
         return entries;
+    }
+
+    private static void AddWave2DomainBlockerResolutionEntries(List<DomainContentDecision> entries)
+    {
+        const string wave2Schema = "artifacts/audits/domain-wave2-schema-migration.md";
+        const string wave2Vocabulary = "artifacts/audits/domain-wave2-component-vocabulary.md";
+
+        entries.Add(Technical("AUD-300", "layout-metadata", DocumentTypes.RunLayout, "RUN_LAYOUT_4D", 2, "$.slots (array order)",
+            "sequenceOrder absent; order derived from slots array position",
+            "catalog/layouts/run-layout-4d.v2.json",
+            ["RunLayoutValidator"],
+            reason: "WAVE2 D1: schemaVersion 2 removes the independently-authored sequenceOrder field. Slot order is derived mechanically from the JSON array position and carries no running-domain claim; historical v1 sequenceOrder remains readable."));
+
+        entries.Add(Placeholder("AUD-301", "workout-definitions", DocumentTypes.WorkoutDefinition, "EASY_STANDARD", 3, "$.complexityTier", "1",
+            "catalog/workouts/easy-standard.v3.json",
+            "WAVE2 intentionally preserved the unresolved complexityTier decision from EASY_STANDARD v2. This task resolved only D6/components; D5 remains PLACEHOLDER_UNCONFIRMED.",
+            ["WorkoutDefinitionValidator"]));
+        entries.Add(Technical("AUD-302", "workout-definitions", DocumentTypes.WorkoutDefinition, "EASY_STANDARD", 3, "$.components",
+            "absent",
+            wave2Schema,
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE2 D6: EASY_STANDARD is a continuous workout; components are optional and omitted rather than synthesized as WARM_UP/MAIN_SET/COOL_DOWN. This is a schema/ownership decision, not a dosage claim."));
+
+        entries.Add(Placeholder("AUD-303", "workout-definitions", DocumentTypes.WorkoutDefinition, "FARTLEK", 3, "$.complexityTier", "1",
+            "catalog/workouts/fartlek.v3.json",
+            "WAVE2 intentionally preserved the unresolved complexityTier decision from FARTLEK v2. This task resolved only D8/components; D7 remains PLACEHOLDER_UNCONFIRMED.",
+            ["WorkoutDefinitionValidator"]));
+        entries.Add(ExplicitDefault("AUD-304", "workout-definitions", DocumentTypes.WorkoutDefinition, "FARTLEK", 3, "$.components",
+            "WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN",
+            wave2Vocabulary,
+            "WAVE2 D8 / WAVE3 evidence review: approved structural component sequence for FARTLEK. The Golden Fixture shows generated fartlek work with warm-up, variable-effort main work, recovery segments, and cool-down, but it does not canonically define this reusable catalog component sequence. RECOVERY represents recovery segments between variable efforts; no concrete duration, distance, pace, or repetition values are assigned.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(Placeholder("AUD-305", "workout-definitions", DocumentTypes.WorkoutDefinition, "LONG_RUN_STANDARD", 3, "$.complexityTier", "1",
+            "catalog/workouts/long-run-standard.v3.json",
+            "WAVE2 intentionally preserved the unresolved complexityTier decision from LONG_RUN_STANDARD v2. This task resolved only D10/components; D9 remains PLACEHOLDER_UNCONFIRMED.",
+            ["WorkoutDefinitionValidator"]));
+        entries.Add(Technical("AUD-306", "workout-definitions", DocumentTypes.WorkoutDefinition, "LONG_RUN_STANDARD", 3, "$.components",
+            "absent",
+            wave2Schema,
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE2 D10: LONG_RUN_STANDARD is a standard continuous long run; components are optional and omitted. No marathon-specific, fast-finish, progression, or embedded-quality structure was introduced."));
+
+        entries.Add(Placeholder("AUD-307", "workout-definitions", DocumentTypes.WorkoutDefinition, "THRESHOLD_TEMPO", 3, "$.complexityTier", "2",
+            "catalog/workouts/threshold-tempo.v3.json",
+            "WAVE2 intentionally preserved the unresolved complexityTier decision from THRESHOLD_TEMPO v2. This task resolved only D12/components; D11 remains PLACEHOLDER_UNCONFIRMED.",
+            ["WorkoutDefinitionValidator"]));
+        entries.Add(ExplicitDefault("AUD-308", "workout-definitions", DocumentTypes.WorkoutDefinition, "THRESHOLD_TEMPO", 3, "$.components",
+            "WARM_UP, MAIN_SET, COOL_DOWN",
+            wave2Vocabulary,
+            "WAVE2 D12 / WAVE3 evidence review: approved continuous-tempo component sequence. The Golden Fixture shows tempo main-set output with warm-up and cool-down, but it does not canonically define the reusable catalog decomposition. RECOVERY and cruise-repeat or interval structure are excluded from this artifact and remain separate workout-definition concerns.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(Technical("AUD-309", "technical-metadata", DocumentTypes.LevelModifier, "INTERMEDIATE_MODIFIER", 3, "$.eligibleWorkouts",
+            "exact workout references repointed to EASY_STANDARD v3, LONG_RUN_STANDARD v3, FARTLEK v3, THRESHOLD_TEMPO v3; GOAL_PACE_TEN_K remains v1",
+            "catalog/level-modifiers/intermediate-modifier.v3.json",
+            ["LevelModifierValidator", "TemplateCombinationValidator"],
+            reason: "WAVE2 immutable parent cascade: only exact references changed to preserve the candidate dependency graph after leaf workout version changes."));
+        entries.Add(Technical("AUD-310", "technical-metadata", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 3, "$.phaseProgressions[*].stages[*].workoutCandidates",
+            "exact workout references repointed to EASY_STANDARD/FARTLEK/THRESHOLD_TEMPO v3 where those candidates are used",
+            "catalog/workout-progressions/ten-k-workout-progression.v3.json",
+            ["WorkoutProgressionValidator", "TemplateCombinationValidator"],
+            reason: "WAVE2 immutable parent cascade required by exact references; stage dosage and selection rules were copied unchanged from v2."));
+        entries.Add(Technical("AUD-311", "technical-metadata", DocumentTypes.PlanTemplate, "TEN_K_MASTER", 4, "$.workoutProgression",
+            "TEN_K_WORKOUT_PROGRESSION_V1 v3",
+            "catalog/templates/ten-k-master.v4.json",
+            ["PlanTemplateValidator", "TemplateCombinationValidator"],
+            reason: "WAVE2 immutable parent cascade required because TEN_K_MASTER owns the exact WorkoutProgression reference. Template content is otherwise unchanged from v3."));
+        entries.Add(Technical("AUD-312", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 5, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v4, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v3, APPSEL_RACE_PLAN_V1 v2",
+            "catalog/combinations/ten-k-4d-intermediate.v5.json",
+            ["TemplateCombinationValidator"],
+            reason: "WAVE2 candidate root. Predecessor is TEN_K__4D__INTERMEDIATE v4; no publish, retirement, or activation is applied in this task."));
+    }
+
+    private static void AddWave3ComplexityRemovalEntries(List<DomainContentDecision> entries)
+    {
+        const string wave3Evidence = "artifacts/audits/domain-wave3-d8-d12-evidence-review.md";
+
+        entries.Add(Technical("AUD-313", "workout-definitions", DocumentTypes.WorkoutDefinition, "EASY_STANDARD", 4, "$.complexityTier",
+            "absent",
+            "catalog/workouts/easy-standard.v4.json",
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE3 D5: removed redundant legacy complexityTier field from reusable WorkoutDefinition schemaVersion 3. No replacement taxonomy, derived field, or running-domain tier value was selected."));
+        entries.Add(Technical("AUD-314", "workout-definitions", DocumentTypes.WorkoutDefinition, "FARTLEK", 4, "$.complexityTier",
+            "absent",
+            "catalog/workouts/fartlek.v4.json",
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE3 D7: removed redundant legacy complexityTier field from reusable WorkoutDefinition schemaVersion 3. No replacement taxonomy, derived field, or running-domain tier value was selected."));
+        entries.Add(ExplicitDefault("AUD-315", "workout-definitions", DocumentTypes.WorkoutDefinition, "FARTLEK", 4, "$.components",
+            "WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN",
+            wave3Evidence,
+            "WAVE3 D8 evidence review retained the approved sequence as EXPLICIT_PRODUCT_DEFAULT, not CANONICAL_CONFIRMED. Fixture evidence supports the shape but does not directly canonize the reusable catalog component vocabulary or ordering.",
+            ["WorkoutDefinitionValidator"]));
+        entries.Add(Technical("AUD-316", "workout-definitions", DocumentTypes.WorkoutDefinition, "LONG_RUN_STANDARD", 4, "$.complexityTier",
+            "absent",
+            "catalog/workouts/long-run-standard.v4.json",
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE3 D9: removed redundant legacy complexityTier field from reusable WorkoutDefinition schemaVersion 3. No replacement taxonomy, derived field, or running-domain tier value was selected."));
+        entries.Add(Technical("AUD-317", "workout-definitions", DocumentTypes.WorkoutDefinition, "THRESHOLD_TEMPO", 4, "$.complexityTier",
+            "absent",
+            "catalog/workouts/threshold-tempo.v4.json",
+            ["WorkoutDefinitionValidator"],
+            reason: "WAVE3 D11: removed redundant legacy complexityTier field from reusable WorkoutDefinition schemaVersion 3. No replacement taxonomy, derived field, or running-domain tier value was selected."));
+        entries.Add(ExplicitDefault("AUD-318", "workout-definitions", DocumentTypes.WorkoutDefinition, "THRESHOLD_TEMPO", 4, "$.components",
+            "WARM_UP, MAIN_SET, COOL_DOWN",
+            wave3Evidence,
+            "WAVE3 D12 evidence review retained the approved sequence as EXPLICIT_PRODUCT_DEFAULT, not CANONICAL_CONFIRMED. Fixture evidence supports the shape but does not directly canonize the reusable catalog component vocabulary or ordering.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(Technical("AUD-319", "technical-metadata", DocumentTypes.LevelModifier, "INTERMEDIATE_MODIFIER", 4, "$.eligibleWorkouts",
+            "exact workout references repointed to EASY_STANDARD v4, LONG_RUN_STANDARD v4, FARTLEK v4, THRESHOLD_TEMPO v4; GOAL_PACE_TEN_K remains v1",
+            "catalog/level-modifiers/intermediate-modifier.v4.json",
+            ["LevelModifierValidator", "TemplateCombinationValidator"],
+            reason: "WAVE3 immutable parent cascade: only exact references changed to preserve the candidate dependency graph after leaf workout version changes."));
+        entries.Add(Technical("AUD-320", "technical-metadata", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 4, "$.phaseProgressions[*].stages[*].workoutCandidates",
+            "exact workout references repointed to EASY_STANDARD/FARTLEK/THRESHOLD_TEMPO v4 where those candidates are used",
+            "catalog/workout-progressions/ten-k-workout-progression.v4.json",
+            ["WorkoutProgressionValidator", "TemplateCombinationValidator"],
+            reason: "WAVE3 immutable parent cascade required by exact references; stage dosage and selection rules were copied unchanged from v3."));
+        entries.Add(Technical("AUD-321", "technical-metadata", DocumentTypes.PlanTemplate, "TEN_K_MASTER", 5, "$.workoutProgression",
+            "TEN_K_WORKOUT_PROGRESSION_V1 v4",
+            "catalog/templates/ten-k-master.v5.json",
+            ["PlanTemplateValidator", "TemplateCombinationValidator"],
+            reason: "WAVE3 immutable parent cascade required because TEN_K_MASTER owns the exact WorkoutProgression reference. Template content is otherwise unchanged from v4."));
+        entries.Add(Technical("AUD-322", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 6, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v5, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v4, APPSEL_RACE_PLAN_V1 v2",
+            "catalog/combinations/ten-k-4d-intermediate.v6.json",
+            ["TemplateCombinationValidator"],
+            reason: "WAVE3 candidate root. Predecessor candidate TEN_K__4D__INTERMEDIATE v5 is preserved unchanged; no publish, retirement, or activation is applied in this task."));
+    }
+
+    private static void AddWave5D2ResolutionEntries(List<DomainContentDecision> entries)
+    {
+        const string wave5Ownership = "artifacts/audits/domain-wave5-d2-ownership.md";
+        const string wave5Implementation = "artifacts/audits/domain-wave5-d2-implementation.md";
+        const string progressionModifierV2File = "catalog/progression-modifiers/intermediate-progression-modifier.v2.json";
+
+        // AUD-044 (v1) is left untouched — historical fact, still PLACEHOLDER_UNCONFIRMED for that
+        // immutable, already-PUBLISHED version. D2 is resolved only on the new v2 artifact below, one
+        // entry per field (this task's approved decision set assigns a different classification to each
+        // of the 5 fields, so they can no longer share a single bundled audit row).
+
+        entries.Add(Technical("AUD-330", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 2, "$.maximumComplexityTier",
+            "absent",
+            wave5Implementation,
+            ["ProgressionModifierValidator"],
+            reason: "WAVE5 D2: removed redundant legacy maximumComplexityTier field from ProgressionModifier schemaVersion 2 (complexityTier was already removed from WorkoutDefinition in Wave 3; the cap no longer has a meaningful target field). No replacement complexity field was introduced."));
+
+        entries.Add(Confirmed("AUD-331", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 2, "$.maximumHardSessionsPerWeek", "1",
+            progressionModifierV2File,
+            "WAVE5 D2, evidence-backed for this exact scope: Golden Fixture v3 realizes exactly one hard training stimulus per week for the TEN_K/INTERMEDIATE/4-day combination this artifact's sole current referrer (INTERMEDIATE_MODIFIER -> TEN_K__4D__INTERMEDIATE) represents. Approved as a CEILING, not a target or minimum — valid weeks may contain zero hard sessions (deload/taper/readiness); no consumer may infer that exactly one hard session must always be scheduled. Scope: TEN_K / INTERMEDIATE / 4 runs per week only; not generalized to other day-counts, distances, or experience levels sharing the INTERMEDIATE label without independent evidence.",
+            ["ProgressionModifierValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-332", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 2, "$.mainSetDoseMultiplier", "1.00",
+            wave5Implementation,
+            "WAVE5 D2: INTERMEDIATE is the product baseline/reference dose; 1.00 is an identity multiplier with no scaling effect, not a scientifically validated universal ratio. Consumption trace (see " + wave5Ownership + "): MainSetDoseMultiplier is validated (>0) and transported through PublishedTemplateBundle by reference only — no consumer in this repository (Process A) multiplies any dose/duration/distance/repetition value by it; Process B (out of scope, runner/backend) is the only theoretical consumer and was not inspected or modified. It is unused for computation in this repository today. Non-identity values remain unsupported pending a future normalized-dose contract; no multiplierTarget/doseMetric field was introduced.",
+            ["ProgressionModifierValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-333", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 2, "$.allowGoalPaceRehearsal", "true",
+            wave5Implementation,
+            "WAVE5 D2: PRINCIPLE_FLAG / UNCONSUMED. This is a capability flag only — it does not independently make any workout eligible. No runtime guard code (race-specific phase, goal feasibility, preparation time, pace confidence, hard-session budget, or workout progression/stage eligibility) reads this field in this repository today; those guards, where they exist, are separate concerns (e.g. TEN_K_WORKOUT_PROGRESSION_V1's GOAL_PACE_REHEARSAL stage `requires: GOAL_FEASIBILITY_IN`). No new runtime behavior was introduced by setting this value. " +
+            "WAVE5-CLARIFICATION: the field has zero readers in this repository (confirmed by repository-wide search) — it is currently write-only authoring metadata. The prior 'RUNTIME_GUARDED' tag is corrected to 'UNCONSUMED' because no runtime guard code actually reads this field; GOAL_FEASIBILITY_IN is an independent gate that applies regardless of this boolean's value, and this boolean being true does not bypass it or make any workout eligible by itself. See artifacts/audits/domain-wave5-d2-clarification.md.",
+            ["ProgressionModifierValidator"]));
+
+        entries.Add(Confirmed("AUD-334", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 2, "$.allowSecondHardStimulus", "false",
+            progressionModifierV2File,
+            "WAVE5 D2, evidence-backed for this exact scope: for the TEN_K/INTERMEDIATE/4-day pilot, do not allow a second hard stimulus in the same week (if goal-pace rehearsal is already HARD, long-run quality must be suppressed/downgraded) — consistent with ProgressionModifierValidator's PM_HARD_SESSION_CAP_EXCEEDS_SINGLE_STIMULUS rule and the fixture's single-hard-stimulus week. This is NOT a universal statement for every INTERMEDIATE plan family: ownership was inspected (see " + wave5Ownership + ") and INTERMEDIATE_PROGRESSION_MODIFIER_V1 currently has exactly one referrer (INTERMEDIATE_MODIFIER, referenced only by the TEN_K__4D__INTERMEDIATE combination family) — reuse boundary matches this artifact's actual scope exactly today. 5-6 day or other-distance plan families remain explicitly out of scope and must not be assumed to inherit this value without new evidence if/when they are introduced.",
+            ["ProgressionModifierValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(Technical("AUD-335", "technical-metadata", DocumentTypes.LevelModifier, "INTERMEDIATE_MODIFIER", 5, "$.progressionModifier",
+            "exact reference repointed to INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2",
+            "catalog/level-modifiers/intermediate-modifier.v5.json",
+            ["LevelModifierValidator", "TemplateCombinationValidator"],
+            reason: "WAVE5 immutable parent cascade: only the exact ProgressionModifier reference changed to preserve the candidate dependency graph after the D2 leaf-artifact version change. eligibleWorkouts copied unchanged from v4."));
+        entries.Add(Technical("AUD-336", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 7, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v5, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v5, APPSEL_RACE_PLAN_V1 v2",
+            "catalog/combinations/ten-k-4d-intermediate.v7.json",
+            ["TemplateCombinationValidator"],
+            reason: "WAVE5 candidate root (D2 resolution only). Predecessor candidate TEN_K__4D__INTERMEDIATE v6 is preserved unchanged; no publish, retirement, or activation is applied in this task."));
+    }
+
+    private static void AddD3RuntimeConditionRegistryResolutionEntries(List<DomainContentDecision> entries)
+    {
+        const string registryV2File = "catalog/registries/runtime-condition-values.v2.json";
+
+        // AUD-048 (v1) is left untouched — historical fact, still PLACEHOLDER_UNCONFIRMED for that
+        // immutable, already-PUBLISHED version. D3 is resolved only on the new v2 artifact below.
+
+        entries.Add(Confirmed("AUD-400", "runtime-condition-registry", DocumentTypes.RuntimeConditionValueRegistry, "RUNTIME_CONDITION_VALUES_V1", 2,
+            "$.conditionValueSets[PACE_SOURCE_IN]", "NONE, RECENT_RACE, ESTIMATED, TARGET_TIME",
+            registryV2File,
+            "D3 RESOLUTION: explicit Process A/Process B ownership decision recorded — this Process A registry is the sole canonical owner of PACE_SOURCE_IN's allowed-value vocabulary; Process B may map user/onboarding inputs into these values but may not invent additional runtime condition codes. Approved canonical values: NONE (no usable pace input available), RECENT_RACE (pace derived from a recent race result), ESTIMATED (pace estimated from user-provided running background/recent volume/longest run/plan assumptions), TARGET_TIME (pace derived from an explicit target finish time). This supersedes AUD-048's invented RACE_RESULT/TIME_TRIAL/ESTIMATED/NOT_PROVIDED set on v1, which remains unchanged and unconfirmed on that immutable version.",
+            ["RuntimeConditionValueRegistryValidator"]));
+
+        entries.Add(Confirmed("AUD-401", "runtime-condition-registry", DocumentTypes.RuntimeConditionValueRegistry, "RUNTIME_CONDITION_VALUES_V1", 2,
+            "$.conditionValueSets[TIME_ADEQUACY_IN]", "ADEQUATE, COMPRESSED, INSUFFICIENT",
+            registryV2File,
+            "D3 RESOLUTION: approved canonical values for TIME_ADEQUACY_IN. ADEQUATE (available plan duration is sufficient for the normal/default plan structure), COMPRESSED (available duration is shorter than ideal but still usable with a compressed core plan), INSUFFICIENT (available duration is too short for a safe or meaningful training-plan build; should not silently generate a normal plan). This supersedes AUD-048's invented ADEQUATE/TIGHT/INSUFFICIENT set on v1, which remains unchanged and unconfirmed on that immutable version. Note: COMPRESSED is also a PLAN_MODE_IN value on a different conditionType; RuntimeConditionValueRegistryValidator only checks for duplicate condition TYPES and per-set uniqueness, not cross-type value collisions, so this is not a validation conflict.",
+            ["RuntimeConditionValueRegistryValidator"]));
+
+        entries.Add(Confirmed("AUD-402", "runtime-condition-registry", DocumentTypes.RuntimeConditionValueRegistry, "RUNTIME_CONDITION_VALUES_V1", 2,
+            "$.conditionValueSets[CORE_ENTRY_READINESS_IN]", "READY, CAUTION, NOT_READY",
+            registryV2File,
+            "D3 RESOLUTION: approved canonical values for CORE_ENTRY_READINESS_IN. READY (user can enter the normal core plan), CAUTION (user can enter only with conservative constraints, warnings, or reduced assumptions), NOT_READY (user should not enter the normal core plan; use readiness-only guidance or reject normal plan generation depending on product flow). This supersedes AUD-048's invented READY/NOT_READY/UNKNOWN set on v1, which remains unchanged and unconfirmed on that immutable version.",
+            ["RuntimeConditionValueRegistryValidator"]));
+
+        entries.Add(Technical("AUD-403", "runtime-condition-registry", DocumentTypes.RuntimeConditionValueRegistry, "RUNTIME_CONDITION_VALUES_V1", 2,
+            "$.conditionValueSets[GOAL_FEASIBILITY_IN,PLAN_MODE_IN]", "unchanged from v1 (REALISTIC/CHALLENGING/UNSUPPORTED/NOT_REQUESTED; STANDARD/FOCUSED_CORE/COMPRESSED/READINESS_ONLY/COMPLETION_FOCUSED)",
+            registryV2File,
+            ["RuntimeConditionValueRegistryValidator"],
+            reason: "D3 scope was limited to PACE_SOURCE_IN, TIME_ADEQUACY_IN, and CORE_ENTRY_READINESS_IN. GOAL_FEASIBILITY_IN and PLAN_MODE_IN were already CANONICAL_CONFIRMED (AUD-046/AUD-047) and are carried forward byte-identical; not re-litigated by this task."));
+
+        entries.Add(Technical("AUD-404", "technical-metadata", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 3, "$.runtimeConditionValueRegistry, $.peakVolumeBandPolicy, $.policies, $.rules",
+            "references only (runtimeConditionValueRegistry now v2; peakVolumeBandPolicy unchanged at v2)",
+            "catalog/rule-packs/appsel-race-plan.v3.json",
+            ["RulePackValidator"],
+            reason: "D3 immutable parent cascade: RulePack v1/v2 preserved unchanged; new v3 created solely to point runtimeConditionValueRegistry at the corrected RUNTIME_CONDITION_VALUES_V1 v2. peakVolumeBandPolicy unchanged (D4 not resolved in this task)."));
+
+        entries.Add(Technical("AUD-405", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 8, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v5, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v5, APPSEL_RACE_PLAN_V1 v3",
+            "catalog/combinations/ten-k-4d-intermediate.v8.json",
+            ["TemplateCombinationValidator"],
+            reason: "D3 candidate root (RUNTIME_CONDITION_VALUES_V1 resolution only). Predecessor candidate TEN_K__4D__INTERMEDIATE v7 (Wave 5 / D2) is preserved unchanged; no publish, retirement, or activation is applied in this task."));
+
+        entries.Add(Technical("AUD-406", "runtime-condition-registry", DocumentTypes.RuntimeConditionValueRegistry, "RUNTIME_CONDITION_VALUES_V1", 2,
+            "$.conditionValueSets[PACE_SOURCE_IN,TIME_ADEQUACY_IN,CORE_ENTRY_READINESS_IN]", "declared and structurally validated; zero references in any catalog artifact",
+            "artifacts/audits/domain-d3-followup.md",
+            ["RuntimeConditionValueRegistryValidator"],
+            reason: "TD-D3-001 (activation-readiness note, does not reopen D3): repository-wide search of catalog/ (workout-progressions, rule-packs, templates, workouts) found zero references to PACE_SOURCE_IN, TIME_ADEQUACY_IN, or CORE_ENTRY_READINESS_IN outside the registry artifact itself — no stage.Requires, rule, or other artifact currently consumes these three condition types, so the D3 vocabulary normalization has no traced candidate/runtime behavior impact today (DECLARED_BUT_CURRENTLY_UNUSED). Process B/backend mapping to the v2 canonical values is UNKNOWN_FROM_REPO_EVIDENCE (out of scope to inspect runner/backend). Golden Fixture v3's DecisionTrace resolver output is suggestive but not dispositive (per AUD-048's existing caution): paceSource=RECENT_RACE now textually matches the new v2 PACE_SOURCE_IN value (it did not match v1's RACE_RESULT); readiness=STANDARD matches neither v1 nor v2 CORE_ENTRY_READINESS_IN vocabulary at all. Before any future publish/activation of TEN_K__4D__INTERMEDIATE v8 or its descendants, Process B/runtime must explicitly confirm it maps to the v2 canonical values and no longer emits or expects the old v1 strings (RACE_RESULT/TIME_TRIAL/NOT_PROVIDED/TIGHT/UNKNOWN). See artifacts/audits/domain-d3-followup.md for the full consumer trace."));
+    }
+
+    private static void AddD4PeakVolumeBandResolutionEntries(List<DomainContentDecision> entries)
+    {
+        const string peakV3File = "catalog/policies/peak-volume-bands.v3.json";
+
+        // AUD-049/AUD-050 (v1) and AUD-056/AUD-057 (v2) are left untouched — historical facts, still
+        // their original classifications for those immutable, already-PUBLISHED versions. D4 is resolved
+        // only on the new v3 artifact below, which is scoped to TEN_K/INTERMEDIATE only.
+
+        entries.Add(Confirmed("AUD-410", "peak-volume-policy", DocumentTypes.PeakVolumeBandPolicy, "PEAK_VOLUME_BANDS_V1", 3,
+            "$.entries[TEN_K,INTERMEDIATE,3|4|5]", "22-32km / 30-42km / 36-50km",
+            "review-provided", "D4 RESOLUTION: carries forward the same review-provided, fixture-corroborated INTERMEDIATE values already CANONICAL_CONFIRMED on v2 (AUD-056) — unchanged in value. The 4-day row (30-42km) remains independently corroborated by Golden Fixture v3 $.peakVolume.typicalBandKm=[30,42].",
+            ["PeakVolumeBandPolicyValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(Technical("AUD-411", "peak-volume-policy", DocumentTypes.PeakVolumeBandPolicy, "PEAK_VOLUME_BANDS_V1", 3,
+            "$.entries[TEN_K,NEW|ADVANCED|EXPERIENCED,3|4|5]", "absent (removed, not carried forward from v2)",
+            peakV3File,
+            ["PeakVolumeBandPolicyValidator"],
+            reason: "D4 RESOLUTION: the 9 unapproved, invented NEW/ADVANCED/EXPERIENCED rows (previously AUD-050 on v1, AUD-057 on v2 — 'No canonical v1.0 source located... invented to complete the matrix shape') are removed entirely from v3, not replaced or reclassified. v3's scope is narrowed to exactly the TEN_K/INTERMEDIATE pilot rows this candidate family needs; no replacement values were invented for NEW/ADVANCED/EXPERIENCED. PeakVolumeBandPolicyValidator has no requirement that every experience level be represented (only duplicate-tuple and min<=max checks), so this narrowing is structurally valid."));
+
+        entries.Add(Technical("AUD-412", "technical-metadata", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4, "$.runtimeConditionValueRegistry, $.peakVolumeBandPolicy, $.policies, $.rules",
+            "references only (peakVolumeBandPolicy now v3; runtimeConditionValueRegistry unchanged at v2)",
+            "catalog/rule-packs/appsel-race-plan.v4.json",
+            ["RulePackValidator"],
+            reason: "D4 immutable parent cascade: RulePack v1/v2/v3 preserved unchanged; new v4 created solely to point peakVolumeBandPolicy at the corrected PEAK_VOLUME_BANDS_V1 v3. runtimeConditionValueRegistry unchanged (D3 vocabulary not touched by this task)."));
+
+        entries.Add(Technical("AUD-413", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 9, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v5, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v5, APPSEL_RACE_PLAN_V1 v4",
+            "catalog/combinations/ten-k-4d-intermediate.v9.json",
+            ["TemplateCombinationValidator"],
+            reason: "D4 candidate root (PEAK_VOLUME_BANDS_V1 resolution only). Predecessor candidate TEN_K__4D__INTERMEDIATE v8 (D3) is preserved unchanged; no publish, retirement, or activation is applied in this task."));
+    }
+
+    private static void AddD13GoalPaceTenKResolutionEntries(List<DomainContentDecision> entries)
+    {
+        const string goalPaceV2File = "catalog/workouts/goal-pace-ten-k.v2.json";
+
+        // AUD-249 (v1, dynamically numbered — see AddWorkoutDefinitionEntries) is left untouched --
+        // historical fact, still PLACEHOLDER_UNCONFIRMED for that version. D13 is resolved only on the
+        // new v2 artifact below. Content is byte-identical to v1: the approved D13 decision confirms the
+        // EXISTING structural representation was already correct (single continuous WARM_UP/MAIN_SET
+        // (GOAL_PACE)/COOL_DOWN block, RACE_SPECIFIC-only, PACE_BASED prescription) -- nothing needed to
+        // change except the governance classification, which per this repository's immutability discipline
+        // requires a new version rather than mutating the historical v1 record.
+
+        entries.Add(Confirmed("AUD-420", "workout-definitions", DocumentTypes.WorkoutDefinition, "GOAL_PACE_TEN_K", 2, "$.eligiblePhases", "RACE_SPECIFIC",
+            goalPaceV2File,
+            "D13 RESOLUTION: approved product/training decision confirms goal-pace work is scoped to the RACE_SPECIFIC phase only (requirement: 'scoped to the race-specific phase only unless repository evidence shows an existing safer convention' -- no such convention was found, and this value already matched it). Independently structurally consistent with TEN_K_WORKOUT_PROGRESSION_V1's GOAL_PACE_REHEARSAL stage, which exists only under the RACE_SPECIFIC phaseProgression (never FOUNDATION/BUILD/TAPER) -- confirming goal-pace work is never scheduled in taper week and never in every week (stage minimumExposures=1, maximumExposures=2 within that phase only).",
+            ["WorkoutDefinitionValidator", "WorkoutProgressionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-421", "workout-definitions", DocumentTypes.WorkoutDefinition, "GOAL_PACE_TEN_K", 2, "$.complexityTier", "2",
+            goalPaceV2File,
+            "D13 RESOLUTION: approved as EXPLICIT_PRODUCT_DEFAULT, not CANONICAL_CONFIRMED -- no canonical source assigns this specific tier value (same caveat as the other workouts' complexityTier fields before Wave 3 removed the field entirely for them); GOAL_PACE_TEN_K was not part of that removal and is not being migrated to a components-only schemaVersion by this task, since D13's approved decision does not address the complexityTier taxonomy. Value carried forward unchanged from v1.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-422", "vocabulary", DocumentTypes.WorkoutDefinition, "GOAL_PACE_TEN_K", 2, "$.allowedPrescriptionModes", "PACE_BASED",
+            goalPaceV2File,
+            "D13 RESOLUTION: approved as EXPLICIT_PRODUCT_DEFAULT. PACE_BASED is an appropriate, deliberate choice for a goal-pace rehearsal workout (prescribing effort relative to a target race pace); not migrated to the DISTANCE/MIXED vocabulary used by the other 4 workouts (WORKOUT-IMMUT-001) because that migration was fixture-driven for those specific keys and GOAL_PACE_TEN_K has no fixture evidence to migrate against. Left unmigrated per the same reasoning already recorded for v1 (AUD-249), now formally approved rather than merely unconfirmed.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-423", "workout-definitions", DocumentTypes.WorkoutDefinition, "GOAL_PACE_TEN_K", 2, "$.components", "WARM_UP, MAIN_SET(GOAL_PACE), COOL_DOWN",
+            goalPaceV2File,
+            "D13 RESOLUTION: approved as EXPLICIT_PRODUCT_DEFAULT. This single continuous-block structure matches the approved concrete guidance ('short continuous goal-pace blocks inside a key session... after adequate warm-up', 'avoid large standalone goal-pace volume') -- deliberately conservative: one MAIN_SET at GOAL_PACE intensity, not an interval/repeat structure, so no additional numeric prescription (reps/duration/distance) was invented beyond the existing descriptive intensity label.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(Technical("AUD-424", "technical-metadata", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5, "$.phaseProgressions[RACE_SPECIFIC].stages[GOAL_PACE_REHEARSAL].workoutCandidates",
+            "exact reference repointed to GOAL_PACE_TEN_K v2",
+            "catalog/workout-progressions/ten-k-workout-progression.v5.json",
+            ["WorkoutProgressionValidator", "TemplateCombinationValidator"],
+            reason: "D13 immutable parent cascade: only the exact GOAL_PACE_TEN_K reference changed (v1 -> v2); stage structure, GOAL_FEASIBILITY_IN requirement, minimumExposures/maximumExposures, compressionBehavior=PROTECTED, and fallbackStageKey=CURRENT_FITNESS_SPECIFIC_REHEARSAL are byte-identical to v4 -- confirming the single-key-session, non-every-week, non-taper representation is unchanged by this task, only formally approved."));
+
+        entries.Add(Technical("AUD-425", "technical-metadata", DocumentTypes.PlanTemplate, "TEN_K_MASTER", 6, "$.workoutProgression",
+            "TEN_K_WORKOUT_PROGRESSION_V1 v5",
+            "catalog/templates/ten-k-master.v6.json",
+            ["PlanTemplateValidator", "TemplateCombinationValidator"],
+            reason: "D13 immutable parent cascade required because TEN_K_MASTER owns the exact WorkoutProgression reference. Template content (phases, eligibleWorkoutFamilies, coreCycle) otherwise unchanged from v5."));
+
+        entries.Add(Technical("AUD-426", "technical-metadata", DocumentTypes.LevelModifier, "INTERMEDIATE_MODIFIER", 6, "$.eligibleWorkouts",
+            "exact reference repointed to GOAL_PACE_TEN_K v2; other eligible workouts unchanged from v5",
+            "catalog/level-modifiers/intermediate-modifier.v6.json",
+            ["LevelModifierValidator", "TemplateCombinationValidator"],
+            reason: "D13 immutable parent cascade: only the exact GOAL_PACE_TEN_K reference changed to preserve the candidate dependency graph after the leaf-artifact version change. progressionModifier reference (Wave 5 / D2) unchanged."));
+
+        entries.Add(Technical("AUD-427", "technical-metadata", DocumentTypes.TemplateCombination, Combination, 10, "$.masterTemplate, $.layout, $.levelModifier, $.rulePack",
+            "candidate root references TEN_K_MASTER v6, RUN_LAYOUT_4D v2, INTERMEDIATE_MODIFIER v6, APPSEL_RACE_PLAN_V1 v4",
+            "catalog/combinations/ten-k-4d-intermediate.v10.json",
+            ["TemplateCombinationValidator"],
+            reason: "D13 candidate root (GOAL_PACE_TEN_K resolution only). Predecessor candidate TEN_K__4D__INTERMEDIATE v9 (D4) is preserved unchanged; no publish, retirement, or activation is applied in this task. This closes the last remaining domain-content decision in the catalog audit (D2, D3, D4, D13 all resolved as of this candidate)."));
     }
 
     private static void AddWorkoutDefinitionEntries(List<DomainContentDecision> entries)

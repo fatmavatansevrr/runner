@@ -80,7 +80,9 @@ public sealed class WorkoutArtifactImmutabilityTests
         var result = Core.Validation.CatalogGraphValidator.Validate(snapshot);
 
         Assert.DoesNotContain(result.Issues, i => i.Code == "GRAPH_DUPLICATE_KEY_VERSION" && i.Message.Contains(key, StringComparison.Ordinal));
-        Assert.Equal(2, snapshot.Workouts.Count(w => w.Metadata.Key == key));
+        Assert.True(snapshot.Workouts.Count(w => w.Metadata.Key == key) >= 2);
+        Assert.Contains(snapshot.Workouts, w => w.Metadata.Key == key && w.Metadata.Version == 1);
+        Assert.Contains(snapshot.Workouts, w => w.Metadata.Key == key && w.Metadata.Version == 2);
     }
 
     [Theory]

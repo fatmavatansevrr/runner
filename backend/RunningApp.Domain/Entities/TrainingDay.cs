@@ -43,4 +43,27 @@ public class TrainingDay
     public TrainingPlan Plan { get; set; } = null!;
     public TrainingWeek Week { get; set; } = null!;
     public TrainingDay? AdaptedFrom { get; set; }
+
+    // ── Backend Integration Phase 3: Process A plan-catalog workout/stage/slot identity ──
+    // Nullable/additive. Null for legacy/seeded-template days. Does not
+    // replace DayType — Phase 2 found KEY_SESSION/EASY_SUPPORT have no
+    // TrainingDayType/slot-role equivalent at all, and even where a loose
+    // family match exists (e.g. GOAL_PACE_TEN_K ~ Tempo/Interval), DayType
+    // alone cannot preserve which exact catalog workout produced the day.
+
+    /// <summary>Exact catalog WORKOUT_DEFINITION key (e.g. "GOAL_PACE_TEN_K"), preserved verbatim.</summary>
+    public string? CatalogWorkoutKey { get; set; }
+    public int? CatalogWorkoutVersion { get; set; }
+
+    /// <summary>Exact workout-progression stage key (e.g. "GOAL_PACE_REHEARSAL"), preserved verbatim.</summary>
+    public string? CatalogStageKey { get; set; }
+
+    /// <summary>Layout slot role (e.g. "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN") — distinct from DayType.</summary>
+    public string? CatalogSlotRole { get; set; }
+
+    /// <summary>Catalog WorkoutFamily (e.g. "QUALITY", "EASY", "LONG_RUN", "RACE").</summary>
+    public string? CatalogWorkoutFamily { get; set; }
+
+    /// <summary>Catalog component intensity descriptor (e.g. "GOAL_PACE", "EASY"), distinct from the existing free-text Intensity field's zone labels (e.g. "z2").</summary>
+    public string? CatalogIntensityKey { get; set; }
 }

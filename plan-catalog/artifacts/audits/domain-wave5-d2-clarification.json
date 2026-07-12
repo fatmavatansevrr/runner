@@ -1,0 +1,78 @@
+{
+  "auditId": "WAVE5-D2-CLARIFICATION-001",
+  "generatedAtUtc": "2026-07-09T09:00:00Z",
+  "readOnly": true,
+  "scope": "Focused clarification/consistency/safety pass over the Wave 5 D2 result. Not a new domain wave; resolves no new decision (D3/D4/D13 untouched).",
+  "issue1_allowGoalPaceRehearsalWriteOnly": {
+    "hasAnyReader": false,
+    "evidence": "grep -rln \"AllowGoalPaceRehearsal\" src/ (excluding obj/bin) matches only src/PlanCatalog.Core/Models/ProgressionModifierDefinition.cs -- the property declaration itself. No validator, publisher, bundle assembler, or any other consumer reads it. Confirmed by new executable test AllowGoalPaceRehearsal_HasNoReaderAnywhereInThisRepository.",
+    "conclusion": {
+      "isWriteOnlyMetadataOrCapabilityDeclaration": true,
+      "gatesAnythingToday": false,
+      "goalFeasibilityInIsIndependent": true,
+      "goalFeasibilityInEvidence": "TEN_K_WORKOUT_PROGRESSION_V1's GOAL_PACE_REHEARSAL stage carries its own non-empty Requires list (GOAL_FEASIBILITY_IN) that does not read AllowGoalPaceRehearsal at all -- the two are structurally disjoint fields on different artifacts.",
+      "trueAloneDoesNotMakeEligible": true,
+      "falseAloneWouldNotCurrentlyBlockAnything": true,
+      "falseWouldOnlyMatterIfAFutureConsumerIsAdded": true
+    },
+    "runtimeValidatorConsidered": true,
+    "runtimeValidatorAdded": false,
+    "runtimeValidatorReasoning": "The candidate enforcement rule (allowGoalPaceRehearsal==false -> no GOAL_PACE_REHEARSAL-family candidates reachable in this modifier's progression graph) would require threading a new edge through TemplateCombinationValidator: ProgressionModifier currently has no relationship to WorkoutProgression/stage candidates in the existing data model (it is reached via LevelModifier, a structurally separate path from MasterTemplate->WorkoutProgression->stages). Building that cross-check is a real (if small) architecture change, and the current approved value is allowGoalPaceRehearsal=true, so the false-case guard would be dead code today with no artifact to exercise it. Per the task's explicit instruction not to add runtime behavior in this task, this was documented as technical debt instead (see technicalDebt below) rather than implemented speculatively.",
+    "technicalDebt": {
+      "id": "TD-WAVE5-001",
+      "title": "No cross-check between ProgressionModifier.AllowGoalPaceRehearsal and WorkoutProgression goal-pace-rehearsal stage reachability",
+      "description": "If a future value sets AllowGoalPaceRehearsal=false for a modifier whose reachable combination's workout progression still contains a goal-pace-rehearsal-family stage (or workout candidate), nothing in this repository will currently detect or reject that inconsistency. Recommended future validator: extend TemplateCombinationValidator (which already resolves both progressionModifier and progression together) to check, when AllowGoalPaceRehearsal==false, that no stage reachable in the RACE_SPECIFIC phase references a goal-pace-rehearsal workout family/key.",
+      "blockingToday": false,
+      "reasonNotBlocking": "Current approved value is true; the false branch is unreachable in the current catalog.",
+      "d13ForwardLookingNote": "TD-WAVE5-001 should be revisited during D13 GOAL_PACE_TEN_K resolution because adding or changing goal-pace workout candidates may make the missing allowGoalPaceRehearsal cross-check behaviorally relevant.",
+      "d13ForwardLookingNoteAddedInPass": "file-attribution follow-up (this pass)",
+      "d13RevisitResult": {
+        "status": "UPDATED_STILL_OPEN",
+        "notClosed": true,
+        "activeGuardAdded": false,
+        "finding": "D13 resolution (GOAL_PACE_TEN_K v2) confirms concrete, real goal-pace candidates now formally exist and are reachable in the TEN_K__4D__INTERMEDIATE v10 candidate graph (GOAL_PACE_REHEARSAL stage, TEN_K_WORKOUT_PROGRESSION_V1 v5, gated only by GOAL_FEASIBILITY_IN -- never by AllowGoalPaceRehearsal). The current state is CONSISTENT: AllowGoalPaceRehearsal=true (Wave 5 / D2, unchanged) and goal-pace candidates do exist -- no live contradiction today. The underlying gap TD-WAVE5-001 describes (no automated cross-check enforcing that consistency) still exists and is now demonstrably more relevant than when it was first recorded, since the candidates it warns about are no longer hypothetical.",
+        "activeGuardReasoning": "Not implemented in this pass, for the same reasons as the original TD-WAVE5-001 analysis, reaffirmed: (1) no current defect to fix -- the flag and the candidate graph agree; (2) the cross-check still requires a genuine (if small) new edge in TemplateCombinationValidator between ProgressionModifier and WorkoutProgression/stage data, which are still reached via structurally separate paths (LevelModifier vs MasterTemplate->WorkoutProgression); (3) this task's D13 scope is a training-content decision, not a validator-architecture decision, and adding speculative runtime behavior beyond what's needed to resolve D13 would violate the standing conservative-implementation instruction. TD-WAVE5-001 is kept OPEN and UPDATED (not closed) as an activation-relevant risk note -- see artifacts/audits/activation-readiness-risks.json for its cross-reference alongside TD-D3-001.",
+        "revisitedInPass": "D13 (Wave 8)"
+      }
+    }
+  },
+  "issue2_ownershipLabelCorrection": {
+    "originalLabel": "RUNTIME_GUARD_ONLY",
+    "wasInconsistentWithZeroReaders": true,
+    "correctedLabel": "TECHNICAL_METADATA / PRODUCT_CAPABILITY_DECLARATION (UNCONSUMED)",
+    "closestExistingEquivalentUsed": true,
+    "principleFlagUnconsumedSupported": false,
+    "principleFlagUnconsumedReasoning": "Not a supported category anywhere in this repository's ownership taxonomy (LEVEL_GLOBAL, COMBINATION_SPECIFIC, DISTANCE_LEVEL_SPECIFIC, DAYS_PER_WEEK_SPECIFIC, WEEKLY_STRUCTURE_POLICY, RUNTIME_GUARD_ONLY, TECHNICAL_METADATA, UNUSED_OR_DEAD_FIELD) -- TECHNICAL_METADATA was selected as the closest existing equivalent, with a PRODUCT_CAPABILITY_DECLARATION (UNCONSUMED) qualifier appended for precision.",
+    "filesUpdated": [
+      "artifacts/audits/domain-wave5-d2-ownership.json",
+      "artifacts/audits/domain-wave5-d2-ownership.md",
+      "src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs (AUD-333 reason text -- appended WAVE5-CLARIFICATION note, original wording preserved)"
+    ],
+    "historicalFactsRewritten": false
+  },
+  "issue3_reuseProtection": {
+    "priorStateHadExecutableProtection": false,
+    "priorStateReasoning": "OnlyOneLevelModifierReferencesIntermediateProgressionModifierV1_OwnershipReuseBoundaryConfirmed only asserted LevelModifier.Metadata.Key == 'INTERMEDIATE_MODIFIER', which is trivially true for any version of that artifact regardless of which combination(s) use it -- it does not actually detect an unrelated combination family gaining a reference.",
+    "protectionAdded": true,
+    "protectionType": "test (Process A only, executable)",
+    "protectionName": "PlanCatalog.Tests.Validation.DomainWave5D2ResolutionTests.IntermediateProgressionModifierV2_ReuseIsExecutablyGuarded_NoUnapprovedCombinationFamilyReferrer",
+    "protectionMechanism": "Enumerates every TemplateCombinationDefinition in the catalog snapshot, resolves its LevelModifier, and for every one whose ProgressionModifier reference is (INTERMEDIATE_PROGRESSION_MODIFIER_V1, v2), asserts DistanceFamily==TenK, RunsPerWeek==4, Experience==Intermediate, and combination key=='TEN_K__4D__INTERMEDIATE'. Fails immediately if any future combination artifact introduces a reachable reference outside this scope.",
+    "productionRuntimeValidatorAdded": false,
+    "productionRuntimeValidatorReasoning": "A test-level guard was judged sufficient and lower-risk than a new production CandidatePublishGraphValidator/TemplateCombinationValidator rule, per the instruction to avoid inventing a large new ownership subsystem and given there is currently zero violation to protect against (only one artifact, one referrer).",
+    "isExecutableOrDocumentationOnly": "EXECUTABLE"
+  },
+  "issue4_fileAttribution": {
+    "reportedSeparately": true,
+    "reportFiles": ["artifacts/audits/domain-wave5-file-attribution.json", "artifacts/audits/domain-wave5-file-attribution.md"]
+  },
+  "issue5_tenKMasterCascade": {
+    "reportedSeparately": true,
+    "reportFile": "artifacts/audits/domain-wave5-version-cascade.md (Clarification pass addendum section)",
+    "summary": "TEN_K_MASTER v5 was created in Wave 3, unchanged by Wave 5. TEN_K_MASTER does not reference LevelModifier or ProgressionModifier at all (PlanTemplateDefinition has no such field). TemplateCombinationDefinition.LevelModifier is the exact reference that changed (v4->v5), owned directly by the combination, not by TEN_K_MASTER. No cascade defect; no master bump required or performed."
+  },
+  "approvedD2ValuesUnchanged": true,
+  "v7CandidateValuesUnchanged": true,
+  "noNewDecisionResolved": true,
+  "d3D4D13Untouched": true,
+  "finalStatus": "Clarification pass complete: 1 ownership label corrected (append-only), 1 new executable reuse-protection test added, 1 technical debt item documented, TEN_K_MASTER cascade ownership traced and confirmed defect-free. No D2 value changed, no v7 candidate value changed, no new domain decision resolved."
+}
