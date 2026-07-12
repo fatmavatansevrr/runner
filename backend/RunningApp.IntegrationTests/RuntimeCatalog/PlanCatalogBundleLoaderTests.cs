@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -98,6 +99,32 @@ public sealed class PlanCatalogBundleLoaderTests
 
         Assert.Equal(new[] { "FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER" }, summary.PhaseKeys);
         Assert.Equal(new[] { "KEY_SESSION", "EASY_SUPPORT", "EASY_SUPPORT", "LONG_RUN" }, summary.SlotRoles);
+    }
+
+    // Backend Integration Phase 4F.3: PhaseAllocations (phaseKey + preferredWeeks,
+    // previously discarded by the loader) must resolve directly from the real,
+    // unmodified templates/ten-k-master.v6.json -- no hardcoded 3/4/4/1 anywhere
+    // in the loader itself.
+    [Fact]
+    public async Task LoadCandidateAsync_ExposesPhaseAllocations_MatchingRepositoryPreferredWeeks()
+    {
+        var loader = NewLoader(RealCatalogRoot());
+
+        var summary = await loader.LoadCandidateAsync(CandidateKey, CandidateVersion);
+
+        Assert.Equal(
+            new[]
+            {
+                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("FOUNDATION", 3),
+                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("BUILD", 4),
+                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("RACE_SPECIFIC", 4),
+                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("TAPER", 1),
+            },
+            summary.PhaseAllocations);
+
+        // The total must equal coreCycle.defaultWeeks, both read from the same file.
+        Assert.Equal(12, summary.PhaseAllocations.Sum(p => p.PreferredWeeks));
+        Assert.Equal(12, summary.CoreCycle.DefaultWeeks);
     }
 
     [Fact]

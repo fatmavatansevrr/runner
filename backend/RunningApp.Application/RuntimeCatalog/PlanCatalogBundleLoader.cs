@@ -69,6 +69,14 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
             var phaseKeys = template.RootElement.TryGetProperty("phases", out var phasesEl) && phasesEl.ValueKind == JsonValueKind.Array
                 ? phasesEl.EnumerateArray().Select(p => RequireString(p, "phaseKey", "templates", masterTemplateRef)).ToList()
                 : throw new PlanCatalogLoadException($"'phases' is missing on templates/{masterTemplateRef.Key} v{masterTemplateRef.Version}.");
+            // Backend Integration Phase 4F.3: also preserve each phase's own preferredWeeks
+            // (previously read only for phaseKey and discarded) -- same single pass over the
+            // same phases[] array, so PhaseKeys and PhaseAllocations can never drift apart.
+            var phaseAllocations = phasesEl.EnumerateArray()
+                .Select(p => new PlanCatalogPhaseAllocation(
+                    RequireString(p, "phaseKey", "templates", masterTemplateRef),
+                    RequireInt(p, "preferredWeeks", "templates", masterTemplateRef)))
+                .ToList();
             var workoutProgressionRef = ReadReference(template, "workoutProgression");
 
             var runsPerWeek = RequireInt(layout, "runsPerWeek", "layouts", layoutRef);
@@ -111,6 +119,7 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
                 RuntimeConditionValueRegistry = runtimeConditionValueRegistryRef,
                 ReferencedWorkouts = referencedWorkouts,
                 PhaseKeys = phaseKeys,
+                PhaseAllocations = phaseAllocations,
                 SlotRoles = slotRoles,
             };
 

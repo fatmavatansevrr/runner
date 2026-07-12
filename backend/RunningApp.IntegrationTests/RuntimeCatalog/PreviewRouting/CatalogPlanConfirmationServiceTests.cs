@@ -111,6 +111,10 @@ public sealed class CatalogPlanConfirmationServiceTests
             RuntimeConditionValueRegistry = refs["runtimeConditionValueRegistry"],
             ReferencedWorkouts = new List<PlanCatalogReference>(),
             PhaseKeys = new List<string> { "FOUNDATION", "BUILD", "PEAK" },
+            PhaseAllocations = new List<PlanCatalogPhaseAllocation>
+            {
+                new("FOUNDATION", 4), new("BUILD", 6), new("PEAK", 2),
+            },
             SlotRoles = new List<string> { "EASY", "INTERVAL", "TEMPO", "LONG_RUN" },
             CoreCycle = new PlanCatalogCoreCycle(8, 12, 16),
         };

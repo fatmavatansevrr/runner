@@ -84,6 +84,7 @@ public sealed class CatalogCandidateEligibilityGateTests
         },
         ReferencedWorkouts = System.Array.Empty<PlanCatalogReference>(),
         PhaseKeys = System.Array.Empty<string>(),
+        PhaseAllocations = System.Array.Empty<PlanCatalogPhaseAllocation>(),
         SlotRoles = System.Array.Empty<string>(),
     };
 

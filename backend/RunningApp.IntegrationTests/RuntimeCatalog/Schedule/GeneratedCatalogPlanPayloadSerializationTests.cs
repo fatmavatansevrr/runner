@@ -222,6 +222,7 @@ public sealed class GeneratedCatalogPlanPayloadSerializationTests
             RuntimeConditionValueRegistry = new RunningApp.Application.RuntimeCatalog.PlanCatalogReference("RUNTIME_CONDITION_VALUES_V1", 2),
             ReferencedWorkouts = new System.Collections.Generic.List<RunningApp.Application.RuntimeCatalog.PlanCatalogReference>(),
             PhaseKeys = new System.Collections.Generic.List<string>(),
+            PhaseAllocations = new System.Collections.Generic.List<RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation>(),
             SlotRoles = new System.Collections.Generic.List<string>(),
         };
 

@@ -14,6 +14,18 @@ public sealed record PlanCatalogReference(string Key, int Version);
 public sealed record PlanCatalogCoreCycle(int MinimumWeeks, int DefaultWeeks, int? MaximumWeeks);
 
 /// <summary>
+/// Backend Integration Phase 4F.3 — one phase's own declared week-count
+/// preference, read verbatim from a PLAN_TEMPLATE's <c>phases[]</c> array
+/// (e.g. <c>templates/ten-k-master.v6.json</c>: <c>{"phaseKey":"BUILD",
+/// "preferredWeeks":4,...}</c>). <see cref="PhaseKey"/> is the catalog's
+/// week-allocation granularity — distinct from the catalog's finer,
+/// workout-selection-level <c>stageKey</c> (nested inside a phase's own
+/// <c>workoutProgression</c> entry), which carries no week-count of its own
+/// and is not represented here.
+/// </summary>
+public sealed record PlanCatalogPhaseAllocation(string PhaseKey, int PreferredWeeks);
+
+/// <summary>
 /// Read-only summary of a Process A plan-catalog TEMPLATE_COMBINATION candidate,
 /// resolved from its immediate dependency graph (master template, layout, level
 /// modifier, rule pack, and their own direct references). Deliberately does NOT
@@ -75,6 +87,16 @@ public sealed class PlanCatalogCandidateSummary
 
     /// <summary>Phase keys declared by the master template (e.g. FOUNDATION, BUILD, RACE_SPECIFIC, TAPER).</summary>
     public required IReadOnlyList<string> PhaseKeys { get; init; }
+
+    /// <summary>
+    /// Backend Integration Phase 4F.3 — each phase's own declared
+    /// <c>preferredWeeks</c>, in the same order as <see cref="PhaseKeys"/>
+    /// (both are populated from the same pass over the same <c>phases[]</c>
+    /// array, so they can never drift relative to each other). Additive:
+    /// <see cref="PhaseKeys"/> is kept unchanged for backward compatibility
+    /// with every existing consumer/test that only needs the bare key list.
+    /// </summary>
+    public required IReadOnlyList<PlanCatalogPhaseAllocation> PhaseAllocations { get; init; }
 
     /// <summary>Slot roles declared by the layout (e.g. KEY_SESSION, EASY_SUPPORT, LONG_RUN).</summary>
     public required IReadOnlyList<string> SlotRoles { get; init; }
