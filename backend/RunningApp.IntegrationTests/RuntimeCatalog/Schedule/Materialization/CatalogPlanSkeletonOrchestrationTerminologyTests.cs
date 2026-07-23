@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using Xunit;
 
@@ -38,7 +39,11 @@ public sealed class CatalogPlanSkeletonOrchestrationTerminologyTests
             .Select(t => t.FullName)
             .ToList();
 
-        var resolverMethod = typeof(CatalogPhaseAllocationResolver).GetMethod(nameof(CatalogPhaseAllocationResolver.Resolve))!;
+        // Phase 4G.3B.2 added a second Resolve(candidate, targetWeekCount)
+        // overload, so this must be disambiguated to the original
+        // candidate-only overload this test has always meant to check.
+        var resolverMethod = typeof(CatalogPhaseAllocationResolver).GetMethod(
+            nameof(CatalogPhaseAllocationResolver.Resolve), new[] { typeof(PlanCatalogCandidateSummary) })!;
         var referencedTypeNames = new[] { resolverMethod.ReturnType, resolverMethod.GetParameters()[0].ParameterType }
             .Select(t => t.FullName).ToList();
 
