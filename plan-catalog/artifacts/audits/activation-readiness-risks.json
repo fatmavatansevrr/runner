@@ -1,4 +1,4 @@
-{
+﻿{
   "auditId": "ACTIVATION-READINESS-RISKS-001",
   "generatedAtUtc": "2026-07-09T16:00:00Z",
   "readOnly": true,
@@ -136,8 +136,31 @@
       "blocking": false,
       "appliesToCandidateRootsFrom": "Any candidate whose runtime generation would consume CORE_ENTRY_READINESS_IN (not specific to any catalog candidate version)",
       "status": "OPEN"
+    },
+    {
+      "id": "TD-TESTFLAKE-001",
+      "title": "Transient reset-endpoint HTTP 500s observed once during Phase 4G.3B.1 validation, not reproduced since",
+      "recordedInPass": "Phase 4G.3B.1 validation evidentiary follow-up (2026-07-23)",
+      "source": "Phase 4G.3B.1 validation follow-up report; captured full-suite terminal output from the original 1071-test run; two subsequent clean full-suite validation runs",
+      "statement": "Ten relational/reset-endpoint tests failed with HTTP 500 or a preview-row-count mismatch in one specific captured Phase 4G.3B.1 validation run, then did not reproduce in two subsequent clean full-suite runs: ResetEndpointRelationalScenarioTests.ResetEndpoint_AllEightRequiredScenarios_SucceedWithoutFkViolationOrStaleState; Sw02ProductAverageEndToEndTests.Sw02Request_ReturnsHttp200_With12Weeks_4SessionsPerWeek_48TotalSessions_NoRestRows; Sw09ExplicitZeroReadinessEndToEndTests.Sw09Request_ExplicitZeroReadiness_IsNotRejectedByTransportValidation; Sw12LongHorizonFailClosedEndToEndTests.VerifiedRegressionCase_NoLegacyFallback_NoPreviewOrPlanPersistence; Sw12LongHorizonFailClosedEndToEndTests.InRangeBoundaryHorizon_Returns422_PlanCoreHorizonUnsupported_NotHttp200(weeks: 8); Sw12LongHorizonFailClosedEndToEndTests.InRangeBoundaryHorizon_Returns422_PlanCoreHorizonUnsupported_NotHttp200(weeks: 14); Sw12LongHorizonFailClosedEndToEndTests.UnsupportedLongHorizon_Returns422_PlanHorizonCompositionRequired(weeks: 16); Sw12LongHorizonFailClosedEndToEndTests.UnsupportedLongHorizon_Returns422_PlanHorizonCompositionRequired(weeks: 24); Sw12LongHorizonFailClosedEndToEndTests.UnsupportedLongHorizon_Returns422_PlanHorizonCompositionRequired(weeks: 15); Sw12LongHorizonFailClosedEndToEndTests.UnsupportedLongHorizon_Returns422_PlanHorizonCompositionRequired(weeks: 20). Root cause is unknown. The failures are not attributable to Phase 4G.3B.1's PlanCatalogBundleLoader.cs or PlanCatalogCandidateSummary.cs changes because those typed catalog-loading changes are unrelated to the reset endpoint and relational test infrastructure.",
+      "classification": "UNVERIFIED_TRANSIENT_FAILURE",
+      "severity": "NON_BLOCKING_OBSERVATION",
+      "affectedAreas": [
+        "Shared PostgreSQL integration-test database state",
+        "Testing reset endpoint",
+        "Relational end-to-end test ordering and isolation",
+        "Future phase validation reporting"
+      ],
+      "requiredResolution": [
+        "If this pattern reoccurs, investigate shared PostgreSQL test-database state and reset ordering before assuming it is safe to ignore again."
+      ],
+      "currentRuntimeImpact": "None confirmed. The ten failures occurred in one captured validation run and did not reproduce in two subsequent clean full-suite runs; root cause remains unknown.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Repository-wide relational validation infrastructure; not candidate-version-specific",
+      "status": "OPEN"
     }
   ],
+  "currentAppendOnlyStatus": "TD-TESTFLAKE-001 appends one OPEN, non-blocking observation. The historical finalStatus text below is retained unchanged under the append-only convention.",
   "howToUse": "Before any publish/activate/release action against TEN_K__4D__INTERMEDIATE v8 or a descendant, review every entry in `risks` regardless of the candidate's blocker/decision count. This file is additive across passes -- future passes should append new risk entries here rather than creating a new aggregator.",
   "finalStatus": "7 risks recorded (TD-D3-001, TD-WAVE5-001, TD-BACKEND-001, TD-REGISTRY-001, TD-PACESOURCE-001, TD-PACESOURCE-002, TD-CORE-READINESS-001), all OPEN. TD-BACKEND-001 is the most fundamental: no backend/plan-catalog integration exists at all. TD-REGISTRY-001 (added Phase 4A.1) is UNRELATED to and unaffected by TD-CORE-READINESS-001 -- it tracks the golden-fixture STANDARD vocabulary defect specifically, still unresolved. TD-PACESOURCE-001 and TD-PACESOURCE-002 (added Phase 4D.2.5) are activation risks on the already-implemented PaceSourceResolver. TD-CORE-READINESS-001 (added Phase 4D.3, thresholds approved and resolver activated in Phase 4D.3.1 per EV-008 -- see its resolutionNote) now tracks only the residual risk that CoreEntryReadinessResolver, though implementing real owner-approved V1 logic, remains unwired from live generation."
 }
