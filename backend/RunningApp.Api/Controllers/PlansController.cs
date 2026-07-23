@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using RunningApp.Application.Commands.Plan;
 using RunningApp.Application.DTOs.Home;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Services;
+using RunningApp.Application.Validation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,12 +37,25 @@ public class PlansController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>POST /api/v1/plans/generate-preview — returns a seed template preview</summary>
-    [HttpPost("generate-preview")]
+    /// <summary>POST /api/v1/plans/generate-preview/race — returns a race plan preview</summary>
+    [HttpPost("generate-preview/race")]
     [ProducesResponseType(typeof(GeneratePreviewResponse), 200)]
-    public async Task<IActionResult> GeneratePreview([FromBody] GeneratePreviewRequest request, CancellationToken ct)
+    public async Task<IActionResult> GenerateRacePlanPreview([FromBody] GenerateRacePlanPreviewRequest request, CancellationToken ct)
     {
-        var response = await _previewService.GeneratePreviewAsync(_currentUser.InternalUserId, request, ct);
+        GenerateRacePlanPreviewRequestValidator.Validate(request);
+        var command = GeneratePreviewCommandMapper.ToCommand(request);
+        var response = await _previewService.GenerateRacePlanPreviewAsync(_currentUser.InternalUserId, command, ct);
+        return Ok(response);
+    }
+
+    /// <summary>POST /api/v1/plans/generate-preview/habit — returns a habit plan preview</summary>
+    [HttpPost("generate-preview/habit")]
+    [ProducesResponseType(typeof(GeneratePreviewResponse), 200)]
+    public async Task<IActionResult> GenerateHabitPlanPreview([FromBody] GenerateHabitPlanPreviewRequest request, CancellationToken ct)
+    {
+        GenerateHabitPlanPreviewRequestValidator.Validate(request);
+        var command = GeneratePreviewCommandMapper.ToCommand(request);
+        var response = await _previewService.GenerateHabitPlanPreviewAsync(_currentUser.InternalUserId, command, ct);
         return Ok(response);
     }
 

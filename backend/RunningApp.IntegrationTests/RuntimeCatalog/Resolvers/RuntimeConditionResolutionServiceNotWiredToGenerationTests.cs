@@ -38,7 +38,7 @@ public sealed class RuntimeConditionResolutionServiceNotWiredToGenerationTests
             Version = 1,
             GoalType = GoalType.Habit,
             GoalDistance = GoalDistance.FiveK,
-            Level = RunningBackground.NewToRunning,
+            Level = RunningBackground.Beginner,
             DaysPerWeek = 3,
             Unit = DistanceUnit.Km,
             DataJson = "{\"templateId\":\"habit_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"habit\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z2\"}]}]}",
@@ -61,13 +61,12 @@ public sealed class RuntimeConditionResolutionServiceNotWiredToGenerationTests
         {
             GoalType = GoalType.Habit,
             GoalDistance = GoalDistance.FiveK,
-            Level = RunningBackground.NewToRunning,
+            Level = RunningBackground.Beginner,
             DaysPerWeek = 3,
             Unit = DistanceUnit.Km,
-            TargetFinishTimeSeconds = 3000,
-            RecentRaceDistanceKm = 5.0,
-            RecentRaceFinishTimeSeconds = 1450,
-            RecentRaceDate = new DateOnly(2026, 6, 15),
+            StartDate = new DateOnly(2026, 7, 20),
+            PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri },
+            RecentRace = new RecentRaceInput { Distance = GoalDistance.FiveK, FinishTimeSeconds = 1450, RaceDate = new DateOnly(2026, 6, 15) },
             RecentWeeklyVolumeKm = 24.0,
             RecentLongestRunKm = 9.0,
         });
@@ -83,17 +82,21 @@ public sealed class RuntimeConditionResolutionServiceNotWiredToGenerationTests
         await using var context = NewSeededContext();
         var service = NewServices(context);
 
-        var ex = await Assert.ThrowsAsync<RunningApp.Application.Exceptions.CatalogCandidateNotPublishedException>(() => service.GeneratePreviewAsync(Guid.NewGuid(), new GeneratePreviewRequest
+        var ex = await Assert.ThrowsAsync<RunningApp.Application.Exceptions.PlanTemplateNotAvailableException>(() => service.GeneratePreviewAsync(Guid.NewGuid(), new GeneratePreviewRequest
         {
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             Unit = DistanceUnit.Km,
+            StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
             TargetFinishTimeSeconds = 3000,
+            PreferredDays = new[] { Weekday.Mon, Weekday.Tue, Weekday.Thu, Weekday.Sat },
+            LongRunDay = Weekday.Sat,
         }));
 
-        Assert.Contains("TEN_K__4D__INTERMEDIATE", ex.Message); // Backend Integration Phase 4E.1: this pilot combination now routes to the catalog flow, which fails with CatalogCandidateNotPublishedException because TEN_K__4D__INTERMEDIATE v10 has status DRAFT, not PLAN_TEMPLATE_NOT_FOUND (the legacy SQL flow's error) -- it never reaches PlaceholderPlanGenerationEngine at all.
+        Assert.Contains("goal_distance=TenK", ex.Message); // Phase 4F.8.2: current repository stays non-live (v10 DRAFT + activation disabled), so this reaches the exact legacy template boundary.
         Assert.Empty(context.PlanPreviews);
     }
 

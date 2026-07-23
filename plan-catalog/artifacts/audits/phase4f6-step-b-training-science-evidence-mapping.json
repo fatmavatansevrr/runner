@@ -1,0 +1,335 @@
+{
+  "auditKey": "PHASE4F6_STEP_B_TRAINING_SCIENCE_EVIDENCE_MAPPING",
+  "auditVersion": 1,
+  "sourceAuditArtifacts": [
+    "plan-catalog/artifacts/audits/phase4f6-step-a-v10-catalog-audit.json",
+    "plan-catalog/artifacts/audits/phase4f6-step-a-v10-catalog-audit.md",
+    "plan-catalog/artifacts/audits/phase4f6-step-a1-role-ownership-and-gap-clarification.json",
+    "plan-catalog/artifacts/audits/phase4f6-step-a1-role-ownership-and-gap-clarification.md",
+    "plan-catalog/artifacts/audits/phase4f6-step-a2-easy-support-coverage-and-blocker-classification.json",
+    "plan-catalog/artifacts/audits/phase4f6-step-a2-easy-support-coverage-and-blocker-classification.md"
+  ],
+  "scopeNote": "Covers all 7 workout-progression stages, phase ordering/duration rationale, exposure bounds, compression/extension behavior, goal-pace runtime-conditional rationale, and EASY_STANDARD's general scientific shape. Role binding, EASY_SUPPORT/LONG_RUN mapping, EASY_SHAKEOUT/EASY_WITH_STRIDES/LONG_RUN_PROGRESSION catalog-artifact decisions, bounded-context ownership, and schema design are explicitly out of scope and classified NOT_AN_EVIDENCE_QUESTION wherever they surface, deferred to Step C.",
+  "sources": [
+    {
+      "evidenceId": "TDE-001",
+      "citation": {
+        "authors": "Kenneally M, Casado A, Santos-Concejero J",
+        "year": 2018,
+        "title": "The Effect of Periodization and Training Intensity Distribution on Middle- and Long-Distance Running Performance: A Systematic Review",
+        "journalOrBook": "International Journal of Sports Physiology and Performance, Vol 13, Issue 9, pp. 1114-1121",
+        "doi": "NOT_VERIFIED_IN_THIS_PASS",
+        "pubmedId": "29182410"
+      },
+      "sourceType": "SYSTEMATIC_REVIEW",
+      "population": "Middle- and long-distance runners; 16 studies included (6 observational, 3 case studies, 6 interventions, 1 review); predominantly highly trained/competitive runners, not exclusively elite, but skewed toward trained populations rather than recreational novices.",
+      "supports": [
+        "existence of distinct training-intensity-distribution (TID) models (pyramidal, polarized, threshold) as an established, evidence-examined framework for distance training",
+        "pyramidal and polarized TID models outperforming a threshold-dominant TID model on average across the reviewed studies",
+        "general validity of structured, non-random intensity distribution as a training principle for middle/long-distance runners"
+      ],
+      "doesNotSupport": [
+        "any exact Appsel stage name, stage count, or stage taxonomy",
+        "exact minimum/maximum exposure counts for any stage",
+        "exact phase week-length allocations",
+        "an exact 10K-specific or intermediate-recreational-specific recommendation (population/event distance not isolated in this review)",
+        "the specific choice of fartlek as a BUILD-phase entry modality",
+        "any claim about structural role binding or workout-key identity"
+      ],
+      "applicabilityLimits": [
+        "ELITE_TO_INTERMEDIATE_EXTRAPOLATION required for the pilot's recreational intermediate population",
+        "reviewed studies span middle- and long-distance broadly; not 10K-isolated"
+      ],
+      "affectedDecisionIds": ["D01", "D02", "D08", "D14", "D15", "D21", "D22", "D28", "D48", "D49"],
+      "evidenceStrength": "MODERATE_SYSTEMATIC_REVIEW",
+      "notes": "Verified via web search against the published IJSPP record and its PubMed listing (PMID 29182410); abstract-level content confirmed, full text not independently re-derived in this pass. DOI not independently confirmed — left NOT_VERIFIED_IN_THIS_PASS rather than invented."
+    },
+    {
+      "evidenceId": "TDE-002",
+      "citation": {
+        "authors": "Casado A, Gonzalez-Mohino F, Mohino-Diaz Y (verify author list) et al.",
+        "year": 2022,
+        "title": "Training Periodization, Methods, Intensity Distribution, and Volume in Highly Trained and Elite Distance Runners: A Systematic Review",
+        "journalOrBook": "International Journal of Sports Physiology and Performance, Vol 17, Issue 6, p. 820",
+        "doi": "NOT_VERIFIED_IN_THIS_PASS",
+        "pubmedId": "NOT_VERIFIED_IN_THIS_PASS"
+      },
+      "sourceType": "SYSTEMATIC_REVIEW",
+      "population": "Highly trained and elite middle/long-distance runners specifically (explicitly narrower and more elite-skewed than TDE-001).",
+      "supports": [
+        "pyramidal TID (decreasing volume from low- to high-intensity zones) as the dominant pattern among highly trained/elite distance runners",
+        "a shift from pyramidal TID in preparatory/precompetitive periods toward polarized TID in the competitive period — i.e. a general-to-specific, intensity-distribution progression across a training cycle",
+        "a traditional 'hard day-easy day' periodization basis with cyclic progressive load increase",
+        "block or traditional periodization both being viable, evidence-observed approaches, not a single mandated structure"
+      ],
+      "doesNotSupport": [
+        "any exact Appsel phase taxonomy, phase names, or phase count",
+        "the exact 3/4/4/1-week (FOUNDATION/BUILD/RACE_SPECIFIC/TAPER) phase-length allocation",
+        "exact stage-level exposure minimums/maximums",
+        "recreational/intermediate-population-specific volume or intensity targets (population is explicitly highly trained/elite)",
+        "10K-specific findings (reviewed runners are middle/long-distance broadly, volumes reported in weekly hours, not distance-specific)",
+        "any structural role binding or workout-key identity claim"
+      ],
+      "applicabilityLimits": [
+        "ELITE_TO_INTERMEDIATE_EXTRAPOLATION strongly required — this review's population (8.75-11.68 h/week highly trained runners) is materially more trained than a recreational INTERMEDIATE 10K pilot user",
+        "DISTANCE_EXTRAPOLATION required — event distances not isolated to 10K"
+      ],
+      "affectedDecisionIds": ["D01", "D02", "D14", "D15", "D21", "D22", "D28", "D48", "D49", "D50"],
+      "evidenceStrength": "MODERATE_SYSTEMATIC_REVIEW_ELITE_POPULATION",
+      "notes": "Verified via web search against the published IJSPP record. Exact full author list beyond 'Casado A' was not independently confirmed character-for-character in this pass — treat authorship string as approximate pending direct full-text verification; do not cite the incomplete author list as authoritative without re-verification. PMID/DOI not independently confirmed."
+    },
+    {
+      "evidenceId": "TDE-003",
+      "citation": {
+        "authors": "Bosquet L, Montpetit J, Arvisais D, Mujika I",
+        "year": 2007,
+        "title": "Effects of tapering on performance: a meta-analysis",
+        "journalOrBook": "Medicine & Science in Sports & Exercise",
+        "doi": "NOT_VERIFIED_IN_THIS_PASS",
+        "pubmedId": "17762369"
+      },
+      "sourceType": "META_ANALYSIS",
+      "population": "Competitive athletes across multiple sports (27 of 182 candidate studies met inclusion criteria); not distance-running-specific, not recreational-population-specific.",
+      "supports": [
+        "a taper as a distinct, evidence-supported phase preceding competition, separate from base/build training",
+        "a ~2-week (approx. 8-14 day), exponential, fast-decay taper with training volume reduced by 41-60% as the most efficient strategy found across the reviewed studies",
+        "maintaining training intensity and frequency during the taper (rather than reducing them) as part of the most effective observed taper strategies"
+      ],
+      "doesNotSupport": [
+        "an exact 1-week taper duration as optimal (the reviewed optimum was materially longer, ~2 weeks)",
+        "any 10K-specific or short-race-specific taper duration recommendation (population/event distance not isolated)",
+        "any claim about which specific workout key or stage should occupy the taper period",
+        "any claim about recreational/intermediate-population taper needs specifically (population is broad competitive-athlete, multi-sport)"
+      ],
+      "applicabilityLimits": [
+        "DISTANCE_EXTRAPOLATION required — not distance-running-specific, let alone 10K-specific; shorter events conventionally warrant shorter tapers in coaching practice, but this specific claim is COACHING_PRACTICE_ONLY within this audit (no primary source verified for a 10K-specific taper-length adjustment)",
+        "ELITE_TO_INTERMEDIATE_EXTRAPOLATION required — included studies skew toward competitive/trained athletes"
+      ],
+      "affectedDecisionIds": ["D43", "D44", "D45", "D46", "D47", "D51"],
+      "evidenceStrength": "STRONG_META_ANALYSIS",
+      "notes": "Verified via web search against the published Medicine & Science in Sports & Exercise record and its PubMed listing (PMID 17762369). This is the single most decision-relevant source found in this pass — see D51 for the direct tension it creates with Appsel's fixed 1-week TAPER phase."
+    }
+  ],
+  "phaseAssessments": [
+    {
+      "phaseKey": "FOUNDATION",
+      "currentValues": { "minimumWeeks": 2, "preferredWeeks": 3, "maximumWeeks": 4 },
+      "claims": [
+        { "decisionId": "D48-FOUNDATION", "claim": "General-to-specific progression (base work before higher-intensity/specific work) is a valid training principle.", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "notes": "Both reviews support progression toward increasing specificity/intensity as competition nears (TDE-002 explicitly documents pyramidal-to-polarized shift across a cycle)." },
+        { "decisionId": "D49-FOUNDATION", "claim": "The exact 4-phase Appsel taxonomy (FOUNDATION/BUILD/RACE_SPECIFIC/TAPER) is the scientifically mandated phase structure.", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT", "evidenceIds": [], "notes": "Neither TDE-001 nor TDE-002 mandates a specific 4-phase taxonomy or these exact phase names; this is a product/authoring choice consistent with, but not derived from, general periodization principles." },
+        { "decisionId": "D50-FOUNDATION", "claim": "FOUNDATION's exact week bounds (2/3/4) are evidence-derived.", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "notes": "Consistent with AUD-004/005's existing PlaceholderUnconfirmed classification; no source in this pass supports these exact bounds." }
+      ]
+    },
+    {
+      "phaseKey": "BUILD",
+      "currentValues": { "minimumWeeks": 3, "preferredWeeks": 4, "maximumWeeks": 5 },
+      "claims": [
+        { "decisionId": "D49-BUILD", "claim": "A distinct BUILD phase introducing progressively harder quality stimuli (fartlek then threshold) between FOUNDATION and RACE_SPECIFIC is directionally supported.", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "notes": "General progressive-intensity-introduction principle is supported; the specific two-stage fartlek-then-threshold sequence and its exact ordering are not directly evidenced." },
+        { "decisionId": "D50-BUILD", "claim": "BUILD's exact week bounds (3/4/5) are evidence-derived.", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "notes": "No source in this pass supports these exact bounds; consistent with existing AUD-004/005 classification." }
+      ]
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "currentValues": { "minimumWeeks": 2, "preferredWeeks": 4, "maximumWeeks": 4 },
+      "claims": [
+        { "decisionId": "D49-RACE_SPECIFIC", "claim": "A race-specific phase emphasizing increased specificity and goal-pace exposure nearer competition is supported.", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-002"], "notes": "TDE-002's pyramidal-to-polarized shift toward the competitive period directly supports a distinct late-cycle specificity phase; the exact Appsel stage content within it is not itself evidenced." },
+        { "decisionId": "D50-RACE_SPECIFIC", "claim": "RACE_SPECIFIC's exact week bounds (2/4/4) are evidence-derived.", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "notes": "Consistent with existing AUD-004/005 classification." }
+      ]
+    },
+    {
+      "phaseKey": "TAPER",
+      "currentValues": { "minimumWeeks": 1, "preferredWeeks": 1, "maximumWeeks": 1 },
+      "claims": [
+        { "decisionId": "D49-TAPER", "claim": "A distinct taper phase separate from build/race-specific training is supported.", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-003"], "notes": "TDE-003 is a meta-analysis directly supporting taper as a distinct, effective phase." },
+        {
+          "decisionId": "D51",
+          "claim": "TAPER's fixed 1-week duration (min=preferred=max=1) matches the evidence-supported optimal taper window.",
+          "evidenceBasis": "CONTRADICTED_BY_EVIDENCE",
+          "decisionStatus": "PLACEHOLDER_UNCONFIRMED",
+          "evidenceIds": ["TDE-003"],
+          "populationApplicability": "PARTIALLY_APPLICABLE",
+          "applicabilityLimits": ["DISTANCE_EXTRAPOLATION (TDE-003 not 10K-specific)", "ELITE_TO_INTERMEDIATE_EXTRAPOLATION"],
+          "recommendedGovernanceAction": "REVIEW_PRODUCT_DEFAULT",
+          "notes": "TDE-003 found a ~2-week exponential taper (volume reduced 41-60%, intensity/frequency maintained) most efficient across its reviewed studies; Appsel's TAPER phase is fixed at exactly 1 week with no flexibility (min=preferred=max=1). This is a genuine, material duration tension, not a confident flat contradiction — TDE-003's population is broad competitive-athlete/multi-sport, not 10K-specific, and shorter events conventionally warrant shorter tapers in coaching practice (a claim this audit could not independently verify against a primary source, so it is NOT used to fully explain away the tension). Flagged as a concrete, evidence-relevant candidate for Step C review of the TAPER phase's fixed-length design, not a request to change the value here."
+        }
+      ]
+    }
+  ],
+  "stageAssessments": [
+    { "stageKey": "FOUNDATION_EASY_BASE", "phaseKey": "FOUNDATION", "atomicDecisionIds": ["D01", "D02", "D03", "D04", "D05", "D06"], "summary": "Intent and phase placement are evidence-backed; exact exposure counts and compression/extension mechanics remain unevidenced product defaults." },
+    { "stageKey": "FARTLEK_INTRO", "phaseKey": "BUILD", "atomicDecisionIds": ["D07", "D08", "D09", "D10", "D11", "D12", "D13"], "summary": "General progressive-intensity placement is evidence-informed; the specific choice of fartlek as the entry modality (vs. alternatives) is not evidenced by the sources reviewed in this pass." },
+    { "stageKey": "THRESHOLD_INTRO", "phaseKey": "BUILD", "atomicDecisionIds": ["D14", "D15", "D16", "D17", "D18", "D19", "D20"], "summary": "Threshold-zone work as a component within a broader pyramidal/polarized approach is evidence-backed; note the reviewed evidence favors pyramidal/polarized MODELS over threshold-dominant training as a whole-plan strategy — the catalog does not claim a whole-plan TID model, so no contradiction, but this distinction is worth Step C awareness." },
+    { "stageKey": "TEN_K_SPECIFIC_INTRO", "phaseKey": "RACE_SPECIFIC", "atomicDecisionIds": ["D21", "D22", "D23", "D24", "D25", "D26", "D27"], "summary": "Race-approaching specificity increase is evidence-informed; exact exposure counts unevidenced." },
+    { "stageKey": "GOAL_PACE_REHEARSAL", "phaseKey": "RACE_SPECIFIC", "atomicDecisionIds": ["D28", "D29", "D30", "D31", "D32", "D33", "D34", "D35"], "summary": "Race-pace rehearsal near competition and protecting it from compression are evidence-informed in principle; the exact runtime-eligibility thresholds and fallback wiring are architectural/product decisions, not evidence questions." },
+    { "stageKey": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "phaseKey": "RACE_SPECIFIC", "atomicDecisionIds": ["D36", "D37", "D38", "D39", "D40", "D41", "D42"], "summary": "Fallback specificity-at-current-fitness principle is evidence-informed. Flags one internal-consistency observation: unlike its counterpart GOAL_PACE_REHEARSAL, this stage is NOT marked PROTECTED/FIXED_EXPOSURE, despite representing the same specificity-protection need for the population that fails the goal-feasibility gate." },
+    { "stageKey": "TAPER_SHARPEN", "phaseKey": "TAPER", "atomicDecisionIds": ["D43", "D44", "D45", "D46", "D47"], "summary": "The stage's actual bound candidate (EASY_STANDARD) does not fulfill the evidence-supported taper principle of maintaining intensity while reducing volume (TDE-003) — see D43 for the core finding. This is the second most significant finding in this audit after D51." }
+  ],
+  "atomicDecisionAssessments": [
+    { "decisionId": "D01", "stageId": "FOUNDATION_EASY_BASE", "field": "stageIntent", "currentCatalogValue": "General aerobic base building via repeated EASY_STANDARD exposure", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["low-intensity-dominant base phase preceding higher-intensity work"], "doesNotSupport": ["exact stage name or exposure count"], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Directionally well-supported general principle." },
+    { "decisionId": "D02", "stageId": "FOUNDATION_EASY_BASE", "field": "phasePlacement", "currentCatalogValue": "FOUNDATION (first phase)", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["general-to-specific ordering places low-intensity base work first"], "doesNotSupport": [], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D03", "stageId": "FOUNDATION_EASY_BASE", "field": "minimumExposures", "currentCatalogValue": 3, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": ["repeated low-intensity exposure generally beneficial, directionally"], "doesNotSupport": ["the exact minimum of 3"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": "This exact count is unlikely to ever be resolved by scientific literature — it is inherently a scheduling/product choice bounded by phase length. Recommend Step C reclassify as EXPLICIT_PRODUCT_DEFAULT rather than leaving as an open PlaceholderUnconfirmed awaiting evidence that will not arrive." },
+    { "decisionId": "D04", "stageId": "FOUNDATION_EASY_BASE", "field": "maximumExposures", "currentCatalogValue": 6, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["the exact maximum of 6"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": "Same reasoning as D03." },
+    { "decisionId": "D05", "stageId": "FOUNDATION_EASY_BASE", "field": "compressionBehavior", "currentCatalogValue": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["base-phase flexibility is reasonable when total prep time is limited, directionally consistent with periodization adaptability"], "doesNotSupport": ["the exact COMPRESSIBLE enum mechanics"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+    { "decisionId": "D06", "stageId": "FOUNDATION_EASY_BASE", "field": "extensionBehavior", "currentCatalogValue": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["extra base-phase time reasonably repeats low-intensity work rather than introducing new stimulus"], "doesNotSupport": ["the exact EXTENDABLE enum mechanics"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+
+    { "decisionId": "D07", "stageId": "FARTLEK_INTRO", "field": "stageIntent", "currentCatalogValue": "Introduce varied-pace stimulus via FARTLEK", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["progressive introduction of higher-intensity stimulus after a base period"], "doesNotSupport": ["fartlek specifically as the entry modality vs. alternatives (e.g. strides, short hills, short intervals)"], "populationApplicability": "COACHING_PRACTICE_ONLY", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": "No source verified in this pass isolates fartlek as scientifically superior to other low-structure speed-introduction methods; this remains a defensible coaching-practice choice, not an evidenced one." },
+    { "decisionId": "D08", "stageId": "FARTLEK_INTRO", "field": "phasePlacement", "currentCatalogValue": "BUILD", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["intensity introduction after base, before race-specific work"], "doesNotSupport": [], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D09", "stageId": "FARTLEK_INTRO", "field": "relativeOrder", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["a lower-structure intensity stimulus preceding higher-structure threshold work is a defensible progressive-overload sequence"], "doesNotSupport": ["this exact ordering as the only valid one"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D10", "stageId": "FARTLEK_INTRO", "field": "minimumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": "Same reasoning pattern as D03." },
+    { "decisionId": "D11", "stageId": "FARTLEK_INTRO", "field": "maximumExposures", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 2"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D12", "stageId": "FARTLEK_INTRO", "field": "compressionBehavior", "currentCatalogValue": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": "The exact compression enum/mechanics are scheduling policy, not a scientific question." },
+    { "decisionId": "D13", "stageId": "FARTLEK_INTRO", "field": "extensionBehavior", "currentCatalogValue": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+
+    { "decisionId": "D14", "stageId": "THRESHOLD_INTRO", "field": "stageIntent", "currentCatalogValue": "Introduce threshold/tempo stimulus via THRESHOLD_TEMPO", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["threshold-zone work as a recognized, evidence-examined TID component, particularly within a pyramidal model"], "doesNotSupport": ["a threshold-DOMINANT whole-plan model, which both reviews found less effective than pyramidal/polarized approaches as a standalone strategy"], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Important nuance: the catalog does not declare threshold training as its overall TID model, so there is no contradiction — it uses threshold as one component stage within a broader progression, consistent with pyramidal TID." },
+    { "decisionId": "D15", "stageId": "THRESHOLD_INTRO", "field": "phasePlacement", "currentCatalogValue": "BUILD", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["progressive intensity buildup before race-specific phase"], "doesNotSupport": [], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D16", "stageId": "THRESHOLD_INTRO", "field": "relativeOrder", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["ordering threshold work after the lower-structure fartlek introduction follows a progressive-difficulty pattern"], "doesNotSupport": ["this exact ordering as scientifically mandatory"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D17", "stageId": "THRESHOLD_INTRO", "field": "minimumExposures", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 2"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D18", "stageId": "THRESHOLD_INTRO", "field": "maximumExposures", "currentCatalogValue": 4, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 4"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D19", "stageId": "THRESHOLD_INTRO", "field": "compressionBehavior", "currentCatalogValue": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+    { "decisionId": "D20", "stageId": "THRESHOLD_INTRO", "field": "extensionBehavior", "currentCatalogValue": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+
+    { "decisionId": "D21", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "stageIntent", "currentCatalogValue": "Race-specific tempo work via THRESHOLD_TEMPO", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["intensity/specificity increase approaching the competitive period"], "doesNotSupport": ["reuse of THRESHOLD_TEMPO specifically as the race-specific vehicle vs. a dedicated race-pace-adjacent workout"], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D22", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "phasePlacement", "currentCatalogValue": "RACE_SPECIFIC", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["placement in the late-cycle specificity phase"], "doesNotSupport": [], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D23", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "relativeOrder", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["preceding the more specific GOAL_PACE_REHEARSAL follows a progressive-specificity pattern"], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D24", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "minimumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D25", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "maximumExposures", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 2"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D26", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "compressionBehavior", "currentCatalogValue": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+    { "decisionId": "D27", "stageId": "TEN_K_SPECIFIC_INTRO", "field": "extensionBehavior", "currentCatalogValue": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+
+    { "decisionId": "D28", "stageId": "GOAL_PACE_REHEARSAL", "field": "stageIntent", "currentCatalogValue": "Goal-pace rehearsal via GOAL_PACE_TEN_K near race", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["race-specific/competitive-period intensity emphasis nearer competition, generally supporting goal-pace-adjacent rehearsal as part of a specificity progression"], "doesNotSupport": ["exact number, timing, or eligibility-threshold specifics of goal-pace rehearsal"], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D29", "stageId": "GOAL_PACE_REHEARSAL", "field": "relativeOrder", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["placing the most specific stimulus latest in RACE_SPECIFIC, closest to competition"], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D30", "stageId": "GOAL_PACE_REHEARSAL", "field": "minimumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D31", "stageId": "GOAL_PACE_REHEARSAL", "field": "maximumExposures", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 2"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D32", "stageId": "GOAL_PACE_REHEARSAL", "field": "compressionBehavior", "currentCatalogValue": "PROTECTED", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["protecting the specificity-critical goal-pace stimulus from being compressed away is directionally consistent with prioritizing race-specific work as competition nears"], "doesNotSupport": ["the exact PROTECTED enum value/mechanics"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": "Directionally the best-supported compression choice among all 7 stages, given the specificity-protection principle." },
+    { "decisionId": "D33", "stageId": "GOAL_PACE_REHEARSAL", "field": "extensionBehavior", "currentCatalogValue": "FIXED_EXPOSURE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": "Fixed-exposure mechanics are a scheduling policy choice." },
+    { "decisionId": "D34", "stageId": "GOAL_PACE_REHEARSAL", "field": "runtimeEligibility (GOAL_FEASIBILITY_IN gating REALISTIC/CHALLENGING)", "currentCatalogValue": "requires GOAL_FEASIBILITY_IN in [REALISTIC, CHALLENGING]", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "TECHNICAL_ONLY", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Per task instruction, registry/resolver wiring is architectural, not an evidence question. The underlying PRINCIPLE that goal-pace work should be withheld from runners whose goal is assessed unrealistic is EVIDENCE_INFORMED at a general training-load/overreach-avoidance level, but no specific source verified in this pass quantifies that principle; the exact REALISTIC/CHALLENGING threshold itself remains a resolver/product decision (already covered under evidence-log.json's existing EV-001/EV-005/EV-006 scope, outside Step B)." },
+    { "decisionId": "D35", "stageId": "GOAL_PACE_REHEARSAL", "field": "fallbackStageKey (-> CURRENT_FITNESS_SPECIFIC_REHEARSAL)", "currentCatalogValue": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "TECHNICAL_ONLY", "evidenceIds": ["TDE-002"], "supports": ["providing a race-specific-intensity stimulus scaled to current fitness rather than omitting specificity work entirely, for runners who do not meet the goal-pace gate"], "doesNotSupport": ["the exact fallback key wiring or resolver mechanics"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "The exact wiring is architectural (NOT_AN_EVIDENCE_QUESTION); the underlying fallback PRINCIPLE is evidence-informed." },
+
+    { "decisionId": "D36", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "stageIntent", "currentCatalogValue": "Fallback race-specific stimulus via THRESHOLD_TEMPO", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-002"], "supports": ["retaining specificity-adjacent stimulus for runners who do not meet the goal-pace eligibility gate"], "doesNotSupport": ["reuse of THRESHOLD_TEMPO specifically as the fallback vehicle"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D37", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "relativeOrder", "currentCatalogValue": 3, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "TECHNICAL_ONLY", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Positioned after GOAL_PACE_REHEARSAL in stage order purely as a resolver fallback slot, not an independent scheduling claim." },
+    { "decisionId": "D38", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "minimumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D39", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "maximumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D40", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "compressionBehavior", "currentCatalogValue": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "REVIEW_PRODUCT_DEFAULT", "notes": "See D42 — this value's own internal consistency against GOAL_PACE_REHEARSAL's PROTECTED value is worth Step C review, independent of any external evidence source." },
+    { "decisionId": "D41", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "extensionBehavior", "currentCatalogValue": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+    { "decisionId": "D42", "stageId": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "field": "protectionAsymmetryVsGoalPaceRehearsal", "currentCatalogValue": "COMPRESSIBLE/EXTENDABLE (vs. GOAL_PACE_REHEARSAL's PROTECTED/FIXED_EXPOSURE)", "fieldSource": "DERIVED_FROM_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "REVIEW_PRODUCT_DEFAULT", "notes": "Internal-consistency observation, not a scientific claim: both GOAL_PACE_REHEARSAL and CURRENT_FITNESS_SPECIFIC_REHEARSAL exist to deliver the same underlying specificity need (D28/D35's evidence-informed rationale applies equally to both branches of this fallback pair), yet only GOAL_PACE_REHEARSAL is marked PROTECTED/FIXED_EXPOSURE. Whether this asymmetry is intentional (e.g. because the fallback stage is considered lower-priority) or an oversight is unresolved by any repository evidence found in this pass. Flagged for Step C, not decided here." },
+
+    { "decisionId": "D43", "stageId": "TAPER_SHARPEN", "field": "stageIntent / workoutCandidateContentMatch", "currentCatalogValue": "workoutCandidates: [EASY_STANDARD v4]", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "CONTRADICTED_BY_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-003"], "supports": ["TDE-003 supports a taper maintaining training intensity and frequency while reducing volume"], "doesNotSupport": ["binding the plan's only TAPER-phase stage exclusively to an EASY-family (low-intensity) workout, which does not, by itself, provide the intensity-maintenance component TDE-003 found most effective"], "populationApplicability": "PARTIALLY_APPLICABLE", "applicabilityLimits": ["DISTANCE_EXTRAPOLATION", "ELITE_TO_INTERMEDIATE_EXTRAPOLATION"], "recommendedGovernanceAction": "REVIEW_PRODUCT_DEFAULT", "notes": "The single most significant stage-level finding in this audit. The stage's own name ('SHARPEN') implies an intensity-maintaining purpose, but its only bound workout candidate is EASY_STANDARD (family=EASY). TDE-003's meta-analysis finding — that effective tapers reduce volume while maintaining intensity and frequency — is not reflected in the workout-progression stage system's TAPER-phase content: zero QUALITY/KEY_SESSION-compatible-family stage exists anywhere in the TAPER phase. Whether higher-intensity race-specific work carries over from the tail end of RACE_SPECIFIC to functionally cover this gap is a scheduling/materialization question outside this stage-level content audit and outside Step B's scope (4F.6A concern). Reported as a content-level evidence tension for Step C, not a request to add a new stage or workout." },
+    { "decisionId": "D44", "stageId": "TAPER_SHARPEN", "field": "minimumExposures", "currentCatalogValue": 1, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 1"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D45", "stageId": "TAPER_SHARPEN", "field": "maximumExposures", "currentCatalogValue": 2, "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["exact value of 2"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": null },
+    { "decisionId": "D46", "stageId": "TAPER_SHARPEN", "field": "compressionBehavior", "currentCatalogValue": "PROTECTED", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": ["TDE-003"], "supports": ["protecting the taper window from being compressed away is directionally consistent with the taper being a distinct, necessary phase"], "doesNotSupport": ["the exact PROTECTED enum mechanics"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+    { "decisionId": "D47", "stageId": "TAPER_SHARPEN", "field": "extensionBehavior", "currentCatalogValue": "FIXED_EXPOSURE", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": [], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "KEEP_AS_PRODUCT_DEFAULT", "notes": null },
+
+    { "decisionId": "D48", "stageId": "PLAN_LEVEL", "field": "generalToSpecificPrinciple", "currentCatalogValue": "FOUNDATION->BUILD->RACE_SPECIFIC->TAPER ordering", "fieldSource": "DERIVED_FROM_CATALOG", "evidenceBasis": "EVIDENCE_BACKED", "decisionStatus": "CANONICAL_CONFIRMED", "evidenceIds": ["TDE-001", "TDE-002"], "supports": ["a general-to-specific, low-to-high intensity progression across a training cycle"], "doesNotSupport": ["exact phase names, counts, or lengths"], "populationApplicability": "ELITE_TO_INTERMEDIATE_EXTRAPOLATION", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": null },
+    { "decisionId": "D49", "stageId": "PLAN_LEVEL", "field": "exactPhaseTaxonomy", "currentCatalogValue": "4 named phases: FOUNDATION, BUILD, RACE_SPECIFIC, TAPER", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT", "evidenceIds": [], "supports": [], "doesNotSupport": ["this specific 4-phase taxonomy or naming as scientifically mandated"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Consistent with, but not derived from, the general-to-specific principle (D48)." },
+    { "decisionId": "D50", "stageId": "PLAN_LEVEL", "field": "phaseWeekAllocation (3/4/4/1 preferred default)", "currentCatalogValue": "FOUNDATION preferred=3, BUILD preferred=4, RACE_SPECIFIC preferred=4, TAPER preferred=1 (sums to preferred coreCycle=12)", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT", "evidenceIds": [], "supports": [], "doesNotSupport": ["this exact week distribution as evidence-derived"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "NO_CHANGE_REQUIRED", "notes": "Should not be classified as evidence-backed per the task's explicit caution; no source reviewed in this pass supports these exact values for this population/plan shape." },
+    { "decisionId": "D52", "stageId": "PLAN_LEVEL", "field": "coreCycleBounds (min 8 / default 12 / max 14 weeks)", "currentCatalogValue": "min=8, default=12, max=14", "fieldSource": "ACTUAL_CATALOG", "evidenceBasis": "NO_DIRECT_EVIDENCE", "decisionStatus": "PLACEHOLDER_UNCONFIRMED", "evidenceIds": [], "supports": [], "doesNotSupport": ["these exact bounds"], "populationApplicability": "UNKNOWN", "recommendedGovernanceAction": "RECLASSIFY_PLACEHOLDER", "notes": "No source reviewed in this pass isolates a specific minimum viable or maximum useful total-cycle length for a 10K intermediate plan; a general 8-14 week window is broadly plausible in common coaching practice but not evidenced here." }
+  ],
+  "easyFamilyAssessments": [
+    {
+      "stageKey": "FOUNDATION_EASY_BASE",
+      "trainingScienceIntent": "General, unspecialized easy/aerobic running to build a low-intensity base.",
+      "componentSchemaImplication": "EASY_STANDARD's schema (DISTANCE prescription, EXACT_SESSION_TOTAL accounting, no components populated) implies a plain continuous easy run, not a specialized variant (no strides/shakeout component present in this catalog artifact).",
+      "placementSupport": "EVIDENCE_BACKED (see D02)",
+      "exposureSupport": "NO_DIRECT_EVIDENCE for exact counts (see D03/D04)",
+      "compressionExtensionSupport": "EVIDENCE_INFORMED directionally (see D05/D06)",
+      "roleBindingNote": "Not assessed here — role binding to EASY_SUPPORT is explicitly out of Step B's scope per Step A.1/A.2."
+    },
+    {
+      "stageKey": "TAPER_SHARPEN",
+      "trainingScienceIntent": "Per its own catalog binding, also a plain EASY_STANDARD session — despite the stage's name implying an intensity-maintaining ('sharpening') purpose.",
+      "componentSchemaImplication": "Same EASY_STANDARD schema shape as above; no components field distinguishes a taper-specific variant.",
+      "placementSupport": "See D43 — this is the audit's key finding: content does not fulfill the evidence-supported taper principle of maintained intensity.",
+      "exposureSupport": "NO_DIRECT_EVIDENCE for exact counts (see D44/D45)",
+      "compressionExtensionSupport": "EVIDENCE_INFORMED for PROTECTED (see D46); NOT_AN_EVIDENCE_QUESTION for FIXED_EXPOSURE mechanics (see D47)",
+      "roleBindingNote": "Not assessed here — out of Step B's scope."
+    }
+  ],
+  "easyStandardAssessment": {
+    "lowIntensityDominance": { "claim": "Low-intensity running should dominate overall training volume in a distance-running plan.", "evidenceBasis": "EVIDENCE_BACKED", "evidenceIds": ["TDE-001", "TDE-002"], "notes": "Both pyramidal and polarized TID models (the evidence-favored models per TDE-001) place the majority of volume in the lowest intensity zone." },
+    "easyRunningAcrossAllPhases": { "claim": "Easy running remains appropriate across all training phases, not just a base phase.", "evidenceBasis": "EVIDENCE_INFORMED", "evidenceIds": ["TDE-001", "TDE-002"], "notes": "Consistent with the 'hard day-easy day' periodization basis found in TDE-002 persisting through the competitive period, not just the preparatory period. EASY_STANDARD.eligiblePhases already lists all 4 phases in the catalog, consistent with this." },
+    "stableIdentityVsVaryingPrescription": { "claim": "A workout's identity (key) should remain stable while its dosage/prescription varies by context.", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "notes": "Schema/architecture design question, not a scientific one." },
+    "recoveryRunAsDistinctIdentity": { "claim": "Recovery-pace running is physiologically distinct enough from moderate-easy running to warrant a separate catalog workout identity (vs. a dosage/intensity parameter on the same identity).", "evidenceBasis": "INSUFFICIENT_EVIDENCE", "evidenceIds": [], "notes": "General intensity-zone physiology supports recovery-pace running as a real, distinct low end of the easy-intensity spectrum, but no primary source was verified in this pass to determine whether that distinction requires a separate catalog IDENTITY vs. a prescription-level DOSAGE difference — this is deferred as INSUFFICIENT_EVIDENCE rather than guessed." },
+    "stridesAsComponentVsIdentity": { "claim": "Strides (short accelerations) should be modeled as a component attachable to an easy session, or as a separate workout identity (e.g. EASY_WITH_STRIDES).", "evidenceBasis": "NO_EXISTING_SOURCE_VERIFIED_THIS_PASS", "evidenceIds": [], "notes": "Established coaching practice widely uses strides for neuromuscular/economy stimulus, but no primary source was verified in this pass; classified honestly as unverified rather than asserted from training-time background knowledge without citation. This question is explicitly deferred to Step C per Step A.2's EASY_WITH_STRIDES governance thread regardless of evidence outcome." }
+  },
+  "goalPaceAssessment": {
+    "raceSpecificPaceExposureGenerally": { "evidenceBasis": "EVIDENCE_BACKED", "evidenceIds": ["TDE-002"], "notes": "Competitive-period specificity shift is directly supported." },
+    "placementWithinRaceSpecific": { "evidenceBasis": "EVIDENCE_INFORMED", "evidenceIds": ["TDE-002"], "notes": "See D22/D29." },
+    "placementNearTaper": { "evidenceBasis": "EVIDENCE_INFORMED", "evidenceIds": ["TDE-002", "TDE-003"], "notes": "Consistent with maintained intensity into the taper window per TDE-003, though TDE-003 concerns the taper phase itself, not RACE_SPECIFIC placement." },
+    "eligibilityBasedOnGoalFeasibility": { "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "notes": "Registry/resolver wiring per instruction; GOAL_FEASIBILITY_IN enum values and thresholds are product/schema decisions already governed under evidence-log.json's separate, narrower scope." },
+    "currentFitnessFallbackUse": { "evidenceBasis": "EVIDENCE_INFORMED", "evidenceIds": ["TDE-002"], "notes": "See D35." },
+    "exactNumberOfExposures": { "evidenceBasis": "NO_DIRECT_EVIDENCE", "notes": "See D30/D31." },
+    "exactStagePosition": { "evidenceBasis": "EVIDENCE_INFORMED", "notes": "See D29 — directional support only." },
+    "sameFormForIntermediateVsAdvancedRunners": { "evidenceBasis": "INSUFFICIENT_EVIDENCE", "notes": "Neither TDE-001 nor TDE-002 isolates recreational/intermediate runners specifically; whether intermediate runners should receive an identically-shaped goal-pace rehearsal stage as advanced runners (vs. a modified form) cannot be confidently assessed from the sources reviewed in this pass." }
+  },
+  "evidenceGaps": [
+    { "category": "EXACT_NUMBERS", "affectedDecisionIds": ["D03", "D04", "D10", "D11", "D17", "D18", "D24", "D25", "D30", "D31", "D38", "D39", "D44", "D45", "D50", "D52"], "summary": "Every minimum/maximum exposure count across all 7 stages, and the exact 3/4/4/1 phase-week allocation plus the 8/12/14 core-cycle bounds, lack direct scientific support. Recommend Step C formally reclassify most of these from PlaceholderUnconfirmed to ExplicitProductDefault (see per-decision notes) rather than leaving them as if awaiting future evidence resolution." },
+    { "category": "ORDERING", "affectedDecisionIds": ["D09", "D16", "D23", "D29", "D37"], "summary": "Stage-order sequencing within each phase is generally evidence-informed at the directional level (progressive intensity, specificity increasing toward competition) but no source specifies these exact orderings as uniquely correct." },
+    { "category": "POPULATION", "affectedDecisionIds": ["D01", "D02", "D08", "D14", "D15", "D21", "D22", "D28", "D48", "D49", "D50", "D51"], "summary": "Both TDE-001 and TDE-002 skew toward highly trained/elite/competitive populations; every claim drawn from them for this recreational INTERMEDIATE pilot requires ELITE_TO_INTERMEDIATE_EXTRAPOLATION, explicitly flagged rather than silently applied." },
+    { "category": "DISTANCE", "affectedDecisionIds": ["D43", "D44", "D45", "D46", "D47", "D51"], "summary": "TDE-003 (taper) is not distance-running-specific at all (multi-sport competitive athletes); TDE-001/TDE-002 cover middle/long-distance broadly but do not isolate 10K. All TAPER-related findings and general phase findings require DISTANCE_EXTRAPOLATION." },
+    { "category": "CONFLICT", "affectedDecisionIds": ["D43", "D51"], "summary": "Two genuine evidence tensions found: (1) TAPER_SHARPEN's sole bound workout (EASY_STANDARD) does not fulfill TDE-003's intensity-maintenance finding for effective tapers; (2) Appsel's fixed 1-week TAPER phase is shorter than TDE-003's ~2-week optimal window, though this is caveated by population/distance extrapolation limits and not asserted as a confident contradiction requiring immediate correction." },
+    { "category": "NO_SOURCE", "affectedDecisionIds": [], "summary": "No source was verified in this pass for: fartlek specifically as the BUILD-phase entry modality (D07), strides-as-component-vs-identity (easyStandardAssessment.stridesAsComponentVsIdentity), or recovery-run-as-distinct-identity (easyStandardAssessment.recoveryRunAsDistinctIdentity). These remain open, honestly unresolved rather than guessed." },
+    { "category": "NOT_SCIENTIFICALLY_DETERMINABLE", "affectedDecisionIds": ["D12", "D13", "D19", "D20", "D26", "D27", "D33", "D34", "D37", "D41", "D47"], "summary": "Exact compression/extension enum mechanics, resolver/registry wiring (GOAL_FEASIBILITY_IN), fallback-key wiring mechanics, and relative-order-as-fallback-slot positioning are architectural/product/schema questions, not evidence questions, and are correctly excluded from scientific evidence mapping." }
+  ],
+  "sourceConflicts": [
+    { "description": "None found between TDE-001, TDE-002, and TDE-003 themselves — they address distinct, complementary questions (TID model comparison; elite periodization patterns; taper mechanics) without contradicting one another.", "resolution": "N/A" }
+  ],
+  "existingEvidenceReuse": [
+    { "existingSource": "evidence-log.json / evidence-log.md (EV-001 through EV-008)", "reuseClassification": "EXISTING_INSUFFICIENT", "notes": "Reviewed in full. Explicitly and narrowly scoped to 4 runtime-resolver threshold decisions (GOAL_FEASIBILITY_IN, PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN) per its own stated Purpose section. None of its 8 entries addresses workout-progression stage content, exposure bounds, compression/extension behavior, or phase-duration rationale — the exact questions Step B needed to answer. Confirms Step A.1's prior finding that no general training-domain evidence registry currently exists." },
+    { "existingSource": "PilotDomainContentAudit.cs (AUD-004, AUD-005, AUD-006, AUD-008, AUD-013, AUD-014, AUD-015)", "reuseClassification": "EXISTING_DIRECT", "notes": "Reused directly as the authoritative baseline for each field's current GOVERNANCE status (all PlaceholderUnconfirmed for the fields Step B assessed). These entries are governance/provenance records, not themselves scientific evidence — this distinction is preserved throughout this audit's decisionStatus vs. evidenceBasis two-axis model." },
+    { "existingSource": "docs/canonical/golden-fixture-v3 (decisiontrace + plandocument)", "reuseClassification": "EXISTING_INDIRECT", "notes": "Used as structural/content ground truth (e.g. confirming TAPER_SHARPEN's EASY_STANDARD binding pattern extends into the generated example), not as scientific evidence." },
+    { "existingSource": "ten-k-pilot-vocabulary-decisions.md, workout-components-ownership-audit.md, domain-wave1-schema-necessity-audit.md", "reuseClassification": "EXISTING_INDIRECT", "notes": "Reused to confirm EASY_SHAKEOUT/EASY_WITH_STRIDES/LONG_RUN_PROGRESSION governance status; these are internal governance records about catalog vocabulary, not scientific sources." }
+  ],
+  "stepCDecisions": [
+    { "decision": "Reclassify most PlaceholderUnconfirmed exact exposure-count fields (all 7 stages) to ExplicitProductDefault, since scientific literature is unlikely to ever determine these exact counts.", "group": "PRODUCT" },
+    { "decision": "Review whether TAPER's fixed 1-week duration should remain fixed or gain flexibility, in light of TDE-003's ~2-week optimal finding (with population/distance-extrapolation caveats explicitly noted).", "group": "PRODUCT" },
+    { "decision": "Review whether TAPER_SHARPEN's exclusive binding to EASY_STANDARD adequately represents the evidence-supported taper principle of maintained intensity, or whether the taper phase needs an additional/alternative quality-adjacent stage.", "group": "PRODUCT" },
+    { "decision": "Resolve the internal asymmetry between GOAL_PACE_REHEARSAL (PROTECTED/FIXED_EXPOSURE) and CURRENT_FITNESS_SPECIFIC_REHEARSAL (COMPRESSIBLE/EXTENDABLE) despite both serving the same specificity-protection need.", "group": "GOVERNANCE" },
+    { "decision": "Decide whether fartlek should remain the BUILD-phase entry modality or whether an evidenced alternative should be considered (no source found favoring either).", "group": "PRODUCT" },
+    { "decision": "Decide whether recovery-pace running and strides warrant separate catalog workout identities (EASY_SHAKEOUT/EASY_WITH_STRIDES-style) vs. remaining a dosage/component variation of EASY_STANDARD — ties directly to the Step A.2 EASY_SHAKEOUT/EASY_WITH_STRIDES governance thread.", "group": "SCHEMA" },
+    { "decision": "Formalize the training-domain evidence registry recommended below, so TDE-001/002/003 have a durable, authoritative home beyond this audit's temporary IDs.", "group": "GOVERNANCE" }
+  ],
+  "trainingEvidenceRegistryRecommendation": "NEW_TRAINING_DOMAIN_REGISTRY_RECOMMENDED",
+  "trainingEvidenceRegistryConceptualNeeds": ["stable evidence IDs", "bibliography", "atomic claims", "supports", "doesNotSupport", "population/applicability", "affected decision IDs", "evidence strength", "supersession", "append-only history"],
+  "easyShakeoutRiskRecommendation": {
+    "riskAlreadyRecorded": false,
+    "recommendation": "RISK_RECORD_RECOMMENDED",
+    "proposedIdentifier": "TD-EASY-WORKOUT-REGISTRY-001",
+    "category": "ACTIVATION_READINESS / CATALOG_FIXTURE_DIVERGENCE",
+    "finding": "Golden Fixture v3 references EASY_SHAKEOUT (and EASY_WITH_STRIDES is separately named in architecture-spec example vocabulary), but no versioned EASY_SHAKEOUT or EASY_WITH_STRIDES workout definition exists in the resolved v10 catalog bundle.",
+    "currentImpact": "No current runtime defect — workout binding is not implemented (Step A.2 finding) and the fixture is not consumed as production workout identity.",
+    "futureImpact": "Phase 4F.6B or v10 publication could incorrectly treat the fixture key as catalog-supported unless vocabulary and binding decisions are resolved first.",
+    "blockingClassification": {
+      "stepB": "NON_BLOCKING_FOR_STEP_B",
+      "phase4F6B": "BLOCKER_FOR_4F6B",
+      "publication": "BLOCKER_FOR_PUBLICATION_IF_UNRESOLVED"
+    },
+    "resolutionOwner": "Step C product + schema decision",
+    "closureEvidenceOptions": [
+      "EASY_SHAKEOUT (and/or EASY_WITH_STRIDES) becomes a validated, versioned workout definition and the bundle/role-binding policy references it",
+      "Golden Fixture v3 is revised to use only accepted catalog keys",
+      "The fixture field is explicitly reclassified as illustrative/non-canonical"
+    ],
+    "actionTakenInThisStep": "None — recommendation only, per explicit instruction not to modify activation-readiness risk files in Step B unless the task is expanded. Not written to activation-readiness-risks.md."
+  },
+  "validationResults": [
+    { "check": "JSON syntax validity", "result": "PASS", "command": "node -e \"JSON.parse(...)\"" },
+    { "check": "Evidence ID uniqueness (TDE-001..003)", "result": "PASS", "method": "manual inspection, 3 sources, 3 distinct IDs" },
+    { "check": "Decision ID uniqueness (D01-D52, D51 intentionally embedded in phaseAssessments.TAPER.claims rather than duplicated in atomicDecisionAssessments)", "result": "PASS" },
+    { "check": "Every decisionId's evidenceIds resolve to an existing source in sources[]", "result": "PASS" },
+    { "check": "Every source in sources[] has non-empty doesNotSupport", "result": "PASS" },
+    { "check": "All 7 stages covered in stageAssessments/atomicDecisionAssessments", "result": "PASS" },
+    { "check": "All min/max exposure fields assessed (14 fields across 7 stages)", "result": "PASS" },
+    { "check": "All compression/extension fields assessed (14 fields across 7 stages)", "result": "PASS" },
+    { "check": "All 4 phases assessed in phaseAssessments", "result": "PASS" },
+    { "check": "No LONG_RUN decision reopened", "result": "PASS — LONG_RUN not referenced anywhere in this artifact except this validation line" },
+    { "check": "No role-binding claim presented as scientific evidence", "result": "PASS — all role-binding-adjacent questions (EASY_SUPPORT mapping, structural role ownership) marked NOT_AN_EVIDENCE_QUESTION or explicitly excluded from scope" },
+    { "suite": "plan-catalog full test suite (revalidated, no repository changes since Step A.2)", "command": "dotnet test PlanCatalog.sln -c Release --no-build", "passed": 335, "failed": 0, "skipped": 0, "total": 335 },
+    { "suite": "backend relevant subset (revalidated, no repository changes since Step A.2)", "command": "dotnet test RunningApp.sln -c Release --no-build --filter \"FullyQualifiedName~Phase4F5|FullyQualifiedName~PlanCatalogDomainMapperTests|FullyQualifiedName~CatalogRunLayoutResolverTests|FullyQualifiedName~CatalogWeekSkeletonCalendarMaterializerTests|FullyQualifiedName~CatalogStageToWeekMaterializerTests|FullyQualifiedName~DatedGeneratedCatalogPlanSkeletonValidatorTests|FullyQualifiedName~CatalogPlanSkeletonOrchestratorTests\"", "passed": 131, "failed": 0, "skipped": 0, "total": 131 }
+  ],
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c6796578f08bc1d76d96f1944a80c9075455206",
+    "commitMade": false,
+    "notes": "Read-only evidence-mapping audit. Two new artifacts created under plan-catalog/artifacts/audits/. No catalog JSON, schema, production code, PilotDomainContentAudit.cs, evidence-log.json, canonical decision artifact, or activation-readiness-risks.md was modified. No prior Step A/A.1/A.2 artifact was modified."
+  }
+}

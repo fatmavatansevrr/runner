@@ -9,10 +9,23 @@ using RunningApp.Application.DTOs.TrainingDay;
 namespace RunningApp.Api.Swagger;
 
 /// <summary>
-/// Attaches a realistic example payload to the response/request DTOs the
-/// mobile app actually consumes, so Swagger shows the real wire shape
-/// instead of an empty/zeroed schema. Every field below matches a property
-/// that exists on the corresponding DTO — nothing here is aspirational.
+/// Attaches a realistic example payload to select RESPONSE DTOs the mobile
+/// app actually consumes, so Swagger shows the real wire shape instead of
+/// an empty/zeroed schema. Every field below matches a property that
+/// exists on the corresponding DTO — nothing here is aspirational.
+///
+/// Deliberately does NOT attach an example to <see cref="GeneratePreviewRequest"/>
+/// (or any other request DTO): its OpenAPI schema — required properties,
+/// nullability, enum value lists, the nested RecentRace object, the
+/// PreferredDays array — is generated purely from the DTO's own C# types
+/// (<c>required</c> members, nullable reference/value types,
+/// <see cref="System.Text.Json.Serialization.JsonConverterAttribute"/>
+/// converters) and MUST stay that way. A hard-coded request example here
+/// previously made Swagger look like a pre-filled acceptance-test payload
+/// rather than a designed contract; a valid sample request now lives only
+/// in <c>backend/RunningApp.Api/generate-preview.http</c> and in this
+/// project's automated tests, neither of which can influence model
+/// binding, defaults, or validation.
 /// </summary>
 public sealed class DtoExamplesSchemaFilter : ISchemaFilter
 {
@@ -20,7 +33,6 @@ public sealed class DtoExamplesSchemaFilter : ISchemaFilter
     {
         schema.Example = context.Type switch
         {
-            Type t when t == typeof(GeneratePreviewRequest) => GeneratePreviewRequestExample(),
             Type t when t == typeof(GeneratePreviewResponse) => GeneratePreviewResponseExample(),
             Type t when t == typeof(ConfirmPlanRequest) => ConfirmPlanRequestExample(),
             Type t when t == typeof(ConfirmPlanResponse) => ConfirmPlanResponseExample(),
@@ -33,25 +45,13 @@ public sealed class DtoExamplesSchemaFilter : ISchemaFilter
         };
     }
 
-    private static IOpenApiAny GeneratePreviewRequestExample() => new OpenApiObject
-    {
-        ["goal_type"] = new OpenApiString("habit"),
-        ["goal_distance"] = new OpenApiString("five_k"),
-        ["level"] = new OpenApiString("new_to_running"),
-        ["days_per_week"] = new OpenApiInteger(3),
-        ["unit"] = new OpenApiString("km"),
-        ["race_name"] = new OpenApiNull(),
-        ["race_date"] = new OpenApiNull(),
-        ["target_finish_time_seconds"] = new OpenApiNull(),
-    };
-
     private static IOpenApiAny GeneratePreviewResponseExample() => new OpenApiObject
     {
         ["preview_id"] = new OpenApiString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
         ["template_id"] = new OpenApiString("habit_5k_beginner_3day_km_v1"),
         ["goal_type"] = new OpenApiString("habit"),
         ["goal_distance"] = new OpenApiString("five_k"),
-        ["level"] = new OpenApiString("new_to_running"),
+        ["level"] = new OpenApiString("beginner"),
         ["days_per_week"] = new OpenApiInteger(3),
         ["unit"] = new OpenApiString("km"),
         ["weeks"] = new OpenApiArray
@@ -97,7 +97,7 @@ public sealed class DtoExamplesSchemaFilter : ISchemaFilter
             ["plan_id"] = new OpenApiString("8f14e45f-ceea-4abc-a743-8b1e3f6c1a2b"),
             ["goal_type"] = new OpenApiString("habit"),
             ["goal_distance"] = new OpenApiString("five_k"),
-            ["level"] = new OpenApiString("new_to_running"),
+            ["level"] = new OpenApiString("beginner"),
             ["progress_text"] = new OpenApiString("Week 1 of 1"),
         },
         ["today_workout"] = (OpenApiObject)TrainingDayResponseExample(),
@@ -139,7 +139,7 @@ public sealed class DtoExamplesSchemaFilter : ISchemaFilter
         ["status"] = new OpenApiString("active"),
         ["goal_type"] = new OpenApiString("habit"),
         ["goal_distance"] = new OpenApiString("five_k"),
-        ["level"] = new OpenApiString("new_to_running"),
+        ["level"] = new OpenApiString("beginner"),
         ["days_per_week"] = new OpenApiInteger(3),
         ["unit"] = new OpenApiString("km"),
         ["race_name"] = new OpenApiNull(),
@@ -179,10 +179,10 @@ public sealed class DtoExamplesSchemaFilter : ISchemaFilter
         ["name"] = new OpenApiString("Runner"),
         ["email"] = new OpenApiString("runner@example.com"),
         ["unit"] = new OpenApiString("km"),
-        ["running_background"] = new OpenApiString("new_to_running"),
+        ["running_background"] = new OpenApiString("beginner"),
         ["active_plan_stats"] = new OpenApiObject
         {
-            ["plan_name"] = new OpenApiString("NewToRunning FiveK Habit Plan"),
+            ["plan_name"] = new OpenApiString("Beginner FiveK Habit Plan"),
             ["goal_type"] = new OpenApiString("habit"),
             ["goal_distance"] = new OpenApiString("five_k"),
             ["completed_runs_count"] = new OpenApiInteger(0),

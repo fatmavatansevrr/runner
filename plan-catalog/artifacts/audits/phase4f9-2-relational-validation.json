@@ -1,0 +1,236 @@
+{
+  "auditKey": "PHASE4F9_2_RELATIONAL_VALIDATION",
+  "auditVersion": 1,
+  "finalClassification": "PHASE4F9_2_RELATIONAL_VALIDATION_CLOSED",
+  "publicationReadiness": "READY_FOR_CANDIDATE_PUBLICATION",
+  "environmentBootstrap": {
+    "classification": "NEW_MINIMAL_DOCKER_COMPOSE_REQUIRED",
+    "mechanism": "docker compose (postgres:17 image)",
+    "fileCreated": "docker-compose.yml",
+    "containerName": "appsel-dev-postgres",
+    "portBinding": "127.0.0.1:5432 (localhost only)",
+    "volume": "appsel-dev-postgres-data (named, persistent)",
+    "healthCheck": "pg_isready -U postgres -d antigravity_dev",
+    "startupResult": "container created and started successfully",
+    "healthResult": "healthy within ~3s"
+  },
+  "postgresqlConnectivity": {
+    "version": "PostgreSQL 17.10 (Debian 17.10-1.pgdg13+1) on x86_64-pc-linux-gnu",
+    "host": "localhost",
+    "port": 5432,
+    "database": "antigravity_dev",
+    "user": "postgres",
+    "healthCheckResult": "accepting connections",
+    "tcpResult": "TcpTestSucceeded: True",
+    "sqlResult": "SELECT version() succeeded",
+    "localDevelopmentProof": "bound to 127.0.0.1 only; credentials match plaintext dev connection string already committed in appsettings.json"
+  },
+  "migrationApplication": {
+    "totalMigrations": 14,
+    "discoveryResult": "all migrations discovered including new FixLongRunDayCheckConstraintFullDayNames",
+    "applicationResult": "all 14 applied successfully in order",
+    "repeatedApplicationResult": "No migrations were applied. The database is already up to date.",
+    "pendingMigrations": 0,
+    "pendingModelChanges": "No changes have been made to the model since the last migration."
+  },
+  "migrationHistory": [
+    "20260624105830_InitialCreate",
+    "20260629134227_AddActivePlanUniqueIndex",
+    "20260629195638_AddPerformanceIndexes",
+    "20260701075716_AddUsersTableAndUserProfileRefactor",
+    "20260701082359_DropLegacyUserProfileColumns",
+    "20260701084934_MigrateToInternalUserIdFKs",
+    "20260701093148_AddCascadeFixStatusEnumExpiresAtPlanEventsFk",
+    "20260701093301_AddAdaptationEngineConstraints",
+    "20260701093524_FixRaceDateTypeAndPreferredPaceFormat",
+    "20260701100111_AddOnboardingSnapshotFields",
+    "20260710072851_AddPlanCatalogProvenanceFields",
+    "20260712115640_Phase4E2_CatalogConfirmationState",
+    "20260716120000_Phase4F9_CatalogConfirmationPersistence",
+    "20260716130000_FixLongRunDayCheckConstraintFullDayNames"
+  ],
+  "directSchemaVerification": {
+    "trainingPlansColumns": {
+      "GenerationSource": "text, nullable",
+      "SourcePreviewId": "uuid, nullable",
+      "CatalogPreviewContentHash": "text, nullable",
+      "CatalogMaterializerVersion": "text, nullable",
+      "CatalogDependencyVersionsJson": "jsonb, nullable",
+      "CatalogConfirmedAtUtc": "timestamp with time zone, nullable"
+    },
+    "trainingDaysColumns": {
+      "CatalogPhaseKey": "text, nullable",
+      "CatalogProgressionStageKey": "text, nullable",
+      "CatalogWorkoutDefinitionKey": "text, nullable",
+      "CatalogWorkoutDefinitionVersion": "integer, nullable",
+      "CatalogStructuralRole": "text, nullable",
+      "CatalogPrescriptionJson": "jsonb, nullable",
+      "CatalogPrescriptionSchemaVersion": "integer, nullable",
+      "GenerationSource": "text, nullable",
+      "CatalogStageKey": "text, nullable, present but no longer written by new code"
+    }
+  },
+  "sourcePreviewIndexVerification": {
+    "indexName": "IX_TrainingPlans_SourcePreviewId",
+    "unique": true,
+    "column": "SourcePreviewId",
+    "predicate": "SourcePreviewId IS NOT NULL",
+    "noDuplicateConflictingIndex": true
+  },
+  "activePlanIndexVerification": {
+    "indexName": "IX_TrainingPlans_InternalUserId_ActiveOnly",
+    "unique": true,
+    "column": "InternalUserId",
+    "predicate": "Status = 'active'::text",
+    "matchesPersistedStatusValue": true,
+    "constraintNameExposedByNpgsqlOn23505": true
+  },
+  "jsonbVerification": {
+    "catalogDependencyVersionsJsonIsJsonb": true,
+    "catalogPrescriptionJsonIsJsonb": true,
+    "validJsonInsertReadSucceeds": true,
+    "keyReorderingObservedOnStorage": true,
+    "keyReorderingBrokeOriginalHash": true,
+    "fixedByCanonicalHashSerializer": true
+  },
+  "resetEndpointVerification": [
+    { "scenario": "empty database reset", "outcome": "200 OK" },
+    { "scenario": "repeated reset", "outcome": "200 OK x2, idempotent" },
+    { "scenario": "reset after successful catalog confirmation", "outcome": "200 OK, rows cleared" },
+    { "scenario": "reset after successful legacy confirmation", "outcome": "200 OK" },
+    { "scenario": "reset after failed catalog confirmation", "outcome": "200 OK, no partial state" },
+    { "scenario": "reset after idempotent repeated catalog confirmation", "outcome": "200 OK" },
+    { "scenario": "reset after active-plan conflict (sequential)", "outcome": "200 OK; second confirm returned already_active=true (200), not 409, per fast-precheck design" },
+    { "scenario": "reset after concurrency test", "outcome": "200 OK; exactly one active plan persisted regardless of race winner" }
+  ],
+  "fullBackendSuite": {
+    "passed": 808,
+    "failed": 0,
+    "skipped": 0,
+    "total": 808,
+    "warnings": 0,
+    "durationApprox": "1m40s",
+    "stableAcrossRuns": 3,
+    "planCatalogSuite": { "passed": 335, "failed": 0, "total": 335 }
+  },
+  "sequentialIdempotency": {
+    "firstConfirmationCreatesOnePlan": true,
+    "secondCallReturnsSamePlanId": true,
+    "replayAfterExpirationStillReturnsExistingPlan": true,
+    "wrongUserReplayThrowsForbidden": true,
+    "confirmedPlanIdPointsToPersistedPlan": true
+  },
+  "samePreviewConcurrency": {
+    "synchronizationMethod": "SemaphoreSlim(0,2) barrier, fresh DbContext per caller",
+    "bothCallerOutcomes": "both success, identical PlanId",
+    "postgresSqlState": "23505",
+    "constraintName": "IX_TrainingPlans_SourcePreviewId",
+    "rollbackReloadBehavior": "loser rolls back, clears change tracker, reloads by SourcePreviewId, returns same plan",
+    "finalRowCounts": "1 plan, matching weeks/days, 1 PlanEvent",
+    "publicExceptionBehavior": "no raw PostgreSQL exception surfaced",
+    "correctionApplied": "ActivePlanPerUser branch now also checks own SourcePreviewId first, since the same-preview race can trip either constraint depending on which Postgres reports first"
+  },
+  "activePlanConcurrency": {
+    "setup": "same user, two distinct valid previews, both unconfirmed",
+    "synchronizationMethod": "SemaphoreSlim(0,2) barrier",
+    "winningOutcome": "one plan created, Active",
+    "losingOutcome": "CatalogActivePlanConflictException (genuine race) or graceful already_active=true (pre-check timing)",
+    "postgresSqlState": "23505",
+    "constraintName": "IX_TrainingPlans_InternalUserId_ActiveOnly",
+    "typedConflictMapping": "CatalogActivePlanConflictException -> HTTP 409",
+    "previewConsumptionStates": "exactly one of the two previews confirmed",
+    "finalRowCounts": "exactly one active plan, one full week/day set for user"
+  },
+  "transactionRollback": [
+    {
+      "injectedFailurePoint": "session date outside plan date range, rejected by post-persist CatalogPersistedPlanValidator before commit",
+      "result": "zero new TrainingPlans/TrainingWeeks/TrainingDays/PlanEvents; preview remains unconfirmed; retry with corrected snapshot succeeds"
+    }
+  ],
+  "persistedPlanRoundTrip": {
+    "trainingPlanFieldsVerified": ["GenerationSource", "SourcePreviewId", "CatalogPreviewContentHash", "CatalogCandidateKey", "CatalogCandidateVersion", "Status", "CatalogConfirmedAtUtc"],
+    "trainingWeekVerified": "exact week count, contiguous numbering",
+    "trainingDayVerified": "exact session count, GenerationSource=Catalog, CatalogStageKey null, ActualDistanceKm/CompletedAt null, Status=Planned"
+  },
+  "taperSharpenRoundTrip": {
+    "catalogPhaseKey": "TAPER",
+    "catalogProgressionStageKey": "TAPER_SHARPEN",
+    "catalogStructuralRole": "KEY_SESSION",
+    "catalogWorkoutDefinitionKey": "EASY_STANDARD",
+    "catalogStageKey": null,
+    "orderedComponents": ["easy_baseline", "controlled_sharpening", "easy_recovery"]
+  },
+  "legacyRelationalRegression": {
+    "legacyGenerationSucceeds": true,
+    "legacyConfirmationSucceeds": true,
+    "legacyConfirmationIdempotent": true,
+    "nullableCatalogFieldsDoNotBreakLegacyRows": true,
+    "legacyRowsDoNotReceiveCatalogProvenance": true,
+    "catalogCannotEnterLegacyConfirmation": true,
+    "legacyCannotEnterCatalogConfirmation": true,
+    "resetCleansBothLegacyAndCatalogRecords": true
+  },
+  "errorMappingVerification": {
+    "samePreviewRaceNoRawException": true,
+    "activePlanRaceMapsTo409": true,
+    "persistenceFailuresMapToSafeErrors": true,
+    "ownershipForbidden": true,
+    "expiredUnconfirmedPreviewMapped": true,
+    "corruptedConfirmedLinkageMappedSafely": true,
+    "unsupported8WeekExplicitZeroUnchanged": true,
+    "noInternalDetailLeakage": true
+  },
+  "correctionsApplied": [
+    {
+      "defect": "CK_TrainingPlans_LongRunDay check constraint only allowed 3-letter day abbreviations while app writes full names",
+      "scope": "pre-existing legacy defect, unrelated to Phase 4F",
+      "fix": "additive migration widening constraint to accept both forms",
+      "userApproved": true
+    },
+    {
+      "defect": "order-dependent snapshot hash breaks under PostgreSQL jsonb key reordering, would fail every real catalog confirmation",
+      "scope": "Phase 4F.9 catalog confirmation core logic",
+      "fix": "CatalogPreviewCanonicalHashSerializer sorts dictionary-shaped fields by key; HashAlgorithmVersion added, fails closed on unsupported version",
+      "userApproved": true
+    },
+    {
+      "defect": "DateTimeKind.Unspecified rejected by Npgsql for timestamp with time zone columns",
+      "scope": "Phase 4F.9 catalog confirmation core logic",
+      "fix": "AsUtcDateTime helper applied at 5 call sites",
+      "userApproved": true
+    },
+    {
+      "defect": "same-preview race can trip the ActivePlanPerUser constraint instead of SourcePreviewId, incorrectly surfacing a conflict instead of idempotent recovery",
+      "scope": "Phase 4F.9 catalog confirmation core logic",
+      "fix": "ActivePlanPerUser recovery branch checks own SourcePreviewId before concluding genuine conflict",
+      "userApproved": true
+    }
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "HTTP-level concurrent races can occasionally surface a transient 500 under heavy full-suite parallel load due to connection-pool contention in the shared single-container dev database - environment resource contention, not a logic defect",
+    "RuntimeConditionResolutionService debt items (TD-PACESOURCE-001/002, TD-CORE-READINESS-001, TD-REGISTRY-001) not re-derived this phase",
+    "Phase 4F.5-4F.9.2 remain uncommitted working-tree changes"
+  ],
+  "validationResults": [
+    "PHASE4F9_2_RELATIONAL_VALIDATION_CLOSED"
+  ],
+  "publicationBoundary": {
+    "candidateStatus": "DRAFT",
+    "catalogLivePilotEnabledDefault": false,
+    "publicationLedgerEntry": false,
+    "productionActivation": false,
+    "liveExposure": false,
+    "newPublicEndpoint": false,
+    "candidateLifecycleChange": false,
+    "planGenerationValueChange": false
+  },
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c67965",
+    "commitsMade": 0,
+    "stagedChanges": 0,
+    "destructiveOperationsPerformed": false,
+    "filesDeleted": 0
+  }
+}

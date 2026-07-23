@@ -277,6 +277,41 @@ public sealed class CoreEntryReadinessResolverTests
         Assert.Equal("NOT_READY", notReady.OutputValue);
     }
 
+    [Fact]
+    public void ExplicitZero_IsDistinctFromMissing_AndExplicitlyEvaluated()
+    {
+        // Explicit zero readiness (both fields reported as 0) is real evidence
+        // — it must be Evaluated/NOT_READY (0 < the NOT_READY thresholds), not
+        // collapsed into the "both missing" NotEvaluated/race-NOT_READY path.
+        var resolver = new CoreEntryReadinessResolver();
+        var explicitZero = resolver.Resolve(Context(new ResolverInputSnapshot
+        {
+            GoalType = GoalType.Race,
+            RecentWeeklyVolumeKm = 0,
+            RecentLongestRunKm = 0,
+        }));
+        var missing = resolver.Resolve(Context(new ResolverInputSnapshot
+        {
+            GoalType = GoalType.Race,
+            RecentWeeklyVolumeKm = null,
+            RecentLongestRunKm = null,
+        }));
+
+        Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, explicitZero.Status);
+        Assert.Equal("NOT_READY", explicitZero.OutputValue);
+        Assert.Equal("CORE_ENTRY_NOT_READY", explicitZero.ReasonCode);
+
+        Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, missing.Status);
+        Assert.Equal("NOT_READY", missing.OutputValue);
+        Assert.Equal("CORE_ENTRY_NOT_READY", missing.ReasonCode);
+
+        // Both land on NOT_READY for a race plan (by different documented rules),
+        // but the resolver reaches them via distinguishable code paths/metadata,
+        // not by silently treating 0 as the same "no evidence" as null.
+        Assert.Equal("Both RecentWeeklyVolumeKm and RecentLongestRunKm missing in a race-based performance plan context", missing.Metadata!["triggeredCriterion"]);
+        Assert.NotEqual(missing.Metadata!["triggeredCriterion"], explicitZero.Metadata!["triggeredCriterion"]);
+    }
+
     // ─── STANDARD anomaly ────────────────────────────────────────────────────
 
     [Fact]

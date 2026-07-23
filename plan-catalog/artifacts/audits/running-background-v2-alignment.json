@@ -1,0 +1,106 @@
+{
+  "superseded_in_part_by": "running-background-v2-1-intermediate-pilot-closure.json",
+  "supersession_note": "As of V2.1, legacy aliases (new_to_running/used_to_run/running_regularly) are no longer accepted at the public HTTP request boundary or anywhere in the frontend. The fields below (e.g. http_verification legacy-alias-acceptance entries) accurately describe the V2 state at the time this file was written and are preserved unchanged as the historical record of that milestone.",
+  "classification": "RUNNING_BACKGROUND_V2_IMPLEMENTED_LOCAL_UNPUBLISHED",
+  "date": "2026-07-16",
+  "scope_boundary": {
+    "catalog_candidate_published_or_activated": false,
+    "plan_generation_science_values_changed": false,
+    "commits_created": false
+  },
+  "canonical_contract": {
+    "values": ["beginner", "intermediate", "advanced", "experienced"],
+    "skips_runner_background_details": ["beginner"],
+    "opens_runner_background_details": ["intermediate", "advanced", "experienced"]
+  },
+  "legacy_compatibility_mapping": {
+    "new_to_running": { "maps_to": "beginner", "evidence": "direct_lexical_correspondence" },
+    "used_to_run": {
+      "maps_to": "beginner",
+      "evidence": "approved_beginner_description_contains_phrase_getting_back_into_it_matching_prior_used_to_run_returning_after_a_break_semantics"
+    },
+    "running_regularly": { "maps_to": "intermediate", "evidence": "direct_lexical_correspondence" },
+    "read_paths_covered": ["json_request_body", "ef_postgres_persisted_rows", "internal_resolver_snapshot_json"],
+    "write_behavior": "canonical_only_never_emits_legacy_alias"
+  },
+  "catalog_pilot_identity": {
+    "policy": "V1_CATALOG_PILOT_IDENTITY_POLICY",
+    "policy_version": 1,
+    "mapped_level": "intermediate",
+    "candidate_key": "TEN_K__4D__INTERMEDIATE",
+    "candidate_version": 10,
+    "non_pilot_levels": ["beginner", "advanced", "experienced"],
+    "broadening_pilot_scope_out_of_scope": true
+  },
+  "backend_changes": {
+    "files_modified_or_created": [
+      "backend/RunningApp.Domain/Enums/RunningBackground.cs",
+      "backend/RunningApp.Domain/Enums/RunningBackgroundJsonConverter.cs",
+      "backend/RunningApp.Persistence/Converters/RunningBackgroundCompatibilityConverter.cs",
+      "backend/RunningApp.Persistence/AppDbContext.cs",
+      "backend/RunningApp.Application/DTOs/Plan/GeneratePreviewRequest.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/Resolvers/ResolverInputSnapshot.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/V1CatalogPilotIdentityPolicy.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PlanCatalogDomainMapper.cs",
+      "backend/RunningApp.Persistence/Migrations/20260716175426_RunningBackgroundV2FourLevelModel.cs"
+    ],
+    "migration_additive": true,
+    "migration_reversible": true,
+    "has_pending_model_changes_after_apply": false,
+    "test_suite": {
+      "project": "RunningApp.IntegrationTests",
+      "passed": 839,
+      "failed": 0,
+      "total": 839
+    },
+    "new_test_file": "backend/RunningApp.IntegrationTests/RunningBackgroundV2Tests.cs"
+  },
+  "frontend_changes": {
+    "files_created": [
+      "mobile/lib/core/models/running_background.dart",
+      "mobile/lib/core/models/recent_race_result.dart",
+      "mobile/lib/features/onboarding/presentation/runner_background_details_page.dart",
+      "mobile/lib/features/onboarding/presentation/recent_race_result_page.dart",
+      "mobile/test/running_background_v2_test.dart"
+    ],
+    "files_modified": [
+      "mobile/lib/core/network/dtos.dart",
+      "mobile/lib/core/routing/app_router.dart",
+      "mobile/lib/features/onboarding/data/onboarding_provider.dart",
+      "mobile/lib/features/onboarding/presentation/running_background_page.dart",
+      "mobile/lib/features/onboarding/presentation/goal_time_page.dart",
+      "mobile/lib/features/onboarding/presentation/habit_goal_page.dart",
+      "mobile/lib/features/onboarding/presentation/plan_preview_page.dart"
+    ],
+    "flutter_analyze_clean": true,
+    "test_suite": {
+      "file": "mobile/test/running_background_v2_test.dart",
+      "passed": 13,
+      "failed": 0,
+      "total": 13
+    },
+    "pre_existing_unrelated_failure": {
+      "file": "mobile/test/widget_test.dart",
+      "test": "Onboarding smoke test",
+      "confirmed_pre_existing_via": "git_stash_baseline_reproduction",
+      "cause": "firebase_initialization_gap_in_full_app_smoke_test"
+    }
+  },
+  "http_verification": {
+    "environment": "local_development_api_plus_real_postgres_17_docker",
+    "catalog_candidate_publication_state": "draft_unchanged",
+    "override_used": "LocalCatalogAcceptanceOptions_development_only",
+    "results": [
+      { "level": "beginner", "request": "race/five_k/3day", "http_status": 200, "response_level": "beginner", "template_id": "race_5k_beginner_3day_km_v1" },
+      { "level": "used_to_run_legacy_alias", "request": "race/five_k/3day", "http_status": 200, "response_level": "beginner", "note": "legacy alias never echoed back" },
+      { "level": "intermediate", "request": "race/ten_k/4day", "route_decision": "CatalogRequestUnsupported", "route_reason": "UnsupportedCycleLength", "note": "pilot identity correctly recognized; failure is a pre-existing unrelated candidate limitation, not caused by this change" },
+      { "level": "advanced", "request": "race/ten_k/4day", "route_decision": "Legacy", "route_reason": "NotPilotRequest", "http_status": 404, "error_code": "PLAN_TEMPLATE_NOT_FOUND", "note": "correctly not coerced into intermediate pilot mapping; 404 is a pre-existing seed-data gap" },
+      { "level": "experienced", "request": "race/ten_k/4day", "route_decision": "Legacy", "route_reason": "NotPilotRequest", "http_status": 404, "error_code": "PLAN_TEMPLATE_NOT_FOUND", "note": "same as advanced" },
+      { "level": "not_a_real_level", "request": "any", "http_status": 400, "note": "validation error names accepted canonical and legacy values explicitly" }
+    ]
+  },
+  "remaining_gaps": [
+    "No seeded PlanTemplates rows exist for Advanced/Experienced legacy-path combinations (pre-existing, not introduced by this change)",
+    "Read DTOs (home/calendar/day-detail) still do not expose catalog phase/stage/workout-identity fields (flagged in Phase 4F.9.3, unchanged)"
+  ]
+}

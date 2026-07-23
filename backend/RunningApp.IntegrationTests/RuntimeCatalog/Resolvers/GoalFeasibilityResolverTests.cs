@@ -256,6 +256,102 @@ public sealed class GoalFeasibilityResolverTests
         Assert.Equal("PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", result.ReasonCode);
     }
 
+    // ─── PHASE4D_4_1: product-average target-time classification (SW-02 fix) ──
+
+    [Fact]
+    public void Resolve_ProductAverageTargetTime_NoIndependentEvidence_ReturnsEvaluatedChallenging()
+    {
+        var resolver = new GoalFeasibilityResolver();
+        var input = new ResolverInputSnapshot
+        {
+            TargetFinishTimeSeconds = 3480,
+            TargetFinishTimeSource = RunningApp.Domain.Enums.TargetFinishTimeSource.ProductAverage,
+        };
+        var targetTime = RuntimeConditionResolutionResult.Evaluated("PACE_SOURCE_IN", "TARGET_TIME", "TARGET_FINISH_TIME_PROVIDED");
+
+        var result = resolver.Resolve(Context(input, Ready(), Adequate(), targetTime));
+
+        Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, result.Status);
+        Assert.Equal("CHALLENGING", result.OutputValue);
+        Assert.Equal("PACE_SOURCE_TARGET_TIME_PRODUCT_AVERAGE_ACCEPTED", result.ReasonCode);
+        Assert.NotEqual("PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", result.ReasonCode);
+    }
+
+    [Fact]
+    public void Resolve_ProductAverageTargetTime_DecisionTraceIncludesSourceAndRuleCode()
+    {
+        var resolver = new GoalFeasibilityResolver();
+        var input = new ResolverInputSnapshot
+        {
+            TargetFinishTimeSeconds = 3480,
+            TargetFinishTimeSource = RunningApp.Domain.Enums.TargetFinishTimeSource.ProductAverage,
+        };
+        var targetTime = RuntimeConditionResolutionResult.Evaluated("PACE_SOURCE_IN", "TARGET_TIME", "TARGET_FINISH_TIME_PROVIDED");
+
+        var result = resolver.Resolve(Context(input, Ready(), Adequate(), targetTime));
+
+        Assert.Equal("PRODUCT_AVERAGE", result.Metadata["targetFinishTimeSource"]);
+        Assert.Equal("GOAL_FEASIBILITY_PRODUCT_AVERAGE_V1", result.Metadata["ruleCode"]);
+        Assert.Contains("PHASE4D_4_1", result.Metadata["governanceDoc"]);
+    }
+
+    [Fact]
+    public void Resolve_UserDefinedTargetTime_NoIndependentEvidence_UnchangedFromBeforeThisField()
+    {
+        var resolver = new GoalFeasibilityResolver();
+        var input = new ResolverInputSnapshot
+        {
+            TargetFinishTimeSeconds = 3480,
+            TargetFinishTimeSource = RunningApp.Domain.Enums.TargetFinishTimeSource.UserDefined,
+        };
+        var targetTime = RuntimeConditionResolutionResult.Evaluated("PACE_SOURCE_IN", "TARGET_TIME", "TARGET_FINISH_TIME_PROVIDED");
+
+        var result = resolver.Resolve(Context(input, Ready(), Adequate(), targetTime));
+
+        Assert.Equal(RuntimeConditionResolutionStatus.NotEvaluated, result.Status);
+        Assert.Equal("PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", result.ReasonCode);
+    }
+
+    [Fact]
+    public void Resolve_NullTargetFinishTimeSource_UnchangedFromBeforeThisField()
+    {
+        // Legacy/unset callers (TargetFinishTimeSource never populated) must
+        // keep the exact prior safety behavior -- never silently treated as
+        // ProductAverage.
+        var resolver = new GoalFeasibilityResolver();
+        var input = new ResolverInputSnapshot { TargetFinishTimeSeconds = 3480, TargetFinishTimeSource = null };
+        var targetTime = RuntimeConditionResolutionResult.Evaluated("PACE_SOURCE_IN", "TARGET_TIME", "TARGET_FINISH_TIME_PROVIDED");
+
+        var result = resolver.Resolve(Context(input, Ready(), Adequate(), targetTime));
+
+        Assert.Equal(RuntimeConditionResolutionStatus.NotEvaluated, result.Status);
+        Assert.Equal("PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", result.ReasonCode);
+    }
+
+    [Fact]
+    public void Resolve_UserDefinedTargetTime_WithValidRecentRace_UsesNormalRiegelPath_NotProductAverageShortcut()
+    {
+        var resolver = new GoalFeasibilityResolver();
+        var input = new ResolverInputSnapshot
+        {
+            TargetFinishTimeSeconds = 3000,
+            TargetFinishTimeSource = RunningApp.Domain.Enums.TargetFinishTimeSource.UserDefined,
+            RecentRaceDistanceKm = 5.0,
+            RecentRaceFinishTimeSeconds = 1450,
+            RequestedTargetDistanceKm = 10.0,
+        };
+        var recentRace = RuntimeConditionResolutionResult.Evaluated("PACE_SOURCE_IN", "RECENT_RACE", "RECENT_RACE_RESULT_PROVIDED");
+
+        var result = resolver.Resolve(Context(input, Ready(), Adequate(), recentRace));
+
+        // Riegel path reached (not the product-average shortcut, which only
+        // applies when PACE_SOURCE_IN=TARGET_TIME) -- proven by the presence
+        // of projection metadata that only ResolveFromRecentRace produces.
+        Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, result.Status);
+        Assert.True(result.Metadata.ContainsKey("projectionMethod"));
+        Assert.False(result.Metadata.ContainsKey("ruleCode"));
+    }
+
     [Fact]
     public void Resolve_PaceSourceEstimated_ReturnsNotEvaluated_NoApprovedMethod()
     {

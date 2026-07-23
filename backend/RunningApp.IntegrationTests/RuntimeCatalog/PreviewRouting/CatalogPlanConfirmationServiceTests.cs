@@ -67,7 +67,7 @@ public sealed class CatalogPlanConfirmationServiceTests
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
             GoalDistanceKm = 10.0,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             RaceDate = new DateOnly(2026, 12, 1),
             CanonicalDistanceFamily = "TEN_K",
@@ -405,6 +405,7 @@ public sealed class CatalogPlanConfirmationServiceTests
             decision_trace = new { },
             selected_stage_keys = Array.Empty<string>(),
             fallback_stages_used = Array.Empty<string>(),
+            hash_algorithm_version = CatalogPreviewCanonicalHashSerializer.CurrentHashAlgorithmVersion,
             created_at_utc = DateTime.UtcNow,
             expires_at_utc = DateTime.UtcNow.AddMinutes(30)
         });
@@ -484,6 +485,7 @@ public sealed class CatalogPlanConfirmationServiceTests
             decision_trace = new { },
             selected_stage_keys = Array.Empty<string>(),
             fallback_stages_used = Array.Empty<string>(),
+            hash_algorithm_version = CatalogPreviewCanonicalHashSerializer.CurrentHashAlgorithmVersion,
         });
         var preview = new PlanPreview
         {
@@ -565,7 +567,7 @@ public sealed class CatalogPlanConfirmationServiceTests
             Status = TrainingPlanStatus.Active,
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             StartedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow
@@ -600,7 +602,7 @@ public sealed class CatalogPlanConfirmationServiceTests
             Status = TrainingPlanStatus.Active,
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             StartedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow
@@ -729,13 +731,22 @@ public sealed class CatalogPlanConfirmationServiceTests
         var userId = Guid.NewGuid();
         var previewId = Guid.NewGuid();
 
-        // Legacy SQL-shaped preview (Weeks present, no generation_source field)
+        // Legacy SQL-shaped preview (Weeks present, no generation_source field).
+        // RequestPayloadJson must satisfy GeneratePreviewRequest's required
+        // members (goal_type/goal_distance/level/days_per_week/unit/
+        // preferred_days/start_date) so deserialization itself succeeds --
+        // this test is about proving previewData.Weeks being empty (from
+        // PreviewPayloadJson) throws the defensive InvalidOperationException,
+        // not about exercising required-member JSON validation (see
+        // GeneratePreviewRequestJsonContractTests for that).
         ctx.PlanPreviews.Add(new PlanPreview
         {
             Id = previewId,
             InternalUserId = userId,
             TemplateId = null,
-            RequestPayloadJson = "{}",
+            RequestPayloadJson = "{\"goal_type\":\"habit\",\"goal_distance\":\"five_k\",\"level\":\"beginner\"," +
+                "\"days_per_week\":3,\"unit\":\"km\",\"preferred_days\":[\"mon\",\"wed\",\"sat\"]," +
+                "\"start_date\":\"2026-07-20\"}",
             PreviewPayloadJson = "{}",  // no generation_source — treated as SQL
             ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             CreatedAt = DateTime.UtcNow,
@@ -850,7 +861,7 @@ public sealed class CatalogPlanConfirmationServiceTests
     // important test proving Phase 4F.1 does not accidentally enable
     // successful catalog confirmation.
     [Fact]
-    public async Task ConfirmAsync_StructurallyValidSchedule_StillThrowsCatalogPreviewMaterializationNotImplementedException_NoMutation()
+    public async Task ConfirmAsync_StructurallyValidSchedule_PersistsCatalogPlanWeeksDaysAndPreviewLink()
     {
         await using var ctx = NewContext();
         var svc = NewService(ctx);
@@ -865,18 +876,352 @@ public sealed class CatalogPlanConfirmationServiceTests
         ctx.PlanPreviews.Add(preview);
         await ctx.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<CatalogPreviewMaterializationNotImplementedException>(
+        var response = await svc.ConfirmAsync(userId, preview.Id);
+
+        Assert.False(response.AlreadyActive);
+        Assert.Single(ctx.TrainingPlans);
+        Assert.Equal(validPayload.PlannedWeekCount, await ctx.TrainingWeeks.CountAsync());
+        Assert.Equal(validPayload.Weeks.Sum(w => w.Sessions.Count), await ctx.TrainingDays.CountAsync());
+        Assert.Single(ctx.PlanEvents);
+        var updatedPreview = await ctx.PlanPreviews.FindAsync(preview.Id);
+        Assert.Equal(response.PlanId, updatedPreview!.ConfirmedPlanId);
+        var plan = await ctx.TrainingPlans.SingleAsync();
+        Assert.Equal(GenerationSource.Catalog, plan.GenerationSource);
+        Assert.Equal(preview.Id, plan.SourcePreviewId);
+        Assert.Equal(snapshot.ContentHash, plan.CatalogPreviewContentHash);
+        Assert.All(ctx.TrainingDays, d => Assert.Equal(GenerationSource.Catalog, d.GenerationSource));
+
+        // LEGACY_READ_ONLY_NO_NEW_WRITES: new catalog-sourced TrainingDay rows
+        // must NOT populate the legacy CatalogStageKey field. Only
+        // CatalogPhaseKey / CatalogProgressionStageKey are written by the
+        // catalog confirmation path.
+        Assert.All(ctx.TrainingDays, d => Assert.Null(d.CatalogStageKey));
+    }
+
+    [Fact]
+    public async Task ConfirmAsync_RepeatedConfirmation_ReturnsSamePlanWithoutDuplicateWeeksOrDays()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        var first = await svc.ConfirmAsync(userId, preview.Id);
+        var second = await svc.ConfirmAsync(userId, preview.Id);
+
+        Assert.Equal(first.PlanId, second.PlanId);
+        Assert.Single(ctx.TrainingPlans);
+        Assert.Equal(payload.PlannedWeekCount, await ctx.TrainingWeeks.CountAsync());
+        Assert.Equal(payload.Weeks.Sum(w => w.Sessions.Count), await ctx.TrainingDays.CountAsync());
+    }
+
+    [Fact]
+    public async Task ConfirmAsync_TaperSharpen_PreservesSeparatePhaseProgressionAndStructuredComponents()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = BuildTaperSharpenPayload();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+
+        var taperSharpen = await ctx.TrainingDays.SingleAsync(d => d.CatalogProgressionStageKey == "TAPER_SHARPEN");
+        Assert.Equal("TAPER", taperSharpen.CatalogPhaseKey);
+        Assert.Equal("KEY_SESSION", taperSharpen.CatalogStructuralRole);
+        Assert.Equal("EASY_STANDARD", taperSharpen.CatalogWorkoutDefinitionKey);
+        Assert.Contains("easy_baseline", taperSharpen.CatalogPrescriptionJson!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("controlled_sharpening", taperSharpen.CatalogPrescriptionJson!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("easy_recovery", taperSharpen.CatalogPrescriptionJson!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GROUP 12 — Backend Integration Phase 4F.9.1A: confirmation ordering
+    // correction. Idempotency (already-confirmed replay) is now checked
+    // BEFORE expiration/invalidation, but AFTER ownership. These tests pin
+    // the exact required behavior from PHASE4F_9_1A_PRE_RELATIONAL_CORRECTIONS.
+    // ════════════════════════════════════════════════════════════════════════
+
+    // 1. already confirmed + not expired -> returns existing plan.
+    [Fact]
+    public async Task ConfirmAsync_AlreadyConfirmedAndNotExpired_ReturnsExistingPlan()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        var first = await svc.ConfirmAsync(userId, preview.Id);
+        var second = await svc.ConfirmAsync(userId, preview.Id);
+
+        Assert.Equal(first.PlanId, second.PlanId);
+    }
+
+    // 2. already confirmed + expired -> STILL returns existing plan (idempotent
+    // replay is not invalidated by later expiration of the source preview).
+    [Fact]
+    public async Task ConfirmAsync_AlreadyConfirmedButNowExpired_StillReturnsExistingPlan()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot, expiresAt: DateTime.UtcNow.AddMinutes(30));
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        var first = await svc.ConfirmAsync(userId, preview.Id);
+
+        // Simulate the preview expiring after it was already confirmed.
+        preview.ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        await ctx.SaveChangesAsync();
+
+        var second = await svc.ConfirmAsync(userId, preview.Id);
+
+        Assert.Equal(first.PlanId, second.PlanId);
+    }
+
+    // 3. already confirmed + wrong user -> ownership is checked before
+    // idempotency, so a non-owner never receives the existing plan.
+    [Fact]
+    public async Task ConfirmAsync_AlreadyConfirmedButWrongUser_ThrowsPlanPreviewForbiddenException()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var ownerId = Guid.NewGuid();
+        var intruder = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(ownerId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(ownerId, preview.Id);
+
+        await Assert.ThrowsAsync<PlanPreviewForbiddenException>(
+            () => svc.ConfirmAsync(intruder, preview.Id));
+    }
+
+    // 4. unconfirmed + expired -> still fails (expiration only stops
+    // confirming a NEW plan, not replaying an existing one).
+    [Fact]
+    public async Task ConfirmAsync_UnconfirmedAndExpired_ThrowsPlanPreviewExpiredException()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot, expiresAt: DateTime.UtcNow.AddMinutes(-1));
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<PlanPreviewExpiredException>(
             () => svc.ConfirmAsync(userId, preview.Id));
 
-        // Tests #46-#50: no TrainingPlan/TrainingWeek/TrainingDay/PlanEvent
-        // created, ConfirmedPlanId stays null.
         Assert.Empty(ctx.TrainingPlans);
-        Assert.Empty(ctx.TrainingWeeks);
-        Assert.Empty(ctx.TrainingDays);
-        Assert.Empty(ctx.PlanEvents);
-        var updatedPreview = await ctx.PlanPreviews.FindAsync(preview.Id);
-        Assert.Null(updatedPreview!.ConfirmedPlanId);
     }
+
+    // 5. ConfirmedPlanId points to a missing plan -> typed data-integrity error.
+    [Fact]
+    public async Task ConfirmAsync_ConfirmedPlanIdPointsToMissingPlan_ThrowsCatalogConfirmationFailedException()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var snapshot = BuildValidSnapshot();
+        var preview = BuildPreviewRow(userId, snapshot, confirmedPlanId: Guid.NewGuid());
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<CatalogConfirmationFailedException>(
+            () => svc.ConfirmAsync(userId, preview.Id));
+    }
+
+    // 6. ConfirmedPlanId points to another user's plan (corrupted linkage) ->
+    // must fail safely rather than leak another user's plan.
+    [Fact]
+    public async Task ConfirmAsync_ConfirmedPlanIdPointsToAnotherUsersPlan_ThrowsCatalogConfirmationFailedException()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var ownerId = Guid.NewGuid();
+        var otherUsersPlan = new TrainingPlan
+        {
+            Id = Guid.NewGuid(),
+            InternalUserId = Guid.NewGuid(), // belongs to a DIFFERENT user
+            TemplateId = "OTHER",
+            Status = TrainingPlanStatus.Active,
+            GoalType = GoalType.Race,
+            GoalDistance = GoalDistance.TenK,
+            Level = RunningBackground.Intermediate,
+            DaysPerWeek = 4,
+            Unit = DistanceUnit.Km,
+            StartedAt = DateTime.UtcNow,
+            EstimatedEndDate = DateTime.UtcNow.AddDays(56),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        ctx.TrainingPlans.Add(otherUsersPlan);
+        var snapshot = BuildValidSnapshot();
+        var preview = BuildPreviewRow(ownerId, snapshot, confirmedPlanId: otherUsersPlan.Id);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<CatalogConfirmationFailedException>(
+            () => svc.ConfirmAsync(ownerId, preview.Id));
+    }
+
+    // 7. idempotent replay performs no new writes (no new TrainingPlan/Week/
+    // Day/PlanEvent rows, no duplicate confirmation side effects).
+    [Fact]
+    public async Task ConfirmAsync_IdempotentReplay_PerformsNoNewWrites()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+        var payload = GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan();
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: payload);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+        var planCountAfterFirst = await ctx.TrainingPlans.CountAsync();
+        var weekCountAfterFirst = await ctx.TrainingWeeks.CountAsync();
+        var dayCountAfterFirst = await ctx.TrainingDays.CountAsync();
+        var eventCountAfterFirst = await ctx.PlanEvents.CountAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+
+        Assert.Equal(planCountAfterFirst, await ctx.TrainingPlans.CountAsync());
+        Assert.Equal(weekCountAfterFirst, await ctx.TrainingWeeks.CountAsync());
+        Assert.Equal(dayCountAfterFirst, await ctx.TrainingDays.CountAsync());
+        Assert.Equal(eventCountAfterFirst, await ctx.PlanEvents.CountAsync());
+    }
+
+    private static GeneratedCatalogPlanPayload BuildTaperSharpenPayload()
+    {
+        var start = new DateOnly(2026, 8, 3);
+        var sessions = new List<GeneratedCatalogTrainingDayPayload>
+        {
+            BuildTaperSession(start, 0, 1, "TAPER_SHARPEN", "KEY_SESSION", 5.0, true),
+            BuildTaperSession(start, 2, 2, "TAPER", "EASY_SUPPORT", 4.0, false),
+            BuildTaperSession(start, 4, 3, "TAPER", "EASY_SUPPORT", 3.0, false),
+            BuildTaperSession(start, 6, 4, "TAPER", "LONG_RUN", 6.0, false),
+        };
+        var dependencyVersions = new Dictionary<string, PlanCatalogReference>
+        {
+            ["masterTemplate"] = new("TEN_K_MASTER", 6),
+            ["layout"] = new("RUN_LAYOUT_4D", 2),
+            ["levelModifier"] = new("INTERMEDIATE_MODIFIER", 6),
+            ["rulePack"] = new("APPSEL_RACE_PLAN_V1", 4),
+        };
+
+        return new GeneratedCatalogPlanPayload
+        {
+            SchemaVersion = GeneratedCatalogPlanPayload.CurrentSchemaVersion,
+            StartDate = start,
+            EndDate = start.AddDays(6),
+            PlannedWeekCount = 1,
+            DaysPerWeek = 4,
+            CanonicalDistanceFamily = "TEN_K",
+            GoalType = GoalType.Race,
+            CandidateKey = "TEN_K__4D__INTERMEDIATE",
+            CandidateVersion = 10,
+            DependencyVersions = dependencyVersions,
+            Weeks = new[]
+            {
+                new GeneratedCatalogWeekPayload
+                {
+                    WeekNumber = 1,
+                    StartDate = start,
+                    EndDate = start.AddDays(6),
+                    StageKey = "TAPER",
+                    PlannedVolumeKm = sessions.Sum(s => s.TargetDistanceKm ?? s.EstimatedDistanceKm ?? 0),
+                    Sessions = sessions,
+                    Provenance = new GeneratedCatalogWeekProvenance
+                    {
+                        StageKey = "TAPER",
+                        SourcePhaseKey = "TAPER",
+                        VolumeRuleKey = "TAPER_STANDARD",
+                        ProgressionReferenceKey = "TEN_K_INTERMEDIATE_PROGRESSION_V1",
+                    },
+                },
+            },
+            Provenance = new GeneratedCatalogPlanProvenance
+            {
+                CandidateKey = "TEN_K__4D__INTERMEDIATE",
+                CandidateVersion = 10,
+                DependencyVersions = dependencyVersions,
+                GenerationSource = "CATALOG",
+                AsOfDate = start,
+                MaterializerVersion = "TEST_TAPER_SHARPEN",
+            },
+        };
+    }
+
+    private static GeneratedCatalogTrainingDayPayload BuildTaperSession(
+        DateOnly weekStart,
+        int dayOffset,
+        int order,
+        string stageKey,
+        string role,
+        double distanceKm,
+        bool taperSharpen) => new()
+    {
+        Date = weekStart.AddDays(dayOffset),
+        SessionOrderInWeek = order,
+        WorkoutType = role == "LONG_RUN" ? GeneratedCatalogWorkoutType.LongRun : GeneratedCatalogWorkoutType.Easy,
+        PrescriptionBasis = GeneratedCatalogPrescriptionBasis.Distance,
+        TargetDistanceKm = distanceKm,
+        EstimatedDurationMinutes = (int)(distanceKm * 6),
+        PlannedIntensity = "z2",
+        PacePrescription = new GeneratedCatalogPacePrescription
+        {
+            PaceType = GeneratedCatalogPaceType.EffortOnly,
+            EffortLabel = taperSharpen ? "easy with controlled sharpening" : "conversational",
+        },
+        Segments = taperSharpen
+            ? new[]
+            {
+                BuildSegment(1, "EASY_BASELINE", 2.0),
+                BuildSegment(2, "CONTROLLED_SHARPENING", 1.0),
+                BuildSegment(3, "EASY_RECOVERY", 2.0),
+            }
+            : Array.Empty<GeneratedCatalogWorkoutSegmentPayload>(),
+        Provenance = new GeneratedCatalogDayProvenance
+        {
+            SourceStageKey = stageKey,
+            SourceWorkoutKey = "EASY_STANDARD",
+            SourceWorkoutVersion = 4,
+            SourceProgressionStepKey = stageKey,
+            SourceLayoutSlotRole = role,
+        },
+    };
+
+    private static GeneratedCatalogWorkoutSegmentPayload BuildSegment(int order, string displayText, double distanceKm) => new()
+    {
+        SegmentOrder = order,
+        SegmentType = order == 2 ? GeneratedCatalogSegmentType.Steady : order == 1 ? GeneratedCatalogSegmentType.WarmUp : GeneratedCatalogSegmentType.CoolDown,
+        PrescriptionBasis = GeneratedCatalogPrescriptionBasis.Distance,
+        TargetDistanceKm = distanceKm,
+        PacePrescription = new GeneratedCatalogPacePrescription { PaceType = GeneratedCatalogPaceType.EffortOnly, EffortLabel = displayText },
+        Intensity = displayText,
+        DisplayText = displayText,
+    };
 
     // Test #52 (partial — the remainder is proven structurally by
     // CatalogPlanConfirmationService_HasNoGenerationOrResolutionDependencies

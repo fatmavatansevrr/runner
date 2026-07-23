@@ -1,0 +1,27 @@
+@baseUrl = http://localhost:5231
+
+### Habit — full valid payload (documentation/manual-testing only)
+POST {{baseUrl}}/api/v1/plans/generate-preview/habit
+Content-Type: application/json
+
+{
+  "goal_distance": "five_k",
+  "level": "beginner",
+  "days_per_week": 3,
+  "unit": "km",
+  "start_date": "2026-07-20",
+  "preferred_days": ["mon", "wed", "sat"],
+  "long_run_day": null
+}
+
+### 400 — missing required field (start_date omitted)
+POST {{baseUrl}}/api/v1/plans/generate-preview/habit
+Content-Type: application/json
+
+{
+  "goal_distance": "five_k",
+  "level": "beginner",
+  "days_per_week": 3,
+  "unit": "km",
+  "preferred_days": ["mon", "wed", "sat"]
+}

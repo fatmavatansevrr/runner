@@ -52,12 +52,23 @@ public sealed class PlanCatalogDomainMapper : IPlanCatalogDomainMapper
                 : $"'{summary.CanonicalDistanceFamily}' did not match any GoalDistance member."));
 
         // ── Level ─────────────────────────────────────────────────────────────
+        // Running Background V2: RunningBackground is now the four-tier
+        // {Beginner, Intermediate, Advanced, Experienced} onboarding
+        // self-description, matching plan-catalog's own four-tier
+        // {NEW, INTERMEDIATE, ADVANCED, EXPERIENCED} taxonomy in CARDINALITY,
+        // but the two are still distinct typed vocabularies with no
+        // implicit 1:1 name equivalence beyond the one explicit, tested
+        // mapping V1CatalogPilotIdentityPolicy owns
+        // (RunningBackground.Intermediate ↔ catalog "INTERMEDIATE"). Only
+        // that one pairing is live; BEGINNER/ADVANCED/EXPERIENCED have no
+        // catalog candidate content and remain NotSupported here.
         classifications.Add(new CatalogConceptClassification(
             summary.Level, BackendRepresentationSupport.NotSupported,
-            "RunningBackground {NewToRunning, UsedToRun, RunningRegularly} is a 3-tier running-habit " +
-            "self-description used at onboarding, not plan-catalog's 4-tier RunningExperience " +
-            "{NEW, INTERMEDIATE, ADVANCED, EXPERIENCED} training-level taxonomy. No documented or " +
-            "code-evident mapping exists between the two axes; this is a taxonomy mismatch, not a missing enum value."));
+            "RunningBackground {Beginner, Intermediate, Advanced, Experienced} is a four-tier onboarding " +
+            "self-description; plan-catalog's own four-tier RunningExperience taxonomy is " +
+            "{NEW, INTERMEDIATE, ADVANCED, EXPERIENCED}. Only RunningBackground.Intermediate has an explicit, " +
+            "tested mapping to catalog level \"INTERMEDIATE\" (see V1CatalogPilotIdentityPolicy) — the other " +
+            "three RunningBackground values have no corresponding catalog candidate content and are not mapped."));
 
         // ── Days per week (structurally representable; the layout IDENTITY is not) ──
         classifications.Add(new CatalogConceptClassification(

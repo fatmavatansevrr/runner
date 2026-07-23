@@ -11,6 +11,7 @@ import '../../plan/data/plan_repository.dart';
 import '../../../core/network/bootstrap_provider.dart';
 import '../../home/data/home_provider.dart';
 import '../../calendar/data/calendar_provider.dart';
+import '../../onboarding/data/onboarding_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -54,6 +55,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ref.invalidate(homeDataProvider);
                 ref.invalidate(calendarDataProvider);
                 ref.invalidate(bootstrapDataProvider);
+                // Guarantee "Create a plan" starts from a genuinely empty
+                // state, even if a prior onboarding attempt was abandoned
+                // (without confirming) before this cancellation.
+                ref.read(onboardingProvider.notifier).reset();
                 if (mounted) {
                   context.go(AppRoutes.goalSelection);
                 }

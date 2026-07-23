@@ -1,4 +1,5 @@
 using RunningApp.Domain.Enums;
+using System.Text.Json.Serialization;
 
 namespace RunningApp.Application.RuntimeCatalog.Resolvers;
 
@@ -34,7 +35,34 @@ public sealed class ResolverInputSnapshot
     public DateOnly? StartDate { get; init; }
     public DateOnly? RaceDate { get; init; }
     public int? TargetFinishTimeSeconds { get; init; }
+
+    /// <summary>
+    /// How <see cref="TargetFinishTimeSeconds"/> was derived — required for
+    /// <see cref="RunningApp.Application.RuntimeCatalog.Resolvers.GoalFeasibilityResolver"/>
+    /// to distinguish a product-computed planning reference from a user's
+    /// own performance claim. Null for Habit snapshots (no target time at
+    /// all) and for any snapshot built before this field existed. See
+    /// PHASE4D_4_1_PRODUCT_AVERAGE_TARGET_TIME_GOAL_FEASIBILITY_CLASSIFICATION.md.
+    /// </summary>
+    public TargetFinishTimeSource? TargetFinishTimeSource { get; init; }
+
     public int? DaysPerWeek { get; init; }
+    /// <summary>
+    /// Running Background V2.1 — deliberately uses the historical-compat
+    /// <see cref="RunningBackgroundJsonConverter"/> (NOT
+    /// <c>RunningBackgroundCanonicalJsonConverter</c>, which owns the public
+    /// request boundary) so an already-persisted preview snapshot written
+    /// before the V2 migration — confirmed present in the real local dev
+    /// database (166 of 221 stored <c>PlanPreviews</c> rows carry
+    /// "running_regularly" in this exact field) — remains deserializable.
+    /// This type is never part of a public request/response contract, so
+    /// accepting legacy aliases here does not reopen the public HTTP
+    /// boundary that Running Background V2.1 closed. See
+    /// <see cref="RunningApp.Application.DTOs.Plan.GeneratePreviewRequest.Level"/>
+    /// for why a property-level attribute is required here rather than
+    /// relying on the type-level one alone.
+    /// </summary>
+    [JsonConverter(typeof(RunningBackgroundJsonConverter))]
     public RunningBackground? Level { get; init; }
 
     // ── Phase 4B fitness-evidence fields (verbatim from GeneratePreviewRequest) ──

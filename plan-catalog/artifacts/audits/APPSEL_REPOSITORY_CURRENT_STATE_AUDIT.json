@@ -1,0 +1,236 @@
+{
+  "auditKey": "APPSEL_REPOSITORY_CURRENT_STATE_AUDIT",
+  "auditVersion": 1,
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c6796578f08bc1d76d96f1944a80c9075455206",
+    "workingTreeMixesMultiplePhases": true,
+    "attributionReliability": "HIGH for new/untracked files (each phase created wholly new files); MEDIUM for 4 modified files (CatalogPreviewGenerator.cs + 3 test files) whose Phase 4F.4/4F.5/4F.5.1/4F.6A edits are squashed together with no intermediate commit boundary to separate them without patch surgery (see PHASE4F_6_STEP_C1_TAPER_SHARPEN_AND_RUNTIME_BOUNDARY_CLOSURE.md section 13 for the full checkpoint-separation analysis)",
+    "unexpectedOrUnrelatedChanges": "None found. Every modified/untracked file traces to an identifiable phase in this session's own history (4F.4 through 4F.6A, Steps A/A.1/A.2/B/C/C.1).",
+    "excludedPaths": ["baseline_tmp/ (explicit standing instruction not to touch)", "PHASE4E_2_DEV_DATABASE_MIGRATION_APPLICATION_AND_BASELINE_VERIFICATION.md (explicit standing instruction not to commit)"],
+    "fileAttributionTable": [
+      { "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewGenerator.cs", "status": "MODIFIED", "area": "backend", "phase": "4F.4/4F.5/4F.5.1/4F.6A (squashed)", "classification": "PRODUCTION_CODE", "runtimeImpact": "Dark pipeline wiring", "confidence": "MEDIUM (phase-level split not separable)" },
+      { "file": "backend/RunningApp.Api/Program.cs", "status": "MODIFIED", "area": "backend", "phase": "4F.6A", "classification": "PRODUCTION_CODE", "runtimeImpact": "DI registration only", "confidence": "HIGH" },
+      { "file": "backend/RunningApp.Application/RuntimeCatalog/Schedule/Progression/*.cs (6 files)", "status": "UNTRACKED", "area": "backend", "phase": "4F.6A", "classification": "PRODUCTION_CODE", "runtimeImpact": "New dark scheduler", "confidence": "HIGH" },
+      { "file": "backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/*.cs (5 files)", "status": "UNTRACKED", "area": "backend", "phase": "4F.5/4F.5.1", "classification": "PRODUCTION_CODE", "runtimeImpact": "Dark calendar materialization/validation", "confidence": "HIGH" },
+      { "file": "backend/RunningApp.IntegrationTests/**/*.cs (test files, tracked-modified + untracked new)", "status": "MIXED", "area": "backend", "phase": "4F.4/4F.5/4F.5.1/4F.6A", "classification": "TEST", "runtimeImpact": "None (test-only)", "confidence": "MEDIUM for the 3 modified files, HIGH for new ones" },
+      { "file": "plan-catalog/src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs", "status": "MODIFIED", "area": "plan-catalog", "phase": "Step C / Step C.1", "classification": "GOVERNANCE", "runtimeImpact": "Consumed by PublishReadinessValidator", "confidence": "HIGH" },
+      { "file": "plan-catalog/artifacts/audits/activation-readiness-risks.{json,md}", "status": "MODIFIED", "area": "plan-catalog", "phase": "Step C", "classification": "GOVERNANCE", "runtimeImpact": "None (documentation)", "confidence": "HIGH" },
+      { "file": "plan-catalog/artifacts/audits/phase4f6-step-{a,a1,a2,b}*.{json,md}", "status": "UNTRACKED", "area": "plan-catalog", "phase": "Step A/A.1/A.2/B", "classification": "AUDIT_ARTIFACT", "runtimeImpact": "None", "confidence": "HIGH" },
+      { "file": "PHASE4F_5*.md, PHASE4F_6_STEP_C*.md, PHASE4F_6A*.md", "status": "UNTRACKED", "area": "root", "phase": "respective phase", "classification": "DOCUMENTATION", "runtimeImpact": "None", "confidence": "HIGH" }
+    ]
+  },
+  "architectureMap": {
+    "layers": ["Frontend/API caller (not inspected — out of repo scope)", "RunningApp.Api (controllers)", "RunningApp.Application (services, RuntimeCatalog integration)", "RunningApp.Domain (entities)", "RunningApp.Infrastructure", "RunningApp.Persistence (EF Core, migrations)", "plan-catalog (separate solution: PlanCatalog.Contracts/Core/Infrastructure/Cli)"],
+    "dependencyDirections": {
+      "RunningApp.Api -> RunningApp.Application": "normal, DI composition root",
+      "RunningApp.Application -> RunningApp.Domain/Persistence/Infrastructure": "normal",
+      "RunningApp.Application -> plan-catalog (C# assemblies)": "NONE — confirmed no project reference; PlanCatalogBundleLoader/CatalogWorkoutProgressionLoader parse catalog JSON directly via System.Text.Json, never referencing PlanCatalog.Core/.Contracts types",
+      "plan-catalog -> RunningApp.*": "NONE",
+      "forbiddenOrSuspicious": "None found. The two solutions are cleanly decoupled at the file/JSON boundary, consistent with the documented Process A / Process B split."
+    }
+  },
+  "planCatalog": {
+    "pilotCandidate": {
+      "key": "TEN_K__4D__INTERMEDIATE", "version": 10, "status": "DRAFT",
+      "masterTemplate": "TEN_K_MASTER v6", "layout": "RUN_LAYOUT_4D v2", "levelModifier": "INTERMEDIATE_MODIFIER v6",
+      "rulePack": "APPSEL_RACE_PLAN_V1 v4", "workoutProgression": "TEN_K_WORKOUT_PROGRESSION_V1 v5",
+      "coreCycle": "min=8, default=12, max=14", "phaseDistribution": "FOUNDATION 3 / BUILD 4 / RACE_SPECIFIC 4 / TAPER 1 (preferred)",
+      "goalDistance": "TEN_K", "level": "INTERMEDIATE", "daysPerWeek": 4
+    },
+    "dependencyGraph": [
+      { "artifact": "TEN_K_MASTER", "version": 6, "status": "referenced", "runtimeConsumed": "ACTIVE_RUNTIME_INPUT (dark)", "validationStatus": "structurally valid, content-decision blockers resolved (D13)", "knownRisks": "none open at this artifact" },
+      { "artifact": "RUN_LAYOUT_4D", "version": 2, "status": "referenced", "runtimeConsumed": "ACTIVE_RUNTIME_INPUT (dark)", "validationStatus": "valid", "knownRisks": "none" },
+      { "artifact": "INTERMEDIATE_MODIFIER", "version": 6, "status": "referenced", "runtimeConsumed": "ACTIVE_RUNTIME_INPUT (dark, eligible-workout list only, not yet used for binding)", "validationStatus": "valid", "knownRisks": "none" },
+      { "artifact": "APPSEL_RACE_PLAN_V1", "version": 4, "status": "referenced", "runtimeConsumed": "REACHABLE_BUT_NOT_CONSUMED (registry/policy refs loaded by combination graph, not yet read by any resolver in this exact form)", "validationStatus": "valid", "knownRisks": "TD-REGISTRY-001 (STANDARD vocabulary mismatch), TD-PACESOURCE-001/002" },
+      { "artifact": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 5, "status": "referenced", "runtimeConsumed": "ACTIVE_RUNTIME_INPUT (Phase 4F.6A, new)", "validationStatus": "valid; exposure/extension values now formally EXPLICIT_PRODUCT_DEFAULT (AUD-500/501)", "knownRisks": "RACE_SPECIFIC phase has zero capacity slack under current exposure bounds (documented, non-blocking)" },
+      { "artifact": "EASY_STANDARD/LONG_RUN_STANDARD/FARTLEK/THRESHOLD_TEMPO/GOAL_PACE_TEN_K", "version": "v4/v4/v4/v4/v2", "status": "reachable via eligible-workouts + progression candidates", "runtimeConsumed": "GOVERNANCE_ONLY (no binding implemented yet)", "validationStatus": "valid", "knownRisks": "no public workout-type mapping (deferred to 4F.8)" },
+      { "artifact": "EASY_SHAKEOUT / EASY_WITH_STRIDES / LONG_RUN_PROGRESSION", "version": "n/a", "status": "MISSING (not in catalog, referenced only in Golden Fixture v3 / governance prose)", "runtimeConsumed": "MISSING", "validationStatus": "n/a", "knownRisks": "TD-EASY-WORKOUT-REGISTRY-001 (fixture/catalog divergence)" }
+    ],
+    "publicationReadiness": "Content-decision blockers (D2/D3/D4/D13) all resolved (D13GoalPaceTenKResolutionTests confirms v10's dependency-closure blocking-entry count is zero). Combination document itself remains status=DRAFT — no publish action has been executed via the PlanCatalog.Cli `publish` command. Publication is deliberately deferred pending 4F.6B/4F.7 completion, not blocked by unresolved domain content."
+  },
+  "backendRuntimePipeline": [
+    { "order": 1, "step": "Candidate eligibility gate", "implementation": "CatalogCandidateEligibilityGate", "wired": true, "darkOrPublic": "PUBLIC path throws (DRAFT); internal dry-run path works", "persisted": false, "tests": "CatalogCandidateEligibilityGateTests" },
+    { "order": 2, "step": "Runtime-condition resolution", "implementation": "RuntimeConditionResolutionService (4 resolvers)", "wired": "IMPLEMENTED_DARK_INTERNAL (never called by PlanServices/PlaceholderPlanGenerationEngine)", "darkOrPublic": "Dark (only reachable via CatalogPreviewGenerator, itself unreachable in production)", "persisted": false, "tests": "extensive per-resolver + orchestration tests" },
+    { "order": 3, "step": "Phase/week skeleton materialization", "implementation": "CatalogPlanSkeletonOrchestrator (4F.2/4F.3)", "wired": "IMPLEMENTED_DARK_INTERNAL", "darkOrPublic": "Dark", "persisted": false, "tests": "yes" },
+    { "order": 4, "step": "Fine-grained stage scheduling", "implementation": "ProgressionStageAllocator (4F.6A, new)", "wired": "IMPLEMENTED_DARK_INTERNAL", "darkOrPublic": "Dark", "persisted": false, "tests": "27 new tests" },
+    { "order": 5, "step": "Calendar-day assignment", "implementation": "CatalogWeekSkeletonCalendarMaterializer (4F.5)", "wired": "IMPLEMENTED_DARK_INTERNAL", "darkOrPublic": "Dark", "persisted": false, "tests": "yes" },
+    { "order": 6, "step": "Dated-skeleton validation", "implementation": "DatedGeneratedCatalogPlanSkeletonValidator (4F.5.1)", "wired": "IMPLEMENTED_DARK_INTERNAL", "darkOrPublic": "Dark", "persisted": false, "tests": "yes" },
+    { "order": 7, "step": "Workout binding", "implementation": "NOT_STARTED", "wired": "NOT_STARTED", "darkOrPublic": "n/a", "persisted": false, "tests": "none" },
+    { "order": 8, "step": "Prescription", "implementation": "NOT_STARTED", "wired": "NOT_STARTED", "darkOrPublic": "n/a", "persisted": false, "tests": "none" },
+    { "order": 9, "step": "Preview payload construction (GeneratedPreviewPlanPayload)", "implementation": "CONTRACT_ONLY (type exists, Phase 4F.1) — field always null on every real snapshot", "wired": "IMPLEMENTED_BUT_NOT_WIRED", "darkOrPublic": "n/a", "persisted": false, "tests": "contract/shape tests only" },
+    { "order": 10, "step": "Snapshot/hash", "implementation": "CatalogPreviewSnapshotBuilder", "wired": "IMPLEMENTED_AND_ACTIVE (for the resolver-decision-trace content it does hash; never includes skeleton/schedule/dated-skeleton content)", "darkOrPublic": "Internal, becomes public via preview response DTO", "persisted": "not yet (preview persistence for catalog path unconfirmed as reachable)", "tests": "yes" },
+    { "order": 11, "step": "Confirm", "implementation": "CatalogPlanConfirmationService", "wired": "IMPLEMENTED_BUT_BLOCKED — unconditionally throws (BuildPlan removed; GeneratedPreviewPlanPayload always null -> CatalogPreviewNotPersistableException, or even if non-null -> CatalogPreviewMaterializationNotImplementedException)", "darkOrPublic": "Public entry point, blocked", "persisted": false, "tests": "yes (exercise the blocking guards)" },
+    { "order": 12, "step": "TrainingPlan/Week/Day persistence (catalog-sourced)", "implementation": "NOT_STARTED (entities have nullable catalog-provenance fields since Phase 3, but no producer populates them from a catalog-generated plan)", "wired": "NOT_STARTED", "darkOrPublic": "n/a", "persisted": false, "tests": "none for catalog path; legacy SQL path is fully persisted/tested" }
+  ],
+  "contractInventory": [
+    { "contract": "GeneratePreviewRequest", "project": "RunningApp.Application", "purpose": "Public preview request DTO", "producer": "PlansController", "consumer": "PlanServices/CatalogPreviewGenerator", "visibility": "Public", "status": "several fields unused by any catalog path (Unit, RaceName, WeeklyAvailability, PreferredPace, HabitPlanType, Custom* fields)" },
+    { "contract": "ResolverInputSnapshot", "project": "RunningApp.Application", "purpose": "Normalized resolver input", "producer": "CatalogPreviewGenerator.BuildInputSnapshot", "consumer": "4 runtime resolvers", "visibility": "Internal", "status": "GoalDistanceKm hardcoded to 10.0 rather than derived; RequestedTargetDistanceKm/CanonicalDistanceFamily never populated" },
+    { "contract": "CatalogPreviewSnapshot", "project": "RunningApp.Application", "purpose": "Frozen preview result", "producer": "CatalogPreviewSnapshotBuilder", "consumer": "PlansController response / (intended) CatalogPlanConfirmationService", "visibility": "Internal, surfaced via API DTO", "status": "GeneratedPreviewPlanPayload always null" },
+    { "contract": "GeneratedCatalogPlanSkeleton", "project": "RunningApp.Application", "purpose": "Phase/week structural skeleton (4F.2/4F.3)", "producer": "CatalogPlanSkeletonOrchestrator", "consumer": "ProgressionStageAllocator (new), CatalogWeekSkeletonCalendarMaterializer", "visibility": "Internal", "status": "StageKey field is phase-granularity — documented terminology debt, ambiguous name if read casually" },
+    { "contract": "GeneratedCatalogStageSchedule / ScheduledProgressionWeek", "project": "RunningApp.Application", "purpose": "Fine-grained KEY_SESSION stage assignment (4F.6A, new)", "producer": "ProgressionStageAllocator", "consumer": "none yet (discarded after validation) — future consumer is 4F.6B", "visibility": "Internal", "status": "new, no workout-identity field by design" },
+    { "contract": "DatedGeneratedCatalogPlanSkeleton", "project": "RunningApp.Application", "purpose": "Calendar-dated structural skeleton (4F.5)", "producer": "CatalogWeekSkeletonCalendarMaterializer", "consumer": "DatedGeneratedCatalogPlanSkeletonValidator only", "visibility": "Internal", "status": "discarded after validation, no consumer beyond validation" },
+    { "contract": "RuntimeConditionResolutionResult / ResolverDecisionTrace", "project": "RunningApp.Application", "purpose": "Per-condition resolver output + trace", "producer": "4 resolvers via RuntimeConditionResolutionService", "consumer": "CatalogPreviewSnapshotBuilder (hashed into snapshot), ProgressionStageAllocator (new)", "visibility": "Internal", "status": "well-consumed" },
+    { "contract": "GeneratedCatalogPlanPayload", "project": "RunningApp.Application", "purpose": "Final personalized-plan contract (Phase 4F.1)", "producer": "NONE (no code ever constructs one)", "consumer": "none", "visibility": "Public-shaped, internal today", "status": "CONTRACT_ONLY — exists with full field set (pace, distance, workout type) but zero producers" },
+    { "contract": "TrainingPlan/TrainingWeek/TrainingDay", "project": "RunningApp.Domain/Persistence", "purpose": "Persisted plan entities", "producer": "Legacy SQL PlanServices path only", "consumer": "IHomeQueryService/ICalendarQueryService/etc.", "visibility": "Persisted", "status": "catalog-provenance fields exist (nullable, added Phase 3/4F.5.1) but never populated — a producer-less contract extension" }
+  ],
+  "runtimeConditions": [
+    { "condition": "TIME_ADEQUACY_IN", "producer": "TimeAdequacyResolver", "possibleResults": "ADEQUATE/COMPRESSED/INSUFFICIENT (v2 registry) or NotEvaluated", "consumer": "None in workout-progression Requires today", "blockingBehavior": "Governance policy maps certain NotEvaluated reasons to typed exceptions in CatalogPreviewGenerator" },
+    { "condition": "PACE_SOURCE_IN", "producer": "PaceSourceResolver", "possibleResults": "NONE/RECENT_RACE/ESTIMATED/TARGET_TIME or NotEvaluated", "consumer": "None in workout-progression Requires today", "blockingBehavior": "same governance policy" },
+    { "condition": "CORE_ENTRY_READINESS_IN", "producer": "CoreEntryReadinessResolver", "possibleResults": "READY/CAUTION/NOT_READY or NotEvaluated", "consumer": "None in workout-progression Requires today", "blockingBehavior": "same governance policy" },
+    { "condition": "GOAL_FEASIBILITY_IN", "producer": "GoalFeasibilityResolver", "possibleResults": "REALISTIC/CHALLENGING/UNSUPPORTED/NOT_REQUESTED or NotEvaluated", "consumer": "GOAL_PACE_REHEARSAL stage's Requires (TEN_K_WORKOUT_PROGRESSION_V1) — the ONLY condition type actually consumed by any catalog artifact", "blockingBehavior": "ProgressionStageAllocator (4F.6A) reads this to resolve eligibility/fallback" }
+  ],
+  "scheduleGeneration": {
+    "structuralSchedule": { "phases": "IMPLEMENTED_DARK_INTERNAL", "weeks": "IMPLEMENTED_DARK_INTERNAL", "structuralRoles": "IMPLEMENTED_DARK_INTERNAL", "runSlots": "IMPLEMENTED_DARK_INTERNAL", "noRestDayRule": "IMPLEMENTED_DARK_INTERNAL", "calendarDates": "IMPLEMENTED_DARK_INTERNAL", "preferredDayBinding": "IMPLEMENTED_DARK_INTERNAL", "longRunDayBinding": "IMPLEMENTED_DARK_INTERNAL", "adjacencyRules": "IMPLEMENTED_DARK_INTERNAL (KEY_SESSION/LONG_RUN 2-day separation)", "dateValidation": "IMPLEMENTED_DARK_INTERNAL" },
+    "fineGrainedStageSchedule": { "progressionStageKey": "IMPLEMENTED_DARK_INTERNAL (new, 4F.6A)", "stageToWeekAllocation": "IMPLEMENTED_DARK_INTERNAL", "minMaxExposureHandling": "IMPLEMENTED_DARK_INTERNAL", "compression": "IMPLEMENTED_DARK_INTERNAL", "extension": "IMPLEMENTED_DARK_INTERNAL", "fallback": "IMPLEMENTED_DARK_INTERNAL", "contiguousAllocation": "IMPLEMENTED_DARK_INTERNAL", "decisionTrace": "IMPLEMENTED_DARK_INTERNAL" },
+    "workoutBinding": { "easySupportToEasyStandard": "governance decision only (D-C07, AUD-503) — CONTRACT_ONLY / NOT_STARTED for implementation", "longRunToLongRunStandard": "governance decision only (D-C08, AUD-504) — NOT_STARTED", "keySessionStageControlled": "governance decision only (D-C09, AUD-505) — NOT_STARTED", "runtimeWiring": "NOT_STARTED", "validation": "NOT_STARTED", "publicOutput": "NOT_STARTED" },
+    "prescription": { "weeklyVolume": "NOT_STARTED", "sessionDistance": "NOT_STARTED", "duration": "NOT_STARTED", "pace": "NOT_STARTED", "segments": "NOT_STARTED", "repetitionCount": "NOT_STARTED", "recovery": "NOT_STARTED", "longRunProgression": "NOT_STARTED", "taperModification": "DOCUMENTED_ONLY (AUD-508 directive exists; no implementation)", "userFitnessPersonalization": "NOT_STARTED" }
+  },
+  "userInputUtilization": [
+    { "input": "GoalType", "collectedByFrontend": "assumed yes", "sentToBackend": true, "storedInPreview": true, "usedInRuntime": true, "persistedOnConfirm": "legacy path only", "currentlyUnused": false },
+    { "input": "GoalDistance", "sentToBackend": true, "usedInRuntime": "partially — hardcoded to 10.0km in ResolverInputSnapshot rather than derived", "currentlyUnused": false },
+    { "input": "TargetFinishTimeSeconds", "sentToBackend": true, "usedInRuntime": true, "currentlyUnused": false },
+    { "input": "DaysPerWeek/Level/RaceDate", "sentToBackend": true, "usedInRuntime": true, "currentlyUnused": false },
+    { "input": "PreferredDays/LongRunDay", "sentToBackend": true, "usedInRuntime": "yes, but only in dark calendar materializer, not in ResolverInputSnapshot", "currentlyUnused": false },
+    { "input": "RecentLongestRunKm/RecentWeeklyVolumeKm/RecentRunsPerWeek/RecentRaceDistanceKm/RecentRaceFinishTimeSeconds/RecentRaceDate", "sentToBackend": true, "usedInRuntime": "mapped into ResolverInputSnapshot but not read by any resolver logic yet per that DTO's own doc comment", "currentlyUnused": true },
+    { "input": "Unit, RaceName, WeeklyAvailability, PreferredPace, HabitPlanType, CustomGoalType, CustomDurationWeeks, CustomTargetTimeSeconds", "sentToBackend": true, "usedInRuntime": false, "currentlyUnused": true }
+  ],
+  "previewFlow": {
+    "requestValidation": "standard DTO validation (not deeply audited)",
+    "catalogEligibility": "IMPLEMENTED_AND_ACTIVE but always throws for public callers (DRAFT); internal dry-run works",
+    "internalGeneratedStructures": "skeleton, stage schedule (new), dated skeleton — all built and validated, all discarded",
+    "publicPayload": "GeneratedPreviewPlanPayload always null",
+    "snapshotAndHash": "built from resolver results + trace only, never includes schedule content",
+    "expiration": "30-minute PreviewLifetime, implemented",
+    "persistence": "not confirmed reachable for catalog-sourced previews in this audit pass",
+    "typedErrors": "extensive, well-covered by tests"
+  },
+  "confirmFlow": {
+    "canConfirmRealCatalogSchedule": "NO",
+    "exactBlockingBoundary": "CatalogPlanConfirmationService throws CatalogPreviewNotPersistableException when snapshot.GeneratedPreviewPlanPayload is null (always true today), and CatalogPreviewMaterializationNotImplementedException even in the hypothetical non-null case — BuildPlan itself was removed as dead code per that file's own comment",
+    "previewLookup": "implemented", "expiryValidation": "implemented", "snapshotValidation": "implemented", "hashValidation": "implemented",
+    "catalogPlanPersistabilityGuard": "always rejects", "concurrency": "not exercised for catalog path (unreachable)", "idempotency": "not exercised for catalog path",
+    "trainingPlanCreation": "never reached for catalog path", "transactionBoundaries": "n/a for catalog path", "failureBehavior": "typed exceptions, well-tested"
+  },
+  "persistence": [
+    { "entity": "TrainingPlan", "writtenToday": "legacy SQL path only", "readToday": true, "catalogReady": "partially — 11 nullable catalog-provenance fields already added (Phase 3/4F.5.1), never populated", "missingFields": "none structurally; missing PRODUCER", "risks": "orphan risk none observed; catalog producer absent" },
+    { "entity": "TrainingWeek", "writtenToday": "legacy SQL path only", "readToday": true, "catalogReady": "partially — nullable CatalogPhaseKey field exists, unpopulated", "missingFields": "no ProgressionStageKey field yet (4F.6A output has nowhere to land)", "risks": "none observed" },
+    { "entity": "TrainingDay", "writtenToday": "legacy SQL path only", "readToday": true, "catalogReady": "partially — nullable CatalogWorkoutKey/Version, CatalogStageKey, CatalogSlotRole, CatalogWorkoutFamily, CatalogIntensityKey fields exist, unpopulated", "missingFields": "CatalogStageKey is presumably phase-granularity by name — needs reconciliation with the new fine-grained ProgressionStageKey concept before 4F.6B/4F.7 map into it", "risks": "naming collision risk between this existing field and the new ProgressionStageKey concept should be resolved explicitly in a future phase" }
+  ],
+  "publicEndpoints": [
+    { "endpoint": "POST /api/v1/plans/generate-preview", "classification": "WORKING_WITH_PLACEHOLDER_DATA (legacy) / NOT_WIRED (catalog path unreachable for public DRAFT candidate)" },
+    { "endpoint": "POST /api/v1/plans/confirm", "classification": "WORKING_WITH_PLACEHOLDER_DATA (legacy) / NOT_WIRED (catalog path unconditionally blocked)" },
+    { "endpoint": "GET /api/v1/plans/active/home", "classification": "WORKING_WITH_PLACEHOLDER_DATA (reads legacy-shape persisted rows only)" },
+    { "endpoint": "GET /api/v1/plans/active/calendar", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "GET /api/v1/plans/active/details", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "GET /api/v1/training-days/{id}", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "POST /api/v1/training-days/{id}/complete", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "POST /api/v1/training-days/{id}/not-today-decisions", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "GET/POST /api/v1/pending-confirmations", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "GET /api/v1/profile/overview", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "POST /api/v1/plans/{id}/cancel", "classification": "WORKING_WITH_PLACEHOLDER_DATA" },
+    { "endpoint": "GET /api/v1/me/bootstrap", "classification": "NOT_DEEPLY_AUDITED_THIS_PASS" }
+  ],
+  "testCoverage": [
+    { "area": "Plan Catalog domain/validation/publishing/audit/golden", "unitTests": "335 total across Architecture(4)/Audit(1)/Combinations(2)/Golden(6)/Hashing(1)/Loading(2)/Publishing(12)/Serialization(3)/TestSupport(4)/Validation(19) source files", "currentPassCount": "335/335" },
+    { "area": "Backend runtime-condition resolvers + orchestration + candidate resolution + phase/week materialization + calendar assignment + stage scheduler (4F.6A) + preview + confirm + API integration", "currentPassCount": "655/655 (628 pre-4F.6A + 27 new)" }
+  ],
+  "governanceDecisions": [
+    { "decision": "D-C01 phase distribution 3/4/4/1", "status": "CANONICAL_CONFIRMED (AUD-003)", "evidenceBasis": "EVIDENCE_INFORMED", "runtimeImplemented": true, "blockingPhase": "none", "source": "AUD-003, Step C" },
+    { "decision": "D-C03 exposure counts", "status": "EXPLICIT_PRODUCT_DEFAULT (AUD-500)", "evidenceBasis": "NO_DIRECT_EVIDENCE/EVIDENCE_INFORMED", "runtimeImplemented": true, "blockingPhase": "none", "source": "Step C" },
+    { "decision": "D-C06 stage=KEY_SESSION intent", "status": "CANONICAL_CONFIRMED (AUD-502)", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "runtimeImplemented": true, "blockingPhase": "none", "source": "Step C" },
+    { "decision": "D-C07/D-C08 EASY_SUPPORT/LONG_RUN fixed bindings", "status": "EXPLICIT_PRODUCT_DEFAULT + TEMPORARY_V1_SIMPLIFICATION (AUD-503/504)", "evidenceBasis": "EVIDENCE_INFORMED", "runtimeImplemented": false, "blockingPhase": "4F.6B", "source": "Step C" },
+    { "decision": "D-C11 TAPER_SHARPEN retained, 4F.7 prescription ownership + AUD-508 concretization", "status": "CANONICAL_CONFIRMED", "evidenceBasis": "EVIDENCE_INFORMED", "runtimeImplemented": "stage identity preserved (4F.6A); prescription NOT implemented", "blockingPhase": "4F.7", "source": "Step C / Step C.1" },
+    { "decision": "TD-BACKEND-001 zero backend/plan-catalog integration", "status": "OPEN risk, now PARTIALLY superseded by 4E-4F.6A dark wiring, but still fully blocking for PUBLIC reachability", "evidenceBasis": "n/a", "runtimeImplemented": "dark only", "blockingPhase": "public preview", "source": "activation-readiness-risks.json" },
+    { "decision": "TD-EASY-WORKOUT-REGISTRY-001", "status": "OPEN, non-blocking today", "evidenceBasis": "n/a", "runtimeImplemented": "n/a", "blockingPhase": "4F.6B completion / publication", "source": "Step C/B" }
+  ],
+  "phaseStatus": [
+    { "phase": "Plan Catalog authoring phases", "status": "COMPLETE", "codeComplete": true, "wired": "n/a (authoring tooling)", "public": false, "persisted": false, "tests": "335/335" },
+    { "phase": "Runtime-condition phases (4D.1-4D.5.1)", "status": "COMPLETE_DARK", "wired": false, "public": false, "persisted": false, "tests": "extensive" },
+    { "phase": "Phase 4E", "status": "COMPLETE_DARK", "wired": true, "public": "success path unreachable (DRAFT)", "persisted": false, "tests": "yes" },
+    { "phase": "Phase 4F.1", "status": "COMPLETE_DARK", "wired": "contract only, no producer", "public": false, "persisted": false, "tests": "contract tests" },
+    { "phase": "Phase 4F.2", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "yes" },
+    { "phase": "Phase 4F.3", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "yes" },
+    { "phase": "Phase 4F.4", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "yes" },
+    { "phase": "Phase 4F.5", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "yes" },
+    { "phase": "Phase 4F.5.1", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "yes" },
+    { "phase": "Step A", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "n/a" },
+    { "phase": "Step A.1", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "n/a" },
+    { "phase": "Step A.2", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "n/a" },
+    { "phase": "Step B", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "n/a" },
+    { "phase": "Step C", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "audit-registry tests" },
+    { "phase": "Step C.1", "status": "GOVERNANCE_COMPLETE", "wired": "n/a", "public": false, "persisted": false, "tests": "audit-registry tests" },
+    { "phase": "Phase 4F.6A", "status": "COMPLETE_DARK", "wired": true, "public": false, "persisted": false, "tests": "27 new, 655 total passing" },
+    { "phase": "Phase 4F.6B", "status": "NOT_STARTED", "wired": false, "public": false, "persisted": false, "tests": "none", "blockers": "none — ready to start" },
+    { "phase": "Phase 4F.7", "status": "NOT_STARTED", "wired": false, "public": false, "persisted": false, "tests": "none", "blockers": "depends on 4F.6B" },
+    { "phase": "Phase 4F.8", "status": "NOT_STARTED", "wired": false, "public": false, "persisted": false, "tests": "none", "blockers": "public workout-type mapping, depends on 4F.6B/4F.7 shape" },
+    { "phase": "Phase 4F.9/4F.10/4F.11", "status": "UNKNOWN", "wired": false, "public": false, "persisted": false, "tests": "none", "blockers": "no phase specification exists yet in the repository" }
+  ],
+  "endToEndCapabilities": {
+    "canResolveRealCatalogCandidate": "PARTIAL (internal dry-run only; public path always throws — DRAFT status)",
+    "canResolveRuntimeConditions": "DARK_ONLY (implemented, never called by live PlanServices/PlaceholderPlanGenerationEngine)",
+    "canBuildRealPhasesAndWeeks": "DARK_ONLY",
+    "canAssignRealDates": "DARK_ONLY",
+    "canAssignFineGrainedStages": "DARK_ONLY (new, Phase 4F.6A)",
+    "canBindExactWorkoutDefinitions": "NO (Phase 4F.6B not started)",
+    "canGenerateUserSpecificPacing": "NO (Phase 4F.7 not started)",
+    "canExposeInPreview": "NO (GeneratedPreviewPlanPayload always null)",
+    "canConfirm": "NO (CatalogPlanConfirmationService unconditionally rejects)",
+    "canPersistRealTrainingRecords": "NO (no producer for catalog-sourced plans; entities have unused provenance fields)",
+    "canHomeCalendarEndpointsReadPersistedCatalogPlan": "NO (nothing is ever persisted from the catalog path to read)",
+    "canPublishAndActivatePilot": "NO (combination status DRAFT; content-decision blockers are actually all resolved per D13's own test, but publication is deliberately deferred pending 4F.6B/4F.7/persistence and the still-open TD-BACKEND-001/TD-EASY-WORKOUT-REGISTRY-001 risks)"
+  },
+  "missingConnections": [
+    { "from": "RuntimeConditionResolutionService", "to": "PlanServices/PlaceholderPlanGenerationEngine (live generation)", "expectedConnection": "live requests should resolve real conditions", "currentState": "not wired", "impact": "no real personalization signal reaches live generation at all", "requiredPhase": "future live-wiring phase, not yet scheduled" },
+    { "from": "GeneratedCatalogStageSchedule (4F.6A)", "to": "workout binder", "expectedConnection": "4F.6B consumes the stage schedule to bind workouts", "currentState": "producer exists, consumer does not", "impact": "expected, by design — 4F.6A stops here", "requiredPhase": "4F.6B" },
+    { "from": "GeneratedCatalogPlanPayload (Phase 4F.1 contract)", "to": "any producer", "expectedConnection": "final contract should eventually be populated", "currentState": "contract exists, zero producers", "impact": "preview/confirm cannot ever succeed for catalog candidates until this is populated", "requiredPhase": "4F.7-4F.9ish (unscheduled)" },
+    { "from": "CatalogPreviewSnapshot", "to": "CatalogPlanConfirmationService.BuildPlan", "expectedConnection": "confirm should materialize a real TrainingPlan from a valid snapshot", "currentState": "BuildPlan was removed as dead code; confirm unconditionally rejects", "impact": "no catalog plan can ever be confirmed today", "requiredPhase": "post-4F.7" },
+    { "from": "TrainingDay.CatalogStageKey (existing entity field)", "to": "ScheduledProgressionWeek.ProgressionStageKey (new 4F.6A contract)", "expectedConnection": "eventual persistence mapping", "currentState": "naming ambiguity not yet reconciled — existing field's own granularity (phase vs. fine-grained) was not verified in this audit pass", "impact": "future mapping phase must explicitly resolve which granularity this persisted field is meant to carry before wiring persistence", "requiredPhase": "persistence-wiring phase (unscheduled)" }
+  ],
+  "risks": [
+    { "risk": "RuntimeConditionResolutionService never wired to live generation", "classification": "BLOCKER_FOR_PUBLIC_PREVIEW" },
+    { "risk": "v10 candidate status DRAFT", "classification": "BLOCKER_FOR_PUBLICATION" },
+    { "risk": "GeneratedPreviewPlanPayload has zero producers", "classification": "BLOCKER_FOR_CONFIRM" },
+    { "risk": "CatalogPlanConfirmationService.BuildPlan removed / unconditional rejection", "classification": "BLOCKER_FOR_CONFIRM" },
+    { "risk": "No producer for catalog-sourced TrainingPlan/Week/Day", "classification": "BLOCKER_FOR_PERSISTENCE" },
+    { "risk": "RACE_SPECIFIC phase has zero exposure/extension slack (Phase 4F.6A finding)", "classification": "NON_BLOCKING_TECH_DEBT" },
+    { "risk": "TD-EASY-WORKOUT-REGISTRY-001 (EASY_SHAKEOUT/EASY_WITH_STRIDES fixture divergence)", "classification": "BLOCKER_FOR_4F6B / BLOCKER_FOR_PUBLICATION" },
+    { "risk": "TD-BACKEND-001 (superseded in substance by dark wiring, still blocks public reachability)", "classification": "BLOCKER_FOR_PUBLIC_PREVIEW" },
+    { "risk": "TrainingDay.CatalogStageKey granularity ambiguity vs. new ProgressionStageKey", "classification": "DOCUMENTATION_GAP" },
+    { "risk": "Recent-* onboarding fields collected/stored but unused by any resolver", "classification": "NON_BLOCKING_TECH_DEBT" }
+  ],
+  "recommendedNextSequence": [
+    { "order": 1, "phase": "4F.6B", "objective": "Bind EASY_SUPPORT/LONG_RUN fixed defaults and KEY_SESSION stage-controlled candidate to exact workout definitions", "prerequisites": "4F.6A output (done)", "expectedOutput": "a bound, dark internal workout schedule", "blockingRisks": "TD-EASY-WORKOUT-REGISTRY-001 does not block 4F.6B itself (V1 uses only existing keys) but must be resolved before publication" },
+    { "order": 2, "phase": "4F.7", "objective": "Personalized prescription (pace/distance/duration/segments/taper modifier per AUD-508)", "prerequisites": "4F.6B", "expectedOutput": "populated GeneratedCatalogPlanPayload equivalent", "blockingRisks": "none new" },
+    { "order": 3, "phase": "4F.8", "objective": "Public workout-type mapping", "prerequisites": "4F.7 shape stabilized", "expectedOutput": "catalog key -> public UI type mapping", "blockingRisks": "none" },
+    { "order": 4, "phase": "unscheduled", "objective": "Wire RuntimeConditionResolutionService + full dark pipeline into live PlanServices/generation path", "prerequisites": "4F.7 complete enough to produce a real payload", "expectedOutput": "public catalog preview reachability", "blockingRisks": "TD-BACKEND-001" },
+    { "order": 5, "phase": "unscheduled", "objective": "Confirm + persistence wiring (rebuild BuildPlan-equivalent, map to TrainingPlan/Week/Day)", "prerequisites": "public preview reachable", "expectedOutput": "real catalog-sourced persisted plans", "blockingRisks": "TrainingDay.CatalogStageKey granularity ambiguity must be resolved first" },
+    { "order": 6, "phase": "publication", "objective": "Publish/activate TEN_K__4D__INTERMEDIATE v10", "prerequisites": "all above + TD-EASY-WORKOUT-REGISTRY-001 resolution", "expectedOutput": "live pilot", "blockingRisks": "product decision on EASY_SHAKEOUT/EASY_WITH_STRIDES" }
+  ],
+  "nextActionClassification": "NEXT_4F6B",
+  "validationResults": [
+    { "suite": "PlanCatalog.Tests", "command": "dotnet test PlanCatalog.sln -c Release --no-build", "result": "335/335 passing" },
+    { "suite": "RunningApp backend full suite", "command": "dotnet test RunningApp.sln -c Release --no-build", "result": "655/655 passing" }
+  ],
+  "filesInspected": [
+    "backend/RunningApp.Application/RuntimeCatalog/**/*.cs (PlanCatalogBundleLoader, PlanCatalogCandidateSummary, resolvers, CatalogPreviewGenerator, Schedule/Materialization, Schedule/Progression)",
+    "backend/RunningApp.Api/Controllers/*.cs, Program.cs",
+    "backend/RunningApp.Domain/Entities/TrainingPlan.cs, TrainingWeek.cs, TrainingDay.cs",
+    "backend/RunningApp.Persistence/Migrations/ (filenames)",
+    "backend/RunningApp.Application/PlanGeneration/PlaceholderPlanGenerationEngine.cs",
+    "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPlanConfirmationService.cs",
+    "backend/RunningApp.Application/DTOs/Plan/GeneratePreviewRequest.cs, ResolverInputSnapshot.cs",
+    "plan-catalog/catalog/combinations/ten-k-4d-intermediate.v10.json and full dependency chain",
+    "plan-catalog/src/PlanCatalog.Core/Validation/PublishReadinessValidator.cs",
+    "plan-catalog/src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs",
+    "plan-catalog/artifacts/audits/activation-readiness-risks.json",
+    "plan-catalog/tests/PlanCatalog.Tests/ (folder structure)",
+    "plan-catalog/src/PlanCatalog.Cli/",
+    "All Step A/A.1/A.2/B/C/C.1 and Phase 4F.6A artifacts produced earlier in this session"
+  ],
+  "filesCreated": [
+    "plan-catalog/artifacts/audits/APPSEL_REPOSITORY_CURRENT_STATE_AUDIT.json",
+    "plan-catalog/artifacts/audits/APPSEL_REPOSITORY_CURRENT_STATE_AUDIT.md"
+  ],
+  "filesModified": []
+}

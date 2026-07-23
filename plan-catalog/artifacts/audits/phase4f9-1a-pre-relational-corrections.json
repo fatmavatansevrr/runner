@@ -1,0 +1,182 @@
+{
+  "auditKey": "PHASE4F9_1A_PRE_RELATIONAL_CORRECTIONS",
+  "auditVersion": 1,
+  "finalClassification": "PHASE4F9_1A_COMPLETED_WITH_NON_BLOCKING_GAPS",
+  "relationalValidationReadiness": "READY_FOR_PHASE4F9_2_RELATIONAL_VALIDATION",
+  "supersededBy": {
+    "auditKey": "PHASE4F9_2_RELATIONAL_VALIDATION",
+    "file": "plan-catalog/artifacts/audits/phase4f9-2-relational-validation.json",
+    "updatedFinalClassification": "PHASE4F9_2_RELATIONAL_VALIDATION_CLOSED",
+    "note": "Real-PostgreSQL relational validation is complete. It found and fixed two additional severe defects (order-dependent snapshot hash broken by jsonb key reordering; DateTimeKind.Unspecified rejected by Npgsql) plus one unrelated legacy defect (CK_TrainingPlans_LongRunDay). This record is retained unmodified for historical accuracy."
+  },
+  "confirmationOrdering": {
+    "finalOrder": [
+      "preview lookup",
+      "ownership validation",
+      "already-confirmed idempotency check",
+      "expiration check (unconfirmed only)",
+      "invalidation/state checks",
+      "snapshot presence",
+      "snapshot deserialization",
+      "schema completeness",
+      "generation-source validation",
+      "snapshot hash verification",
+      "persistability guard (null payload / schema version / structural validation / 8-week-zero)",
+      "active-plan invariant",
+      "transactional persistence"
+    ],
+    "idempotentExpirationBehavior": "already-confirmed preview returns the existing plan even if since expired or invalidated; expiration/invalidation only block confirming a NEW plan",
+    "newDefensiveChecks": [
+      "ConfirmedPlanId points to missing TrainingPlan -> CatalogConfirmationFailedException",
+      "ConfirmedPlanId points to a different user's TrainingPlan -> CatalogConfirmationFailedException, never returns another user's plan"
+    ],
+    "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPlanConfirmationService.cs"
+  },
+  "activePlanInvariant": {
+    "productRule": "at most one Active TrainingPlan per InternalUserId",
+    "databaseMechanism": "pre-existing unique partial index, no new migration required",
+    "constraintIndexName": "IX_TrainingPlans_InternalUserId_ActiveOnly",
+    "constraintOrigin": "MigrateToInternalUserIdFKs migration (2026-07-01)",
+    "exceptionTranslation": {
+      "sourcePreviewIdViolation": "idempotent reload-and-return existing plan",
+      "activePlanViolation": "CatalogActivePlanConflictException (pre-existing type, 409 mapping, previously unused by this code path)",
+      "otherViolations": "CatalogPlanPersistenceFailedException (500)"
+    },
+    "migrationImpact": "none - index already existed",
+    "unverifiedRelationalAssumptions": [
+      "actual Postgres lock/race behavior under real concurrent confirmation",
+      "exact Npgsql ConstraintName population on 23505 for this index in production"
+    ]
+  },
+  "pilotIdentityPolicy": {
+    "policyKey": "V1_CATALOG_PILOT_IDENTITY_POLICY",
+    "policyVersion": 1,
+    "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/V1CatalogPilotIdentityPolicy.cs",
+    "backendLevel": "RunningBackground.RunningRegularly",
+    "catalogLevel": "INTERMEDIATE",
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10,
+    "daysPerWeek": 4,
+    "consumers": [
+      "V1LiveCatalogPilotRoutingPolicy.Evaluate",
+      "CatalogPreviewGenerator.GenerateAsync",
+      "ProgressionStageAllocatorTests.cs",
+      "CatalogWorkoutBinderTests.cs",
+      "CatalogCandidateEligibilityGateTests.cs"
+    ],
+    "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION",
+    "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT",
+    "alreadyGovernanceDocumented": true,
+    "newGovernanceEntryAdded": false
+  },
+  "legacyRouteDeciderStatus": "REMOVED_AS_DEAD_CODE",
+  "legacyRouteDeciderNotes": "PilotGenerationRouteDecider was never DI-registered; its constants were reused in 4 call sites, all repointed to V1CatalogPilotIdentityPolicy before deletion; its dedicated test file was also deleted.",
+  "eightWeekExplicitZeroVerification": {
+    "result": "CONFIRMED_INFEASIBLE",
+    "weeklyArithmetic": [
+      { "week": 1, "phase": "FOUNDATION", "volumeKm": 12, "longRunKm": 4, "residualKm": 8 },
+      { "week": 2, "phase": "FOUNDATION", "volumeKm": 12.5, "longRunKm": 4, "residualKm": 8.5 },
+      { "week": 3, "phase": "BUILD", "volumeKm": 13.5, "longRunKm": 4.5, "residualKm": 9 },
+      { "week": 4, "phase": "RACE_SPECIFIC", "volumeKm": 14, "longRunKm": 4.5, "residualKm": 9.5 },
+      { "week": 5, "phase": "RACE_SPECIFIC", "volumeKm": 14.5, "longRunKm": 5, "residualKm": 9.5 },
+      { "week": 6, "phase": "RACE_SPECIFIC", "volumeKm": 15.5, "longRunKm": 5, "residualKm": 10.5 },
+      { "week": 7, "phase": "RACE_SPECIFIC", "volumeKm": 16, "longRunKm": 5.5, "residualKm": 10.5 },
+      { "week": 8, "phase": "TAPER", "volumeKm": 8.5, "longRunKm": 3, "residualKm": 5.5, "infeasible": true }
+    ],
+    "sessionAllocationFloorKm": 6.0,
+    "realCause": "week 8 (taper) residual volume 5.5km falls below the 6.0km session-allocation floor (3.0km KEY_SESSION + 2x1.5km EASY_SUPPORT)",
+    "priorStaticAuditError": "earlier static arithmetic checked week 1 (feasible) instead of the actual infeasible week (week 8, taper)",
+    "codeChange": "guard condition and exception type unchanged; comment and exception message corrected to state the real cause",
+    "numericDefaultsChanged": false
+  },
+  "catalogStageKeyDecision": {
+    "decision": "LEGACY_READ_ONLY_NO_NEW_WRITES",
+    "activeReadersFound": false,
+    "changes": [
+      "removed CatalogStageKey write from CatalogPlanConfirmationService.BuildCatalogTrainingDay",
+      "updated TrainingDay.CatalogStageKey XML doc to state the decision explicitly",
+      "added test assertion proving new catalog-sourced TrainingDay rows leave CatalogStageKey null"
+    ]
+  },
+  "diResolution": {
+    "file": "backend/RunningApp.IntegrationTests/DependencyInjectionResolutionTests.cs",
+    "usesRealProgramRegistration": true,
+    "servicesValidated": [
+      "IGenerationRouteDecider",
+      "ICatalogPreviewGenerator",
+      "IGeneratedCatalogPlanPayloadValidator",
+      "ICatalogPlanConfirmationService",
+      "ICatalogPeakVolumeBandLoader",
+      "IOptions<CatalogLivePilotOptions>"
+    ],
+    "scopeValidationEnabled": true,
+    "postgresConnectionOpenedByResolution": false,
+    "catalogLivePilotDefaultConfirmed": false,
+    "testsAdded": 7,
+    "testsPassed": 7
+  },
+  "prescriptionJsonRoundTrip": {
+    "file": "backend/RunningApp.IntegrationTests/RuntimeCatalog/PreviewRouting/CatalogPrescriptionJsonRoundTripTests.cs",
+    "usesProductionSerializerPath": true,
+    "casesCovered": [
+      "effort-only EASY",
+      "exact GOAL_PACE",
+      "pace-range",
+      "unresolved duration",
+      "FARTLEK ordered segments",
+      "THRESHOLD ordered segments",
+      "GOAL_PACE ordered segments",
+      "TAPER_SHARPEN ordered segments"
+    ],
+    "schemaKeyVerified": "CATALOG_SESSION_PRESCRIPTION_SNAPSHOT",
+    "schemaVersionVerified": 1,
+    "deterministic": true,
+    "noZeroPaceForEffortOnly": true,
+    "testsAdded": 8,
+    "testsPassed": 8
+  },
+  "staleDocumentationCorrections": [
+    { "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewGenerator.cs", "correction": "removed dark/discarded/never-stored claim; payload is stored, hashed, and returned" },
+    { "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewSnapshot.cs", "correction": "removed claim that generatedPreviewPlanPayload is excluded from the hash; it is included" },
+    { "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPlanConfirmationService.cs", "correction": "removed stale 'steps 12-15 do not exist as executable code' trailing block; corrected persistability-guard and 8-week-guard comments" },
+    { "file": "backend/RunningApp.Domain/Entities/TrainingDay.cs", "correction": "CatalogStageKey doc now states LEGACY_READ_ONLY_NO_NEW_WRITES explicitly" }
+  ],
+  "auditArtifactLocation": {
+    "oldPath": "phase4f9-catalog-confirmation-and-persistence-audit.json (repo root)",
+    "newPath": "plan-catalog/artifacts/audits/phase4f9-catalog-confirmation-and-persistence-audit.json",
+    "duplicateRemaining": false
+  },
+  "migrationStaticValidation": {
+    "newMigrationCreated": false,
+    "reason": "IX_TrainingPlans_InternalUserId_ActiveOnly already existed from MigrateToInternalUserIdFKs migration",
+    "pendingModelChanges": false,
+    "command": "dotnet ef migrations has-pending-model-changes",
+    "result": "No changes have been made to the model since the last migration."
+  },
+  "governanceEntries": [],
+  "tests": {
+    "planCatalogBuild": { "errors": 0, "warnings": 0 },
+    "planCatalogTest": { "passed": 335, "failed": 0, "total": 335 },
+    "backendBuild": { "errors": 0, "warnings": 0 },
+    "backendTest": { "passed": 738, "failed": 37, "total": 775, "failureClassification": "ENVIRONMENT_BLOCKED_POSTGRES", "newFailuresIntroduced": 0 },
+    "newTestsAdded": 41
+  },
+  "environmentBlockedChecks": [
+    "37 RunningApp.IntegrationTests failures requiring live PostgreSQL",
+    "real relational concurrency behavior for IX_TrainingPlans_InternalUserId_ActiveOnly and IX_TrainingPlans_SourcePreviewId"
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "real Postgres concurrency behavior for both unique-index races unverified (reserved for 4F.9.2)",
+    "RuntimeConditionResolutionService debt items (TD-PACESOURCE-001/002, TD-CORE-READINESS-001, TD-REGISTRY-001) not re-derived this pass",
+    "Phase 4F.5-4F.9.1A remain uncommitted working-tree changes"
+  ],
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c67965",
+    "commitsMade": 0,
+    "publicationLedgerEntry": false,
+    "candidateStatus": "DRAFT",
+    "catalogLivePilotEnabledDefault": false
+  }
+}

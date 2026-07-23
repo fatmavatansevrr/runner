@@ -218,6 +218,7 @@ public static class PilotDomainContentAudit
         AddD3RuntimeConditionRegistryResolutionEntries(entries);
         AddD4PeakVolumeBandResolutionEntries(entries);
         AddD13GoalPaceTenKResolutionEntries(entries);
+        AddStepCV1PilotBindingGovernanceEntries(entries);
 
         // ===================== progression-modifier (INTERMEDIATE_PROGRESSION_MODIFIER_V1) =====================
         entries.Add(Placeholder("AUD-044", "progression-modifier", DocumentTypes.ProgressionModifier, "INTERMEDIATE_PROGRESSION_MODIFIER_V1", 1,
@@ -635,6 +636,407 @@ public static class PilotDomainContentAudit
             "catalog/combinations/ten-k-4d-intermediate.v10.json",
             ["TemplateCombinationValidator"],
             reason: "D13 candidate root (GOAL_PACE_TEN_K resolution only). Predecessor candidate TEN_K__4D__INTERMEDIATE v9 (D4) is preserved unchanged; no publish, retirement, or activation is applied in this task. This closes the last remaining domain-content decision in the catalog audit (D2, D3, D4, D13 all resolved as of this candidate)."));
+    }
+
+    /// <summary>
+    /// Phase 4F.6 Pre-Implementation — Step C (V1 Pilot Workout Progression, Fixed Role Binding, and
+    /// Governance Decisions): formalizes decision-record entries that were previously either scoped only
+    /// to an immutable historical version (AUD-014/AUD-015 on WORKOUT_PROGRESSION v1) or never recorded
+    /// anywhere (V1 EASY_SUPPORT/LONG_RUN/KEY_SESSION role-binding decisions, stage-semantics contract
+    /// meaning, TAPER_SHARPEN identity retention, and the TAPER-phase evidence tension surfaced by Step B).
+    /// New static ID block (500+), deliberately disjoint from every hardcoded AUD-0xx id (highest is
+    /// AUD-427) and from the dynamic AUD-2xx block (highest is below 260) so it can never collide.
+    /// Full decision rationale lives in PHASE4F_6_STEP_C_V1_PILOT_WORKOUT_AND_BINDING_DECISIONS.md — these
+    /// entries are the machine-consulted governance record, not a duplicate of that document's prose.
+    /// No numeric catalog value, workout candidate list, or structural field was changed by this pass.
+    /// </summary>
+    private static void AddStepCV1PilotBindingGovernanceEntries(List<DomainContentDecision> entries)
+    {
+        const string stepCDoc = "PHASE4F_6_STEP_C_V1_PILOT_WORKOUT_AND_BINDING_DECISIONS.md";
+        const string progressionV5File = "catalog/workout-progressions/ten-k-workout-progression.v5.json";
+        const string layoutV2File = "catalog/layouts/run-layout-4d.v2.json";
+
+        entries.Add(ExplicitDefault("AUD-500", "workout-progression", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "$.phaseProgressions[*].stages[*].minimumExposures / maximumExposures", "unchanged from v1/v4 (various, 1-6 range across all 7 stages)",
+            progressionV5File,
+            "STEP C D-C03 RESOLUTION: formally reclassifies all 14 exposure-count fields (7 stages x min/max) from PLACEHOLDER_UNCONFIRMED (AUD-014, recorded only against the immutable v1 artifact) to EXPLICIT_PRODUCT_DEFAULT on the current v5 artifact. Rationale per Phase 4F.6 Step B evidence mapping (phase4f6-step-b-training-science-evidence-mapping.json, decisions D03/D04/D10/D11/D17/D18/D24/D25/D30/D31/D38/D39/D44/D45): scientific evidence (Kenneally/Casado/Santos-Concejero 2018; Casado et al. 2022) supports repeated and progressively specific exposure to a training stimulus in principle, but does not determine the exact Appsel exposure numbers for any stage. No further scientific search is required before pilot implementation; these are accepted V1 product defaults. Numeric values themselves are unchanged from v1 — only the governance classification changed, and only on this current version.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-501", "workout-progression", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "$.phaseProgressions[*].stages[*].compressionBehavior / extensionBehavior", "unchanged from v1/v4 (COMPRESSIBLE/PROTECTED, EXTENDABLE/FIXED_EXPOSURE per stage)",
+            progressionV5File,
+            "STEP C D-C04 RESOLUTION: formally reclassifies the compression/extension behavior fields from PLACEHOLDER_UNCONFIRMED (AUD-015, recorded only against the immutable v1 artifact) to EXPLICIT_PRODUCT_DEFAULT on the current v5 artifact. Per Step B (decisions D05/D06/D12/D13/D19/D20/D26/D27/D32/D33/D40/D41/D46/D47): PROTECTED/FIXED_EXPOSURE on GOAL_PACE_REHEARSAL and TAPER_SHARPEN is directionally EVIDENCE_INFORMED (specificity-protection principle); all other COMPRESSIBLE/EXTENDABLE assignments are NOT_AN_EVIDENCE_QUESTION (scheduling policy). Does not add ExtensionPriority, StageDistributionBehavior, or any new tie-break field — those remain a later stage-scheduler contract task (4F.6A). Values themselves are unchanged from v1; only the governance classification changed, and only on this current version. Note: CURRENT_FITNESS_SPECIFIC_REHEARSAL's asymmetry against GOAL_PACE_REHEARSAL's PROTECTED status (Step B decision D42) is preserved here as an open Step-C-recorded observation, not resolved by this reclassification — see PHASE4F_6_STEP_C_V1_PILOT_WORKOUT_AND_BINDING_DECISIONS.md.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(Confirmed("AUD-502", "role-binding-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "$ (contract-level meaning of WorkoutProgressionStageDefinition, not a single field)", "governs KEY_SESSION progression intent only; does not populate the full weekly layout",
+            stepCDoc,
+            "STEP C D-C06 RESOLUTION (CANONICAL_CONFIRMED as an accepted Appsel domain interpretation, NOT a sports-science claim — evidenceBasis is NOT_AN_EVIDENCE_QUESTION): for the TEN_K/INTERMEDIATE/4D V1 pilot, WorkoutProgressionStageDefinition governs KEY_SESSION progression intent only. It does not directly assign workouts to EASY_SUPPORT or LONG_RUN, and it is not a full-week slot population mechanism, a public workout type, a personalized prescription, or a fixed calendar week. Supporting references: WorkoutProgressionStageDefinition.cs has no Role/SlotRole/StructuralRole field (confirmed by direct source read); Phase 4F.6 Step A.1 (phase4f6-step-a1-role-ownership-and-gap-clarification.json, A1-Q01/A1-Q04) found no role-to-workout binding mechanism anywhere; Step A.2 (phase4f6-step-a2-easy-support-coverage-and-blocker-classification.json) found the progression lacks full weekly role coverage (BUILD/RACE_SPECIFIC phases have zero EASY-family stages) and zero LONG_RUN-family stages exist anywhere in the progression.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-503", "role-binding-governance", DocumentTypes.RunLayout, "RUN_LAYOUT_4D", 2,
+            "EASY_SUPPORT (structural role) -> V1 fixed workout-identity binding (not a literal field on this artifact; a cross-artifact V1 pilot decision)", "EASY_STANDARD",
+            layoutV2File,
+            "STEP C D-C07 RESOLUTION [TEMPORARY_V1_SIMPLIFICATION]: for the TEN_K/INTERMEDIATE/4D V1 pilot, EASY_SUPPORT -> EASY_STANDARD. This is NOT a permanent architectural restriction — it limits the V1 pilot to one accepted canonical workout identity for EASY_SUPPORT while preserving future versioned expansion (e.g. EASY_SHAKEOUT/EASY_WITH_STRIDES, see activation risk TD-EASY-WORKOUT-REGISTRY-001). EASY_SUPPORT must not be claimed to always map to EASY_STANDARD in every future catalog version. Evidence basis is EVIDENCE_INFORMED (Step B: low-intensity dominance and easy running's appropriateness across all phases are evidence-backed generally; the exact identity binding itself is not a scientific question). No role-binding runtime service, schema, or artifact is implemented by this decision record.",
+            ["RunLayoutValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-504", "role-binding-governance", DocumentTypes.RunLayout, "RUN_LAYOUT_4D", 2,
+            "LONG_RUN (structural role) -> V1 fixed workout-identity binding (not a literal field on this artifact; a cross-artifact V1 pilot decision)", "LONG_RUN_STANDARD",
+            layoutV2File,
+            "STEP C D-C08 RESOLUTION [TEMPORARY_V1_SIMPLIFICATION]: for the TEN_K/INTERMEDIATE/4D V1 pilot, LONG_RUN -> LONG_RUN_STANDARD. This is NOT a permanent architectural restriction — future catalog versions may introduce long-run variants or selection policies without changing historical published-plan behavior. LONG_RUN_PROGRESSION (the fixture-evidenced, non-substitutable, more complex workout key documented in domain-wave1-schema-necessity-audit.md and ten-k-pilot-vocabulary-decisions.md) is explicitly NOT added by this decision. Evidence basis is EVIDENCE_INFORMED (Step B/Step A.1: long-run training generally is evidence-relevant, but the exact identity binding is not itself a scientific question). No role-binding runtime service, schema, or artifact is implemented by this decision record.",
+            ["RunLayoutValidator"]));
+
+        entries.Add(Confirmed("AUD-505", "role-binding-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "KEY_SESSION (structural role) -> resolution mechanism (not a literal field; a cross-artifact V1 pilot decision)", "stage-controlled workout candidate resolution (distinct from EASY_SUPPORT/LONG_RUN's fixed V1 defaults)",
+            stepCDoc,
+            "STEP C D-C09 RESOLUTION (CANONICAL_CONFIRMED; evidenceBasis NOT_AN_EVIDENCE_QUESTION — architectural, not a sports-science claim): for the TEN_K/INTERMEDIATE/4D V1 pilot, KEY_SESSION resolves via stage-controlled workout candidate resolution (the 5 progression-controlled stages targeting QUALITY/EASY-family workouts), remaining distinct from EASY_SUPPORT and LONG_RUN's fixed V1 defaults (AUD-503/AUD-504). The exact stage-scheduler and candidate-resolution algorithm remain a later implementation task (Phase 4F.6A) and are not implemented by this decision record.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(Technical("AUD-506", "phase-metadata", DocumentTypes.PlanTemplate, "TEN_K_MASTER", 6, "$.phases[TAPER].preferredWeeks (traceability addendum to AUD-003's existing CanonicalConfirmed value; classification NOT changed)",
+            "1 (unchanged)",
+            stepCDoc,
+            ["PlanTemplateValidator"],
+            reason: "STEP C D-C05 evidence-tension traceability note (does not reopen or reclassify AUD-003, which remains CanonicalConfirmed against the brief and Golden Fixture v3). Phase 4F.6 Step B (phase4f6-step-b-training-science-evidence-mapping.json, decision D51) found: tapering itself is EVIDENCE_BACKED (Bosquet et al. 2007 meta-analysis); Bosquet found ~2 weeks the most efficient taper window in the analyzed competitive-athlete evidence; this does not directly prove a 10K/intermediate/12-week Appsel plan must use two taper weeks (population is broad competitive-athlete/multi-sport, not 10K-specific — DISTANCE_EXTRAPOLATION and ELITE_TO_INTERMEDIATE_EXTRAPOLATION both required). The current 1-week value remains an accepted V1 pilot product default (see AUD-003); this tension is recorded here for traceability and must not be treated as a contradiction that automatically changes the catalog. No phase week count was changed by this entry."));
+
+        entries.Add(Confirmed("AUD-507", "workout-progression", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "$.phaseProgressions[TAPER].stages[TAPER_SHARPEN]", "stageKey=TAPER_SHARPEN, workoutCandidates=[EASY_STANDARD v4] (unchanged)",
+            stepCDoc,
+            "STEP C D-C11 RESOLUTION: retains TAPER_SHARPEN's stageKey and EASY_STANDARD workout-identity binding unchanged; no new taper workout key is introduced. Per Step B's central finding (decision D43): TAPER_SHARPEN's name implies an intensity-maintaining purpose, but its bound candidate is a plain EASY-family workout, which by itself does not fulfill Bosquet et al. (2007)'s finding that effective tapers maintain intensity while reducing volume. This decision accepts that gap for V1 and assigns its resolution to Phase 4F.7: the sharpening effect must be produced through a taper-specific prescription modifier (reducing total workload while preserving an appropriate intensity stimulus, using only components/prescription modes already allowed by EASY_STANDARD and the future prescription contract — not a generic 'faster easy pace', and not defined here). Stage context must be available to Phase 4F.7 prescription generation so TAPER_SHARPEN and ordinary EASY_STANDARD sessions do not receive identical prescriptions by accident. Implementation owner: Phase 4F.7. Evidence basis: EVIDENCE_INFORMED.",
+            ["WorkoutProgressionValidator"]));
+
+        // ===== Phase 4F.6 Pre-Implementation Step C.1 (append-only clarification of AUD-507/D-C11) =====
+        // AUD-507 is left completely unchanged above -- this is a new, additive entry only. It does not
+        // alter TAPER_SHARPEN's stageKey or workout-identity binding (both remain exactly as AUD-507
+        // states) and does not reopen D-C11. It exists solely because AUD-507, on strict re-reading against
+        // the CONCRETE_PRESCRIPTION_DIRECTIVE checklist, states the required prescription EFFECT (reduced
+        // workload + preserved intensity + allowed-components-only) explicitly, but expresses the
+        // "must be materially distinguishable from ordinary EASY_STANDARD" and "must not be merely a naive
+        // pace increase" requirements only by entailment/caution rather than as freestanding, unambiguous
+        // sentences -- see PHASE4F_6_STEP_C1_TAPER_SHARPEN_AND_RUNTIME_BOUNDARY_CLOSURE.md section 2 for
+        // the full CONCRETE_PRESCRIPTION_DIRECTIVE-checklist assessment that produced this entry.
+        entries.Add(Confirmed("AUD-508", "workout-progression", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "$.phaseProgressions[TAPER].stages[TAPER_SHARPEN] (append-only clarification of AUD-507 / D-C11 — does not change stageKey or workout-identity binding)", "stageKey=TAPER_SHARPEN, workoutCandidates=[EASY_STANDARD v4] (unchanged, same as AUD-507)",
+            "PHASE4F_6_STEP_C1_TAPER_SHARPEN_AND_RUNTIME_BOUNDARY_CLOSURE.md",
+            "STEP C.1 CLARIFICATION OF AUD-507 / D-C11 (title: 'TAPER_SHARPEN prescription directive concretized'; append-only — AUD-507 is not edited, deleted, or superseded, only completed): Phase 4F.7's prescription for TAPER_SHARPEN sessions MUST be materially distinguishable from an ordinary (non-taper) EASY_STANDARD session's prescription — not merely 'not identical by accident' (AUD-507's own phrasing), but affirmatively required to differ in a way a reviewer could observe (e.g. in reduced total distance/duration/volume and/or a distinguishable intensity-zone signature), while still using only components and prescription modes already allowed by EASY_STANDARD (schemaVersion 3, allowedPrescriptionModes=[DISTANCE], allowedDistanceAccountingModes=[EXACT_SESSION_TOTAL] as of v4) and the future prescription contract. Explicitly prohibited implementations: (a) uniformly increasing pace across the entire session ('indiscriminately faster'); (b) a trivial/negligible volume trim with no distinguishable intensity treatment, which would technically satisfy 'reduced workload' while failing the material-distinguishability requirement; (c) introducing a new workout key automatically to sidestep the modifier requirement (AUD-507/D-C11 already forecloses this); (d) deferring the training intent for later review without an enforceable effect (this would be DELEGATION_ONLY, not a closed decision, and is exactly what this entry closes). Stage context (TAPER_SHARPEN's own stageKey, preserved from whatever future stage-scheduler output Phase 4F.6A produces) MUST be available to Phase 4F.7 prescription generation as an affirmative input, not merely as a non-loss guarantee — Phase 4F.7 cannot apply this modifier at all if the assigned progression stageKey is not threaded through Phase 4F.6A/4F.6B's output. Evidence basis: EVIDENCE_INFORMED (Bosquet et al. 2007, per Step B decision D43/D51 — reduce volume, preserve intensity; does not determine exact segments/pace/repetition/recovery/distance/duration/modifier schema, all of which remain Phase 4F.7 design details). Decision status: CANONICAL_CONFIRMED. Implementation owner: Phase 4F.7 (prescription); stage-context propagation owner: Phase 4F.6A (see Step C.1 responsibility matrix). No catalog value, stageKey, or workout candidate changed by this entry.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(Confirmed("AUD-509", "volume-governance", DocumentTypes.PeakVolumeBandPolicy, "PEAK_VOLUME_BANDS_V1", 3,
+            "$.entries[TEN_K/INTERMEDIATE/4].minKmPerWeek (runtime semantic boundary)", "30 is a typical peak-band lower bound, not a Week 1 floor",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: the prior runtime interpreted the 30km lower band as a starting-week floor. Corrected canonical behavior treats PEAK_VOLUME_BANDS_V1 as a typical peak-volume band only; valid readiness weekly-volume anchors below 30km are preserved and progressed toward a reachable peak instead of being clamped to 30km at Week 1. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: CANONICAL_CONFIRMED; source files: peak-volume-bands.v3.json plus golden fixture weeklyVolumeAnchorKm=24 and resolvedPeakKm=38. No catalog artifact value changed.",
+            ["PeakVolumeBandPolicyValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(Confirmed("AUD-510", "volume-governance", DocumentTypes.PeakVolumeBandPolicy, "PEAK_VOLUME_BANDS_V1", 3,
+            "$.entries[TEN_K/INTERMEDIATE/4].maxKmPerWeek (runtime reachable-peak semantic boundary)", "42 is an upper constraint, not an unconditional selected peak",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: the prior runtime selected 42km unconditionally. Corrected canonical behavior computes a reachable peak from the valid starting volume and cycle length, then constrains that result to the typical peak band when applicable. The golden fixture demonstrates a 24km anchor resolving to a 38km peak, not 42km. Evidence basis: EVIDENCE_INFORMED; decision status: CANONICAL_CONFIRMED. No catalog artifact value changed.",
+            ["PeakVolumeBandPolicyValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(Confirmed("AUD-511", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "runtime weekly-volume anchor selection (not a literal catalog field)", "valid positive RecentWeeklyVolumeKm remains the starting-volume anchor",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: valid positive readiness input is preserved as the Week 1 volume anchor and is not raised to the peak-band lower bound. This follows Phase 4F.7A's normalized-readiness semantics and the golden fixture capacitySnapshot.weeklyVolumeAnchorKm=24. Evidence basis: EVIDENCE_INFORMED; decision status: CANONICAL_CONFIRMED. Invalid readiness fails closed; missing/explicit-zero Intermediate fallback remains unresolved pending a canonical source.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(Confirmed("AUD-512", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "runtime invalid-readiness handling (not a literal catalog field)", "typed fail-closed exception",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: invalid readiness inputs must not silently fall back to catalog peak-band values. Corrected runtime behavior throws explicit typed failures for invalid volume/readiness state and for missing canonical rule sources. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: CANONICAL_CONFIRMED; aligns with accepted Phase 4E/4F fail-closed governance. No catalog artifact value changed.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-513", "volume-governance", DocumentTypes.PlanTemplate, "TEN_K_MASTER", 6,
+            "runtime taper volume multiplier (not a literal catalog field)", "0.53 multiplier / 47% reduction from previous week",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: the prior 0.65 multiplier is outside the accepted 41%-60% reduction envelope. Corrected V1 runtime default is 0.53, matching the golden fixture's 38km to 20km taper transition after rounding. Evidence basis: EVIDENCE_INFORMED; decision status: EXPLICIT_PRODUCT_DEFAULT. No catalog artifact value changed.",
+            ["PlanTemplateValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-514", "volume-governance", DocumentTypes.RunLayout, "RUN_LAYOUT_4D", 2,
+            "runtime four-day long-run weekly-share rule (not a literal catalog field)", "preferred 30%-36%; selected 33%; hard cap 40%",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: the prior 20%-35% range was not the accepted four-day long-run target share. Corrected V1 runtime default uses preferred share 30%-36%, selected share 33%, and hard cap 40%; compatibility classes from readiness are confidence classifications and not target prescriptions. Evidence basis: PRODUCT_PRACTICE_INFORMED; decision status: EXPLICIT_PRODUCT_DEFAULT. No catalog artifact value changed.",
+            ["RunLayoutValidator"]));
+
+        entries.Add(Confirmed("AUD-515", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "runtime long-run compatibility semantics (not a literal catalog field)", "compatibility class only; not a target-share source",
+            "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md",
+            "PHASE 4F.7B.1 correction: Phase 4F.7A compatibility state such as BALANCED/ACCEPTABLE/HIGH_SHARE/INCONSISTENT is a readiness/confidence classification used to prevent unsafe direct use of inconsistent inputs, not the source of a prescribed long-run weekly share. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: CANONICAL_CONFIRMED. No catalog artifact value changed.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-516", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1: missing RecentWeeklyVolumeKm", "16km Week 1 starting-volume default",
+            "PHASE4F_7B2_MISSING_ZERO_READINESS_DECISION.md",
+            "PHASE 4F.7B.2 product decision: repository Doc13 volume sections remain absent, so this is not claimed as canonical-confirmed. For TEN_K/INTERMEDIATE/4D V1, missing recent weekly-volume evidence uses a conservative Intermediate starting-volume default of 16km, preserving INTERMEDIATE identity and avoiding the 30km peak-band minimum. Evidence basis: PRODUCT_PRACTICE_INFORMED; decision status: EXPLICIT_PRODUCT_DEFAULT; affected phase: 4F.7B.2; numeric value changed from fail-closed/no numeric output to 16km; correction closes the missing-input blocker without editing catalog artifact values.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-517", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1: explicit zero RecentWeeklyVolumeKm", "12km Week 1 no-recent-running default",
+            "PHASE4F_7B2_MISSING_ZERO_READINESS_DECISION.md",
+            "PHASE 4F.7B.2 product decision: explicit zero remains distinct from missing evidence and uses a lower no-recent-running V1 default of 12km, preserving INTERMEDIATE identity while reflecting reduced readiness. The 30km peak-band minimum is not used. Evidence basis: PRODUCT_PRACTICE_INFORMED; decision status: EXPLICIT_PRODUCT_DEFAULT; affected phase: 4F.7B.2; numeric value changed from fail-closed/no numeric output to 12km; no catalog artifact value changed.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-518", "volume-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1: candidate and cycle behavior", "generation continues for 8/12/14 weeks with below-typical reachable peak allowed",
+            "PHASE4F_7B2_MISSING_ZERO_READINESS_DECISION.md",
+            "PHASE 4F.7B.2 product decision: the active TEN_K/INTERMEDIATE/4D candidate remains selected for missing and explicit-zero weekly-volume states; the user is not reclassified as BEGINNER. For supported 8/12/14 week cycles, the selected starts (16km missing, 12km zero) preserve four-session feasibility, non-zero residual volume after the long run, the 30%-36% preferred long-run share, the 40% hard cap, and reachable-peak semantics. Evidence basis: PRODUCT_PRACTICE_INFORMED; decision status: EXPLICIT_PRODUCT_DEFAULT; affected phase: 4F.7B.2; no catalog artifact value changed.",
+            ["PublishReadinessValidator", "TemplateCombinationValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-519", "session-prescription-governance", DocumentTypes.RunLayout, "RUN_LAYOUT_4D", 2,
+            "V1_FOUR_DAY_SESSION_VOLUME_ALLOCATION_POLICY v1", "residual volume -> KEY_SESSION, EASY_SUPPORT, EASY_SUPPORT; easy minimum 1.5km, key minimum 3km",
+            "PHASE4F_7C_PACE_SOURCE_AND_SESSION_PRESCRIPTION.md",
+            "PHASE 4F.7C product/technical decision: after the 4F.7B long-run distance is reserved, residual volume is deterministically allocated to the bound KEY_SESSION and two EASY_SUPPORT sessions without changing workout identity. This is not a scientific claim; it is deterministic allocation arithmetic needed for dark session prescription. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: EXPLICIT_PRODUCT_DEFAULT; no catalog content changed.",
+            ["RunLayoutValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-520", "session-prescription-governance", DocumentTypes.WorkoutDefinition, "FARTLEK", 4,
+            "V1_COMPONENT_RANGE_SELECTION_POLICY", "deterministic component distance split within allocated session volume",
+            "PHASE4F_7C_PACE_SOURCE_AND_SESSION_PRESCRIPTION.md",
+            "PHASE 4F.7C decision: workout definitions provide component order and intensity descriptors but no dose-selection formula. 4F.7C therefore records one deterministic V1 component-selection policy that preserves catalog component order, keeps warm-up/cool-down where present, and fits the allocated session envelope. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: EXPLICIT_PRODUCT_DEFAULT; no catalog content changed.",
+            ["WorkoutDefinitionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-521", "session-prescription-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "effort-only fallback for unsupported numeric pace derivations", "EASY/LONG_RUN/FARTLEK/THRESHOLD use effort-only unless a supported exact pace source exists",
+            "PHASE4F_7C_PACE_SOURCE_AND_SESSION_PRESCRIPTION.md",
+            "PHASE 4F.7C decision: Target goal pace is only active for GOAL_PACE_TEN_K when goal feasibility permits it. Easy, long-run, fartlek, and threshold sessions do not derive invented numerical paces from preferred pace, recent race, target goal, or ESTIMATED. They use effort-only prescriptions with unresolved numeric pace provenance. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: EXPLICIT_PRODUCT_DEFAULT; no catalog content changed.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-522", "session-prescription-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "TAPER_SHARPEN baseline-pending status", "BASELINE_PRESCRIBED_SHARPENING_PENDING",
+            "PHASE4F_7C_PACE_SOURCE_AND_SESSION_PRESCRIPTION.md",
+            "PHASE 4F.7C boundary decision: the TAPER_SHARPEN KEY_SESSION keeps EASY_STANDARD identity and receives only a baseline EASY prescription in 4F.7C, with explicit pending status for the Phase 4F.7D sharpening overlay. No strides, intensity overlay, or workout-key substitution is introduced. Evidence basis: NOT_AN_EVIDENCE_QUESTION; decision status: EXPLICIT_PRODUCT_DEFAULT; no catalog content changed.",
+            ["WorkoutProgressionValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-523", "session-prescription-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: concrete final prescription", "TAPER_SHARPEN completed as EASY_STANDARD with additive runtime components",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D implementation decision: the final TAPER_SHARPEN prescription preserves PhaseKey=TAPER, ProgressionStageKey=TAPER_SHARPEN, StructuralRole=KEY_SESSION, and WorkoutDefinitionKey=EASY_STANDARD while completing the pending 4F.7C baseline state. Runtime effect: baseline SESSION_TOTAL is replaced only in the internal prescribed plan by componentized additive runtime prescription content. Catalog content changed=false. Closes AUD-508's implementation requirement when paired with AUD-524..AUD-530.",
+            ["WorkoutProgressionValidator", "PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-524", "session-prescription-governance", DocumentTypes.WorkoutDefinition, "EASY_STANDARD", 4,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: component type and placement", "EASY_BASELINE -> CONTROLLED_SHARPENING -> EASY_RECOVERY",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D product-default decision: EASY_STANDARD v4 has no native catalog components, but the 4F.7C internal CatalogPrescriptionSegment contract can legally represent stage-specific runtime components without a new workout identity. Runtime effect: controlled sharpening is placed after an easy baseline and before easy recovery. Catalog content changed=false. Closes the AUD-508 material-distinction requirement.",
+            ["WorkoutDefinitionValidator", "PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-525", "session-prescription-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: dose-selection rule", "20% rounded to 0.5km, clamped 0.5-1.5km; recovery 0.5km; easy receives remainder",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D product-default decision: the sharpening dose is deterministic, materially smaller than the session, and bounded so it cannot dominate a reduced taper key session. Runtime effect: no weekly volume, long-run distance, or key-session distance changes. Catalog content changed=false. Supports AUD-508 closure.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-526", "session-prescription-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: effort and pace behavior", "effort-only EASY / CONTROLLED_FAST_RELAXED / EASY_RECOVERY; no target pace borrowed",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D product-default decision: no ESTIMATED pace producer or general numeric easy/sharpening model exists. Runtime effect: numeric pace remains unresolved by design, TargetGoalDerived is not used, and the whole run is not accelerated. Catalog content changed=false. Supports AUD-508 closure.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-527", "session-prescription-governance", DocumentTypes.WorkoutDefinition, "EASY_STANDARD", 4,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: distance-accounting behavior", "ExactSessionTotal across all runtime components",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D technical/product decision: all TAPER_SHARPEN runtime components count toward the already-assigned 4F.7C taper key-session distance, and their rounded sum must reconcile to that assigned distance. Runtime effect: no hidden or unaccounted volume. Catalog content changed=false. Supports AUD-508 closure.",
+            ["WorkoutDefinitionValidator", "PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-528", "session-prescription-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY v1: low-volume feasibility", "minimum 3km taper key-session; typed infeasibility below minimum",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D product-default decision: supported 8/12/14 week plans for valid-positive and missing weekly-volume paths remain feasible, and 12/14 week explicit-zero paths remain feasible. The 8-week explicit-zero path remains blocked before 4F.7D by existing 4F.7C allocation minimums (5.5km taper residual versus 6.0km required key/easy minimum). An assigned taper key-session below 3km fails closed through a typed exception rather than increasing volume or silently omitting sharpening. Catalog content changed=false. Supports AUD-508 closure for reachable final prescribed plans.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-529", "session-prescription-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "CatalogFinalPrescribedPlanValidator", "complete internal prescribed-plan validation required before dark pipeline stop",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D technical decision: final internal prescribed plans must validate structure, session counts, dates/identity, weekly totals, long-run values, component accounting, pace-source use, taper behavior, and provenance before the dark pipeline stops. Runtime effect: invalid complete prescriptions fail closed. Catalog content changed=false. Supports AUD-508 closure.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-530", "session-prescription-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "TAPER_SHARPEN pending-state removal", "BASELINE_PRESCRIBED_SHARPENING_PENDING must not remain in final prescribed plan",
+            "PHASE4F_7D_TAPER_SHARPEN_AND_FINAL_PRESCRIPTION_VALIDATION.md",
+            "PHASE 4F.7D implementation decision: BaselinePrescribedSharpeningPending remains a 4F.7C intermediate status only; 4F.7D replaces it with FinalPrescriptionComplete in the final internal prescribed plan and fails closed if any pending state remains. Runtime effect: no future overlay is required before public materialization begins. Catalog content changed=false. Closes AUD-508's pending-overlay requirement.",
+            ["WorkoutProgressionValidator", "PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-531", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "CATALOG_PUBLIC_PREVIEW_MATERIALIZER v1", "final prescribed plan -> GeneratedCatalogPlanPayload",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: the fully validated 4F.7D prescribed plan is projected into the existing GeneratedCatalogPlanPayload preview contract after final prescribed-plan validation. Runtime effect: supported internal catalog dry-run previews now carry a non-null generated payload; live routing remains closed and catalog content changed=false. Public compatibility impact: additive population of an existing nullable field; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-532", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_CATALOG_PUBLIC_WORKOUT_TYPE_MAPPING_POLICY v1", "explicit workout key/role/stage -> GeneratedCatalogWorkoutType",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: public workout type mapping is deterministic and keyed by exact workout identity, structural role, and stage context; it does not depend on display strings, list order, or family guessing. Runtime effect: EASY_STANDARD, LONG_RUN_STANDARD, FARTLEK, THRESHOLD_TEMPO, GOAL_PACE_TEN_K, and TAPER_SHARPEN are representable in the existing enum. Public compatibility impact: no enum change; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-533", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "public effort-only pace representation", "GeneratedCatalogPaceType.EffortOnly with null numeric pace",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: effort-only prescriptions materialize as structured EffortOnly pace with effort label and no numeric target/range. Runtime effect: no ESTIMATED pace, preferred pace, or target goal pace is fabricated. Public compatibility impact: uses existing pace contract; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-534", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "public duration semantics", "prescribed/derived/estimated/unresolved preserved without zero placeholders in payload",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: estimated durations are mapped only when available; effort-only unresolved durations remain null in GeneratedCatalogPlanPayload. Runtime effect: estimated goal-pace duration is not collapsed into prescribed duration and unresolved duration is not represented by zero in the payload. Public compatibility impact: uses existing nullable schedule fields; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-535", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_CATALOG_PUBLIC_SEGMENT_MAPPING_POLICY v1", "ordered internal prescription segments -> public segment payloads",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: internal segment order and distance accounting are projected to public segment payloads with explicit mappings for SESSION_TOTAL, WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN, EASY_BASELINE, CONTROLLED_SHARPENING, and EASY_RECOVERY. Runtime effect: TAPER_SHARPEN and quality sessions are not flattened. Public compatibility impact: uses existing segment contract; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-536", "public-preview-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "TAPER_SHARPEN public representation", "EASY_STANDARD public type plus stage provenance and ordered sharpening components",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: TAPER_SHARPEN keeps public compatibility with the existing Easy workout type while preserving stage identity in provenance and EASY_BASELINE/CONTROLLED_SHARPENING/EASY_RECOVERY segment detail. Runtime effect: clients can distinguish taper sharpen from ordinary easy support without a new workout definition. Public compatibility impact: no enum change; schema changed=false; dark-only=true.",
+            ["WorkoutProgressionValidator", "PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-537", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "snapshot hash includes generated payload", "ContentHash changes when material prescription payload changes",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 technical decision: CatalogPreviewSnapshotBuilder and verifier include GeneratedPreviewPlanPayload in canonical hash content. Runtime effect: equivalent payloads verify deterministically and material prescription changes alter the hash. Public compatibility impact: applies only to newly generated previews; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-538", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "confirm remains disabled with non-null payload", "valid generated payload still throws materialization-not-implemented on confirm",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 boundary decision: non-null catalog preview payload is preview-only; CatalogPlanConfirmationService still validates and rejects structurally valid generated payloads before any TrainingPlan/TrainingWeek/TrainingDay persistence. Public compatibility impact: no confirm activation; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-539", "public-preview-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "8-week explicit-zero unsupported propagation", "typed failure and no generated payload",
+            "PHASE4F_8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION.md",
+            "PHASE 4F.8.1 boundary decision: the known 8-week explicit-zero weekly-volume path remains unsupported for public materialization and fails closed with a typed preview-generation failure. Runtime effect: no partial or misleading GeneratedCatalogPlanPayload is returned and weekly volume is not silently raised. Public compatibility impact: existing error response path; schema changed=false; dark-only=true.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-540", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "V1_LIVE_CATALOG_PILOT_ROUTING_POLICY v1: exact pilot identity", "Race/TenK/RunningRegularly/4D plus supported cycle length",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 technical decision: only the typed TEN_K/RACE/RunningRegularly/4D request shape with a valid supported 8-14 week race cycle can enter the live catalog routing boundary. Runtime effect: non-pilot requests use the established legacy route and do not probe catalog. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-541", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "PUBLISHED plus activation dual gate", "candidate lifecycle cannot be overridden by activation",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 governance decision: CATALOG_LIVE requires candidate lifecycle status PUBLISHED and CatalogLivePilot.Enabled=true. DRAFT plus enabled remains non-live. Runtime effect: lifecycle is authoritative and activation is only a second gate after publication. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-542", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "default-disabled live pilot activation", "CatalogLivePilot:Enabled defaults false",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 rollout decision: live pilot routing uses one explicit configuration option and no production default enables it. Runtime effect: the current repository remains non-live. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-543", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "DRAFT candidate behavior", "catalog-supported but not published routes to approved legacy boundary",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 boundary decision: the real TEN_K__4D__INTERMEDIATE v10 DRAFT candidate never serves catalog output to real users. Runtime effect: pilot-shaped live requests hit the existing exact legacy template path and preserve typed template-not-available failure when no exact template exists. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-544", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "out-of-scope request behavior", "non-pilot shapes remain legacy only",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 fallback decision: 5K, half marathon, marathon, habit, non-RunningRegularly, non-4D, unsupported cycles, and custom unsupported catalog requests do not silently execute catalog. Runtime effect: out-of-scope supported legacy behavior is preserved and unsupported catalog/safety failures fail typed. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-545", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "legacy fallback permission matrix", "availability fallback allowed; safety/data fallback prohibited",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 routing decision: fallback is permitted for non-pilot requests, not-published pilot availability, and activation-disabled availability; fallback is prohibited for invalid requests, unsupported cycles, readiness infeasibility, artifact inconsistency, snapshot/hash failure, payload validation failure, and confirm materialization. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-546", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "route provenance in preview snapshot", "LEGACY_SQL response JSON versus CATALOG snapshot GenerationSource",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 technical decision: catalog previews continue to persist CatalogPreviewSnapshot.GenerationSource=CATALOG and legacy previews continue using the legacy response JSON; confirmation dispatch uses stored provenance rather than recomputing routing. Snapshot/hash schema changed=false. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-547", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "catalog confirmation remains disabled", "catalog preview cannot persist TrainingPlan/Week/Day",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 confirmation boundary decision: catalog preview confirmation remains fail-closed through CatalogPreviewMaterializationNotImplementedException after snapshot validation; no TrainingPlan, TrainingWeek, or TrainingDay writes are introduced. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-548", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "8-week explicit-zero no-fallback route", "known generation-infeasible request rejected before generator/legacy fallback",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 safety decision: the 8-week explicit-zero weekly-volume pilot path is classified as CATALOG_GENERATION_INFEASIBLE with fallback prohibited. Runtime effect: no legacy detour, no snapshot, no payload, and no silent weekly-volume increase. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-549", "live-routing-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "live route observability", "structured policy/version/route/lifecycle/activation/reason fields",
+            "PHASE4F_8_2_SCOPED_LIVE_PILOT_ROUTING.md",
+            "PHASE 4F.8.2 observability decision: live routing logs sanitized structured route decisions without free-form onboarding text, payloads, secrets, or normal stack traces. Runtime effect: route provenance is inspectable while privacy boundaries are preserved. Candidate status changed=false; activation changed=false.",
+            ["PublishReadinessValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-550", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "catalog confirm source of truth", "stored hash-verified preview snapshot only",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: catalog confirmation persists the exact stored CatalogPreviewSnapshot and GeneratedCatalogPlanPayload after hash verification. Runtime behavior: no route selection, resolver orchestration, stage allocation, workout binding, volume allocation, date assignment, or prescription generation runs during confirm. Schema impact=true; transaction impact=all persisted rows share one confirm transaction; legacy compatibility=unchanged; migration added=true.",
+            ["CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-551", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "TrainingPlan provenance mapping", "candidate, dependency, preview, hash, materializer, confirmed timestamp",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: TrainingPlan stores catalog candidate key/version/status, artifact dependency versions, SourcePreviewId, CatalogPreviewContentHash, CatalogMaterializerVersion, GenerationSource=CATALOG, and CatalogConfirmedAtUtc. Runtime behavior: historical plan explanation does not require current catalog files. Schema impact=true; transaction impact=included in confirm transaction; legacy compatibility=nullable fields; migration added=true.",
+            ["CatalogPlanConfirmationService", "AppDbContext"]));
+
+        entries.Add(ExplicitDefault("AUD-552", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "phase and progression-stage persistence", "CatalogPhaseKey separate from CatalogProgressionStageKey",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: TrainingDay.CatalogPhaseKey stores phase provenance and TrainingDay.CatalogProgressionStageKey stores fine-grained progression stage provenance when distinct. Existing CatalogStageKey is retained as legacy/deprecated compatibility data and is not repurposed. Runtime behavior: TAPER and TAPER_SHARPEN remain distinct. Schema impact=true; transaction impact=included in day writes; legacy compatibility=old field retained; migration added=true.",
+            ["TrainingDay", "CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-553", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "structured prescription persistence", "CATALOG_SESSION_PRESCRIPTION_SNAPSHOT v1 JSON",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: catalog sessions persist a versioned JSON prescription snapshot with deterministic snake_case fields, ordered segments, pace object, duration semantics, and day provenance. Runtime behavior: effort-only, target pace, pace range, unresolved numeric pace, estimated duration, and component order are not flattened into lossy display text. Schema impact=true; transaction impact=included in day writes; legacy compatibility=nullable field; migration added=true.",
+            ["CatalogPlanConfirmationService", "CatalogPersistedPlanValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-554", "catalog-confirmation-governance", DocumentTypes.WorkoutProgression, "TEN_K_WORKOUT_PROGRESSION_V1", 5,
+            "TAPER_SHARPEN persistence", "phase TAPER, stage TAPER_SHARPEN, role KEY_SESSION, workout EASY_STANDARD",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: confirmed taper sharpening sessions preserve CatalogPhaseKey=TAPER, CatalogProgressionStageKey=TAPER_SHARPEN, CatalogStructuralRole=KEY_SESSION, CatalogWorkoutDefinitionKey=EASY_STANDARD, and ordered EASY_BASELINE/CONTROLLED_SHARPENING/EASY_RECOVERY prescription components. Runtime behavior: public workout type may remain Easy but the persisted row is distinguishable from ordinary easy support. Schema impact=true; transaction impact=included in day writes; legacy compatibility=additive; migration added=true.",
+            ["CatalogPlanConfirmationService", "CatalogPersistedPlanValidator"]));
+
+        entries.Add(ExplicitDefault("AUD-555", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "idempotent catalog confirmation", "same preview returns existing plan",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: repeated confirmation of an already confirmed preview returns the existing TrainingPlan and creates no duplicate weeks or days. Runtime behavior: PlanPreview.ConfirmedPlanId is the application idempotency anchor and TrainingPlans.SourcePreviewId has a unique filtered index. Schema impact=true; transaction impact=idempotency link written with plan; legacy compatibility=unchanged; migration added=true.",
+            ["CatalogPlanConfirmationService", "AppDbContext"]));
+
+        entries.Add(ExplicitDefault("AUD-556", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "concurrent catalog confirmation behavior", "at most one TrainingPlan per SourcePreviewId",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: simultaneous confirmation attempts must not create duplicate plans for the same preview. Runtime behavior is protected by the SourcePreviewId uniqueness invariant and typed persistence failure handling. Schema impact=true; transaction impact=database uniqueness participates in transaction; legacy compatibility=nullable filtered index; migration added=true.",
+            ["AppDbContext", "CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-557", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "atomic confirmation transaction", "plan, weeks, days, event, preview link all-or-none",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: relational catalog confirmation persists TrainingPlan, all TrainingWeeks, all TrainingDays, PlanEvent, and PlanPreview.ConfirmedPlanId in one transaction. Runtime behavior: failed persistence rolls back partial rows and leaves preview unconsumed. Schema impact=false beyond Phase 4F.9 columns; transaction impact=explicit transaction; legacy compatibility=unchanged; migration added=true.",
+            ["CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-558", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "preview consumption lifecycle", "ConfirmedPlanId set only after successful confirmation",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: successful catalog confirmation marks the preview confirmed/consumed by setting ConfirmedPlanId while preserving the snapshot for audit; failed confirmation writes nothing and leaves the preview unconsumed. Runtime behavior: expiration blocks unconfirmed previews but does not require regenerating an already-confirmed plan. Schema impact=false; transaction impact=preview link written in confirm transaction; legacy compatibility=unchanged; migration added=false.",
+            ["CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-559", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "legacy confirmation isolation", "catalog confirm never calls legacy generation",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: legacy confirmation behavior remains isolated and catalog confirmation does not invoke the legacy SQL generation path. Runtime behavior: stored preview provenance controls dispatch and catalog failures are not converted to legacy materialization. Schema impact=false; transaction impact=none for legacy path; legacy compatibility=unchanged; migration added=false.",
+            ["PlanServices", "CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-560", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "publication-independent confirm for existing valid previews", "DRAFT candidate allowed for stored valid catalog test previews",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: confirmation of an already-created, valid catalog preview is independent from candidate publication and production activation. Runtime behavior: repository tests may confirm DRAFT candidate snapshots; this phase does not publish v10, add publication ledger entries, or enable production activation. Schema impact=false; transaction impact=none beyond confirm; legacy compatibility=unchanged; migration added=false.",
+            ["CatalogPlanConfirmationService"]));
+
+        entries.Add(ExplicitDefault("AUD-561", "catalog-confirmation-governance", DocumentTypes.RulePack, "APPSEL_RACE_PLAN_V1", 4,
+            "unsupported 8-week explicit-zero defensive guard", "invalid handcrafted snapshot fails before persistence",
+            "PHASE4F_9_CATALOG_CONFIRMATION_AND_PERSISTENCE.md",
+            "PHASE 4F.9 decision: the known unsupported 8-week cycle plus explicit-zero recent-volume path remains unsolved and must not be materialized through a handcrafted payload. Runtime behavior: confirmation rejects that combination with a typed persistence-contract failure before mutation. Schema impact=false; transaction impact=no writes on failure; legacy compatibility=unchanged; migration added=false.",
+            ["CatalogPlanConfirmationService"]));
     }
 
     private static void AddWorkoutDefinitionEntries(List<DomainContentDecision> entries)

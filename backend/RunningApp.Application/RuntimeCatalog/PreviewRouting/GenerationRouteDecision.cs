@@ -37,49 +37,10 @@ public interface IGenerationRouteDecider
     GenerationRouteDecision Decide(GeneratePreviewRequest request);
 }
 
-/// <summary>
-/// Backend Integration Phase 4E.1 — routes exactly the
-/// TEN_K / INTERMEDIATE / 4-days-per-week pilot combination to the catalog
-/// flow; every other request continues through the existing legacy SQL
-/// flow unchanged.
-///
-/// Pilot match criteria, each with its evidence basis:
-/// <list type="bullet">
-/// <item><c>GoalType == Race</c> — TEN_K is a race distance; every prior
-/// phase's TEN_K/INTERMEDIATE/4D test scenario used GoalType.Race (no habit
-/// scenario for this combination exists anywhere in this repository).</item>
-/// <item><c>GoalDistance == TenK</c> — the pilot's own catalog candidate key
-/// is literally <c>TEN_K__4D__INTERMEDIATE</c>.</item>
-/// <item><c>Level == RunningBackground.RunningRegularly</c> — the backend's
-/// <c>RunningBackground</c> enum (NewToRunning/UsedToRun/RunningRegularly)
-/// has no exact "INTERMEDIATE" member (Phase 2 finding: NotSupported, a
-/// different taxonomy axis). No formal owner-approved mapping from
-/// RunningBackground to the catalog's INTERMEDIATE level exists as of this
-/// phase. <c>RunningRegularly</c> is used here because it is the value
-/// every prior phase's TEN_K/INTERMEDIATE/4D test scenario has used as its
-/// informal stand-in since Phase 0 (e.g.
-/// CatalogNotWiredToGenerationTests.TenKIntermediate4Day_StillReturnsPlanTemplateNotAvailable_CatalogNotYetWired)
-/// — an established repository convention, not a newly invented mapping.
-/// If a future phase formally approves a different mapping, this criterion
-/// must be updated to match, not silently left inconsistent.</item>
-/// <item><c>DaysPerWeek == 4</c> — the pilot candidate key names 4D.</item>
-/// </list>
-/// </summary>
-public sealed class PilotGenerationRouteDecider : IGenerationRouteDecider
-{
-    public const string PilotCandidateKey = "TEN_K__4D__INTERMEDIATE";
-    public const int PilotCandidateVersion = 10;
-
-    public GenerationRouteDecision Decide(GeneratePreviewRequest request)
-    {
-        var isPilotCombination =
-            request.GoalType == GoalType.Race &&
-            request.GoalDistance == GoalDistance.TenK &&
-            request.Level == RunningBackground.RunningRegularly &&
-            request.DaysPerWeek == 4;
-
-        return isPilotCombination
-            ? new GenerationRouteDecision(GenerationSource.Catalog, "PILOT_TEN_K_INTERMEDIATE_4D_MATCH")
-            : new GenerationRouteDecision(GenerationSource.LegacySql, "NOT_PILOT_COMBINATION");
-    }
-}
+// Phase 4F.9.1A: the previous PilotGenerationRouteDecider implementation of
+// IGenerationRouteDecider lived here. It was never registered in DI (see
+// RunningApp.Api/Program.cs, which registers only LivePlanPreviewRoutingService
+// for IGenerationRouteDecider) and was exercised solely by its own now-removed
+// unit test file. Its pilot-identity check duplicated
+// V1LiveCatalogPilotRoutingPolicy's inline check verbatim; both now consume the
+// single centrally-owned V1CatalogPilotIdentityPolicy. Removed as dead code.

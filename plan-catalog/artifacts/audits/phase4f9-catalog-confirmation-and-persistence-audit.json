@@ -1,0 +1,110 @@
+{
+  "auditKey": "PHASE4F9_CATALOG_CONFIRMATION_AND_PERSISTENCE",
+  "auditVersion": 1,
+  "supersededBy": {
+    "auditKey": "PHASE4F9_2_RELATIONAL_VALIDATION",
+    "file": "plan-catalog/artifacts/audits/phase4f9-2-relational-validation.json",
+    "note": "Real-PostgreSQL relational validation is complete. Found and fixed two severe defects in this phase's own hash-verification and date-handling code (order-dependent snapshot hash broken by jsonb key reordering; DateTimeKind.Unspecified rejected by Npgsql), invisible to InMemory-only testing. This record retained unmodified for historical accuracy."
+  },
+  "inputBoundary": {
+    "inputs": ["stored PlanPreview", "CatalogPreviewSnapshot", "GenerationSource=CATALOG", "GeneratedCatalogPlanPayload", "snapshot hash", "authenticated user"],
+    "rejectsNonCatalog": true
+  },
+  "snapshotAuthority": {
+    "sourceOfTruth": "stored snapshot",
+    "regenerationDuringConfirm": false,
+    "hashVerified": true
+  },
+  "trainingPlanMapping": {
+    "generationSource": "CATALOG",
+    "sourcePreviewId": "TrainingPlans.SourcePreviewId",
+    "candidate": ["CatalogCandidateKey", "CatalogCandidateVersion", "CatalogCandidateStatusAtGenerationTime"],
+    "dependencySummary": "CatalogDependencyVersionsJson",
+    "confirmationTimestamp": "CatalogConfirmedAtUtc"
+  },
+  "trainingWeekMapping": {
+    "rows": "one per generated week",
+    "fields": ["PlanId", "WeekNumber", "StartDate", "PlannedVolumeKm", "CatalogPhaseKey"]
+  },
+  "trainingDayMapping": {
+    "rows": "one per generated session; no rest rows",
+    "fields": ["PlanId", "WeekId", "Date", "DayType", "CatalogWorkoutDefinitionKey", "CatalogWorkoutDefinitionVersion", "CatalogPhaseKey", "CatalogProgressionStageKey", "CatalogStructuralRole", "CatalogPrescriptionJson", "CatalogPrescriptionSchemaVersion", "GenerationSource"]
+  },
+  "stageGranularityDecision": {
+    "catalogPhaseKey": "new/additive TrainingDay.CatalogPhaseKey and existing TrainingWeek.CatalogPhaseKey",
+    "catalogProgressionStageKey": "new/additive TrainingDay.CatalogProgressionStageKey",
+    "catalogStageKey": "retained as legacy/deprecated compatibility field; not repurposed"
+  },
+  "prescriptionPersistence": {
+    "schemaKey": "CATALOG_SESSION_PRESCRIPTION_SNAPSHOT",
+    "schemaVersion": 1,
+    "storage": "TrainingDays.CatalogPrescriptionJson jsonb",
+    "serialization": "deterministic snake_case System.Text.Json",
+    "segmentsOrdered": true
+  },
+  "taperSharpenPersistence": {
+    "phase": "TAPER",
+    "progressionStage": "TAPER_SHARPEN",
+    "role": "KEY_SESSION",
+    "workoutDefinitionKey": "EASY_STANDARD",
+    "components": ["EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY"]
+  },
+  "idempotency": {
+    "repeatSamePreview": "returns existing confirmed plan",
+    "databaseInvariant": "unique filtered index IX_TrainingPlans_SourcePreviewId"
+  },
+  "concurrency": {
+    "targetBehavior": "at most one TrainingPlan per SourcePreviewId",
+    "databaseInvariant": "unique filtered index",
+    "recoveryBehavior": "on IX_TrainingPlans_SourcePreviewId unique violation, rollback, clear tracker, reload existing plan by SourcePreviewId, and return it when available",
+    "nonBlockingGap": "real PostgreSQL simultaneous-confirm stress test could not run because localhost:5432 rejected connections"
+  },
+  "transaction": {
+    "boundary": ["TrainingPlan", "TrainingWeeks", "TrainingDays", "PlanEvent", "PlanPreview.ConfirmedPlanId"],
+    "rollback": "all-or-none for relational providers"
+  },
+  "previewLifecycle": {
+    "success": "sets ConfirmedPlanId",
+    "failure": "leaves ConfirmedPlanId null",
+    "snapshotPreserved": true
+  },
+  "legacyIsolation": {
+    "legacyConfirmPathChanged": false,
+    "catalogCallsLegacyGeneration": false
+  },
+  "migration": {
+    "name": "20260716120000_Phase4F9_CatalogConfirmationPersistence",
+    "additive": true,
+    "destructive": false,
+    "designerAdded": true,
+    "modelSnapshotUpdated": true
+  },
+  "typedFailures": [
+    "PlanPreviewForbiddenException",
+    "PlanPreviewExpiredException",
+    "PlanPreviewIntegrityFailedException",
+    "PlanPreviewGenerationSourceInvalidException",
+    "CatalogPreviewScheduleInvalidException",
+    "CatalogPreviewPersistenceContractException",
+    "CatalogPlanPersistenceFailedException",
+    "CatalogPersistedPlanValidationException",
+    "CatalogActivePlanConflictException",
+    "CatalogPrescriptionPersistenceUnsupportedException"
+  ],
+  "governanceEntries": ["AUD-550", "AUD-551", "AUD-552", "AUD-553", "AUD-554", "AUD-555", "AUD-556", "AUD-557", "AUD-558", "AUD-559", "AUD-560", "AUD-561"],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "Development PostgreSQL at localhost:5432 was unavailable, blocking DB migration application and real relational verification.",
+    "dotnet-ef CLI is not installed in this environment, so EF CLI pending-model-change verification could not be executed."
+  ],
+  "validationResults": [],
+  "repositoryState": {},
+  "phase4f91Continuation": {
+    "postgresConnectivity": "FAILED: localhost:5432 refused connection for antigravity_dev",
+    "migrationApplication": "BLOCKED_BY_POSTGRES_UNAVAILABLE",
+    "directSchemaVerification": "BLOCKED_BY_POSTGRES_UNAVAILABLE",
+    "pendingModelChanges": "PASSED: No changes have been made to the model since the last migration.",
+    "fullBackendSuite": "FAILED: 722 passed, 37 failed, 0 skipped; failures are reset endpoint HTTP 500 from PostgreSQL connection refused",
+    "relationalVerification": "BLOCKED_BY_POSTGRES_UNAVAILABLE"
+  }
+}

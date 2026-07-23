@@ -1,0 +1,127 @@
+{
+  "auditKey": "PHASE4F8_1_CATALOG_PUBLIC_PREVIEW_MATERIALIZATION",
+  "auditVersion": 1,
+  "pilotScope": {
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10,
+    "distanceFamily": "TEN_K",
+    "level": "INTERMEDIATE",
+    "daysPerWeek": 4,
+    "mode": "dark_internal_preview_materialization"
+  },
+  "inputBoundary": {
+    "input": "validated CatalogPrescribedPlan from Phase 4F.7D",
+    "output": "GeneratedCatalogPlanPayload",
+    "pipelineLocation": "after final prescribed-plan validation in CatalogPreviewGenerator"
+  },
+  "publicPayloadContracts": [
+    "GeneratedCatalogPlanPayload",
+    "GeneratedCatalogWeekPayload",
+    "GeneratedCatalogTrainingDayPayload",
+    "GeneratedCatalogWorkoutSegmentPayload",
+    "GeneratedCatalogPacePrescription"
+  ],
+  "planMapping": {
+    "fields": ["candidateKey", "candidateVersion", "goalType", "canonicalDistanceFamily", "daysPerWeek", "startDate", "endDate", "plannedWeekCount", "dependencyVersions", "provenance"],
+    "recomputesUpstreamValues": false
+  },
+  "weekMapping": {
+    "fields": ["weekNumber", "startDate", "endDate", "stageKey", "plannedVolumeKm", "sessions", "provenance"],
+    "sessionsPerWeek": 4
+  },
+  "sessionMapping": {
+    "fields": ["date", "sessionOrderInWeek", "workoutType", "targetDistanceKm", "pacePrescription", "estimatedDurationMinutes", "plannedIntensity", "segments", "provenance"]
+  },
+  "workoutTypeMapping": {
+    "policyKey": "V1_CATALOG_PUBLIC_WORKOUT_TYPE_MAPPING_POLICY",
+    "policyVersion": 1,
+    "mappings": [
+      "EASY_STANDARD/EASY_SUPPORT -> Easy",
+      "EASY_STANDARD/KEY_SESSION/TAPER_SHARPEN -> Easy",
+      "LONG_RUN_STANDARD/LONG_RUN -> LongRun",
+      "FARTLEK/KEY_SESSION -> Interval",
+      "THRESHOLD_TEMPO/KEY_SESSION -> Tempo",
+      "GOAL_PACE_TEN_K/KEY_SESSION -> Interval"
+    ]
+  },
+  "paceMapping": {
+    "exact": "Target seconds/km",
+    "range": "Range faster/slower seconds/km",
+    "effortOnly": "EffortOnly with null numeric pace",
+    "unresolvedNumeric": "EffortOnly with unresolved numeric display provenance",
+    "estimatedFabricated": false
+  },
+  "durationMapping": {
+    "prescribed": "target duration when present",
+    "derived": "target duration when present",
+    "estimated": "estimated duration when present",
+    "unresolved": "null duration fields in GeneratedCatalogPlanPayload"
+  },
+  "segmentMapping": {
+    "policyKey": "V1_CATALOG_PUBLIC_SEGMENT_MAPPING_POLICY",
+    "policyVersion": 1,
+    "supportedInternalTypes": ["SESSION_TOTAL", "WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN", "EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY"]
+  },
+  "taperSharpenRepresentation": {
+    "publicWorkoutType": "Easy",
+    "stagePreserved": "TAPER_SHARPEN",
+    "workoutIdentityPreserved": "EASY_STANDARD",
+    "segments": ["EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY"],
+    "numericPaceFabricated": false
+  },
+  "snapshotAndHash": {
+    "generatedPayloadIncludedInContentHash": true,
+    "canonicalSerialization": "System.Text.Json with existing snapshot builder/verifier hash path",
+    "deterministicOrdering": true
+  },
+  "confirmBoundary": {
+    "nonNullPayloadConfirmable": false,
+    "guard": "CatalogPreviewMaterializationNotImplementedException",
+    "writesTrainingPlan": false,
+    "writesTrainingWeek": false,
+    "writesTrainingDay": false
+  },
+  "unsupportedPathHandling": [
+    {
+      "path": "8-week explicit-zero weekly volume",
+      "outcome": "typed preview-generation failure",
+      "payloadReturned": false,
+      "volumeRaised": false
+    }
+  ],
+  "governanceEntries": [
+    { "id": "AUD-531", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-532", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-533", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-534", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-535", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-536", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-537", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-538", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "id": "AUD-539", "classification": "EXPLICIT_PRODUCT_DEFAULT" }
+  ],
+  "typedFailures": [
+    "CatalogPublicMaterializationException",
+    "CatalogPublicWorkoutTypeUnsupportedException",
+    "CatalogPublicPaceRepresentationUnsupportedException",
+    "CatalogPublicSegmentUnsupportedException",
+    "CatalogPublicDistanceMismatchException",
+    "CatalogPublicDurationMappingException",
+    "CatalogPublicPayloadInvalidException",
+    "CatalogPublicCanonicalSerializationException"
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "Confirm/persistence materialization remains deferred.",
+    "8-week explicit-zero allocation resolution remains deferred.",
+    "Future pace-estimation and race-equivalence work remains deferred."
+  ],
+  "validationResults": [],
+  "repositoryState": {
+    "candidatePublished": false,
+    "liveRoutingChanged": false,
+    "persistenceChanged": false,
+    "migrationsChanged": false,
+    "publicationChanged": false
+  }
+}

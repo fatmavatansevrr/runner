@@ -427,7 +427,7 @@ namespace RunningApp.Persistence.Migrations
                             DaysPerWeek = 3,
                             GoalDistance = "five_k",
                             GoalType = "habit",
-                            Level = "new_to_running",
+                            Level = "beginner",
                             TemplateId = "habit_5k_beginner_3day_km_v1",
                             Unit = "km",
                             Version = 1
@@ -440,7 +440,7 @@ namespace RunningApp.Persistence.Migrations
                             DaysPerWeek = 4,
                             GoalDistance = "five_k",
                             GoalType = "habit",
-                            Level = "new_to_running",
+                            Level = "beginner",
                             TemplateId = "habit_5k_beginner_4day_km_v1",
                             Unit = "km",
                             Version = 1
@@ -453,7 +453,7 @@ namespace RunningApp.Persistence.Migrations
                             DaysPerWeek = 3,
                             GoalDistance = "five_k",
                             GoalType = "race",
-                            Level = "new_to_running",
+                            Level = "beginner",
                             TemplateId = "race_5k_beginner_3day_km_v1",
                             Unit = "km",
                             Version = 1
@@ -487,11 +487,32 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<string>("CatalogIntensityKey")
                         .HasColumnType("text");
 
+                    b.Property<string>("CatalogPhaseKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogPrescriptionJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("CatalogPrescriptionSchemaVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogProgressionStageKey")
+                        .HasColumnType("text");
+
                     b.Property<string>("CatalogSlotRole")
                         .HasColumnType("text");
 
                     b.Property<string>("CatalogStageKey")
                         .HasColumnType("text");
+
+                    b.Property<string>("CatalogStructuralRole")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CatalogWorkoutDefinitionKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CatalogWorkoutDefinitionVersion")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CatalogWorkoutFamily")
                         .HasColumnType("text");
@@ -517,6 +538,9 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GenerationSource")
                         .HasColumnType("text");
 
                     b.Property<string>("Intensity")
@@ -599,6 +623,12 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<int?>("CatalogCandidateVersion")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("CatalogConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CatalogDependencyVersionsJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("CatalogLayoutKey")
                         .HasColumnType("text");
 
@@ -611,11 +641,17 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<int?>("CatalogLevelModifierVersion")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CatalogMaterializerVersion")
+                        .HasColumnType("text");
+
                     b.Property<string>("CatalogPeakVolumeBandPolicyKey")
                         .HasColumnType("text");
 
                     b.Property<int?>("CatalogPeakVolumeBandPolicyVersion")
                         .HasColumnType("integer");
+
+                    b.Property<string>("CatalogPreviewContentHash")
+                        .HasColumnType("text");
 
                     b.Property<string>("CatalogProgressionModifierKey")
                         .HasColumnType("text");
@@ -668,6 +704,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<DateTime>("EstimatedEndDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GenerationSource")
+                        .HasColumnType("text");
+
                     b.Property<string>("GoalDistance")
                         .IsRequired()
                         .HasColumnType("text");
@@ -710,6 +749,9 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<double?>("RequestedTargetDistanceKm")
                         .HasColumnType("double precision");
 
+                    b.Property<Guid?>("SourcePreviewId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -739,6 +781,11 @@ namespace RunningApp.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_TrainingPlans_InternalUserId_ActiveOnly")
                         .HasFilter("\"Status\" = 'active'");
+
+                    b.HasIndex("SourcePreviewId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrainingPlans_SourcePreviewId")
+                        .HasFilter("\"SourcePreviewId\" IS NOT NULL");
 
                     b.HasIndex("InternalUserId", "Status")
                         .HasDatabaseName("IX_TrainingPlans_InternalUserId_Status");

@@ -10,6 +10,7 @@ using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
+using RunningApp.Application.RuntimeCatalog.Schedule;
 using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using RunningApp.Domain.Enums;
 using Xunit;
@@ -66,13 +67,20 @@ public sealed class CatalogPreviewGeneratorTests
     {
         GoalType = GoalType.Race,
         GoalDistance = GoalDistance.TenK,
-        Level = RunningBackground.RunningRegularly,
+        Level = RunningBackground.Intermediate,
         DaysPerWeek = 4,
         Unit = DistanceUnit.Km,
+        StartDate = raceDate.AddDays(-84),
         RaceDate = raceDate,
         // TargetFinishTimeSeconds intentionally omitted: GoalFeasibilityResolver
         // short-circuits to Evaluated/NOT_REQUESTED immediately, so this request
         // reaches a fully Evaluated pipeline (no NotEvaluated results at all).
+        // Backend Integration Phase 4F.5: a race-plan preview now also
+        // dark-materializes a calendar-day assignment, which requires
+        // PreferredDays/LongRunDay -- Mon/Wed/Fri/Sun with long run on Sunday
+        // is a known-safe combination (see CatalogWeekSkeletonCalendarMaterializerTests).
+        PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+        LongRunDay = Weekday.Sun,
     };
 
     [Fact]
@@ -102,7 +110,11 @@ public sealed class CatalogPreviewGeneratorTests
         Assert.Equal(4, snapshot.DecisionTrace.Steps.Count);
         Assert.Empty(snapshot.SelectedStageKeys);
         Assert.Empty(snapshot.FallbackStagesUsed);
-        Assert.Null(snapshot.GeneratedPreviewPlanPayload);
+        Assert.NotNull(snapshot.GeneratedPreviewPlanPayload);
+        Assert.Equal(12, snapshot.GeneratedPreviewPlanPayload.PlannedWeekCount);
+        Assert.Equal(48, snapshot.GeneratedPreviewPlanPayload.Weeks.Sum(w => w.Sessions.Count));
+        Assert.True(new RunningApp.Application.RuntimeCatalog.Schedule.GeneratedCatalogPlanPayloadValidator()
+            .Validate(snapshot.GeneratedPreviewPlanPayload).IsValid);
         Assert.False(string.IsNullOrWhiteSpace(snapshot.ContentHash));
         Assert.True(snapshot.ExpiresAtUtc > snapshot.CreatedAtUtc);
         Assert.Equal(8, snapshot.ReferencedArtifacts.Count);
@@ -133,5 +145,57 @@ public sealed class CatalogPreviewGeneratorTests
 
         await Assert.ThrowsAsync<PlanPreviewGenerationFailedException>(() =>
             generator.GenerateAsync(requestWithoutRaceDate, new DateOnly(2026, 1, 5)));
+    }
+
+    [Fact]
+    public async Task Phase4F8_1_GenerateAsync_MaterializesPublicPayloadWithTaperSharpenSegments()
+    {
+        var asOfDate = new DateOnly(2026, 1, 5);
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration(), RealSkeletonOrchestrator());
+
+        var snapshot = await generator.GenerateAsync(PilotRequest(asOfDate.AddDays(84)), asOfDate);
+        var payload = Assert.IsType<GeneratedCatalogPlanPayload>(snapshot.GeneratedPreviewPlanPayload);
+        var taper = payload.Weeks.Single(w => w.Provenance.SourcePhaseKey == "TAPER")
+            .Sessions.Single(s => s.Provenance.SourceLayoutSlotRole == "KEY_SESSION");
+
+        Assert.Equal("TAPER_SHARPEN", taper.Provenance.SourceStageKey);
+        Assert.Equal("EASY_STANDARD", taper.Provenance.SourceWorkoutKey);
+        Assert.Equal(GeneratedCatalogWorkoutType.Easy, taper.WorkoutType);
+        Assert.Equal(new[] { "EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY" }, taper.Segments.Select(s => s.DisplayText));
+        Assert.Contains(taper.Segments, s => s.Intensity == "CONTROLLED_FAST_RELAXED");
+        Assert.Equal(GeneratedCatalogPaceType.EffortOnly, taper.PacePrescription.PaceType);
+        Assert.True(CatalogPreviewSnapshotVerifier.Verify(snapshot));
+    }
+
+    [Fact]
+    public async Task Phase4F8_1_GenerateAsync_PublicPayloadIsDeterministicAndRoundTrips()
+    {
+        var asOfDate = new DateOnly(2026, 1, 5);
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration(), RealSkeletonOrchestrator());
+
+        var first = await generator.GenerateAsync(PilotRequest(asOfDate.AddDays(84)), asOfDate);
+        var second = await generator.GenerateAsync(PilotRequest(asOfDate.AddDays(84)), asOfDate);
+        var firstJson = System.Text.Json.JsonSerializer.Serialize(first.GeneratedPreviewPlanPayload);
+        var secondJson = System.Text.Json.JsonSerializer.Serialize(second.GeneratedPreviewPlanPayload);
+        var roundTrip = System.Text.Json.JsonSerializer.Deserialize<GeneratedCatalogPlanPayload>(firstJson);
+
+        Assert.Equal(firstJson, secondJson);
+        Assert.NotNull(roundTrip);
+        Assert.True(new GeneratedCatalogPlanPayloadValidator().Validate(roundTrip).IsValid);
+    }
+
+    [Fact]
+    public async Task Phase4F8_1_EightWeekExplicitZero_PropagatesTypedFailureAndProducesNoPayload()
+    {
+        var asOfDate = new DateOnly(2026, 1, 5);
+        var request = PilotRequest(asOfDate.AddDays(55));
+        request.RecentWeeklyVolumeKm = 0;
+        var generator = new CatalogPreviewGenerator(new DryRunEligibilityGate(RealGate()), RealOrchestration(), RealSkeletonOrchestrator());
+
+        var exception = await Assert.ThrowsAsync<PlanPreviewGenerationFailedException>(() =>
+            generator.GenerateAsync(request, asOfDate));
+
+        Assert.IsType<RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogSessionPrescriptionInfeasibleException>(exception.InnerException);
+        Assert.Contains("8-week explicit-zero weekly-volume", exception.InnerException!.Message);
     }
 }

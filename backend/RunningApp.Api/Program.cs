@@ -111,8 +111,34 @@ builder.Services.AddScoped<IPlanGenerationEngine, PlaceholderPlanGenerationEngin
 // runtime plan assignment/generation, which this phase begins to integrate
 // with read-only).
 builder.Services.Configure<PlanCatalogOptions>(builder.Configuration.GetSection(PlanCatalogOptions.SectionName));
+builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions>(
+    builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions.SectionName));
+// Backend Integration Phase 4F.9.3: Development-only local-acceptance seam.
+// Disabled by default; see LocalCatalogAcceptanceOptions's own doc comment.
+builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.LocalCatalogAcceptanceOptions>(
+    builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.LocalCatalogAcceptanceOptions.SectionName));
 builder.Services.AddScoped<IPlanCatalogBundleLoader, PlanCatalogBundleLoader>();
 builder.Services.AddScoped<ICanonicalDistanceFamilyResolver, CanonicalDistanceFamilyResolver>();
+
+// Backend Integration Phase 4F.6A: same PlanCatalog:CatalogRootPath configuration as
+// IPlanCatalogBundleLoader above, but reads a WORKOUT_PROGRESSION document's fine-grained
+// stage content, which PlanCatalogCandidateSummary deliberately does not carry. Consumed by
+// CatalogPreviewGenerator's public constructor (widened by one genuine parameter — see that
+// class's own doc comment for why this dependency could not be composed internally like its
+// other dark-pipeline collaborators).
+builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Schedule.Progression.ICatalogWorkoutProgressionLoader,
+    RunningApp.Application.RuntimeCatalog.Schedule.Progression.CatalogWorkoutProgressionLoader>();
+
+// Backend Integration Phase 4F.6B: same PlanCatalog:CatalogRootPath configuration again, but
+// reads a WORKOUT_DEFINITION document's family/eligible-phases/prescription-modes/status —
+// needed to validate an exact workout-definition binding. Consumed by
+// CatalogPreviewGenerator's public constructor (widened by a second genuine parameter, for
+// the same reason as ICatalogWorkoutProgressionLoader above).
+builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Schedule.Binding.ICatalogWorkoutDefinitionLoader,
+    RunningApp.Application.RuntimeCatalog.Schedule.Binding.CatalogWorkoutDefinitionLoader>();
+
+builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Prescription.Volume.ICatalogPeakVolumeBandLoader,
+    RunningApp.Application.RuntimeCatalog.Prescription.Volume.CatalogPeakVolumeBandLoader>();
 
 // Backend Integration Phase 2: analysis-only vocabulary mapper. Consumes Phase 1's
 // PlanCatalogCandidateSummary and reports backend representation support per concept
@@ -158,16 +184,14 @@ builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Resolvers.IRunt
 // not on IRuntimeConditionResolutionService.
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Resolvers.RuntimeConditionResolutionService>();
 
-// Backend Integration Phase 4E.1: catalog preview routing + immutable
+// Backend Integration Phase 4E.1 / Phase 4F.8.2: catalog preview routing + immutable
 // resolution snapshot foundation. Route decision happens once per request
-// (IGenerationRouteDecider); catalog execution is gated by candidate +
-// dependency lifecycle eligibility (ICatalogCandidateEligibilityGate); the
-// resolvers registered above are now invoked, but ONLY for the narrowly
-// scoped TEN_K/INTERMEDIATE/4D pilot combination, and ONLY during preview
-// (never confirm). See
-// PHASE4E_1_CATALOG_PREVIEW_ROUTING_AND_IMMUTABLE_RESOLUTION_SNAPSHOT.md.
+// (IGenerationRouteDecider). Phase 4F.8.2 adds an explicit default-disabled
+// CatalogLivePilot activation control and a PUBLISHED-only lifecycle boundary
+// before a real user can be routed to catalog generation. Candidate/dependency
+// eligibility remains enforced again by ICatalogCandidateEligibilityGate.
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.IGenerationRouteDecider,
-    RunningApp.Application.RuntimeCatalog.PreviewRouting.PilotGenerationRouteDecider>();
+    RunningApp.Application.RuntimeCatalog.PreviewRouting.LivePlanPreviewRoutingService>();
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.ICatalogCandidateEligibilityGate,
     RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogCandidateEligibilityGate>();
 

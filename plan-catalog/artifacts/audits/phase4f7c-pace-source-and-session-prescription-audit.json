@@ -1,0 +1,85 @@
+{
+  "auditKey": "PHASE4F7C_PACE_SOURCE_AND_SESSION_PRESCRIPTION",
+  "auditVersion": 1,
+  "pilotScope": {
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10,
+    "distanceFamily": "TEN_K",
+    "level": "INTERMEDIATE",
+    "daysPerWeek": 4
+  },
+  "inputContracts": [
+    "CatalogPlanPrescriptionContext",
+    "CatalogVolumeAndLongRunPlan",
+    "BoundCatalogPlan",
+    "CatalogWorkoutDefinitionSummary"
+  ],
+  "allocationPolicy": {
+    "key": "V1_FOUR_DAY_SESSION_VOLUME_ALLOCATION_POLICY",
+    "version": 1,
+    "minimumEasySupportDistanceKm": 1.5,
+    "minimumKeySessionDistanceKm": 3.0,
+    "rounding": "nearest 0.5km with second EASY_SUPPORT adjustment",
+    "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION",
+    "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT"
+  },
+  "paceSourceRules": [
+    { "source": "TARGET_TIME", "activeFor": "GOAL_PACE_TEN_K only when feasibility is REALISTIC or CHALLENGING", "formula": "TargetFinishTimeSeconds / GoalDistanceKm" },
+    { "source": "RECENT_RACE", "activeFor": "preserved as evidence; no new race-equivalence pace derivation in 4F.7C" },
+    { "source": "PREFERRED_PACE", "activeFor": "context only; not verified threshold/easy pace" },
+    { "source": "ESTIMATED", "activeFor": "unavailable; TD-PACESOURCE-001 remains open" },
+    { "source": "EFFORT_ONLY", "activeFor": "EASY_STANDARD, LONG_RUN_STANDARD, FARTLEK, THRESHOLD_TEMPO when no exact supported pace exists" }
+  ],
+  "workoutPrescriptionRules": [
+    { "workout": "EASY_STANDARD", "mode": "DISTANCE", "accounting": "EXACT_SESSION_TOTAL", "pace": "EFFORT_ONLY", "components": ["SESSION_TOTAL"] },
+    { "workout": "LONG_RUN_STANDARD", "mode": "DISTANCE", "accounting": "EXACT_SESSION_TOTAL", "pace": "EFFORT_ONLY", "components": ["SESSION_TOTAL"] },
+    { "workout": "FARTLEK", "mode": "MIXED", "accounting": "ESTIMATED_SESSION_TOTAL", "pace": "EFFORT_ONLY", "components": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"] },
+    { "workout": "THRESHOLD_TEMPO", "mode": "MIXED", "accounting": "ESTIMATED_SESSION_TOTAL", "pace": "EFFORT_ONLY", "components": ["WARM_UP", "MAIN_SET", "COOL_DOWN"] },
+    { "workout": "GOAL_PACE_TEN_K", "mode": "PACE_BASED", "accounting": "PRESCRIBED_TOTAL", "pace": "EXACT_TARGET_GOAL_WHEN_FEASIBLE", "components": ["WARM_UP", "MAIN_SET", "COOL_DOWN"] }
+  ],
+  "distanceAccountingRules": [
+    "session accounted distance is the sum of countable segment distances",
+    "weekly accounted distance must equal corrected 4F.7B planned weekly volume",
+    "long-run session distance must equal corrected 4F.7B long-run distance"
+  ],
+  "durationRules": [
+    "exact goal-pace sessions carry estimated duration from distance times pace",
+    "effort-only sessions leave duration unresolved rather than fabricating a pace"
+  ],
+  "taperSharpenBoundary": {
+    "status": "BASELINE_PRESCRIBED_SHARPENING_PENDING",
+    "phaseKey": "TAPER",
+    "progressionStageKey": "TAPER_SHARPEN",
+    "structuralRole": "KEY_SESSION",
+    "workoutDefinitionKey": "EASY_STANDARD",
+    "overlayImplemented": false
+  },
+  "typedFailures": [
+    "CatalogSessionPrescriptionInfeasibleException",
+    "CatalogSessionPrescriptionInvalidException",
+    "CatalogGoalPacePrescriptionUnsupportedException"
+  ],
+  "technicalDebtAssessment": [
+    { "id": "TD-PACESOURCE-001", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-PACESOURCE-002", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-CORE-READINESS-001", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-REGISTRY-001", "status": "LEAVES_UNCHANGED" }
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "No ESTIMATED pace producer exists.",
+    "No approved threshold/easy/long-run numeric pace derivation exists.",
+    "Phase 4F.7D sharpening overlay remains deferred."
+  ],
+  "validationResults": [],
+  "repositoryState": {
+    "publicPayloadChanged": false,
+    "snapshotHashChanged": false,
+    "confirmChanged": false,
+    "persistenceChanged": false,
+    "migrationChanged": false,
+    "routingChanged": false,
+    "catalogArtifactValuesChanged": false,
+    "publicationStatusChanged": false
+  }
+}

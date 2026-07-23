@@ -1,0 +1,93 @@
+{
+  "auditKey": "PHASE4F7B1_CANONICAL_VOLUME_RULE_CORRECTION",
+  "auditVersion": 1,
+  "authoritativeSources": [
+    "plan-catalog/docs/canonical/appsel-v1-canonical-decisions.md",
+    "plan-catalog/docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json",
+    "plan-catalog/docs/canonical/golden-fixture-v3/progression_rules_v2.yaml",
+    "plan-catalog/src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs",
+    "plan-catalog/catalog/policies/peak-volume-bands.v3.json"
+  ],
+  "doc13Rules": [
+    { "requestedSection": "section 2", "foundInRepositoryDoc13": false, "fallbackCanonicalEvidence": "golden fixture longRunCompatibilityBand=ACCEPTABLE, longRunCompatibilityRatio=0.375" },
+    { "requestedSection": "section 3", "foundInRepositoryDoc13": false, "fallbackCanonicalEvidence": "golden fixture weeklyVolumeAnchorKm=24, typicalBandKm=[30,42], resolvedPeakKm=38; progression_rules_v2.yaml caps" },
+    { "requestedSection": "section 5.2", "foundInRepositoryDoc13": false, "fallbackCanonicalEvidence": "golden fixture week 11 38km to week 12 20km; accepted 41%-60% taper reduction in phase prompt" },
+    { "requestedSection": "section 8.1", "foundInRepositoryDoc13": false, "fallbackCanonicalEvidence": "phase prompt supplied four-day preferred share 30%-36% and hard cap 40%; no superseding repo value found" }
+  ],
+  "previousIncorrectRules": [
+    "Peak-band minimum used as Week 1 floor.",
+    "Peak-band maximum selected unconditionally.",
+    "Taper multiplier 0.65 used.",
+    "Long-run range 0.20-0.35 used as four-day compatibility rule.",
+    "Invalid readiness silently fell back to catalog band minimum."
+  ],
+  "correctedRules": [
+    "Peak band is typical peak band only.",
+    "Starting volume remains readiness anchored when valid positive.",
+    "Invalid readiness fails closed.",
+    "Reachable peak depends on starting volume and cycle length.",
+    "Taper multiplier is 0.53.",
+    "Four-day long-run preferred share 30%-36%, hard cap 40%.",
+    "Compatibility classes remain readiness classifications, not target shares."
+  ],
+  "governanceEntries": [
+    { "entryId": "AUD-509", "source": "golden fixture / peak-volume policy", "correction": "Peak band is not a first-week floor.", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "CANONICAL_CONFIRMED" },
+    { "entryId": "AUD-510", "source": "golden fixture / progression rules", "correction": "Reachable-peak selection follows starting volume and cycle length.", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "CANONICAL_CONFIRMED" },
+    { "entryId": "AUD-511", "source": "golden fixture weeklyVolumeAnchorKm", "correction": "First-week volume remains readiness anchored.", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "CANONICAL_CONFIRMED" },
+    { "entryId": "AUD-512", "source": "Phase 4E fail-closed governance precedent", "correction": "Invalid readiness uses explicit typed failure.", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "CANONICAL_CONFIRMED" },
+    { "entryId": "AUD-513", "source": "golden fixture taper reduction / accepted range", "correction": "Taper multiplier corrected to 0.53.", "evidenceBasis": "EVIDENCE_INFORMED", "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "entryId": "AUD-514", "source": "Doc13 prompt-specified four-day share", "correction": "Long-run preferred share 30%-36%, hard cap 40%.", "evidenceBasis": "PRODUCT_PRACTICE_INFORMED", "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "entryId": "AUD-515", "source": "golden fixture compatibility band", "correction": "Compatibility classes are not long-run target shares.", "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION", "decisionStatus": "CANONICAL_CONFIRMED" }
+  ],
+  "startingVolumeRule": {
+    "validPositive": "preserve recent weekly volume as start anchor",
+    "missing": "closed by Phase 4F.7B.2 V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1: 16km",
+    "explicitZero": "closed by Phase 4F.7B.2 V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1: 12km",
+    "invalid": "typed invalid-readiness failure"
+  },
+  "reachablePeakRule": {
+    "formula": "startingVolume * cycle-adjusted canonical multiplier from golden fixture 24km -> 38km over 10 non-taper transitions",
+    "classification": ["WITHIN_TYPICAL_PEAK_BAND", "BELOW_TYPICAL_PEAK_BUT_VALID", "UPPER_BOUND_CONSTRAINED"],
+    "maximumKm": 42
+  },
+  "weeklyCurveRule": {
+    "interpolation": "technical deterministic interpolation to selected reachable peak",
+    "rounding": "nearest 0.5km"
+  },
+  "taperRule": {
+    "previousMultiplier": 0.65,
+    "finalMultiplier": 0.53,
+    "reductionPercent": 0.47,
+    "acceptedReductionRange": "41%-60%"
+  },
+  "longRunCompatibilityRule": {
+    "classes": ["BALANCED", "ACCEPTABLE", "HIGH_SHARE", "INCONSISTENT", "MISSING"],
+    "semantic": "readiness/confidence classification only"
+  },
+  "longRunShareRule": {
+    "preferredShare": [0.30, 0.36],
+    "selectionShare": 0.33,
+    "hardCap": 0.40
+  },
+  "typedFailures": [
+    "CatalogVolumeInvalidReadinessInputException",
+    "CatalogVolumeCanonicalRuleSourceMissingException",
+    "CatalogVolumeUnreachablePeakRuleException",
+    "CatalogVolumeInvalidTaperRuleException",
+    "CatalogLongRunHardCapViolationException",
+    "CatalogVolumeInvalidGovernanceConfigurationException"
+  ],
+  "tests": [],
+  "remainingGaps": [
+    "Repository Doc13 lacks requested volume sections 2/3/5.2/8.1.",
+    "Concrete missing/explicit-zero Intermediate starting-volume resolver was absent during 4F.7B.1 and closed by Phase 4F.7B.2 as explicit V1 product defaults."
+  ],
+  "readiness": "READY_FOR_4F7C_WITH_NON_BLOCKING_GAPS",
+  "repositoryState": {
+    "publicPayloadChanged": false,
+    "snapshotHashChanged": false,
+    "confirmChanged": false,
+    "persistenceChanged": false,
+    "catalogArtifactValuesChanged": false
+  }
+}

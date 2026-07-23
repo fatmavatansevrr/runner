@@ -35,11 +35,12 @@ public class UserJourneyTests
 
     private static readonly object ExactMatchPreviewRequest = new
     {
-        goal_type = "habit",
         goal_distance = "five_k",
-        level = "new_to_running",
+        level = "beginner",
         days_per_week = 3,
         unit = "km",
+        start_date = "2026-07-20",
+        preferred_days = new[] { "mon", "wed", "fri" },
     };
 
     private async Task ResetAsync()
@@ -67,7 +68,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
 
         Assert.False(string.IsNullOrWhiteSpace(preview["preview_id"]!.GetValue<string>()));
         // Fallback fields must be present even when not used.
@@ -84,7 +85,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         var previewId = preview["preview_id"]!.GetValue<string>();
 
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
@@ -106,12 +107,12 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview1 = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview1 = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         var confirm1 = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview1["preview_id"]!.GetValue<string>() });
         var firstPlanId = confirm1["plan_id"]!.GetValue<string>();
         Assert.False(confirm1["already_active"]!.GetValue<bool>());
 
-        var preview2 = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview2 = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         var confirm2 = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview2["preview_id"]!.GetValue<string>() });
 
         Assert.True(confirm2["already_active"]!.GetValue<bool>());
@@ -124,16 +125,18 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
 
         var home = await _client.GetJsonAsync("/api/v1/plans/active/home");
 
         Assert.NotNull(home["active_plan"]);
-        // Regression guard: RunningBackground.NewToRunning must serialize as
-        // "new_to_running", not "newtorunning" (a bare .ToString().ToLower()
-        // mangles multi-word enum names).
-        Assert.Equal("new_to_running", home["active_plan"]!["level"]!.GetValue<string>());
+        // Regression guard: the response echoes the canonical Running
+        // Background V2.1 wire value "beginner" in snake_case. Legacy
+        // aliases (new_to_running/used_to_run/running_regularly) are no
+        // longer accepted at the public request boundary at all — see
+        // RunningBackgroundV2_1Tests for that rejection behavior.
+        Assert.Equal("beginner", home["active_plan"]!["level"]!.GetValue<string>());
 
         Assert.NotNull(home["today_workout"]); // always set, even as a synthetic rest day
         var weekSummary = home["week_summary"]!.AsArray();
@@ -146,7 +149,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
 
         var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
@@ -172,7 +175,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
 
         var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
@@ -192,7 +195,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
 
         var before = await _client.GetJsonAsync("/api/v1/plans/active/details");
@@ -223,7 +226,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
 
         var before = await _client.GetJsonAsync("/api/v1/plans/active/details");
@@ -259,7 +262,7 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", ExactMatchPreviewRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", ExactMatchPreviewRequest);
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = preview["preview_id"]!.GetValue<string>() });
         var planId = confirm["plan_id"]!.GetValue<string>();
 
@@ -314,14 +317,19 @@ public class UserJourneyTests
 
         var unsupportedRequest = new
         {
-            goal_type = "race",
             goal_distance = "half_marathon",
-            level = "running_regularly",
+            level = "intermediate",
             days_per_week = 5,
             unit = "km",
+            start_date = "2026-07-20",
+            preferred_days = new[] { "mon", "tue", "wed", "fri", "sun" },
+            long_run_day = "sun",
+            race_date = "2026-10-12",
+            target_finish_time_seconds = 7200,
+            target_finish_time_source = "user_defined",
         };
 
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview", unsupportedRequest);
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", unsupportedRequest);
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
 
@@ -337,19 +345,22 @@ public class UserJourneyTests
 
         var raceRequest = new
         {
-            goal_type = "race",
             goal_distance = "five_k",
-            level = "new_to_running",
+            level = "beginner",
             days_per_week = 3,
             unit = "km",
+            start_date = "2026-07-20",
+            preferred_days = new[] { "mon", "wed", "fri" },
+            long_run_day = "fri",
             race_name = "Integration Test Race",
             race_date = "2026-10-10",
             target_finish_time_seconds = 1500,
-            custom_goal_type = "comfort",      // should be ignored
-            habit_plan_type = "five_k_comfort" // should be ignored
+            target_finish_time_source = "user_defined",
+            custom_goal_type = "comfort",      // should be ignored -- no such property on GenerateRacePlanPreviewRequest
+            habit_plan_type = "five_k_comfort" // should be ignored -- no such property on GenerateRacePlanPreviewRequest
         };
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", raceRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/race", raceRequest);
         var previewId = preview["preview_id"]!.GetValue<string>();
 
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
@@ -362,118 +373,47 @@ public class UserJourneyTests
         Assert.Equal("Integration Test Race", details["race_name"]!.GetValue<string>());
     }
 
-    // ─── Test 12: Confirm habit standard plan => CustomGoalType null ────────────
+    // ─── Test 12: habit_plan_type/custom_goal_type no longer exist on the ──────
+    // ─── public habit contract -- sending them is silently ignored, confirm ────
+    // ─── always nulls both out (superseded Tests 12-15, which exercised the ───
+    // ─── now-removed custom-habit-goal branch; see plan doc: custom generation ─
+    // ─── was already vestigial/unreachable for real Flutter users). ────────────
     [Fact]
-    public async Task ConfirmHabitStandardPlan_NullsOutCustomGoalType()
+    public async Task ConfirmHabitPlan_HabitPlanTypeAndCustomGoalTypeFields_AreIgnored_AndNulledOutOnConfirm()
     {
         await ResetAsync();
 
-        var habitRequest = new
+        var habitRequestWithStaleFields = new
         {
-            goal_type = "habit",
             goal_distance = "five_k",
-            level = "new_to_running",
+            level = "beginner",
             days_per_week = 3,
             unit = "km",
-            habit_plan_type = "five_k_comfort",
-            custom_goal_type = "comfort" // ignored because habit_plan_type is not "custom"
+            start_date = "2026-07-20",
+            preferred_days = new[] { "mon", "wed", "fri" },
+            habit_plan_type = "custom",      // no such property on GenerateHabitPlanPreviewRequest -- ignored
+            custom_goal_type = "comfort",    // no such property on GenerateHabitPlanPreviewRequest -- ignored
         };
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", habitRequest);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", habitRequestWithStaleFields);
         var previewId = preview["preview_id"]!.GetValue<string>();
 
         await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
 
         var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
         Assert.True(details["has_active_plan"]!.GetValue<bool>());
-        Assert.Equal("five_k_comfort", details["habit_plan_type"]!.GetValue<string>());
+        Assert.Null(details["habit_plan_type"]);
         Assert.Null(details["custom_goal_type"]);
-    }
-
-    // ─── Test 13: Confirm habit custom plan => CustomGoalType valid value ───────
-    [Fact]
-    public async Task ConfirmHabitCustomPlan_PersistsCustomGoalType()
-    {
-        await ResetAsync();
-
-        var habitCustomRequest = new
-        {
-            goal_type = "habit",
-            goal_distance = "five_k",
-            level = "new_to_running",
-            days_per_week = 3,
-            unit = "km",
-            habit_plan_type = "custom",
-            custom_goal_type = "comfort"
-        };
-
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", habitCustomRequest);
-        var previewId = preview["preview_id"]!.GetValue<string>();
-
-        await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
-
-        var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
-        Assert.True(details["has_active_plan"]!.GetValue<bool>());
-        Assert.Equal("custom", details["habit_plan_type"]!.GetValue<string>());
-        Assert.Equal("comfort", details["custom_goal_type"]!.GetValue<string>());
-    }
-
-    // ─── Test 14: Empty CustomGoalType => null ─────────────────────────────────
-    [Fact]
-    public async Task ConfirmHabitCustomPlan_EmptyCustomGoalType_MapsToNull()
-    {
-        await ResetAsync();
-
-        var habitCustomRequest = new
-        {
-            goal_type = "habit",
-            goal_distance = "five_k",
-            level = "new_to_running",
-            days_per_week = 3,
-            unit = "km",
-            habit_plan_type = "custom",
-            custom_goal_type = "   " // empty/whitespace
-        };
-
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", habitCustomRequest);
-        var previewId = preview["preview_id"]!.GetValue<string>();
-
-        await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
-
-        var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
-        Assert.True(details["has_active_plan"]!.GetValue<bool>());
-        Assert.Equal("custom", details["habit_plan_type"]!.GetValue<string>());
-        Assert.Null(details["custom_goal_type"]);
-    }
-
-    // ─── Test 15: Invalid CustomGoalType => 400 validation response ────────────
-    [Fact]
-    public async Task ConfirmHabitCustomPlan_InvalidCustomGoalType_Returns400()
-    {
-        await ResetAsync();
-
-        var habitCustomRequest = new
-        {
-            goal_type = "habit",
-            goal_distance = "five_k",
-            level = "new_to_running",
-            days_per_week = 3,
-            unit = "km",
-            habit_plan_type = "custom",
-            custom_goal_type = "invalid_value"
-        };
-
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", habitCustomRequest);
-        var previewId = preview["preview_id"]!.GetValue<string>();
-
-        var response = await _client.PostRawAsync("/api/v1/plans/confirm", new { preview_id = previewId });
-        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-
-        var error = await response.Content.ReadFromJsonAsync<JsonNode>();
-        Assert.Equal("VALIDATION_ERROR", error!["errorCode"]!.GetValue<string>());
     }
 
     // ─── Test 16: PreferredDays and LongRunDay day format normalization ────────
+    // NOTE: PreferredDays/LongRunDay are now strictly-typed Weekday values at
+    // the wire boundary (canonical lowercase 3-letter tokens only, e.g. "mon",
+    // "sat" -- see GeneratePreviewRequest/Weekday), so the request itself can
+    // no longer send loose formats like "mon,WEDNESDAY,sat" or "saturday".
+    // This test's remaining, still-valid intent is the OUTPUT side: proving
+    // the typed enum still normalizes to full-capitalized display/DB strings
+    // ("Saturday", "Monday,Wednesday,Saturday") downstream of confirm.
     [Fact]
     public async Task ConfirmPlan_NormalizesDayFormats_ToFullCapitalizedNames()
     {
@@ -481,16 +421,16 @@ public class UserJourneyTests
 
         var request = new
         {
-            goal_type = "habit",
             goal_distance = "five_k",
-            level = "new_to_running",
+            level = "beginner",
             days_per_week = 3,
             unit = "km",
-            preferred_days = "mon,WEDNESDAY,sat",
-            long_run_day = "saturday"
+            start_date = "2026-07-20",
+            preferred_days = new[] { "mon", "wed", "sat" },
+            long_run_day = "sat"
         };
 
-        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview", request);
+        var preview = await _client.PostJsonAsync("/api/v1/plans/generate-preview/habit", request);
         var previewId = preview["preview_id"]!.GetValue<string>();
 
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });

@@ -1,0 +1,95 @@
+{
+  "auditKey": "PHASE4F7B_WEEKLY_VOLUME_AND_LONG_RUN",
+  "auditVersion": 2,
+  "status": "CORRECTED_BY_PHASE4F7B1",
+  "pilotScope": {
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10,
+    "distanceFamily": "TEN_K",
+    "level": "INTERMEDIATE",
+    "daysPerWeek": 4
+  },
+  "catalogRulesUsed": [
+    { "artifact": "TEN_K_MASTER", "version": 6, "fields": ["coreCycle.minimumWeeks", "coreCycle.defaultWeeks", "coreCycle.maximumWeeks", "phases.phaseKey"] },
+    { "artifact": "PEAK_VOLUME_BANDS_V1", "version": 3, "fields": ["entries.minimumKm=30", "entries.maximumKm=42"], "semantics": "typical peak band only, not Week 1 floor" },
+    { "artifact": "golden-10k-intermediate-4d-12w.v3.plandocument.json", "fields": ["weeklyVolumeAnchorKm=24", "peakVolume.typicalBandKm=[30,42]", "peakVolume.resolvedPeakKm=38", "week11=38km", "week12=20km"] },
+    { "artifact": "progression_rules_v2.yaml", "fields": ["profilePercentageCaps.INTERMEDIATE.preferred=[0.04,0.07]", "profilePercentageCaps.INTERMEDIATE.hardCap=0.08", "absoluteWeeklyIncrementCapKm[4]=2.5"] },
+    { "artifact": "LONG_RUN_STANDARD", "version": 4, "fields": ["workout identity"] }
+  ],
+  "firstWeekVolumeRule": {
+    "validPositiveRecentVolume": "RUNTIME_USER_DERIVED anchor, not raised to typical peak band minimum",
+    "missingRecentVolume": "Phase 4F.7B.2 V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1 selects 16km",
+    "explicitZeroRecentVolume": "Phase 4F.7B.2 V1_MISSING_READINESS_STARTING_VOLUME_POLICY v1 selects 12km",
+    "invalidRecentVolume": "typed failure; no silent fallback",
+    "correctedPreviousBehavior": ["no peak-band-minimum fallback", "no invalid-readiness fallback"]
+  },
+  "peakVolumeRule": {
+    "typicalBandKm": { "minimum": 30, "maximum": 42 },
+    "semantic": "typical peak band",
+    "selectedPeak": "reachable peak from starting volume and cycle length, capped at 42",
+    "classifications": ["WITHIN_TYPICAL_PEAK_BAND", "BELOW_TYPICAL_PEAK_BUT_VALID", "UPPER_BOUND_CONSTRAINED"]
+  },
+  "weeklyVolumeCurveRule": {
+    "nonTaper": "linear interpolation from starting volume to selected reachable peak across actual non-taper weeks",
+    "authority": "TECHNICAL_DETERMINISTIC_RULE",
+    "evidenceBasis": "NOT_AN_EVIDENCE_QUESTION"
+  },
+  "recoveryAndDeloadRule": {
+    "catalogRecurringRulePresent": false,
+    "behavior": "no recurring recovery/deload week invented; taper remains separate"
+  },
+  "taperRule": {
+    "previousIncorrectMultiplier": 0.65,
+    "finalMultiplier": 0.53,
+    "finalReductionPercent": 0.47,
+    "acceptedReductionRange": "41%-60%",
+    "evidenceBasis": "EVIDENCE_INFORMED",
+    "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT"
+  },
+  "longRunAnchorRule": {
+    "validRecentLongestRun": "anchor reconciled with weekly-volume compatibility, may start below reported maximum",
+    "missing": "requires canonical source if paired with missing/zero weekly volume; otherwise weekly-volume-derived",
+    "explicitZero": "weekly-volume-derived when weekly volume is valid",
+    "inconsistent": "input preserved; state INCONSISTENT; LOW_CONFIDENCE_CONSERVATIVE_CLAMP; weekly-volume-derived"
+  },
+  "longRunProgressionRule": {
+    "preferredShareRange": [0.30, 0.36],
+    "selectionShare": 0.33,
+    "hardCapShare": 0.40,
+    "authority": "EXPLICIT_PRODUCT_DEFAULT",
+    "evidenceBasis": "PRODUCT_PRACTICE_INFORMED"
+  },
+  "roundingRule": {
+    "incrementKm": 0.5,
+    "timing": "after each weekly and long-run value calculation",
+    "validationAfterRounding": true
+  },
+  "cycleLengthResults": [
+    { "weeks": 8, "status": "SUPPORTED" },
+    { "weeks": 12, "status": "SUPPORTED" },
+    { "weeks": 14, "status": "SUPPORTED" },
+    { "weeks": 15, "status": "TYPED_UNSUPPORTED_CYCLE_LENGTH" }
+  ],
+  "decisionTraceSummary": [
+    "WeeklyVolumeDecisionTrace records reported volume, input state, anchor, unclamped value, typical band, clamp, selected peak, phase, prior week, change rule, taper/recovery rule, rounding, final value.",
+    "LongRunDecisionTrace records reported longest run, input state, anchor, low-confidence flag, weekly compatibility, preferred range, hard cap, clamp, prior long run, progression, taper, rounding, final value."
+  ],
+  "nonBlockingGaps": [
+    "Repository Doc13 still lacks the expected volume sections; Phase 4F.7B.2 records the missing/zero behavior as explicit V1 product defaults rather than canonical-confirmed Doc13 rules.",
+    "No catalog recurring recovery/deload rule exists; none is invented.",
+    "TAPER_SHARPEN component/dose remains later work.",
+    "Pace, duration, segments, repetitions, and recovery intervals remain outside 4F.7B."
+  ],
+  "blockers": [],
+  "validationResults": [],
+  "repositoryState": {
+    "publicPayloadChanged": false,
+    "snapshotHashChanged": false,
+    "confirmChanged": false,
+    "persistenceChanged": false,
+    "migrationsChanged": false,
+    "routingChanged": false,
+    "catalogArtifactsModified": false,
+    "publishedStatusChanged": false
+  }
+}

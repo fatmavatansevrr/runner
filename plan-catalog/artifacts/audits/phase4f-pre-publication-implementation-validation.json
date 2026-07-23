@@ -1,0 +1,335 @@
+{
+  "auditKey": "PHASE4F_PRE_PUBLICATION_IMPLEMENTATION_VALIDATION",
+  "auditVersion": 1,
+  "finalClassification": "PHASE4F_CORRECTIONS_REQUIRED_BEFORE_RELATIONAL_VALIDATION",
+  "relationalValidationReadiness": "CORRECTIONS_REQUIRED_BEFORE_PHASE4F9_2",
+  "supersededBy": {
+    "auditKey": "PHASE4F9_1A_PRE_RELATIONAL_CORRECTIONS",
+    "file": "plan-catalog/artifacts/audits/phase4f9-1a-pre-relational-corrections.json",
+    "updatedFinalClassification": "PHASE4F9_1A_COMPLETED_WITH_NON_BLOCKING_GAPS",
+    "updatedRelationalValidationReadiness": "READY_FOR_PHASE4F9_2_RELATIONAL_VALIDATION",
+    "note": "All blockers listed in this audit (confirmation ordering, active-plan concurrency translation, pilot identity duplication, unverified 8-week explicit-zero claim) were resolved with concrete code changes and tests in Phase 4F.9.1A. This record is retained unmodified for historical accuracy; see the superseding audit for current status.",
+    "furtherSupersededBy": {
+      "auditKey": "PHASE4F9_2_RELATIONAL_VALIDATION",
+      "file": "plan-catalog/artifacts/audits/phase4f9-2-relational-validation.json",
+      "updatedFinalClassification": "PHASE4F9_2_RELATIONAL_VALIDATION_CLOSED"
+    }
+  },
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c67965",
+    "headMessage": "checkpoint: add Phase 4F.4 dark skeleton preview wiring",
+    "commitsCoverThroughPhase": "4F.4",
+    "phase4F5ThroughPhase4F9Status": "UNCOMMITTED_WORKING_TREE_ONLY",
+    "stagedChanges": 0,
+    "unstagedChangesCount": 214,
+    "unstagedGeneratedDrift": "bin/ and obj/ build artifacts across all backend projects",
+    "unstagedRealSourceChanges": [
+      "backend/RunningApp.Api/Controllers/TestingController.cs",
+      "backend/RunningApp.Api/ErrorHandling/GlobalExceptionHandler.cs",
+      "backend/RunningApp.Api/Program.cs",
+      "backend/RunningApp.Application/Exceptions/AppExceptions.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPlanConfirmationService.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewGenerator.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewSnapshot.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewSnapshotVerifier.cs",
+      "backend/RunningApp.Application/Services/PlanServices.cs",
+      "backend/RunningApp.Domain/Entities/TrainingDay.cs"
+    ],
+    "untrackedNewSource": [
+      "backend/RunningApp.Application/RuntimeCatalog/Prescription/**",
+      "backend/RunningApp.Application/RuntimeCatalog/Schedule/Binding/**",
+      "backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/**",
+      "backend/RunningApp.Application/RuntimeCatalog/Schedule/Progression/**",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPersistedPlanValidator.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/LivePlanPreviewRouting.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/Schedule/CatalogPublicPreviewMaterializer.cs"
+    ],
+    "misfiledArtifact": "phase4f9-catalog-confirmation-and-persistence-audit.json is at repo root instead of plan-catalog/artifacts/audits/",
+    "dirtyWorktreeClassification": "INTENTIONAL_IN_PROGRESS_WORK",
+    "documentationRiskNote": "Uncommitted Phase 4F.5-4F.9 docs use closure vocabulary (CLOSED, CANONICAL_CONFIRMED) despite zero commit/PR/review trail"
+  },
+  "buildResults": {
+    "planCatalogBuild": { "command": "dotnet build plan-catalog/PlanCatalog.sln", "errors": 0, "warnings": 0 },
+    "planCatalogTest": { "command": "dotnet test plan-catalog/PlanCatalog.sln", "passed": 335, "failed": 0, "skipped": 0 },
+    "backendBuild": { "command": "dotnet build backend/RunningApp.sln", "errors": 0, "warnings": 0 },
+    "backendTest": {
+      "command": "dotnet test backend/RunningApp.sln",
+      "passed": 722,
+      "failed": 37,
+      "skipped": 0,
+      "total": 759,
+      "failureClassification": "ENVIRONMENT_BLOCKED",
+      "failureRootCause": "CustomWebApplicationFactory hardcodes PostgreSQL localhost:5432/antigravity_dev; unreachable in sandbox; reset endpoint fails before test body runs",
+      "genuineLogicFailures": 0
+    },
+    "efPendingModelChanges": {
+      "command": "dotnet ef migrations has-pending-model-changes",
+      "result": "No changes have been made to the model since the last migration."
+    }
+  },
+  "phaseValidation": [
+    { "phase": "4D", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4E", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.1", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.2", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.3", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.4", "classification": "IMPLEMENTED_BUT_INCOMPLETELY_VALIDATED", "note": "dark/discarded framing is now stale relative to 4F.5+" },
+    { "phase": "4F.5", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.5.1", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.6A", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.6B", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.7A", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.7B", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.7B.1", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.7B.2", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.7C", "classification": "VERIFIED_IMPLEMENTED", "note": "8-week explicit-zero infeasibility claim not reproduced by static arithmetic" },
+    { "phase": "4F.7D", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.8.1", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.8.2", "classification": "VERIFIED_IMPLEMENTED" },
+    { "phase": "4F.9", "classification": "PARTIALLY_IMPLEMENTED", "note": "confirmation validation order contradicts documented expiration/idempotency precedence" },
+    { "phase": "4F.9.1", "classification": "IMPLEMENTED_BUT_INCOMPLETELY_VALIDATED", "note": "active-plan invariant race window not proven closed" }
+  ],
+  "productionCallChain": {
+    "preview": [
+      { "step": "controller", "file": "backend/RunningApp.Api/Controllers/PlansController.cs", "method": "GeneratePreview" },
+      { "step": "routing", "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/LivePlanPreviewRouting.cs", "method": "V1LiveCatalogPilotRoutingPolicy.Evaluate" },
+      { "step": "catalog dispatch", "file": "backend/RunningApp.Application/Services/PlanServices.cs", "method": "GenerateCatalogPreviewAsync" },
+      { "step": "candidate resolution", "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/CatalogPreviewGenerator.cs", "method": "GenerateAsync" },
+      { "step": "runtime conditions", "file": "RuntimeConditionResolutionService.cs", "method": "ResolveAllResults" },
+      { "step": "skeleton", "file": "CatalogPreviewGenerator.cs", "method": "BuildDarkInternalDatedSkeleton" },
+      { "step": "stage scheduling", "file": "Schedule/Progression/ProgressionStageAllocator.cs", "method": "Allocate" },
+      { "step": "calendar assignment", "file": "Schedule/Materialization/CatalogWeekSkeletonCalendarMaterializer.cs", "method": "Materialize" },
+      { "step": "workout binding", "file": "Schedule/Binding/CatalogWorkoutBinder.cs", "method": "BindAsync" },
+      { "step": "prescription context", "file": "Prescription/CatalogPrescriptionContextBuilder.cs", "method": "Build" },
+      { "step": "volume/long-run", "file": "Prescription/Volume/CatalogVolumeAndLongRunPlanner.cs", "method": "Build" },
+      { "step": "session prescription", "file": "Prescription/Session/CatalogSessionPrescriptionPlanner.cs", "method": "Build" },
+      { "step": "taper sharpen + final validation", "file": "CatalogFinalPrescribedPlanFinalizer / CatalogFinalPrescribedPlanValidator", "method": "Complete" },
+      { "step": "public materialization", "file": "Schedule/CatalogPublicPreviewMaterializer.cs", "method": "Materialize" },
+      { "step": "snapshot/hash", "file": "CatalogPreviewSnapshot.cs", "method": "CatalogPreviewSnapshotBuilder.Build" },
+      { "step": "persist preview", "file": "PlanServices.cs", "method": "GenerateCatalogPreviewAsync" }
+    ],
+    "confirmation": [
+      { "step": "controller", "file": "PlansController.cs", "method": "ConfirmPlan" },
+      { "step": "dispatch", "file": "PlanServices.cs", "method": "IsCatalogSourcedPreview" },
+      { "step": "confirmation service", "file": "CatalogPlanConfirmationService.cs", "method": "ConfirmAsync", "orderFound": [
+        "preview lookup", "ownership", "expiration", "invalidation", "snapshot presence",
+        "deserialize", "schema completeness", "generation source", "hash verification",
+        "already-confirmed idempotency", "payload/schema/structural/8-week-zero guard",
+        "active-plan invariant", "transaction+persist"
+      ], "defect": "expiration checked before already-confirmed idempotency, contradicting documented precedence" }
+    ]
+  },
+  "phaseOwnership": [
+    { "finding": "duplicate pilot-identity routing check", "files": ["GenerationRouteDecision.cs:75-79 (dead)", "LivePlanPreviewRouting.cs:72-76 (live)"], "classification": "DUPLICATE_LOGIC_NON_BLOCKING" },
+    { "finding": "CatalogStageKey dual-written by new confirmation code", "file": "CatalogPlanConfirmationService.cs:587", "classification": "NON_BLOCKING_GAP_CONFIRM_INTENT" },
+    { "finding": "no other downstream recomputation of volume/dates/keys found", "classification": "VERIFIED_NO_DUPLICATION" }
+  ],
+  "pilotIdentity": {
+    "expectedCandidate": "TEN_K__4D__INTERMEDIATE v10",
+    "typedMappingExists": true,
+    "typedMappingSingleOwned": false,
+    "duplicateLocations": ["GenerationRouteDecision.cs:75-79", "LivePlanPreviewRouting.cs:72-76"],
+    "runningRegularlyToIntermediateApproved": false,
+    "selfDocumentedAsUnapproved": "GenerationRouteDecision.cs:53-64",
+    "classification": "IMPLEMENTATION_CONTRADICTS_DECISION"
+  },
+  "candidateIntegrity": {
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "version": 10,
+    "status": "DRAFT",
+    "dependenciesResolved": true,
+    "dependencyCount": 9,
+    "disclosedGap": "LONG_RUN_STANDARD:v4 reachable only via level-modifier eligibility, referenced by zero progression stages",
+    "publicationLedgerEntry": false,
+    "validationSuitePassed": "150/150",
+    "d13GoalPaceTests": "12/12",
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "runtimeConditionValidation": {
+    "resolverOrderDeterministic": true,
+    "notEvaluatedHandledExplicitly": true,
+    "resolversWiredIntoLiveServing": false,
+    "debtItemsIndependentlyReDerived": false,
+    "classification": "IMPLEMENTED_BUT_INCOMPLETELY_VALIDATED"
+  },
+  "scheduleValidation": {
+    "cyclesParameterized": true,
+    "cyclesSupported": [8, 12, 14],
+    "roleCountsEnforced": true,
+    "restRowsGenerated": false,
+    "datesFromStartDate": true,
+    "mondayHardcode": false,
+    "deterministicOrdering": true,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "bindingValidation": {
+    "easySupport": "EASY_STANDARD",
+    "longRun": "LONG_RUN_STANDARD",
+    "keySession": "STAGE_CONTROLLED",
+    "ambiguityHandling": "throws CatalogWorkoutBindingAmbiguousCandidateException, not first-match",
+    "vo2maxOrHillFound": false,
+    "easyShakeoutSubstitutionFound": false,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "volumeValidation": {
+    "readinessPolicy": "V1MissingReadinessStartingVolumePolicy",
+    "notProvidedDefaultKm": 16,
+    "explicitZeroDefaultKm": 12,
+    "invalidHandling": "typed failure",
+    "peakBandDataDriven": true,
+    "taperMultiplier": 0.53,
+    "obsoleteConstantsInLiveCode": false,
+    "obsoleteConstantSearchNotes": "only test-asserted absence of 0.65; unrelated live 0.20 uses in taper-sharpen/warmup sizing; no 0.35 anywhere",
+    "longRunPreferredShare": [0.30, 0.36],
+    "longRunDefaultShare": 0.33,
+    "longRunHardCap": 0.40,
+    "computedOnceIn": "CatalogVolumeAndLongRunPlanner (4F.7B)",
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "prescriptionValidation": {
+    "sessionAllocationPolicy": "V1_FOUR_DAY_SESSION_VOLUME_ALLOCATION_POLICY",
+    "keySessionTargetShareOfResidual": 0.50,
+    "keySessionMinKm": 3,
+    "easySupportMinKmEach": 1.5,
+    "infeasibilityGuard": "CatalogSessionPrescriptionInfeasibleException thrown before payload materialization when residual < 6km",
+    "eightWeekExplicitZeroClaimReproduced": false,
+    "eightWeekExplicitZeroNote": "static arithmetic suggests week 1 (12km start, ~4km long run, ~8km residual) clears the 6km floor; needs runtime confirmation",
+    "paceSourceFabricationFound": false,
+    "estimatedPaceHasProducer": false,
+    "classification": "VERIFIED_IMPLEMENTED_WITH_ONE_UNCONFIRMED_CLAIM"
+  },
+  "taperSharpenValidation": {
+    "phaseKey": "TAPER",
+    "progressionStageKey": "TAPER_SHARPEN",
+    "structuralRole": "KEY_SESSION",
+    "workoutDefinitionKey": "EASY_STANDARD",
+    "componentOrder": ["EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY"],
+    "pendingStateName": "BaselinePrescribedSharpeningPending",
+    "pendingStateCanSurviveFinalPlan": false,
+    "publicPayloadGuarded": true,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "publicMaterializationValidation": {
+    "projectionOnly": true,
+    "recomputationFound": false,
+    "recomputationLooksLikeButIsCrossCheck": true,
+    "stringContainsMapping": false,
+    "firstMatchMapping": false,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "routingValidation": {
+    "policy": "V1_LIVE_CATALOG_PILOT_ROUTING_POLICY v1",
+    "lifecycleMatrixVerified": true,
+    "currentCandidateStatus": "DRAFT",
+    "currentPilotEnabledDefault": false,
+    "overrideInConfig": false,
+    "liveExposurePossible": false,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "confirmationValidation": {
+    "noRerouting": true,
+    "noRegeneration": true,
+    "dependencyFreeStructuralValidatorOnly": true,
+    "validationOrderMatchesDoc": false,
+    "orderDefect": "expiration checked before already-confirmed idempotency",
+    "classification": "IMPLEMENTATION_CONTRADICTS_DECISION"
+  },
+  "persistenceMappingValidation": {
+    "trainingPlanFieldsMapped": true,
+    "trainingWeekFieldsMapped": true,
+    "trainingDayFieldsMapped": true,
+    "dataLossFound": false,
+    "note": "PlannedPaceMinKm only populated for exact-pace sessions; effort-only/range paces rely on JSON blob by design",
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "prescriptionJsonValidation": {
+    "schemaKey": "CATALOG_SESSION_PRESCRIPTION_SNAPSHOT",
+    "schemaVersion": 1,
+    "serialization": "snake_case System.Text.Json, deterministic",
+    "segmentsOrdered": true,
+    "sensitiveDataLeakage": false,
+    "roundTripTestExists": false,
+    "classification": "IMPLEMENTED_BUT_INCOMPLETELY_VALIDATED"
+  },
+  "migrationStaticValidation": {
+    "migrationFile": "20260716120000_Phase4F9_CatalogConfirmationPersistence.cs",
+    "upDownSymmetric": true,
+    "jsonbColumns": ["CatalogDependencyVersionsJson", "CatalogPrescriptionJson"],
+    "filteredUniqueIndex": "IX_TrainingPlans_SourcePreviewId",
+    "modelSnapshotConsistent": true,
+    "pendingModelChanges": false,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "idempotencyConcurrencyCodeReview": {
+    "confirmedPlanIdShortCircuit": true,
+    "uniqueViolationRecoveryImplemented": true,
+    "uniqueViolationRecoverySteps": ["rollback", "clear change tracker", "reload by SourcePreviewId", "return existing or throw CatalogPreviewConfirmationConcurrencyException"],
+    "activePlanRaceWindowProvenClosed": false,
+    "concurrencyTestsSelfDisclosedSequentialOnly": true,
+    "classification": "IMPLEMENTED_BUT_INCOMPLETELY_VALIDATED"
+  },
+  "legacyIsolation": {
+    "dispatchDataDriven": true,
+    "oneDirectional": true,
+    "legacyGuardAgainstCatalogCrossover": true,
+    "nullableColumnsNotRequiredByLegacy": true,
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "errorMapping": {
+    "distinctStatusPerExceptionType": true,
+    "internalDetailLeakageOn500": false,
+    "messageReturnedVerbatimOn4xx": true,
+    "messagesReviewedForSensitiveContent": true,
+    "duplicateExceptionNamingConfusion": "PlanPreviewAlreadyConfirmedException (dead) vs CatalogPreviewAlreadyConfirmedException (live, 409)",
+    "classification": "VERIFIED_IMPLEMENTED"
+  },
+  "governanceToCodeMatrix": [
+    { "audRange": "AUD-500 to AUD-561", "contiguous": true, "appendOnly": true },
+    { "claim": "taper multiplier 0.53", "codeMatch": true, "file": "CatalogVolumeAndLongRunPlanner.cs:18" },
+    { "claim": "TAPER_SHARPEN component order", "codeMatch": true, "file": "V1TaperSharpenPrescriptionPolicy.cs:150" },
+    { "claim": "CatalogLivePilot default false", "codeMatch": true, "file": "LivePlanPreviewRouting.cs:13" }
+  ],
+  "testQualityAssessment": [
+    { "file": "Phase4F5_1ProductionValidatorWiringTests.cs", "classification": "PRODUCTION_PATH_COVERAGE" },
+    { "file": "Phase4F8_2LivePilotRoutingTests.cs", "classification": "PRODUCTION_PATH_COVERAGE_MIXED" },
+    { "file": "Phase4F7BVolumeAndLongRunTests.cs", "classification": "UNIT_CONTRACT_COVERAGE" },
+    { "file": "Phase4F5DarkCalendarWiringTests.cs", "classification": "IN_MEMORY_APPROXIMATION" },
+    { "file": "CatalogPlanConfirmationServiceTests.cs", "classification": "SELF_DISCLOSED_SEQUENTIAL_ONLY_NOT_CONCURRENCY_PROOF" },
+    { "gap": "no DI ServiceCollection/BuildServiceProvider resolution test anywhere in backend test suite", "classification": "ENVIRONMENT_BLOCKED_ALTERNATIVE_MISSING" }
+  ],
+  "obsoleteCodeFindings": [
+    { "token": "BaselinePrescribedSharpeningPending", "classification": "ACTIVE_VALID_BEHAVIOR" },
+    { "token": "CatalogPreviewMaterializationNotImplementedException", "classification": "ACTIVE_VALID_BEHAVIOR" },
+    { "token": "EASY_SHAKEOUT", "classification": "NOT_FOUND" },
+    { "token": "VO2max", "classification": "NOT_FOUND" },
+    { "token": "hill workout", "classification": "NOT_FOUND" },
+    { "token": "CatalogStageKey", "classification": "DUAL_WRITTEN_BY_NEW_CODE_CONFIRM_INTENT" },
+    { "token": "0.65 (taper multiplier)", "classification": "SUPERSEDED_DISCLOSED_ONLY_IN_TEST_ASSERTING_ABSENCE" },
+    { "token": "PilotGenerationRouteDecider", "classification": "DEAD_OR_UNREACHABLE_CODE" }
+  ],
+  "correctionsApplied": [],
+  "environmentBlockedValidation": [
+    "37 RunningApp.IntegrationTests failures requiring live PostgreSQL",
+    "real relational uniqueness-constraint concurrency/rollback behavior",
+    "reset endpoint end-to-end verification",
+    "real migration application and post-migration schema diff"
+  ],
+  "blockers": [
+    "confirmation validation ordering: expiration checked before idempotency, contradicting documented precedence",
+    "active-plan TOCTOU race not proven closed; concurrency tests self-admittedly sequential-only",
+    "pilot identity mapping (RunningRegularly to INTERMEDIATE) remains unapproved and duplicated",
+    "8-week explicit-zero infeasibility claim not reproduced by static arithmetic"
+  ],
+  "nonBlockingGaps": [
+    "stale dark/discarded documentation in CatalogPreviewGenerator.cs and CatalogPreviewSnapshot.cs",
+    "missing DI resolution unit test",
+    "missing isolated prescription-JSON round-trip test",
+    "CatalogStageKey dual-write intent not explicitly confirmed",
+    "misfiled phase4f9 audit JSON at repo root",
+    "Phase 4F.5-4F.9 entirely uncommitted despite decisive governance language"
+  ],
+  "validationResults": [
+    "PHASE4F_CORRECTIONS_REQUIRED_BEFORE_RELATIONAL_VALIDATION"
+  ]
+}

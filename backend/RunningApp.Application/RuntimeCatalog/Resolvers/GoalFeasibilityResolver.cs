@@ -156,10 +156,29 @@ public sealed class GoalFeasibilityResolver : IGoalFeasibilityResolver
             "NONE" => RuntimeConditionResolutionResult.NotEvaluated(
                 ConditionType, "PACE_SOURCE_NONE_TARGET_TIME_REQUESTED", input, metadata: metadata),
 
-            // Section 6: target time is a user goal, not independent
+            // Section 6, amended by PHASE4D_4_1 (SW-02 governance decision):
+            // a USER-DEFINED target time is a user goal, not independent
             // current-fitness evidence -- never validate it against itself.
-            "TARGET_TIME" => RuntimeConditionResolutionResult.NotEvaluated(
-                ConditionType, "PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", input, metadata: metadata),
+            // A PRODUCT_AVERAGE target time is different in kind: it is the
+            // product's own planning reference (the canonical "go with
+            // average" value for the goal distance -- see
+            // CanonicalTargetFinishTimePolicy), never presented to the user
+            // as a demonstrated capability claim, so it does not need
+            // independent evidence to be an explicitly-classified, approved
+            // case. This is a governance decision, formalized in
+            // PHASE4D_4_1_PRODUCT_AVERAGE_TARGET_TIME_GOAL_FEASIBILITY_CLASSIFICATION.md
+            // -- not a code-level guess: CHALLENGING is chosen (never
+            // REALISTIC, which is reserved for the Riegel-ratio-evidenced
+            // recent-race path below) because no evidence proves the target
+            // is achievable, but the product's own recommended default must
+            // not be rejected as UNSUPPORTED either. UserDefined and the
+            // legacy/unset (null) case are completely unchanged.
+            "TARGET_TIME" => input.TargetFinishTimeSource == Domain.Enums.TargetFinishTimeSource.ProductAverage
+                ? RuntimeConditionResolutionResult.Evaluated(
+                    ConditionType, OutputChallenging, "PACE_SOURCE_TARGET_TIME_PRODUCT_AVERAGE_ACCEPTED", input,
+                    metadata: WithProductAverageProvenance(metadata))
+                : RuntimeConditionResolutionResult.NotEvaluated(
+                    ConditionType, "PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", input, metadata: metadata),
 
             // Section 8: ESTIMATED is registry-valid but PaceSourceResolver
             // never emits it (TD-PACESOURCE-001) and no approved estimate
@@ -247,4 +266,18 @@ public sealed class GoalFeasibilityResolver : IGoalFeasibilityResolver
 
     private static RuntimeConditionResolutionResult? FindPriorResult(RuntimeResolverContext context, string conditionType) =>
         context.PriorResults?.FirstOrDefault(r => r.ConditionType == conditionType);
+
+    /// <summary>
+    /// Stable rule code + source-provenance metadata for the PHASE4D_4_1
+    /// product-average classification, so the decision trace can show
+    /// exactly which governance-approved rule produced this Evaluated
+    /// result and why (never a bare "trust me" classification).
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> WithProductAverageProvenance(Dictionary<string, string> metadata)
+    {
+        metadata["targetFinishTimeSource"] = "PRODUCT_AVERAGE";
+        metadata["ruleCode"] = "GOAL_FEASIBILITY_PRODUCT_AVERAGE_V1";
+        metadata["governanceDoc"] = "PHASE4D_4_1_PRODUCT_AVERAGE_TARGET_TIME_GOAL_FEASIBILITY_CLASSIFICATION.md";
+        return metadata;
+    }
 }

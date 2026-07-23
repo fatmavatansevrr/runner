@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/routing/app_router.dart';
-import '../data/onboarding_provider.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../home/data/home_provider.dart';
 
 class PlanGenerationPage extends ConsumerStatefulWidget {
   const PlanGenerationPage({super.key});
@@ -77,17 +77,33 @@ class _PlanGenerationPageState extends ConsumerState<PlanGenerationPage>
     _tickStep(2, 900);
     _tickStep(3, 1400);
 
-    try {
-      await ref.read(onboardingProvider.notifier).generatePreview();
-
+    // TEST SHORTCUT: skip the real generate-preview/confirm/backend round
+    // trip entirely and jump straight to Home with mock data for the
+    // current week (see useMockHomeDataProvider / buildMockHomeResponse in
+    // features/home/data/home_provider.dart and mock_home_data.dart).
+    //
+    // To restore the real flow, replace this block with:
+    //   try {
+    //     await ref.read(onboardingProvider.notifier).generatePreview();
+    //     if (mounted) {
+    //       setState(() => _completedSteps = 4);
+    //       await Future.delayed(const Duration(milliseconds: 300));
+    //       if (mounted) context.pushReplacement(AppRoutes.planPreview);
+    //     }
+    //   } catch (e) {
+    //     // planGenerationUserSafeMessage never retries, never mutates
+    //     // onboarding state, and never resubmits with a shortened
+    //     // horizon — it only picks the display copy. Onboarding state
+    //     // (including startDate/raceDate) stays exactly as the user left
+    //     // it, so they can go back and change either.
+    //     if (mounted) setState(() => _error = planGenerationUserSafeMessage(e));
+    //   }
+    if (mounted) {
+      setState(() => _completedSteps = 4);
+      await Future.delayed(const Duration(milliseconds: 300));
       if (mounted) {
-        setState(() => _completedSteps = 4);
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (mounted) context.pushReplacement(AppRoutes.planPreview);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _error = e.toString());
+        ref.read(useMockHomeDataProvider.notifier).state = true;
+        context.go(AppRoutes.home);
       }
     }
   }

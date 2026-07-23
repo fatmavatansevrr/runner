@@ -32,6 +32,11 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
       ref.invalidate(calendarDataProvider);
       ref.invalidate(profileOverviewProvider);
       ref.invalidate(activePlanDetailsProvider);
+      // Clear every onboarding answer (preview_id included) now that it has
+      // been consumed by a successful confirm — cleanup must complete
+      // before navigating away. Never done on the failure path below, so a
+      // failed confirm always preserves the user's answers for retry.
+      ref.read(onboardingProvider.notifier).reset();
       if (mounted) {
         context.go(AppRoutes.home);
       }
@@ -61,11 +66,18 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
     return '$verb $distLabel';
   }
 
+  // Running Background V2 canonical values, plus legacy aliases for any
+  // preview response generated before the migration.
+  // Running Background V2.1: the backend never emits a legacy alias in any
+  // response (only these four canonical values), and the frontend model no
+  // longer accepts them either — so this display-only mapping only ever
+  // needs to cover the canonical contract.
   String _levelLabel(String level) => switch (level) {
-        'new_to_running'    => 'Beginner',
-        'used_to_run'       => 'Returning',
-        'running_regularly' => 'Intermediate',
-        _                   => level,
+        'beginner'      => 'Beginner',
+        'intermediate'  => 'Intermediate',
+        'advanced'      => 'Advanced',
+        'experienced'   => 'Experienced',
+        _               => level,
       };
 
   @override

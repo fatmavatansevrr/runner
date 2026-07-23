@@ -1,6 +1,4 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
+using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 
 namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
@@ -10,12 +8,11 @@ namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 /// <see cref="CatalogPreviewSnapshot"/> by recomputing its SHA-256 content
 /// hash using the same deterministic mechanism used by
 /// <see cref="CatalogPreviewSnapshotBuilder.Build"/> at preview-creation
-/// time and comparing it against <see cref="CatalogPreviewSnapshot.ContentHash"/>.
+/// time (both now delegate to the shared
+/// <see cref="CatalogPreviewCanonicalHashSerializer"/>, Phase 4F.9.2) and
+/// comparing it against <see cref="CatalogPreviewSnapshot.ContentHash"/>.
 ///
 /// Pure static class — no constructor, no dependencies, no I/O.
-/// Reuses the exact same hashing approach (anonymous-object serialization
-/// via <c>HashSerializerOptions</c> → SHA-256 → lowercase hex) established
-/// in Phase 4E.1. No second hashing or canonicalization format is introduced.
 ///
 /// If this method returns <c>false</c>, the snapshot has been corrupted or
 /// tampered with after creation. Confirm must throw
@@ -24,16 +21,6 @@ namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 /// </summary>
 public static class CatalogPreviewSnapshotVerifier
 {
-    /// <summary>
-    /// Same options as <c>CatalogPreviewSnapshotBuilder.HashSerializerOptions</c>:
-    /// no indentation, default (PascalCase) property naming — the only policy
-    /// that was in effect when the hash was originally computed.
-    /// </summary>
-    private static readonly JsonSerializerOptions HashSerializerOptions = new()
-    {
-        WriteIndented = false,
-    };
-
     /// <summary>
     /// Returns <c>true</c> if the SHA-256 of the snapshot's canonical
     /// hashable content matches <see cref="CatalogPreviewSnapshot.ContentHash"/>;
@@ -61,39 +48,34 @@ public static class CatalogPreviewSnapshotVerifier
     /// </param>
     public static bool Verify(CatalogPreviewSnapshot snapshot)
     {
-        // Mirror the exact anonymous object from CatalogPreviewSnapshotBuilder.Build.
-        // Any divergence here would make every stored hash unverifiable.
-        var hashableContent = new
+        // Phase 4F.9.2: no supported verification algorithm exists for any
+        // HashAlgorithmVersion other than the current one. No real (non-test)
+        // snapshot was ever produced with a different version — this feature
+        // has never been committed, published, or activated — so failing
+        // closed here is safe and avoids permanently maintaining a second,
+        // known-broken (order-dependent) hashing implementation. Callers
+        // must not catch this and fall back to any other verification path.
+        if (snapshot.HashAlgorithmVersion != CatalogPreviewCanonicalHashSerializer.CurrentHashAlgorithmVersion)
         {
-            normalizedInput = snapshot.NormalizedInput,
-            asOfDate = snapshot.AsOfDate,
-            CandidateKey = snapshot.CandidateKey,
-            CandidateVersion = snapshot.CandidateVersion,
-            CandidateStatusAtGenerationTime = snapshot.CandidateStatusAtGenerationTime,
-            referencedArtifacts = snapshot.ReferencedArtifacts,
-            GenerationSource = snapshot.GenerationSource,
-            routeReason = snapshot.RouteReason,
-            resolverResults = snapshot.ResolverResults.Select(r => new
-            {
-                r.ConditionType,
-                Status = r.Status.ToString(),
-                r.OutputValue,
-                r.ReasonCode,
-                r.Metadata
-            }),
-            createdAtUtc = snapshot.CreatedAtUtc,
-            expiresAtUtc = snapshot.ExpiresAtUtc,
-        };
+            throw new PlanPreviewHashAlgorithmVersionUnsupportedException(
+                $"Snapshot HashAlgorithmVersion={snapshot.HashAlgorithmVersion} is not supported; " +
+                $"only version {CatalogPreviewCanonicalHashSerializer.CurrentHashAlgorithmVersion} can be verified.");
+        }
 
-        var json = JsonSerializer.Serialize(hashableContent, HashSerializerOptions);
-        var recomputed = ComputeSha256Hex(json);
+        var recomputed = CatalogPreviewCanonicalHashSerializer.ComputeContentHash(
+            snapshot.NormalizedInput,
+            snapshot.AsOfDate,
+            snapshot.CandidateKey,
+            snapshot.CandidateVersion,
+            snapshot.CandidateStatusAtGenerationTime,
+            snapshot.ReferencedArtifacts,
+            snapshot.GenerationSource,
+            snapshot.RouteReason,
+            snapshot.ResolverResults,
+            snapshot.GeneratedPreviewPlanPayload,
+            snapshot.CreatedAtUtc,
+            snapshot.ExpiresAtUtc);
+
         return string.Equals(recomputed, snapshot.ContentHash, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string ComputeSha256Hex(string content)
-    {
-        var bytes = Encoding.UTF8.GetBytes(content);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 }

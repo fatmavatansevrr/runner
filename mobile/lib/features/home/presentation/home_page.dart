@@ -46,6 +46,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _showCompletionSheet(TrainingDayResponse workout) {
     final dayId = workout.dayId;
+    // Synthetic rest/no-session days have canMarkComplete == false, so the
+    // "complete" action that opens this sheet is never reachable for them.
+    if (dayId == null) return;
     String selectedOption = 'as_planned';
     final distanceController = TextEditingController();
     String? distanceError;
@@ -662,14 +665,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                           onTap: () => context.push(
                               '/training-day/${selectedWorkout.dayId}'),
                           onComplete: () => _showCompletionSheet(selectedWorkout),
-                          onNotToday: () => _showNotTodayReasonSheet(selectedWorkout.dayId),
+                          // Reached only for non-rest workouts, which always have a
+                          // persisted dayId (only synthetic rest days are null).
+                          onNotToday: () => _showNotTodayReasonSheet(selectedWorkout.dayId!),
                           onUndoComplete: () {
                             setState(() {
-                              _localDayStates[selectedWorkout.dayId] = DayStatus.planned;
+                              _localDayStates[selectedWorkout.dayId!] = DayStatus.planned;
                               _showCompletionBanner = false;
                             });
                           },
-                          onUndoNotToday: () => _showUndoNotTodayDialog(selectedWorkout.dayId),
+                          onUndoNotToday: () => _showUndoNotTodayDialog(selectedWorkout.dayId!),
                         );
                       }),
 

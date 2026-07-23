@@ -82,8 +82,139 @@ public sealed class CatalogPreviewSnapshot
     /// <summary>SHA-256 hex digest of this snapshot's own canonical JSON (excluding this field itself) — a content-integrity check, not a security signature.</summary>
     public required string ContentHash { get; init; }
 
+    /// <summary>
+    /// Phase 4F.9.2 — identifies which hash canonicalization algorithm
+    /// produced <see cref="ContentHash"/>. Added after a real-PostgreSQL
+    /// relational-validation pass discovered that <c>ReferencedArtifacts</c>,
+    /// <c>GeneratedPreviewPlanPayload.DependencyVersions</c>,
+    /// <c>GeneratedPreviewPlanPayload.Provenance.DependencyVersions</c>, and
+    /// each resolver result's <c>Metadata</c> are all <c>Dictionary</c>-typed
+    /// fields whose enumeration order is NOT preserved once
+    /// <c>PlanPreviews.PreviewPayloadJson</c> is stored as PostgreSQL
+    /// <c>jsonb</c> (jsonb canonicalizes/reorders object keys on write) — the
+    /// original (version 1, pre-Phase-4F.9.2) hash was computed by directly
+    /// serializing those dictionaries in whatever order .NET happened to
+    /// enumerate them, making the hash order-dependent and therefore
+    /// guaranteed to mismatch after any real jsonb round-trip. Version 2 (see
+    /// <see cref="CatalogPreviewCanonicalHashSerializer"/>) sorts every
+    /// dictionary-shaped field by key (<c>StringComparer.Ordinal</c>) before
+    /// hashing, making the hash independent of storage-layer key reordering.
+    /// No real (non-test) snapshot was ever produced with the version-1
+    /// algorithm — this feature has never been committed, published, or
+    /// activated — so only version 2 is a supported/verifiable value; any
+    /// other value fails closed rather than silently falling back to the
+    /// broken order-dependent algorithm.
+    /// </summary>
+    public required int HashAlgorithmVersion { get; init; }
+
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime ExpiresAtUtc { get; init; }
+}
+
+/// <summary>
+/// Phase 4F.9.2 — the single canonical hash-content builder shared by
+/// <see cref="CatalogPreviewSnapshotBuilder"/> (at generation time) and
+/// <see cref="CatalogPreviewSnapshotVerifier"/> (at confirm time), so the two
+/// can never silently diverge. Sorts every dictionary-shaped field reachable
+/// from the hashable content by key (never relying on Dictionary insertion
+/// order, PostgreSQL jsonb key order, or System.Text.Json's incidental
+/// preservation of input order) while leaving every semantically-ordered
+/// list (resolver results, weeks, sessions, segments) untouched.
+/// </summary>
+public static class CatalogPreviewCanonicalHashSerializer
+{
+    /// <summary>
+    /// Version 2: dictionary-shaped fields are canonicalized (sorted by key,
+    /// <see cref="StringComparer.Ordinal"/>) before hashing. See
+    /// <see cref="CatalogPreviewSnapshot.HashAlgorithmVersion"/> for why
+    /// version 1 (order-dependent) is not implemented as a fallback.
+    /// </summary>
+    public const int CurrentHashAlgorithmVersion = 2;
+
+    private static readonly JsonSerializerOptions HashSerializerOptions = new()
+    {
+        WriteIndented = false,
+    };
+
+    public static string ComputeContentHash(
+        ResolverInputSnapshot normalizedInput,
+        DateOnly asOfDate,
+        string candidateKey,
+        int candidateVersion,
+        string candidateStatusAtGenerationTime,
+        IReadOnlyDictionary<string, PlanCatalogReference> referencedArtifacts,
+        string generationSource,
+        string routeReason,
+        IReadOnlyList<RuntimeConditionResolutionResult> resolverResults,
+        GeneratedCatalogPlanPayload? generatedPreviewPlanPayload,
+        DateTime createdAtUtc,
+        DateTime expiresAtUtc)
+    {
+        var hashableContent = new
+        {
+            normalizedInput,
+            asOfDate,
+            CandidateKey = candidateKey,
+            CandidateVersion = candidateVersion,
+            CandidateStatusAtGenerationTime = candidateStatusAtGenerationTime,
+            referencedArtifacts = Canonicalize(referencedArtifacts),
+            GenerationSource = generationSource,
+            routeReason,
+            resolverResults = resolverResults.Select(r => new
+            {
+                r.ConditionType,
+                Status = r.Status.ToString(),
+                r.OutputValue,
+                r.ReasonCode,
+                Metadata = Canonicalize(r.Metadata)
+            }),
+            generatedPreviewPlanPayload = CanonicalizePayload(generatedPreviewPlanPayload),
+            createdAtUtc,
+            expiresAtUtc,
+        };
+
+        var json = JsonSerializer.Serialize(hashableContent, HashSerializerOptions);
+        return ComputeSha256Hex(json);
+    }
+
+    private static SortedDictionary<string, TValue> Canonicalize<TValue>(IReadOnlyDictionary<string, TValue> source) =>
+        new(source.ToDictionary(kv => kv.Key, kv => kv.Value), StringComparer.Ordinal);
+
+    private static object? CanonicalizePayload(GeneratedCatalogPlanPayload? payload)
+    {
+        if (payload is null) return null;
+
+        return new
+        {
+            payload.SchemaVersion,
+            payload.StartDate,
+            payload.EndDate,
+            payload.PlannedWeekCount,
+            payload.DaysPerWeek,
+            payload.CanonicalDistanceFamily,
+            payload.GoalType,
+            payload.CandidateKey,
+            payload.CandidateVersion,
+            DependencyVersions = Canonicalize(payload.DependencyVersions),
+            payload.Weeks, // order is semantically meaningful (week sequence) — never sorted
+            Provenance = new
+            {
+                payload.Provenance.CandidateKey,
+                payload.Provenance.CandidateVersion,
+                DependencyVersions = Canonicalize(payload.Provenance.DependencyVersions),
+                payload.Provenance.GenerationSource,
+                payload.Provenance.AsOfDate,
+                payload.Provenance.MaterializerVersion,
+            },
+        };
+    }
+
+    private static string ComputeSha256Hex(string content)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
 }
 
 /// <summary>
@@ -92,29 +223,23 @@ public sealed class CatalogPreviewSnapshot
 /// </summary>
 public static class CatalogPreviewSnapshotBuilder
 {
-    private static readonly JsonSerializerOptions HashSerializerOptions = new()
-    {
-        WriteIndented = false,
-    };
-
     /// <summary>
     /// Builds the snapshot and stamps <see cref="CatalogPreviewSnapshot.ContentHash"/>
     /// with the SHA-256 of the canonical JSON serialization of every OTHER
-    /// field (the hash cannot include itself).
+    /// field (the hash cannot include itself), via the shared
+    /// <see cref="CatalogPreviewCanonicalHashSerializer"/> (Phase 4F.9.2 —
+    /// order-independent for every dictionary-shaped field; see
+    /// <see cref="CatalogPreviewSnapshot.HashAlgorithmVersion"/>).
     ///
-    /// Backend Integration Phase 4F.1 compatibility note: <paramref name="generatedPreviewPlanPayload"/>
-    /// (now strongly typed — see <see cref="Schedule.GeneratedCatalogPlanPayload"/>)
-    /// is deliberately NOT included in <c>hashableContent</c> below, exactly as
-    /// in Phase 4E.1/4E.2. This is an explicit compatibility decision, not an
-    /// oversight: every real production snapshot still has this parameter
-    /// null, so excluding it keeps the hash format byte-for-byte unchanged —
-    /// zero risk to any already-stored snapshot's <c>ContentHash</c>, and zero
-    /// need for a schema-version bump on the OUTER snapshot. Whether a future
-    /// materialization phase's real (non-null) schedule content should become
-    /// part of the integrity hash is a real product decision (tamper-evidence
-    /// for the schedule itself vs. keeping the hash scoped to
-    /// resolution-inputs-only) deliberately left open for that phase, not
-    /// silently decided here.
+    /// Backend Integration Phase 4F.5+ update: <paramref name="generatedPreviewPlanPayload"/>
+    /// (strongly typed — see <see cref="Schedule.GeneratedCatalogPlanPayload"/>)
+    /// IS included in the hashed content and therefore IS part of the
+    /// computed <see cref="CatalogPreviewSnapshot.ContentHash"/>. This
+    /// supersedes the earlier Phase 4E.1/4E.2/4F.1 decision to exclude it
+    /// while it was always null — now that real production snapshots
+    /// populate a non-null schedule payload, including it in the hash gives
+    /// tamper-evidence over the schedule content itself, not just the
+    /// resolution inputs.
     /// </summary>
     public static CatalogPreviewSnapshot Build(
         ResolverInputSnapshot normalizedInput,
@@ -139,22 +264,19 @@ public static class CatalogPreviewSnapshotBuilder
             ["runtimeConditionValueRegistry"] = candidate.RuntimeConditionValueRegistry,
         };
 
-        var hashableContent = new
-        {
+        var contentHash = CatalogPreviewCanonicalHashSerializer.ComputeContentHash(
             normalizedInput,
             asOfDate,
             candidate.CandidateKey,
             candidate.CandidateVersion,
-            CandidateStatusAtGenerationTime = candidate.CandidateStatus,
+            candidate.CandidateStatus,
             referencedArtifacts,
-            GenerationSource = PreviewRouting.GenerationSource.Catalog,
+            PreviewRouting.GenerationSource.Catalog,
             routeReason,
-            resolverResults = resolverResults.Select(r => new { r.ConditionType, Status = r.Status.ToString(), r.OutputValue, r.ReasonCode, r.Metadata }),
+            resolverResults,
+            generatedPreviewPlanPayload,
             createdAtUtc,
-            expiresAtUtc,
-        };
-
-        var contentHash = ComputeSha256Hex(JsonSerializer.Serialize(hashableContent, HashSerializerOptions));
+            expiresAtUtc);
 
         return new CatalogPreviewSnapshot
         {
@@ -172,15 +294,9 @@ public static class CatalogPreviewSnapshotBuilder
             FallbackStagesUsed = Array.Empty<string>(),
             GeneratedPreviewPlanPayload = generatedPreviewPlanPayload,
             ContentHash = contentHash,
+            HashAlgorithmVersion = CatalogPreviewCanonicalHashSerializer.CurrentHashAlgorithmVersion,
             CreatedAtUtc = createdAtUtc,
             ExpiresAtUtc = expiresAtUtc,
         };
-    }
-
-    private static string ComputeSha256Hex(string content)
-    {
-        var bytes = Encoding.UTF8.GetBytes(content);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 }

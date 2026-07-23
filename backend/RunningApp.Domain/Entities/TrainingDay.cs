@@ -55,8 +55,28 @@ public class TrainingDay
     public string? CatalogWorkoutKey { get; set; }
     public int? CatalogWorkoutVersion { get; set; }
 
-    /// <summary>Exact workout-progression stage key (e.g. "GOAL_PACE_REHEARSAL"), preserved verbatim.</summary>
+    /// <summary>
+    /// LEGACY_READ_ONLY_NO_NEW_WRITES: exact workout-progression stage key
+    /// (e.g. "GOAL_PACE_REHEARSAL") written only by the legacy SQL-generation
+    /// confirmation path. New catalog-sourced rows (via
+    /// <c>CatalogPlanConfirmationService.BuildCatalogTrainingDay</c>) do NOT
+    /// write this field — they rely solely on <see cref="CatalogPhaseKey"/>
+    /// and <see cref="CatalogProgressionStageKey"/>, which are the fields
+    /// actually read by catalog-path consumers (e.g.
+    /// <c>CatalogPersistedPlanValidator</c>). No active reader anywhere in
+    /// the codebase depends on this field being populated for catalog-sourced
+    /// rows; it is retained read-only for legacy SQL-path rows only and is a
+    /// candidate for future removal once the legacy SQL path is retired.
+    /// </summary>
     public string? CatalogStageKey { get; set; }
+    public string? CatalogPhaseKey { get; set; }
+    public string? CatalogProgressionStageKey { get; set; }
+    public string? CatalogWorkoutDefinitionKey { get; set; }
+    public int? CatalogWorkoutDefinitionVersion { get; set; }
+    public string? CatalogStructuralRole { get; set; }
+    public string? CatalogPrescriptionJson { get; set; }
+    public int? CatalogPrescriptionSchemaVersion { get; set; }
+    public string? GenerationSource { get; set; }
 
     /// <summary>Layout slot role (e.g. "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN") — distinct from DayType.</summary>
     public string? CatalogSlotRole { get; set; }

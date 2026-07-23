@@ -31,7 +31,7 @@ public sealed class CatalogAwarePersistenceTests
         Status = TrainingPlanStatus.Active,
         GoalType = GoalType.Race,
         GoalDistance = GoalDistance.TenK,
-        Level = RunningBackground.RunningRegularly,
+        Level = RunningBackground.Intermediate,
         DaysPerWeek = 4,
         StartedAt = DateTime.UtcNow,
         EstimatedEndDate = DateTime.UtcNow.AddDays(84),

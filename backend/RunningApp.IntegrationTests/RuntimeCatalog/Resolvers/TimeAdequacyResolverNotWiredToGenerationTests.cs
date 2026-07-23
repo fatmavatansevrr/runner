@@ -38,7 +38,7 @@ public sealed class TimeAdequacyResolverNotWiredToGenerationTests
             Version = 1,
             GoalType = GoalType.Habit,
             GoalDistance = GoalDistance.FiveK,
-            Level = RunningBackground.NewToRunning,
+            Level = RunningBackground.Beginner,
             DaysPerWeek = 3,
             Unit = DistanceUnit.Km,
             DataJson = "{\"templateId\":\"habit_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"habit\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z2\"}]}]}",
@@ -52,10 +52,17 @@ public sealed class TimeAdequacyResolverNotWiredToGenerationTests
         RunningApp.IntegrationTests.RuntimeCatalog.PreviewRouting.TestPlanServicesFactory.Create(context);
 
     [Fact]
-    public async Task ExistingSupportedSeededTemplate_PreviewWithRaceDate_StillSucceeds_ResolverNeverInvoked()
+    public async Task ExistingSupportedSeededTemplate_PreviewWithReadinessEvidence_StillSucceeds_ResolverNeverInvoked()
     {
-        // RaceDate is exactly the input TimeAdequacyResolver would need -- proves
-        // its mere presence in the request does not trigger any resolver call.
+        // Generate-preview contract alignment: a Habit request can no longer
+        // carry a RaceDate at all (GeneratePreviewRequestValidator rejects
+        // it with a 400 -- see GeneratePreviewRequestValidatorTests), so this
+        // regression guard's original "RaceDate mere presence" angle is now
+        // structurally impossible to construct. Readiness/RecentRace fields
+        // remain legal on a Habit request and are exactly the kind of input
+        // TimeAdequacyResolver-adjacent resolvers could plausibly read --
+        // this proves their mere presence still doesn't trigger any resolver
+        // call on the legacy (non-catalog) generation path.
         await using var context = NewSeededContext();
         var service = NewServices(context);
 
@@ -63,10 +70,20 @@ public sealed class TimeAdequacyResolverNotWiredToGenerationTests
         {
             GoalType = GoalType.Habit,
             GoalDistance = GoalDistance.FiveK,
-            Level = RunningBackground.NewToRunning,
+            Level = RunningBackground.Beginner,
             DaysPerWeek = 3,
             Unit = DistanceUnit.Km,
-            RaceDate = new DateOnly(2026, 12, 1),
+            StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+            PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri },
+            RecentWeeklyVolumeKm = 24.0,
+            RecentLongestRunKm = 9.0,
+            RecentRunsPerWeek = 4,
+            RecentRace = new RunningApp.Application.DTOs.Plan.RecentRaceInput
+            {
+                Distance = GoalDistance.FiveK,
+                FinishTimeSeconds = 1450,
+                RaceDate = new DateOnly(2026, 6, 15),
+            },
         });
 
         Assert.Equal("habit_5k_beginner_3day_km_v1", response.TemplateId);
@@ -80,17 +97,21 @@ public sealed class TimeAdequacyResolverNotWiredToGenerationTests
         await using var context = NewSeededContext();
         var service = NewServices(context);
 
-        var ex = await Assert.ThrowsAsync<RunningApp.Application.Exceptions.CatalogCandidateNotPublishedException>(() => service.GeneratePreviewAsync(Guid.NewGuid(), new GeneratePreviewRequest
+        var ex = await Assert.ThrowsAsync<RunningApp.Application.Exceptions.PlanTemplateNotAvailableException>(() => service.GeneratePreviewAsync(Guid.NewGuid(), new GeneratePreviewRequest
         {
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             Unit = DistanceUnit.Km,
-            RaceDate = new DateOnly(2026, 12, 1),
+            RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
+            StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+            PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+            LongRunDay = Weekday.Sun,
+            TargetFinishTimeSeconds = 3600,
         }));
 
-        Assert.Contains("TEN_K__4D__INTERMEDIATE", ex.Message); // Backend Integration Phase 4E.1: this pilot combination now routes to the catalog flow, which fails with CatalogCandidateNotPublishedException because TEN_K__4D__INTERMEDIATE v10 has status DRAFT, not PLAN_TEMPLATE_NOT_FOUND (the legacy SQL flow's error) -- it never reaches PlaceholderPlanGenerationEngine at all.
+        Assert.Contains("goal_distance=TenK", ex.Message); // Phase 4F.8.2: current repository stays non-live (v10 DRAFT + activation disabled), so this reaches the exact legacy template boundary.
         Assert.Empty(context.PlanPreviews);
     }
 

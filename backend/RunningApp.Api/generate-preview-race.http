@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:5231
+
+### SW-02 — product-average target time (documentation/manual-testing only;
+### has no effect on model binding, defaults, or validation)
+POST {{baseUrl}}/api/v1/plans/generate-preview/race
+Content-Type: application/json
+
+{
+  "goal_distance": "ten_k",
+  "level": "intermediate",
+  "days_per_week": 4,
+  "unit": "km",
+  "start_date": "2026-07-20",
+  "preferred_days": ["mon", "wed", "fri", "sun"],
+  "long_run_day": "sun",
+  "race_name": null,
+  "race_date": "2026-10-12",
+  "target_finish_time_seconds": 3480,
+  "target_finish_time_source": "product_average",
+  "recent_weekly_volume_km": 20,
+  "recent_longest_run_km": 8,
+  "recent_runs_per_week": 3,
+  "recent_race": null
+}
+
+### User-defined target time, no independent evidence — expect the existing
+### typed 422 (RUNTIME_CONDITION_UNSUPPORTED) unless recent_race is added
+POST {{baseUrl}}/api/v1/plans/generate-preview/race
+Content-Type: application/json
+
+{
+  "goal_distance": "ten_k",
+  "level": "intermediate",
+  "days_per_week": 4,
+  "unit": "km",
+  "start_date": "2026-07-20",
+  "preferred_days": ["mon", "wed", "fri", "sun"],
+  "long_run_day": "sun",
+  "race_name": null,
+  "race_date": "2026-10-12",
+  "target_finish_time_seconds": 3600,
+  "target_finish_time_source": "user_defined",
+  "recent_weekly_volume_km": 20,
+  "recent_longest_run_km": 8,
+  "recent_runs_per_week": 3,
+  "recent_race": null
+}
+
+### 400 — product_average source/value mismatch (10K with a 5K average value)
+POST {{baseUrl}}/api/v1/plans/generate-preview/race
+Content-Type: application/json
+
+{
+  "goal_distance": "ten_k",
+  "level": "intermediate",
+  "days_per_week": 4,
+  "unit": "km",
+  "start_date": "2026-07-20",
+  "preferred_days": ["mon", "wed", "fri", "sun"],
+  "long_run_day": "sun",
+  "race_date": "2026-10-12",
+  "target_finish_time_seconds": 1680,
+  "target_finish_time_source": "product_average"
+}
+
+### 400 — missing required field (target_finish_time_source omitted)
+POST {{baseUrl}}/api/v1/plans/generate-preview/race
+Content-Type: application/json
+
+{
+  "goal_distance": "ten_k",
+  "level": "intermediate",
+  "days_per_week": 4,
+  "unit": "km",
+  "start_date": "2026-07-20",
+  "preferred_days": ["mon", "wed", "fri", "sun"],
+  "long_run_day": "sun",
+  "race_date": "2026-10-12",
+  "target_finish_time_seconds": 3480
+}

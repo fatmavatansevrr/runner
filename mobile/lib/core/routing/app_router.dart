@@ -10,6 +10,9 @@ import '../../features/onboarding/presentation/intro_carousel_page.dart';
 import '../../features/onboarding/presentation/goal_selection_page.dart';
 import '../../features/onboarding/presentation/race_details_page.dart';
 import '../../features/onboarding/presentation/running_background_page.dart';
+import '../../features/onboarding/presentation/runner_background_details_page.dart';
+import '../../features/onboarding/presentation/recent_race_result_page.dart';
+import '../models/recent_race_result.dart';
 import '../../features/onboarding/presentation/habit_goal_page.dart';
 import '../../features/onboarding/presentation/custom_goal_page.dart';
 import '../../features/onboarding/presentation/custom_goal_with_time_page.dart';
@@ -42,6 +45,8 @@ abstract final class AppRoutes {
   static const String goalSelection     = '/onboarding/goal';
   static const String raceDetails       = '/onboarding/race-details';
   static const String runningBackground = '/onboarding/background';
+  static const String runnerBackgroundDetails = '/onboarding/background-details';
+  static const String recentRaceResult  = '/onboarding/recent-race-result';
   static const String habitGoal         = '/onboarding/habit-goal';
   static const String customGoal        = '/onboarding/custom-goal';
   static const String customGoalWithTime = '/onboarding/custom-goal-time';
@@ -151,6 +156,16 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.runningBackground,
         builder: (_, __) => const RunningBackgroundPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.runnerBackgroundDetails,
+        builder: (_, __) => const RunnerBackgroundDetailsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.recentRaceResult,
+        builder: (_, state) => RecentRaceResultPage(
+          initialResult: state.extra as RecentRaceResult?,
+        ),
       ),
       GoRoute(
         path: AppRoutes.habitGoal,

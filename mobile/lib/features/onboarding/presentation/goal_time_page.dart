@@ -6,6 +6,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/models/average_finish_time_policy.dart';
 import '../data/onboarding_provider.dart';
 
 class GoalTimePage extends ConsumerStatefulWidget {
@@ -69,32 +70,21 @@ class _GoalTimePageState extends ConsumerState<GoalTimePage> {
 
   void _onContinue() {
     final totalSeconds = (_hours * 3600) + (_minutes * 60) + _seconds;
-    ref.read(onboardingProvider.notifier).updateTargetFinishTime(totalSeconds);
+    ref.read(onboardingProvider.notifier).setUserDefinedTarget(totalSeconds);
     context.go(AppRoutes.weeklyFrequency);
   }
 
   void _onGoWithAverage(double distanceKm) {
-    // Average finish times: Marathon = 4h 21m, Half Marathon = 2h 05m, 10K = 58m, 5K = 28m
-    int targetSec = 0;
-    if (distanceKm >= 42.0) {
-      _hours = 4; _minutes = 21; _seconds = 0;
-      targetSec = (4 * 3600) + (21 * 60);
-    } else if (distanceKm >= 21.0) {
-      _hours = 2; _minutes = 5; _seconds = 0;
-      targetSec = (2 * 3600) + (5 * 60);
-    } else if (distanceKm >= 10.0) {
-      _hours = 0; _minutes = 58; _seconds = 0;
-      targetSec = 58 * 60;
-    } else {
-      _hours = 0; _minutes = 28; _seconds = 0;
-      targetSec = 28 * 60;
-    }
+    final targetSec = AverageFinishTimePolicy.secondsForDistanceKm(distanceKm);
+    _hours = targetSec ~/ 3600;
+    _minutes = (targetSec % 3600) ~/ 60;
+    _seconds = targetSec % 60;
     setState(() {
       _hoursController.jumpToItem(_hours);
       _minutesController.jumpToItem(_minutes);
       _secondsController.jumpToItem(_seconds);
     });
-    ref.read(onboardingProvider.notifier).updateTargetFinishTime(targetSec);
+    ref.read(onboardingProvider.notifier).setProductAverageTarget(targetSec);
   }
 
   @override
@@ -104,13 +94,8 @@ class _GoalTimePageState extends ConsumerState<GoalTimePage> {
     final calculatedPace = _calculatePace(distanceKm);
 
     // Dynamic average label based on distance
-    final String avgLabel = distanceKm >= 42.0
-        ? 'Go with average pace (4h 21m)'
-        : distanceKm >= 21.0
-            ? 'Go with average pace (2h 05m)'
-            : distanceKm >= 10.0
-                ? 'Go with average pace (58m)'
-                : 'Go with average pace (28m)';
+    final String avgLabel =
+        'Go with average pace (${AverageFinishTimePolicy.labelForDistanceKm(distanceKm)})';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -126,7 +111,19 @@ class _GoalTimePageState extends ConsumerState<GoalTimePage> {
                     icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => context.go(AppRoutes.runningBackground),
+                    onPressed: () {
+                      // Running Background V2 (§11): Beginner's details screen
+                      // was skipped on the way in, so back must return there
+                      // directly; every other level opened it, so back must
+                      // return to it, not past it.
+                      final skipped = ref
+                          .read(onboardingProvider)
+                          .runningBackground
+                          .skipsRunnerBackgroundDetails;
+                      context.go(skipped
+                          ? AppRoutes.runningBackground
+                          : AppRoutes.runnerBackgroundDetails);
+                    },
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using RunningApp.Api.Logging;
 using RunningApp.Application.Exceptions;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 // UnauthorizedAppException, NotFoundAppException, ConflictAppException, PlanTemplateNotAvailableException are all in RunningApp.Application.Exceptions
 
 namespace RunningApp.Api.ErrorHandling;
@@ -57,6 +58,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             PlanPreviewSnapshotMalformedException       => (StatusCodes.Status422UnprocessableEntity,   "PLAN_PREVIEW_SNAPSHOT_MALFORMED"),
             PlanPreviewSnapshotUnsupportedException     => (StatusCodes.Status422UnprocessableEntity,   "PLAN_PREVIEW_SNAPSHOT_UNSUPPORTED"),
             PlanPreviewIntegrityFailedException         => (StatusCodes.Status422UnprocessableEntity,   "PLAN_PREVIEW_INTEGRITY_FAILED"),
+            PlanPreviewHashAlgorithmVersionUnsupportedException => (StatusCodes.Status422UnprocessableEntity, "PLAN_PREVIEW_HASH_ALGORITHM_VERSION_UNSUPPORTED"),
             PlanPreviewGenerationSourceInvalidException => (StatusCodes.Status422UnprocessableEntity,   "PLAN_PREVIEW_GENERATION_SOURCE_INVALID"),
             CatalogPreviewNotPersistableException       => (StatusCodes.Status422UnprocessableEntity,   "CATALOG_PREVIEW_NOT_PERSISTABLE"),
             CatalogConfirmationFailedException          => (StatusCodes.Status500InternalServerError,   "CATALOG_CONFIRMATION_FAILED"),
@@ -67,6 +69,26 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             CatalogPreviewScheduleSchemaUnsupportedException => (StatusCodes.Status422UnprocessableEntity, "CATALOG_PREVIEW_SCHEDULE_SCHEMA_UNSUPPORTED"),
             CatalogPreviewScheduleInvalidException            => (StatusCodes.Status422UnprocessableEntity, "CATALOG_PREVIEW_SCHEDULE_INVALID"),
             CatalogPreviewMaterializationNotImplementedException => (StatusCodes.Status422UnprocessableEntity, "CATALOG_PREVIEW_MATERIALIZATION_NOT_IMPLEMENTED"),
+            CatalogLivePilotNotPublishedException            => (StatusCodes.Status409Conflict, "CATALOG_LIVE_PILOT_NOT_PUBLISHED"),
+            CatalogLivePilotActivationDisabledException      => (StatusCodes.Status409Conflict, "CATALOG_LIVE_PILOT_ACTIVATION_DISABLED"),
+            CatalogLivePilotRequestUnsupportedException      => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_PILOT_REQUEST_UNSUPPORTED"),
+            CatalogLivePilotGenerationInfeasibleException    => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_PILOT_GENERATION_INFEASIBLE"),
+            CatalogLiveFallbackNotPermittedException         => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_FALLBACK_NOT_PERMITTED"),
+            CatalogLiveRouteDecisionInvalidException         => (StatusCodes.Status500InternalServerError, "CATALOG_LIVE_ROUTE_DECISION_INVALID"),
+            CatalogPreviewOwnershipMismatchException         => (StatusCodes.Status403Forbidden, "CATALOG_PREVIEW_OWNERSHIP_MISMATCH"),
+            CatalogPreviewAlreadyConfirmedException          => (StatusCodes.Status409Conflict, "CATALOG_PREVIEW_ALREADY_CONFIRMED"),
+            CatalogPreviewConfirmationConcurrencyException   => (StatusCodes.Status409Conflict, "CATALOG_PREVIEW_CONFIRMATION_CONCURRENCY"),
+            CatalogPreviewPersistenceContractException       => (StatusCodes.Status422UnprocessableEntity, "CATALOG_PREVIEW_PERSISTENCE_CONTRACT"),
+            CatalogPlanPersistenceFailedException            => (StatusCodes.Status500InternalServerError, "CATALOG_PLAN_PERSISTENCE_FAILED"),
+            CatalogPersistedPlanValidationException          => (StatusCodes.Status500InternalServerError, "CATALOG_PERSISTED_PLAN_VALIDATION_FAILED"),
+            CatalogActivePlanConflictException               => (StatusCodes.Status409Conflict, "CATALOG_ACTIVE_PLAN_CONFLICT"),
+            CatalogPrescriptionPersistenceUnsupportedException => (StatusCodes.Status422UnprocessableEntity, "CATALOG_PRESCRIPTION_PERSISTENCE_UNSUPPORTED"),
+            // Long-horizon race fail-closed safety constraint (temporary —
+            // see RaceHorizonPolicy). Never a 400: the request is
+            // structurally valid, just not yet composable.
+            PlanHorizonCompositionRequiredException      => (StatusCodes.Status422UnprocessableEntity, "PLAN_HORIZON_COMPOSITION_REQUIRED"),
+            PlanCoreHorizonUnsupportedException           => (StatusCodes.Status422UnprocessableEntity, "PLAN_CORE_HORIZON_UNSUPPORTED"),
+            CatalogRaceDateAlignmentInvalidException     => (StatusCodes.Status422UnprocessableEntity, "CATALOG_RACE_DATE_ALIGNMENT_INVALID"),
             ArgumentException                 => (StatusCodes.Status400BadRequest,    "VALIDATION_ERROR"),
             _                                 => (StatusCodes.Status500InternalServerError, "INTERNAL_ERROR"),
         };

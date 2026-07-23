@@ -98,6 +98,12 @@ public class TrainingPlan
 
     public string? CatalogRuntimeConditionRegistryKey { get; set; }
     public int? CatalogRuntimeConditionRegistryVersion { get; set; }
+    public string? GenerationSource { get; set; }
+    public Guid? SourcePreviewId { get; set; }
+    public string? CatalogPreviewContentHash { get; set; }
+    public string? CatalogMaterializerVersion { get; set; }
+    public string? CatalogDependencyVersionsJson { get; set; }
+    public DateTime? CatalogConfirmedAtUtc { get; set; }
 
     /// <summary>
     /// The internal canonical distance family the plan-catalog candidate was

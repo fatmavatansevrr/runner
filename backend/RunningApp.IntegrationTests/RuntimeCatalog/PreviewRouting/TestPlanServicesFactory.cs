@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RunningApp.Application.PlanGeneration;
@@ -44,7 +45,10 @@ public static class TestPlanServicesFactory
 
     private static string RealCatalogRoot() => Path.Combine(RepoRoot(), "plan-catalog", "catalog");
 
-    public static PlanServices Create(AppDbContext context, IPlanGenerationEngine? engine = null)
+    public static PlanServices Create(
+        AppDbContext context,
+        IPlanGenerationEngine? engine = null,
+        IGenerationRouteDecider? routeDecider = null)
     {
         var bundleLoader = new PlanCatalogBundleLoader(
             Options.Create(new PlanCatalogOptions { CatalogRootPath = RealCatalogRoot() }),
@@ -73,9 +77,23 @@ public static class TestPlanServicesFactory
             context,
             engine ?? new PlaceholderPlanGenerationEngine(context, NullLogger<PlaceholderPlanGenerationEngine>.Instance),
             NullLogger<PlanServices>.Instance,
-            new PilotGenerationRouteDecider(),
+            routeDecider ?? new LivePlanPreviewRoutingService(
+                Options.Create(new CatalogLivePilotOptions()),
+                Options.Create(new LocalCatalogAcceptanceOptions()),
+                new FakeHostEnvironment("Production"),
+                bundleLoader,
+                NullLogger<LivePlanPreviewRoutingService>.Instance),
             catalogPreviewGenerator,
             catalogConfirmationService);
     }
-}
 
+    /// <summary>Minimal fake for LivePlanPreviewRoutingService's IHostEnvironment dependency (Phase 4F.9.3 local-acceptance override).</summary>
+    private sealed class FakeHostEnvironment : IHostEnvironment
+    {
+        public FakeHostEnvironment(string environmentName) => EnvironmentName = environmentName;
+        public string EnvironmentName { get; set; }
+        public string ApplicationName { get; set; } = "RunningApp.Api";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = null!;
+    }
+}

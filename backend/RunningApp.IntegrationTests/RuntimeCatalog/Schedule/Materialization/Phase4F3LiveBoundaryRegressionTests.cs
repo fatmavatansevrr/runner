@@ -56,21 +56,25 @@ public sealed class Phase4F3LiveBoundaryRegressionTests
     }
 
     [Fact]
-    public async Task RealCatalogPreviewGeneration_StillProducesNullGeneratedPreviewPlanPayload()
+    public async Task RealCatalogPreviewGeneration_CurrentDefaultRoute_DoesNotExposeCatalogPayload()
     {
         await using var context = NewContext();
         var service = TestPlanServicesFactory.Create(context);
 
-        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() => service.GeneratePreviewAsync(
+        await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(() => service.GeneratePreviewAsync(
             Guid.NewGuid(),
             new GeneratePreviewRequest
             {
                 GoalType = GoalType.Race,
                 GoalDistance = GoalDistance.TenK,
-                Level = RunningBackground.RunningRegularly,
+                Level = RunningBackground.Intermediate,
                 DaysPerWeek = 4,
                 Unit = DistanceUnit.Km,
-                RaceDate = new DateOnly(2026, 12, 1),
+                RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+                PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+                LongRunDay = Weekday.Sun,
+                TargetFinishTimeSeconds = 3600,
             }));
 
         Assert.Empty(context.PlanPreviews);

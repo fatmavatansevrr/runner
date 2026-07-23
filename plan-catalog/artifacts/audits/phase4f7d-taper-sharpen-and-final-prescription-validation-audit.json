@@ -1,0 +1,123 @@
+{
+  "auditKey": "PHASE4F7D_TAPER_SHARPEN_AND_FINAL_VALIDATION",
+  "auditVersion": 1,
+  "pilotScope": {
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10,
+    "distanceFamily": "TEN_K",
+    "level": "INTERMEDIATE",
+    "daysPerWeek": 4,
+    "mode": "dark_internal"
+  },
+  "capabilityAssessment": {
+    "classification": "SUPPORTED_BY_ADDITIVE_RUNTIME_PRESCRIPTION_CONTRACT",
+    "basis": "EASY_STANDARD v4 has DISTANCE and EXACT_SESSION_TOTAL but no catalog components; internal CatalogPrescriptionSegment can represent stage-specific runtime components without catalog artifact changes.",
+    "catalogContentChanged": false,
+    "workoutRevisionRequired": false
+  },
+  "policy": {
+    "policyKey": "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY",
+    "policyVersion": 1,
+    "qualifyingIdentity": {
+      "phaseKey": "TAPER",
+      "progressionStageKey": "TAPER_SHARPEN",
+      "structuralRole": "KEY_SESSION",
+      "workoutDefinitionKey": "EASY_STANDARD"
+    },
+    "minimumSessionDistanceKm": 3.0
+  },
+  "componentSelection": {
+    "orderedComponentTypes": ["EASY_BASELINE", "CONTROLLED_SHARPENING", "EASY_RECOVERY"],
+    "placement": "after_easy_baseline_before_easy_recovery",
+    "doseRule": "20% rounded to 0.5km and clamped to 0.5-1.5km; recovery fixed at 0.5km; easy receives remainder"
+  },
+  "paceAndEffortRule": {
+    "easy": "EASY",
+    "sharpening": "CONTROLLED_FAST_RELAXED",
+    "recovery": "EASY_RECOVERY",
+    "paceKind": "EFFORT_ONLY",
+    "targetGoalPaceBorrowed": false,
+    "estimatedPaceProduced": false
+  },
+  "distanceAccountingRule": {
+    "mode": "EXACT_SESSION_TOTAL",
+    "allComponentsCountTowardSessionDistance": true,
+    "weeklyVolumeChanged": false,
+    "longRunChanged": false,
+    "taperKeySessionDistanceChanged": false
+  },
+  "lowVolumeFeasibility": [
+    { "path": "missing_weekly_volume", "startKm": 16.0, "status": "FEASIBLE" },
+    { "path": "explicit_zero_weekly_volume_12w_14w", "startKm": 12.0, "status": "FEASIBLE" },
+    { "path": "explicit_zero_weekly_volume_8w", "startKm": 12.0, "status": "PRE_EXISTING_4F7C_ALLOCATION_BLOCKER", "reason": "taper residual 5.5km is below current 6.0km four-day key/easy minimum requirement" },
+    { "path": "too_small_taper_key_session", "thresholdKm": 3.0, "status": "TYPED_FAILURE" }
+  ],
+  "crossCycleValidation": [
+    { "weeks": 8, "status": "FEASIBLE_FOR_VALID_POSITIVE_AND_MISSING_READINESS; EXPLICIT_ZERO_BLOCKED_BY_4F7C_ALLOCATION_MINIMUM" },
+    { "weeks": 12, "status": "FEASIBLE" },
+    { "weeks": 14, "status": "FEASIBLE" }
+  ],
+  "completePlanValidation": {
+    "validator": "CatalogFinalPrescribedPlanValidator",
+    "validates": [
+      "week_count",
+      "session_count",
+      "four_sessions_per_week",
+      "date_identity_preservation",
+      "workout_identity_preservation",
+      "weekly_volume_reconciliation",
+      "long_run_reconciliation",
+      "long_run_40_percent_cap",
+      "component_accounting",
+      "pace_source_validity",
+      "taper_sharpen_integrity",
+      "pending_state_absence",
+      "provenance"
+    ]
+  },
+  "aud508Assessment": {
+    "status": "CLOSED",
+    "evidence": "Final TAPER_SHARPEN preserves EASY_STANDARD identity, remains reduced, includes controlled sharpening component, avoids whole-run acceleration, and removes pending state."
+  },
+  "technicalDebtAssessment": [
+    { "id": "TD-PACESOURCE-001", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-PACESOURCE-002", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-CORE-READINESS-001", "status": "LEAVES_UNCHANGED" },
+    { "id": "TD-REGISTRY-001", "status": "LEAVES_UNCHANGED" }
+  ],
+  "governanceEntries": [
+    { "id": "AUD-523", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "final taper-sharpen policy" },
+    { "id": "AUD-524", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "component type and placement" },
+    { "id": "AUD-525", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "dose-selection rule" },
+    { "id": "AUD-526", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "effort and pace behavior" },
+    { "id": "AUD-527", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "distance accounting behavior" },
+    { "id": "AUD-528", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "low-volume feasibility behavior" },
+    { "id": "AUD-529", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "final plan validation requirement" },
+    { "id": "AUD-530", "classification": "EXPLICIT_PRODUCT_DEFAULT", "runtimeEffect": "pending state removed from final plan" }
+  ],
+  "typedFailures": [
+    "CatalogTaperSharpenSchemaUnsupportedException",
+    "CatalogTaperSharpenComponentAmbiguousException",
+    "CatalogTaperSharpenPrescriptionInfeasibleException",
+    "CatalogTaperSharpenDistanceAccountingException",
+    "CatalogFinalPrescribedPlanInvalidException",
+    "CatalogPendingPrescriptionStateException"
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "8-week explicit-zero weekly-volume path remains blocked before 4F.7D by existing 4F.7C allocation minimums.",
+    "No future pace-estimation model exists.",
+    "No race-equivalence model was introduced.",
+    "Public materialization, live routing, confirm/persistence, and publication remain deferred."
+  ],
+  "validationResults": [],
+  "repositoryState": {
+    "publicDtoChanged": false,
+    "generatedCatalogPlanPayloadChanged": false,
+    "snapshotHashChanged": false,
+    "confirmChanged": false,
+    "persistenceChanged": false,
+    "migrationsChanged": false,
+    "publicationChanged": false
+  }
+}

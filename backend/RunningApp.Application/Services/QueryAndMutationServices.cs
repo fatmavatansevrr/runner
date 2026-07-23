@@ -79,10 +79,11 @@ public class QueryAndMutationServices :
         }
         else
         {
-            // Transient rest day
+            // Read-time synthetic rest day: not persisted, so DayId is null
+            // rather than a fake/zero GUID.
             todayWorkout = new TrainingDayResponse
             {
-                DayId = Guid.Empty,
+                DayId = null,
                 Date = today,
                 DayType = TrainingDayType.Rest,
                 Status = TrainingDayStatus.Planned,
@@ -95,23 +96,53 @@ public class QueryAndMutationServices :
             };
         }
 
-        // Fetch current week summary (Monday to Sunday)
-        var startOfWeek = today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek - 7) % 7);
-        if (today.DayOfWeek == DayOfWeek.Sunday)
+        // Determine the plan's current training week from real TrainingWeek
+        // boundaries (StartDate), not a Monday-Sunday calendar week — plans
+        // can start on any weekday. Bounded query: one plan typically has a
+        // handful of weeks (e.g. 12), never an unrelated user's data.
+        var weeks = await _context.TrainingWeeks
+            .AsNoTracking()
+            .Where(w => w.PlanId == plan.Id)
+            .OrderBy(w => w.WeekNumber)
+            .ToListAsync(ct);
+
+        var totalWeeks = weeks.Count;
+
+        DateTime weekStart;
+        DateTime weekEnd;
+        int currentWeekNumber;
+        if (weeks.Count > 0)
         {
-            startOfWeek = today.AddDays(-6);
+            // Last week whose start is on/before today; if today precedes the
+            // plan's first week (not started yet), show week 1; if today is
+            // past the last week's end (plan finished), show the final week.
+            var currentWeek = weeks.LastOrDefault(w => w.StartDate.Date <= today) ?? weeks[0];
+            currentWeekNumber = currentWeek.WeekNumber;
+            weekStart = currentWeek.StartDate.Date;
+            weekEnd = weekStart.AddDays(6);
         }
-        var endOfWeek = startOfWeek.AddDays(6);
+        else
+        {
+            // Legacy/seeded plans without TrainingWeek rows: fall back to a
+            // calendar Monday-Sunday week anchored on today.
+            weekStart = today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek - 7) % 7);
+            if (today.DayOfWeek == DayOfWeek.Sunday)
+            {
+                weekStart = today.AddDays(-6);
+            }
+            weekEnd = weekStart.AddDays(6);
+            currentWeekNumber = 1;
+        }
 
         var weekDays = await _context.TrainingDays
             .AsNoTracking()
-            .Where(d => d.PlanId == plan.Id && d.Date >= startOfWeek && d.Date <= endOfWeek)
+            .Where(d => d.PlanId == plan.Id && d.Date >= weekStart && d.Date <= weekEnd)
             .ToListAsync(ct);
 
         var weekSummary = new List<TrainingDayResponse>();
         for (int i = 0; i < 7; i++)
         {
-            var date = startOfWeek.AddDays(i);
+            var date = weekStart.AddDays(i);
             var existing = weekDays.FirstOrDefault(d => d.Date == date);
             if (existing != null)
             {
@@ -121,7 +152,7 @@ public class QueryAndMutationServices :
             {
                 weekSummary.Add(new TrainingDayResponse
                 {
-                    DayId = Guid.Empty,
+                    DayId = null,
                     Date = date,
                     DayType = TrainingDayType.Rest,
                     Status = TrainingDayStatus.Planned,
@@ -138,20 +169,9 @@ public class QueryAndMutationServices :
         // Fetch tip of the day
         var dailyTip = await GetTipForTypeAsync(todayWorkout.DayType, plan.GoalType, plan.Level, ct);
 
-        var planProgressText = "";
-        var currentWeekNumber = 1;
-        var activeWeek = weekDays.FirstOrDefault();
-        if (activeWeek != null)
-        {
-            var weekEntity = await _context.TrainingWeeks.AsNoTracking().FirstOrDefaultAsync(w => w.Id == activeWeek.WeekId, ct);
-            if (weekEntity != null)
-            {
-                currentWeekNumber = weekEntity.WeekNumber;
-            }
-        }
-        
-        var totalWeeks = await _context.TrainingWeeks.CountAsync(w => w.PlanId == plan.Id, ct);
-        planProgressText = $"Week {currentWeekNumber} of {totalWeeks}";
+        var planProgressText = totalWeeks > 0
+            ? $"Week {currentWeekNumber} of {totalWeeks}"
+            : $"Week {currentWeekNumber}";
 
         return new HomeResponse
         {
@@ -242,7 +262,7 @@ public class QueryAndMutationServices :
             {
                 calendarDays.Add(new TrainingDayResponse
                 {
-                    DayId = Guid.Empty,
+                    DayId = null,
                     Date = date,
                     DayType = TrainingDayType.Rest,
                     Status = TrainingDayStatus.Planned,
@@ -565,7 +585,7 @@ public class QueryAndMutationServices :
                 Name = "Runner",
                 Email = string.Empty,
                 Unit = DistanceUnit.Km,
-                RunningBackground = activePlan?.Level ?? RunningBackground.NewToRunning,
+                RunningBackground = activePlan?.Level ?? RunningBackground.Beginner,
                 ActivePlanStats = null
             };
         }
@@ -574,9 +594,9 @@ public class QueryAndMutationServices :
         var email = profile.User?.Email       ?? string.Empty;
 
         // RunningBackground is no longer stored on UserProfile after Migration 1.
-        // Read it from the active plan snapshot; use NewToRunning as default when
+        // Read it from the active plan snapshot; use Beginner as default when
         // no plan exists.
-        var runningBackground = activePlan?.Level ?? RunningBackground.NewToRunning;
+        var runningBackground = activePlan?.Level ?? RunningBackground.Beginner;
 
         ProfilePlanStatsDto? stats = null;
         if (activePlan != null)

@@ -1,0 +1,78 @@
+{
+  "auditKey": "PHASE4F7B2_MISSING_ZERO_READINESS_DECISION",
+  "auditVersion": 1,
+  "repositorySourceFindings": {
+    "doc13Path": "plan-catalog/docs/canonical/appsel-v1-canonical-decisions.md",
+    "expectedVolumeSectionsPresent": false,
+    "existingRuleFound": false,
+    "goldenFixtureEvidence": "positive weeklyVolumeAnchorKm=24 only; no missing or explicit-zero resolver",
+    "progressionRulesEvidence": "progression caps only; no start default",
+    "levelModifierEvidence": "no missing/zero weekly-volume starting default"
+  },
+  "policy": {
+    "key": "V1_MISSING_READINESS_STARTING_VOLUME_POLICY",
+    "version": 1,
+    "scope": "TEN_K / INTERMEDIATE / 4-day V1 pilot",
+    "evidenceBasis": "PRODUCT_PRACTICE_INFORMED",
+    "decisionStatus": "EXPLICIT_PRODUCT_DEFAULT"
+  },
+  "missingInputDecision": {
+    "inputState": "NOT_PROVIDED",
+    "selectedStartingVolumeKm": 16,
+    "anchorSource": "LEVEL_CONSERVATIVE_DEFAULT",
+    "candidateBehavior": "GENERATE_DARK_INTERNAL_VOLUME_PLAN",
+    "preservesIntermediateIdentity": true,
+    "usesPeakBandMinimum": false
+  },
+  "explicitZeroDecision": {
+    "inputState": "AVAILABLE_WITH_ZERO",
+    "selectedStartingVolumeKm": 12,
+    "anchorSource": "NO_RECENT_RUNNING_DEFAULT",
+    "candidateBehavior": "GENERATE_DARK_INTERNAL_VOLUME_PLAN",
+    "preservesIntermediateIdentity": true,
+    "usesPeakBandMinimum": false
+  },
+  "cycleLengthMatrix": [
+    { "weeks": 8, "missingStartKm": 16, "missingPeakKm": 21.5, "zeroStartKm": 12, "zeroPeakKm": 16.0, "classification": "BELOW_TYPICAL_PEAK_BUT_VALID" },
+    { "weeks": 12, "missingStartKm": 16, "missingPeakKm": 25.5, "zeroStartKm": 12, "zeroPeakKm": 19.0, "classification": "BELOW_TYPICAL_PEAK_BUT_VALID" },
+    { "weeks": 14, "missingStartKm": 16, "missingPeakKm": 27.0, "zeroStartKm": 12, "zeroPeakKm": 20.5, "classification": "BELOW_TYPICAL_PEAK_BUT_VALID" }
+  ],
+  "feasibilityValidation": {
+    "slotsPreserved": ["KEY_SESSION", "EASY_SUPPORT", "EASY_SUPPORT", "LONG_RUN"],
+    "longRunPreferredShare": [0.30, 0.36],
+    "longRunHardCap": 0.40,
+    "residualVolumeForOtherThreeSessions": "NON_ZERO",
+    "paceGenerated": false,
+    "sessionAllocationGenerated": false
+  },
+  "governanceEntries": [
+    { "entryId": "AUD-516", "subject": "missing weekly-volume behavior", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "entryId": "AUD-517", "subject": "explicit-zero weekly-volume behavior", "classification": "EXPLICIT_PRODUCT_DEFAULT" },
+    { "entryId": "AUD-518", "subject": "Intermediate identity, candidate continuation, and cycle feasibility", "classification": "EXPLICIT_PRODUCT_DEFAULT" }
+  ],
+  "tdCoreReadiness001": {
+    "status": "REMAINS_OPEN",
+    "reason": "This phase resolves only missing/zero starting-volume selection for the dark 4F.7B planner; it does not close broader readiness resolver live-generation criteria."
+  },
+  "typedFailures": [
+    "CatalogVolumeInvalidReadinessInputException",
+    "CatalogVolumeCanonicalRuleSourceMissingException",
+    "CatalogVolumeUnsupportedCycleLengthException",
+    "CatalogVolumeUnreachablePeakRuleException",
+    "CatalogVolumeInvalidTaperRuleException",
+    "CatalogLongRunHardCapViolationException",
+    "CatalogVolumeInvalidGovernanceConfigurationException"
+  ],
+  "tests": [],
+  "readiness": "READY_FOR_4F7C_WITH_NON_BLOCKING_GAPS",
+  "repositoryState": {
+    "publicDtoChanged": false,
+    "snapshotHashChanged": false,
+    "confirmChanged": false,
+    "persistenceChanged": false,
+    "migrationChanged": false,
+    "routingChanged": false,
+    "catalogArtifactValuesChanged": false,
+    "publicationStatusChanged": false
+  }
+}

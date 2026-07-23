@@ -1,0 +1,104 @@
+{
+  "auditId": "phase4f7a-prescription-rule-boundary-audit",
+  "phase": "4F.7A",
+  "generatedOn": "2026-07-15",
+  "scope": "dark_internal_prescription_input_and_rule_contract_for_active_appsel_plan_catalog_pilot",
+  "activeCandidate": {
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 10,
+    "distanceFamily": "TEN_K",
+    "level": "INTERMEDIATE",
+    "daysPerWeek": 4
+  },
+  "dependenciesReviewed": {
+    "masterTemplate": { "key": "TEN_K_MASTER", "version": 6 },
+    "levelModifier": { "key": "INTERMEDIATE_MODIFIER", "version": 6 },
+    "progressionModifier": { "key": "PROGRESSION_MODIFIER", "version": 2 },
+    "rulePack": { "key": "APPSEL_RACE_PLAN_V1", "version": 4 },
+    "peakVolumeBandPolicy": { "key": "PEAK_VOLUME_BANDS_V1", "version": 3 },
+    "runtimeConditionValueRegistry": { "version": 2 },
+    "workoutProgression": { "key": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 5 },
+    "workouts": [
+      { "key": "EASY_STANDARD", "version": 4, "family": "EASY", "primaryMeasurementBasis": "DISTANCE_FIRST" },
+      { "key": "LONG_RUN_STANDARD", "version": 4, "family": "LONG_RUN", "primaryMeasurementBasis": "DISTANCE_FIRST" },
+      { "key": "FARTLEK", "version": 4, "family": "QUALITY", "primaryMeasurementBasis": "DISTANCE_FIRST" },
+      { "key": "THRESHOLD_TEMPO", "version": 4, "family": "QUALITY", "primaryMeasurementBasis": "DISTANCE_FIRST" },
+      { "key": "GOAL_PACE_TEN_K", "version": 2, "family": "QUALITY", "primaryMeasurementBasis": "CATALOG_MODE_SELECTED" }
+    ]
+  },
+  "contractArtifacts": {
+    "code": [
+      "backend/RunningApp.Application/RuntimeCatalog/Prescription/PrescriptionContracts.cs",
+      "backend/RunningApp.Application/RuntimeCatalog/Prescription/CatalogPrescriptionContextBuilder.cs"
+    ],
+    "docs": [
+      "PHASE4F_7A_PRESCRIPTION_INPUT_AND_RULE_CONTRACT.md"
+    ],
+    "tests": [
+      "backend/RunningApp.IntegrationTests/RuntimeCatalog/Prescription/Phase4F7APrescriptionContextTests.cs"
+    ]
+  },
+  "goalDistanceResolution": {
+    "removedLiteralHardcode": "GoalDistanceKm = 10.0",
+    "resolver": "CatalogGoalDistanceResolver",
+    "supportedMappings": [
+      { "catalogFamily": "TEN_K", "requestGoalDistance": "TenK", "kilometers": 10.0 }
+    ],
+    "mismatchHandling": [
+      "UNSUPPORTED_CATALOG_GOAL_DISTANCE",
+      "UNSUPPORTED_REQUEST_GOAL_DISTANCE",
+      "GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH"
+    ]
+  },
+  "inputNormalization": {
+    "recentWeeklyVolume": ["AVAILABLE", "NOT_PROVIDED", "INVALID"],
+    "recentLongestRun": ["AVAILABLE", "NOT_PROVIDED", "INVALID", "INCONSISTENT"],
+    "recentRunsPerWeek": ["AVAILABLE", "NOT_PROVIDED", "INVALID"],
+    "recentRace": ["AVAILABLE", "NOT_PROVIDED", "INCOMPLETE", "INVALID"],
+    "zeroHandling": "explicit_zero_is_available_and_distinct_from_missing",
+    "inconsistencyHandling": "recent_longest_run_greater_than_recent_four_week_weekly_average_is_inconsistent_low_confidence_and_not_used_directly",
+    "conservativeClampHandling": "long_run_anchor_falls_back_to_weekly_volume_derived_when_longest_run_is_inconsistent",
+    "futureRaceResultHandling": "future_recent_race_date_is_invalid"
+  },
+  "sourceSelection": {
+    "weeklyVolumeAnchors": ["RECENT_FOUR_WEEK_AVERAGE", "LEVEL_CONSERVATIVE_DEFAULT", "UNRESOLVED"],
+    "longRunAnchors": ["RECENT_30_DAY_LONGEST_RUN", "WEEKLY_VOLUME_DERIVED", "LEVEL_CONSERVATIVE_DEFAULT"],
+    "paceSources": ["RECENT_RACE", "TARGET_GOAL", "ESTIMATED_CURRENT_FITNESS", "PREFERRED_PACE", "EFFORT_ONLY", "UNRESOLVED"],
+    "goalFeasibilityBoundary": "UNSUPPORTED_goal_feasibility_cannot_select_TARGET_GOAL_pace",
+    "notEvaluatedPolicy": "not_evaluated_resolver_outputs_remain_not_evaluated"
+  },
+  "ruleOwnership": {
+    "catalogFixed": ["workout_identity", "workout_version", "family", "eligible_phases"],
+    "catalogBoundedRuntimeSelected": ["allowed_prescription_modes", "allowed_distance_accounting_modes", "component_shape"],
+    "runtimeUserDerivedLater": ["final_distance", "duration", "pace_range", "repetitions", "recovery", "segments", "long_run_dosage", "taper_dosage"],
+    "derivedDisplayLater": ["display_duration", "public_workout_display_values"]
+  },
+  "taperSharpenAssessment": {
+    "stagePreserved": true,
+    "boundWorkout": { "key": "EASY_STANDARD", "version": 4 },
+    "capability": "CONTRACT_EXTENSION_REQUIRED",
+    "reason": "TAPER_SHARPEN is structurally preserved by phase and progression stage, but EASY_STANDARD v4 has distance-only mode and no component body to distinguish taper-sharpen dosage from ordinary easy running in this phase."
+  },
+  "publicSurfaceImpact": {
+    "previewPayloadChanged": false,
+    "snapshotHashChanged": false,
+    "confirmationPayloadChanged": false,
+    "persistenceChanged": false,
+    "migrationsChanged": false,
+    "routingChanged": false,
+    "publishStatusChanged": false
+  },
+  "numericPrescriptionGeneration": {
+    "weeklyVolume": false,
+    "sessionDistance": false,
+    "duration": false,
+    "pace": false,
+    "repetitions": false,
+    "recovery": false,
+    "segments": false,
+    "longRunDistance": false,
+    "taperDosage": false
+  },
+  "classification": "PHASE4F7A_IMPLEMENTED_WITH_NON_BLOCKING_GAPS",
+  "nextReadiness": "READY_FOR_4F7B_WITH_NON_BLOCKING_GAPS"
+}

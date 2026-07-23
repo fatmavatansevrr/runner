@@ -34,7 +34,7 @@ public sealed class CatalogCandidateEligibilityGateTests
         var gate = RealGate();
 
         var ex = await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() =>
-            gate.LoadForPublicPreviewAsync(PilotGenerationRouteDecider.PilotCandidateKey, PilotGenerationRouteDecider.PilotCandidateVersion));
+            gate.LoadForPublicPreviewAsync(V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion));
 
         Assert.Contains("DRAFT", ex.Message);
     }
@@ -44,7 +44,7 @@ public sealed class CatalogCandidateEligibilityGateTests
     {
         var gate = RealGate();
 
-        var summary = await gate.LoadForInternalDryRunAsync(PilotGenerationRouteDecider.PilotCandidateKey, PilotGenerationRouteDecider.PilotCandidateVersion);
+        var summary = await gate.LoadForInternalDryRunAsync(V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion);
 
         Assert.Equal("DRAFT", summary.CandidateStatus);
     }

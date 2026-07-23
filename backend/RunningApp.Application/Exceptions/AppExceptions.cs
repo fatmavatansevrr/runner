@@ -291,6 +291,20 @@ public sealed class PlanPreviewIntegrityFailedException : Exception
 }
 
 /// <summary>
+/// Phase 4F.9.2 — thrown when a stored snapshot's
+/// <c>HashAlgorithmVersion</c> is not the current supported value. Fails
+/// closed rather than falling back to a known order-dependent (and
+/// therefore, once stored as PostgreSQL jsonb, guaranteed-to-mismatch) hash
+/// algorithm. No real (non-test) snapshot was ever produced with an older
+/// version — this feature has never been committed, published, or
+/// activated.
+/// </summary>
+public sealed class PlanPreviewHashAlgorithmVersionUnsupportedException : Exception
+{
+    public PlanPreviewHashAlgorithmVersionUnsupportedException(string message) : base(message) { }
+}
+
+/// <summary>
 /// Thrown when the <c>GenerationSource</c> field in a stored
 /// <c>CatalogPreviewSnapshot</c> is not <c>"CATALOG"</c> — the snapshot was
 /// not produced by the catalog pilot flow. A catalog-confirm attempt against
@@ -395,3 +409,105 @@ public sealed class CatalogPreviewMaterializationNotImplementedException : Excep
     public CatalogPreviewMaterializationNotImplementedException(string message) : base(message) { }
 }
 
+public sealed class CatalogPreviewOwnershipMismatchException : Exception
+{
+    public CatalogPreviewOwnershipMismatchException(string message) : base(message) { }
+}
+
+public sealed class CatalogPreviewAlreadyConfirmedException : Exception
+{
+    public Guid ConfirmedPlanId { get; }
+    public CatalogPreviewAlreadyConfirmedException(Guid confirmedPlanId, string message) : base(message) => ConfirmedPlanId = confirmedPlanId;
+}
+
+public sealed class CatalogPreviewConfirmationConcurrencyException : Exception
+{
+    public CatalogPreviewConfirmationConcurrencyException(string message) : base(message) { }
+    public CatalogPreviewConfirmationConcurrencyException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+public sealed class CatalogPreviewPersistenceContractException : Exception
+{
+    public CatalogPreviewPersistenceContractException(string message) : base(message) { }
+}
+
+public sealed class CatalogPlanPersistenceFailedException : Exception
+{
+    public CatalogPlanPersistenceFailedException(string message) : base(message) { }
+    public CatalogPlanPersistenceFailedException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+public sealed class CatalogPersistedPlanValidationException : Exception
+{
+    public CatalogPersistedPlanValidationException(string message) : base(message) { }
+}
+
+public sealed class CatalogActivePlanConflictException : Exception
+{
+    public CatalogActivePlanConflictException(string message) : base(message) { }
+}
+
+public sealed class CatalogPrescriptionPersistenceUnsupportedException : Exception
+{
+    public CatalogPrescriptionPersistenceUnsupportedException(string message) : base(message) { }
+}
+
+// ── Long-horizon race fail-closed safety constraint ──────────────────────────
+// Temporary: long-horizon preparation + race-core composition is not yet
+// implemented. See RunningApp.Application.Common.RaceHorizonPolicy and
+// PHASE4G_1_LONG_HORIZON_FAIL_CLOSED_SAFETY_CONSTRAINT.md.
+
+/// <summary>
+/// Thrown when a race request's available horizon (StartDate to RaceDate)
+/// exceeds <see cref="RunningApp.Application.Common.RaceHorizonPolicy.MaximumSupportedStandaloneWeeks"/>.
+/// The system fails closed rather than silently selecting a shorter
+/// supported core cycle anchored at StartDate and leaving RaceDate
+/// unreached — the exact regression this exception exists to prevent. Never
+/// caught and converted into a legacy-SQL fallback, a clamped/stretched
+/// core, or a truncated plan. No preview or plan row is persisted when this
+/// is thrown.
+/// Mapped to HTTP 422, error code PLAN_HORIZON_COMPOSITION_REQUIRED.
+/// </summary>
+public sealed class PlanHorizonCompositionRequiredException : Exception
+{
+    public PlanHorizonCompositionRequiredException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Thrown when a race request's available horizon (StartDate to RaceDate)
+/// falls within the nominal standalone core-cycle range
+/// (<see cref="RunningApp.Application.Common.RaceHorizonPolicy.MinimumSupportedStandaloneWeeks"/>..<see cref="RunningApp.Application.Common.RaceHorizonPolicy.MaximumSupportedStandaloneWeeks"/>)
+/// but is not the one exact length
+/// (<see cref="RunningApp.Application.Common.RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks"/>)
+/// currently proven to produce a race-date-aligned plan. Distinct from
+/// <see cref="PlanHorizonCompositionRequiredException"/>: the request is
+/// within the nominally-supported range (does not need preparation-block
+/// composition), but the current catalog phase allocator is not yet
+/// horizon-aware and always emits its fixed default allocation regardless
+/// of the accepted cycle length — generating here would silently misalign
+/// with RaceDate (verified live for both 8-week overshoot and 20-week
+/// undershoot). Never caught and converted into a legacy-SQL fallback, a
+/// stretched/trimmed/repeated core, or a truncated plan. No preview or plan
+/// row is persisted when this is thrown.
+/// Mapped to HTTP 422, error code PLAN_CORE_HORIZON_UNSUPPORTED.
+/// </summary>
+public sealed class PlanCoreHorizonUnsupportedException : Exception
+{
+    public PlanCoreHorizonUnsupportedException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Defensive invariant thrown when a generated race-specific dated schedule's
+/// final session/plan-end date is not aligned to the request's RaceDate
+/// (ends materially before the race, or after it). A backstop against any
+/// future regression re-introducing the class of bug
+/// <see cref="PlanHorizonCompositionRequiredException"/> fails closed for
+/// upstream, in case a schedule ever reaches materialization with a mismatch
+/// that earlier horizon validation did not catch. Never caught/repaired —
+/// the malformed schedule is never persisted.
+/// Mapped to HTTP 422, error code CATALOG_RACE_DATE_ALIGNMENT_INVALID.
+/// </summary>
+public sealed class CatalogRaceDateAlignmentInvalidException : Exception
+{
+    public CatalogRaceDateAlignmentInvalidException(string message) : base(message) { }
+}

@@ -7,9 +7,19 @@ class PlanRepository {
   PlanRepository(this._client);
   final ApiClient _client;
 
-  Future<GeneratePreviewResponse> generatePreview(GeneratePreviewRequest request) async {
-    const path = '/plans/generate-preview';
-    print('Calling generatePreview: ${ApiClient.resolveBaseUrl()}$path');
+  Future<GeneratePreviewResponse> generateRacePlanPreview(GenerateRacePlanPreviewRequestDto request) async {
+    const path = '/plans/generate-preview/race';
+    print('Calling generateRacePlanPreview: ${ApiClient.resolveBaseUrl()}$path');
+    final response = await _client.post(
+      path,
+      data: request.toJson(),
+    );
+    return GeneratePreviewResponse.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<GeneratePreviewResponse> generateHabitPlanPreview(GenerateHabitPlanPreviewRequestDto request) async {
+    const path = '/plans/generate-preview/habit';
+    print('Calling generateHabitPlanPreview: ${ApiClient.resolveBaseUrl()}$path');
     final response = await _client.post(
       path,
       data: request.toJson(),

@@ -124,10 +124,17 @@ public sealed class Phase4F4DarkSkeletonWiringTests
     {
         GoalType = GoalType.Race,
         GoalDistance = GoalDistance.TenK,
-        Level = RunningBackground.RunningRegularly,
+        Level = RunningBackground.Intermediate,
         DaysPerWeek = 4,
         Unit = DistanceUnit.Km,
+        StartDate = raceDate.AddDays(-84),
         RaceDate = raceDate,
+        // Backend Integration Phase 4F.5: a race-plan preview now also
+        // dark-materializes a calendar-day assignment, which requires
+        // PreferredDays/LongRunDay -- Mon/Wed/Fri/Sun with long run on Sunday
+        // is a known-safe combination (see CatalogWeekSkeletonCalendarMaterializerTests).
+        PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+        LongRunDay = Weekday.Sun,
     };
 
     // ─────────────────────────── Wiring placement ───────────────────────────
@@ -254,7 +261,7 @@ public sealed class Phase4F4DarkSkeletonWiringTests
         // The orchestrator ran and (by not throwing) proves it built a valid
         // 12-week skeleton -- but nothing about it reached the snapshot.
         Assert.Equal(1, counting.InvocationCount);
-        Assert.Null(snapshot.GeneratedPreviewPlanPayload);
+        Assert.NotNull(snapshot.GeneratedPreviewPlanPayload);
         Assert.DoesNotContain(snapshot.GetType().GetProperties(), p => p.Name.Contains("Skeleton"));
     }
 
@@ -271,7 +278,7 @@ public sealed class Phase4F4DarkSkeletonWiringTests
         Assert.Equal(4, snapshot.ResolverResults.Count);
         Assert.Empty(snapshot.SelectedStageKeys);
         Assert.Empty(snapshot.FallbackStagesUsed);
-        Assert.Null(snapshot.GeneratedPreviewPlanPayload);
+        Assert.NotNull(snapshot.GeneratedPreviewPlanPayload);
         Assert.False(string.IsNullOrWhiteSpace(snapshot.ContentHash));
         Assert.Equal(8, snapshot.ReferencedArtifacts.Count);
     }

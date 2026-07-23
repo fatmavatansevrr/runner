@@ -878,6 +878,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   void _showCompletionSheet(BuildContext context, TrainingDayResponse workout) {
+    final dayId = workout.dayId;
+    // Synthetic rest/no-session days have canMarkComplete == false, so the
+    // "complete" action that opens this sheet is never reachable for them.
+    if (dayId == null) return;
     final distanceController = TextEditingController(text: workout.plannedDistanceKm.toStringAsFixed(1));
     final durationController = TextEditingController(text: workout.plannedDurationMin.toString());
     String selectedResult = 'as_planned';
@@ -998,7 +1002,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(homeRepositoryProvider);
-                    await repo.completeWorkout(workout.dayId, dist, dur, 'Completed from calendar selection!');
+                    await repo.completeWorkout(dayId, dist, dur, 'Completed from calendar selection!');
                     
                     ref.invalidate(calendarDataProvider);
                     ref.invalidate(homeDataProvider);
@@ -1027,6 +1031,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   void _showNotTodaySheet(BuildContext context, TrainingDayResponse workout) {
+    final dayId = workout.dayId;
+    // Synthetic rest/no-session days have canMarkNotToday == false, so this
+    // sheet is never reachable for them.
+    if (dayId == null) return;
     String? selectedReason;
     final reasons = [
       ('need_rest', 'Need rest'),
@@ -1158,7 +1166,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(homeRepositoryProvider);
-                    final decision = await repo.createNotTodayDecision(workout.dayId, selectedReason ?? 'other');
+                    final decision = await repo.createNotTodayDecision(dayId, selectedReason ?? 'other');
                     await repo.confirmNotTodayDecision(decision.decisionId);
                     
                     ref.invalidate(calendarDataProvider);

@@ -41,7 +41,7 @@ public sealed class SafeTemplateSelectionTests
                 Version = 1,
                 GoalType = GoalType.Habit,
                 GoalDistance = GoalDistance.FiveK,
-                Level = RunningBackground.NewToRunning,
+                Level = RunningBackground.Beginner,
                 DaysPerWeek = 3,
                 Unit = DistanceUnit.Km,
                 DataJson = "{\"templateId\":\"habit_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"habit\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z2\"}]}]}",
@@ -54,7 +54,7 @@ public sealed class SafeTemplateSelectionTests
                 Version = 1,
                 GoalType = GoalType.Race,
                 GoalDistance = GoalDistance.FiveK,
-                Level = RunningBackground.NewToRunning,
+                Level = RunningBackground.Beginner,
                 DaysPerWeek = 3,
                 Unit = DistanceUnit.Km,
                 DataJson = "{\"templateId\":\"race_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"race\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"interval\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z4\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":4.0,\"durationMin\":40,\"intensity\":\"z2\"}]}]}",
@@ -69,18 +69,25 @@ public sealed class SafeTemplateSelectionTests
     {
         GoalType = GoalType.Race,
         GoalDistance = GoalDistance.TenK,
-        Level = RunningBackground.RunningRegularly,
+        Level = RunningBackground.Intermediate,
         DaysPerWeek = 4,
         Unit = DistanceUnit.Km,
+        RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
+        StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+        PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+        LongRunDay = Weekday.Sun,
+        TargetFinishTimeSeconds = 3600,
     };
 
     private static GeneratePreviewRequest SeededHabit5KRequest() => new()
     {
         GoalType = GoalType.Habit,
         GoalDistance = GoalDistance.FiveK,
-        Level = RunningBackground.NewToRunning,
+        Level = RunningBackground.Beginner,
         DaysPerWeek = 3,
         Unit = DistanceUnit.Km,
+        StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+        PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri },
     };
 
     // ---------- 1: existing seeded template still selectable ----------
@@ -116,22 +123,16 @@ public sealed class SafeTemplateSelectionTests
     }
 
     [Fact]
-    public async Task GeneratePreviewAsync_TenKIntermediate4Day_RoutesToCatalog_ThrowsCatalogCandidateNotPublished_AndPersistsNoPreview()
+    public async Task GeneratePreviewAsync_TenKIntermediate4Day_DefaultClosedUsesLegacyExactTemplateBoundary_AndPersistsNoPreview()
     {
-        // Backend Integration Phase 4E.1: TEN_K/RunningRegularly/4-day is
-        // exactly the catalog pilot combination -- GeneratePreviewAsync now
-        // routes it to the catalog flow before ever consulting
-        // PlaceholderPlanGenerationEngine/the SQL PlanTemplates table. It
-        // fails with CatalogCandidateNotPublishedException (not
-        // PlanTemplateNotAvailableException) because TEN_K__4D__INTERMEDIATE
-        // v10 has status DRAFT, not PUBLISHED. This is a deliberate Phase
-        // 4E.1 behavior change for this exact request shape -- see
-        // PHASE4E_1_CATALOG_PREVIEW_ROUTING_AND_IMMUTABLE_RESOLUTION_SNAPSHOT.md.
+        // Phase 4F.8.2 keeps the repository non-live: v10 is DRAFT and
+        // activation defaults disabled. The pilot-shaped request therefore
+        // reaches the existing exact legacy template boundary.
         await using var context = NewSeededContext();
         var engine = new PlaceholderPlanGenerationEngine(context, NullLogger<PlaceholderPlanGenerationEngine>.Instance);
         var service = TestPlanServicesFactory.Create(context, engine);
 
-        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(
+        await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(
             () => service.GeneratePreviewAsync(Guid.NewGuid(), TenKIntermediate4DayRequest()));
 
         Assert.Empty(context.PlanPreviews);
@@ -167,7 +168,7 @@ public sealed class SafeTemplateSelectionTests
 
         var userId = Guid.NewGuid();
 
-        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(
+        await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(
             () => service.GeneratePreviewAsync(userId, TenKIntermediate4DayRequest()));
 
         await Assert.ThrowsAsync<NotFoundAppException>(

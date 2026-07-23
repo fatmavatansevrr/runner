@@ -1,0 +1,331 @@
+{
+  "auditKey": "PHASE4F6_STEP_A1_ROLE_OWNERSHIP_AND_GAP_CLARIFICATION",
+  "auditVersion": 1,
+  "sourceStepAArtifact": "plan-catalog/artifacts/audits/phase4f6-step-a-v10-catalog-audit.json",
+  "questions": [
+    {
+      "questionId": "A1-Q01",
+      "question": "Is WorkoutProgressionDefinition explicitly scoped to KEY_SESSION?",
+      "resolutionClass": "REPOSITORY_CONFIRMED",
+      "answer": "No. WorkoutProgressionStageDefinition (plan-catalog/src/PlanCatalog.Core/Models/WorkoutProgressionStageDefinition.cs) has no Role/SlotRole/StructuralRole field of any kind. SlotRole exists only on LayoutSlotDefinition (RUN_LAYOUT contract), a structurally separate artifact type. No validator ties a stage to a specific layout role. The architecture doc (Appsel_Master_Template_Catalog_Authoring_Process.md) describes the progression's declared scope generically as 'phase-relative stage order, candidate workout keys, exposure bounds, compression/extension behavior, runtime eligibility conditions, fallback stages' with no KEY_SESSION restriction anywhere in that description.",
+      "evidence": [
+        "plan-catalog/src/PlanCatalog.Core/Models/WorkoutProgressionStageDefinition.cs (full field list, no role field)",
+        "plan-catalog/src/PlanCatalog.Contracts/Enums/SlotRole.cs (Role lives only on LayoutSlotDefinition)",
+        "plan-catalog/docs/specifications/Appsel_Master_Template_Catalog_Authoring_Process.md lines ~830-845 (Adim 4, progression scope description)"
+      ],
+      "counterEvidence": [
+        "Current v10 data: 5 of 7 stages target QUALITY-family workouts (the family compatible with KEY_SESSION per CandidatePublishGraphValidator.RoleCompatibleFamilies), which is the DATA PATTERN a reader could mistake for an explicit contract restriction."
+      ],
+      "confidence": "HIGH",
+      "decisionRequired": false,
+      "decisionOwner": null,
+      "notes": "The absence of a role field is itself the confirmed fact. Whether the CURRENT DATA is intended to represent 'KEY_SESSION only' content is a separate, unconfirmed question -- see A1-Q02."
+    },
+    {
+      "questionId": "A1-Q02",
+      "question": "What do current v10 stage candidates actually target (family, phase, role-compatibility)?",
+      "resolutionClass": "MECHANICALLY_DERIVED",
+      "answer": "2 of 7 stages target the EASY family (FOUNDATION_EASY_BASE, TAPER_SHARPEN -> EASY_STANDARD); 5 of 7 target the QUALITY family (FARTLEK_INTRO, THRESHOLD_INTRO, TEN_K_SPECIFIC_INTRO, GOAL_PACE_REHEARSAL, CURRENT_FITNESS_SPECIFIC_REHEARSAL). ZERO stages target the LONG_RUN family. This directly contradicts a naive 'WorkoutProgressionDefinition only ever contains key-session-like candidates' framing -- EASY-family stages are already present and scheduled.",
+      "evidence": [
+        "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json (direct read of all 7 stages' workoutCandidates)",
+        "plan-catalog/catalog/workouts/easy-standard.v4.json family=EASY",
+        "plan-catalog/catalog/workouts/{fartlek,threshold-tempo,goal-pace-ten-k}.v*.json family=QUALITY"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": false,
+      "decisionOwner": null,
+      "notes": "Per CandidatePublishGraphValidator.RoleCompatibleFamilies: KEY_SESSION accepts {QUALITY,RACE}; EASY_SUPPORT accepts {EASY}; LONG_RUN accepts {LONG_RUN}. Under this validator-encoded rule, all 7 v10 stages' candidates ARE family-compatible with either KEY_SESSION or EASY_SUPPORT -- never exclusively KEY_SESSION -- and none is compatible with LONG_RUN.",
+      "table": [
+        { "stageId": "FOUNDATION:FOUNDATION_EASY_BASE", "candidateKey": "EASY_STANDARD", "family": "EASY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "EASY_SUPPORT-compatible (family rule)", "source": "ten-k-workout-progression.v5.json + CandidatePublishGraphValidator" },
+        { "stageId": "BUILD:FARTLEK_INTRO", "candidateKey": "FARTLEK", "family": "QUALITY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "KEY_SESSION-compatible (family rule)", "source": "same" },
+        { "stageId": "BUILD:THRESHOLD_INTRO", "candidateKey": "THRESHOLD_TEMPO", "family": "QUALITY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "KEY_SESSION-compatible (family rule)", "source": "same" },
+        { "stageId": "RACE_SPECIFIC:TEN_K_SPECIFIC_INTRO", "candidateKey": "THRESHOLD_TEMPO", "family": "QUALITY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "KEY_SESSION-compatible (family rule)", "source": "same" },
+        { "stageId": "RACE_SPECIFIC:GOAL_PACE_REHEARSAL", "candidateKey": "GOAL_PACE_TEN_K", "family": "QUALITY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "KEY_SESSION-compatible (family rule)", "source": "same" },
+        { "stageId": "RACE_SPECIFIC:CURRENT_FITNESS_SPECIFIC_REHEARSAL", "candidateKey": "THRESHOLD_TEMPO", "family": "QUALITY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "KEY_SESSION-compatible (family rule)", "source": "same" },
+        { "stageId": "TAPER:TAPER_SHARPEN", "candidateKey": "EASY_STANDARD", "family": "EASY", "explicitRoleCompatibility": "NONE_ENCODED", "derivedSemanticRole": "EASY_SUPPORT-compatible (family rule)", "source": "same" }
+      ]
+    },
+    {
+      "questionId": "A1-Q03",
+      "question": "How is the eligible-workout list (EligibleWorkoutKeys / EligibleWorkouts) actually used?",
+      "resolutionClass": "REPOSITORY_CONFIRMED",
+      "answer": "v10's actual INTERMEDIATE_MODIFIER v6 uses the exact-reference field EligibleWorkouts (VersionedCatalogReference list), NOT the legacy bare-string EligibleWorkoutKeys (IReadOnlySet<string>?) -- schema's oneOf forbids both being present simultaneously. For v10's schemaVersion>=2 ('exact') shape, WorkoutClosureResolver.ComputeExactClosureRefs computes candidateRefs (from stage.WorkoutCandidates) UNION eligibleRefs (from levelModifier.EligibleWorkouts) -- an ELIGIBILITY_FILTER/closure-union role, never a selection mechanism. For the legacy (schemaVersion 1) shape, EligibleWorkoutKeys is consulted in exactly 3 places: LevelModifierValidator (VALIDATION_ONLY -- existence check), TemplateCombinationValidator.ValidateEffectiveWorkoutSet (ELIGIBILITY_FILTER -- intersects with stage candidates for a non-empty-set check), and CatalogBundleAssembler's legacy-shape branch (ELIGIBILITY_FILTER -- filters candidateKeys before bundle assembly). Neither field is ever read to SELECT a single workout -- every consumer either validates existence or filters a set.",
+      "evidence": [
+        "plan-catalog/src/PlanCatalog.Core/Models/LevelModifierDefinition.cs:18 (EligibleWorkoutKeys typed as IReadOnlySet<string>?, confirming it is a SET, not an ordered list -- order carries no semantic meaning)",
+        "plan-catalog/src/PlanCatalog.Core/Validation/LevelModifierValidator.cs:24-26 (VALIDATION_ONLY)",
+        "plan-catalog/src/PlanCatalog.Core/Validation/TemplateCombinationValidator.cs:118-135 (ValidateEffectiveWorkoutSet, ELIGIBILITY_FILTER)",
+        "plan-catalog/src/PlanCatalog.Infrastructure/Publishing/CatalogBundleAssembler.cs:85-98 (legacy branch, ELIGIBILITY_FILTER; exact branch uses WorkoutClosureResolver instead)",
+        "plan-catalog/src/PlanCatalog.Core/Catalog/WorkoutClosureResolver.cs (union closure for schemaVersion>=2)",
+        "plan-catalog/catalog/level-modifiers/intermediate-modifier.v6.json (uses eligibleWorkouts, not eligibleWorkoutKeys)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": false,
+      "decisionOwner": null,
+      "notes": "Because it is a SET (no order) and used only as a filter/whitelist, adding a second EASY-family or LONG_RUN-family workout to the eligible list would create NO ambiguity within this mechanism itself -- it would simply widen the closure. Ambiguity would only arise in a hypothetical FUTURE role-selection mechanism that does not yet exist (see A1-Q04)."
+    },
+    {
+      "questionId": "A1-Q04",
+      "question": "Is there an existing role-to-workout (or role-to-family) binding mechanism, versioned, deterministic, and used at runtime?",
+      "resolutionClass": "MECHANICALLY_DERIVED",
+      "answer": "One mechanism exists, but it is authoring-tooling-side only, family-grained (not workout-key-grained), and NOT consumed by backend runtime at all. plan-catalog/src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs's private RoleCompatibleFamilies(SlotRole) switch statement (LONG_RUN->[LongRun], EASY_SUPPORT->[Easy], KEY_SESSION->[Quality,Race]) is used by the LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT validation rule at candidate-publish time. It is: versioned only in the sense that it lives in versioned tooling source code (not a catalog artifact with its own key/version); deterministic (a pure switch expression); NOT used at runtime by the backend (RunningApp.Application has zero role-to-family logic anywhere -- confirmed by source search of CatalogRunLayoutSlots.cs / CatalogWeekSkeletonCalendarMaterializer.cs, which treat StructuralRole as an opaque string end-to-end).",
+      "evidence": [
+        "plan-catalog/src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs:185-191 (RoleCompatibleFamilies)",
+        "backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/CatalogRunLayoutSlots.cs (StructuralRole as opaque string, no family/role logic)",
+        "backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/CatalogWeekSkeletonCalendarMaterializer.cs (same)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": true,
+      "decisionOwner": "SCHEMA_DECISION_REQUIRED",
+      "notes": "No role->exact-workout-key mechanism exists anywhere (only role->family, and only in Process A tooling). resolutionClass for 'a role-to-workout-KEY mechanism' specifically is NOT_FOUND.",
+      "mechanismTable": [
+        { "mechanism": "RoleCompatibleFamilies (role->family)", "location": "PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs", "explicitOrImplicit": "EXPLICIT (hardcoded switch)", "versioned": "NO (tooling code, not a catalog artifact)", "deterministic": "YES", "usedAtRuntime": "NO (Process A publish-time validator only)" }
+      ]
+    },
+    {
+      "questionId": "A1-Q05",
+      "question": "What does the repository currently establish for EASY_SUPPORT?",
+      "resolutionClass": "ARCHITECTURAL_INFERENCE",
+      "answer": "EASY_SUPPORT is REPOSITORY_CONFIRMED as a layout-only role (RUN_LAYOUT_4D v2 slots). EASY_STANDARD (family=EASY) is REPOSITORY_CONFIRMED reachable from the v10 bundle AND is REPOSITORY_CONFIRMED as an actual stage candidate (FOUNDATION_EASY_BASE, TAPER_SHARPEN) -- unlike LONG_RUN, at least one EASY-family workout IS already stage-scheduled. However, the mapping 'EASY_SUPPORT (layout role) receives EASY_STANDARD (stage-produced workout)' is NOT explicitly encoded anywhere -- it is only an ARCHITECTURAL_INFERENCE from family-name similarity plus the validator's RoleCompatibleFamilies rule (which checks closure membership, not stage-to-slot binding). No other EASY-family workout is currently reachable. Workout progression DOES already control an EASY-family stage (2 of them) -- this is a repository fact, not an inference. Easy-run pace/distance is REPOSITORY_CONFIRMED deferred to prescription (WorkoutDefinition schema has no numeric dosage field at all). Workout IDENTITY itself (which exact key fills the slot) is NOT explicitly deferred anywhere -- it is simply unaddressed.",
+      "evidence": [
+        "plan-catalog/catalog/layouts/run-layout-4d.v2.json (EASY_SUPPORT x2 as layout slots)",
+        "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json (FOUNDATION_EASY_BASE, TAPER_SHARPEN -> EASY_STANDARD)",
+        "plan-catalog/catalog/level-modifiers/intermediate-modifier.v6.json (EASY_STANDARD in eligibleWorkouts)"
+      ],
+      "counterEvidence": [
+        "No JSON field, schema property, or validator rule states 'EASY_SUPPORT slot <- EASY_STANDARD workout' as an explicit binding."
+      ],
+      "confidence": "MEDIUM",
+      "decisionRequired": true,
+      "currentRepositoryState": "EASY_STANDARD is the only reachable EASY-family workout and IS already stage-scheduled (2 stages); no other EASY-family candidate exists in the closure.",
+      "explicitMapping": "NONE",
+      "inferredMapping": "EASY_SUPPORT (layout role) likely intended to receive EASY_STANDARD-sourced sessions, by family-name correspondence only",
+      "ambiguity": "LOW for family (only one EASY-family workout exists at all, so there is no competing candidate to be ambiguous about); HIGH for the underlying architectural QUESTION of whether role population should be stage-controlled, default-controlled, or something else -- since only 2 of the FOUNDATION/TAPER stages are EASY, while BUILD/RACE_SPECIFIC weeks have ZERO EASY-family stages, meaning the two EASY_SUPPORT slots in a BUILD/RACE_SPECIFIC week cannot come from any stage at all today.",
+      "nextOwner": "STEP_C_PRODUCT",
+      "resolutionClassFinal": "ARCHITECTURAL_INFERENCE for the family-level correspondence; PRODUCT_DECISION_REQUIRED for formalizing it"
+    },
+    {
+      "questionId": "A1-Q06",
+      "question": "What does the repository currently establish for LONG_RUN?",
+      "resolutionClass": "MECHANICALLY_DERIVED",
+      "answer": "LONG_RUN is REPOSITORY_CONFIRMED as a layout-only role (RUN_LAYOUT_4D v2, exactly 1 slot). LONG_RUN_STANDARD (family=LONG_RUN) is REPOSITORY_CONFIRMED reachable from the v10 bundle, but ONLY via INTERMEDIATE_MODIFIER v6's eligibleWorkouts list -- MECHANICALLY_DERIVED (direct read): zero workout-progression stages in ten-k-workout-progression.v5.json reference LONG_RUN_STANDARD or any LONG_RUN-family key. 'LONG_RUN_PROGRESSION' does NOT exist anywhere in the active catalog/ directory as a workout artifact -- it exists only inside the tier-1 canonical Golden Fixture v3 generated PlanDocument (a DIFFERENT, distinct workout key with components, per an EXISTING, EXPLICIT governance decision in artifacts/audits/domain-wave1-schema-necessity-audit.md: 'the fixture's LONG_RUN_PROGRESSION key... is a distinct, non-substitutable workout key, not evidence for LONG_RUN_STANDARD itself'). No accepted decision requires phase-specific long-run workout identities. Long-run progression today is expressed ONLY through the phase-level PEAK_VOLUME_BANDS_V1 percentage/absolute-km bands (rule-pack-level, distance-only, no workout-key concept) -- confirmed no rule/policy artifact implies a long-run PACE curve, distance curve, or taper reduction tied to a workout-key change. LONG_RUN -> LONG_RUN_STANDARD is INFERRED ONLY (same reasoning as EASY_SUPPORT), and weaker, since LONG_RUN_STANDARD is not even stage-reachable.",
+      "evidence": [
+        "plan-catalog/catalog/layouts/run-layout-4d.v2.json (LONG_RUN x1 slot)",
+        "plan-catalog/catalog/level-modifiers/intermediate-modifier.v6.json (LONG_RUN_STANDARD in eligibleWorkouts)",
+        "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json (zero references to LONG_RUN_STANDARD or any LONG_RUN-family key)",
+        "plan-catalog/docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json:1235 (workoutKey=LONG_RUN_PROGRESSION, family=LONG_RUN, MIXED prescription, has components incl. STEADY_FINISH)",
+        "plan-catalog/artifacts/audits/domain-wave1-schema-necessity-audit.md line 67 (explicit non-substitutability statement)",
+        "plan-catalog/artifacts/audits/ten-k-pilot-vocabulary-decisions.md line 81 (STEADY_FINISH ownership explicitly left open)",
+        "plan-catalog/catalog/policies/peak-volume-bands.v3.json (distance-only bands, no workout-key concept)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": true,
+      "decisionOwner": "PRODUCT_DECISION_REQUIRED and SCHEMA_DECISION_REQUIRED (jointly)",
+      "answers": {
+        "1_layoutRolePresent": true,
+        "2_longRunStandardReachable": true,
+        "3_longRunStandardReferencedByAnyStage": false,
+        "4_longRunProgressionInActiveCatalog": false,
+        "5_presentOnlyInExamplesHistoricalDeletedTests": "Present only in the tier-1 canonical fixture (docs/canonical/golden-fixture-v3, an evidence/example artifact, not a catalog/ artifact) and in prose governance docs discussing it; also appears in the docs/archive/golden-fixture-v2 predecessor and in three audit documents explicitly discussing (not creating) it.",
+        "6_acceptedDecisionRequiringPhaseSpecificLongRunIdentities": false,
+        "7_expressedOnlyThroughDistancePaceRules": true,
+        "8_impliedByExistingRuleWithoutNewWorkoutKey": false,
+        "9_explicitOrInferred": "INFERRED_ONLY, and weaker than EASY_SUPPORT's inference since no stage reaches LONG_RUN_STANDARD at all",
+        "10_finalClassification": "GENUINE_DOCUMENTED_OPEN_GAP -- not simply intentional, not accidental, not undocumented. It IS documented (three separate audit artifacts explicitly discuss LONG_RUN_PROGRESSION and its non-substitutability for LONG_RUN_STANDARD), the decision to create it as a catalog artifact was explicitly deferred ('intentionally left as an open decision for a future, explicitly-scoped follow-up'), and it is not contradicted by any accepted decision. This is the most precise available characterization."
+      },
+      "notes": "This is the single most significant finding of Step A.1: the tier-1 canonical evidence source (Golden Fixture v3) itself implies the catalog's current LONG_RUN workout representation (LONG_RUN_STANDARD, continuous/DISTANCE-only) may not be the complete picture the fixture's own generated plan relies on for every long run in the plan."
+    },
+    {
+      "questionId": "A1-Q07",
+      "question": "Was LONG_RUN progression (as a catalog concept) ever accepted?",
+      "resolutionClass": "REPOSITORY_CONFIRMED",
+      "answer": "No catalog artifact named or keyed LONG_RUN_PROGRESSION was ever created or accepted. Every repository mention is either (a) inside the Golden Fixture v3/v2 example/evidence documents (not a catalog artifact), or (b) inside governance/audit prose explicitly discussing and DEFERRING the decision, never accepting it.",
+      "evidence": [
+        "grep across entire repository for 'LONG_RUN_PROGRESSION': matches only in artifacts/audits/domain-wave1-schema-necessity-audit.{json,md}, artifacts/audits/ten-k-pilot-vocabulary-decisions.md, artifacts/audits/workout-components-ownership-audit.{json,md}, docs/archive/golden-fixture-v2/*, docs/canonical/golden-fixture-v3/* (fixture + its own internal canonical-debug byproducts), docs/specifications/Appsel_Master_Template_Catalog_Authoring_Process.md",
+        "zero matches in plan-catalog/catalog/ (the actual live artifact directory)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": true,
+      "decisionOwner": "PRODUCT_DECISION_REQUIRED",
+      "classificationTable": [
+        { "term": "LONG_RUN_PROGRESSION (as workout key)", "classification": "PROPOSED_NEVER_ACCEPTED", "location": "referenced only in fixture/evidence + audit prose" },
+        { "term": "LONG_RUN_PROGRESSION (as fixture evidence)", "classification": "EXAMPLE_ONLY", "location": "docs/canonical/golden-fixture-v3, docs/archive/golden-fixture-v2" },
+        { "term": "STEADY_FINISH (component of LONG_RUN_PROGRESSION)", "classification": "PROPOSED_NEVER_ACCEPTED", "location": "ten-k-pilot-vocabulary-decisions.md, explicitly 'open decision for a future, explicitly-scoped follow-up'" },
+        { "term": "LONG_RUN_STANDARD (actual catalog artifact)", "classification": "ACTIVE_CANONICAL", "location": "catalog/workouts/long-run-standard.v4.json" }
+      ]
+    },
+    {
+      "questionId": "A1-Q08",
+      "question": "Which bounded context owns role binding: Appsel.PlanCatalog or Appsel.PlanGeneration?",
+      "resolutionClass": "GOVERNANCE_DECISION_REQUIRED",
+      "answer": "The only bounded-context split found (Appsel.PlanCatalog / Appsel.PlanGeneration) is explicitly labeled 'Onerilen bounded-context ayrimi' ('SUGGESTED bounded-context split') in Appsel_Master_Template_Catalog_Authoring_Process.md section 17 -- it is itself a recommendation, not an accepted, binding architecture decision. The document explicitly scopes itself to 'Process A' (Template Catalog Authoring) only and explicitly excludes 'Process B' (Runtime Template Assignment and Personalized Plan Generation) from its own coverage. No document assigns 'role binding' specifically to either side. What IS repository-confirmed: catalog declares available workout definitions and compatible candidates (Process A, versioned artifacts); runtime resolves phase allocation, calendar dates, and (per backend Phase 4F.1-4F.5) calendar-day assignment (Process B / RunningApp.Application). Nothing in either codebase currently claims ownership of 'assigning workout identity to a structural role' at all -- it is unowned, not merely unclear.",
+      "evidence": [
+        "plan-catalog/docs/specifications/Appsel_Master_Template_Catalog_Authoring_Process.md section 17 ('Onerilen bounded-context ayrimi', 'Bu dokuman yalnizca A surecini tanimlar')",
+        "backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/* (Process B side; confirmed no role-to-workout logic present anywhere)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": true,
+      "decisionOwner": "GOVERNANCE_DECISION_REQUIRED",
+      "ownershipSeparation": {
+        "catalogDeclares": "Available workout definitions (WorkoutDefinition), compatible candidates per stage (WorkoutCandidates), eligible workouts per level (EligibleWorkouts) -- REPOSITORY_CONFIRMED, Process A / Appsel.PlanCatalog",
+        "runtimeSelects": "Phase allocation, calendar-day assignment for structural slots that ALREADY have a role -- REPOSITORY_CONFIRMED, Process B / backend RunningApp.Application (Phase 4F.2-4F.5); role-to-workout-identity selection specifically -- NOT_FOUND anywhere",
+        "prescriptionPersonalizes": "Not yet implemented anywhere (Phase 4F.7+, DEFERRED_TO_PRESCRIPTION)",
+        "presentationMaps": "Public workout-type mapping -- NOT_FOUND anywhere (see A1-Q09)"
+      },
+      "notes": "Whether role binding should be static catalog content, a runtime selection decision, a new versioned policy artifact consumed by runtime, layout-carried default references, or an extension of level-modifier scope are all live alternatives; none is chosen here."
+    },
+    {
+      "questionId": "A1-Q09",
+      "question": "Does an explicit public workout-type mapping exist for the 5 reachable workout keys?",
+      "resolutionClass": "REPOSITORY_CONFIRMED",
+      "answer": "No. Confirmed directly (not merely re-asserting Step A) by reading backend/RunningApp.Application/RuntimeCatalog/PlanCatalogDomainMapper.cs::ClassifyWorkoutKeys in full: every one of the 5 keys is explicitly classified BackendRepresentationSupport.RequiresNewField with an explicit 'plausible loose family match, but the exact catalog workout key is not preserved' caveat. Two candidate public enums exist -- legacy RunningApp.Domain.Enums.TrainingDayType {Easy,Interval,Tempo,LongRun,Rest,RecoveryEasy} and Phase 4F.1's GeneratedCatalogWorkoutType {Easy,Interval,Tempo,LongRun,RecoveryEasy} -- neither has a documented, confirmed, exact mapping from any of the 5 catalog keys.",
+      "evidence": [
+        "backend/RunningApp.Application/RuntimeCatalog/PlanCatalogDomainMapper.cs:226-252 (ClassifyWorkoutKeys, all 5 keys)",
+        "backend/RunningApp.Domain/Enums/TrainingDayType.cs",
+        "backend/RunningApp.Application/RuntimeCatalog/Schedule/GeneratedCatalogPlanPayload.cs:18-23 (GeneratedCatalogWorkoutType)"
+      ],
+      "counterEvidence": [],
+      "confidence": "HIGH",
+      "decisionRequired": true,
+      "decisionOwner": "SCHEMA_DECISION_REQUIRED / PRODUCT_DECISION_REQUIRED (jointly, presentation-layer ownership)",
+      "perKeyTable": [
+        { "workoutKey": "EASY_STANDARD", "publicTypeMapping": "MISSING", "displayCategory": "MISSING", "localizedLabel": "MISSING", "legacyEnumLooseMatch": "TrainingDayType.Easy (loose family match only, not confirmed identity mapping)" },
+        { "workoutKey": "LONG_RUN_STANDARD", "publicTypeMapping": "MISSING", "displayCategory": "MISSING", "localizedLabel": "MISSING", "legacyEnumLooseMatch": "TrainingDayType.LongRun (loose family match only)" },
+        { "workoutKey": "FARTLEK", "publicTypeMapping": "MISSING", "displayCategory": "MISSING", "localizedLabel": "MISSING", "legacyEnumLooseMatch": "TrainingDayType.Interval (loose family match only -- NOT a confirmed INTERVAL mapping)" },
+        { "workoutKey": "THRESHOLD_TEMPO", "publicTypeMapping": "MISSING", "displayCategory": "MISSING", "localizedLabel": "MISSING", "legacyEnumLooseMatch": "TrainingDayType.Tempo (loose family match only -- NOT a confirmed TEMPO mapping)" },
+        { "workoutKey": "GOAL_PACE_TEN_K", "publicTypeMapping": "MISSING", "displayCategory": "MISSING", "localizedLabel": "MISSING", "legacyEnumLooseMatch": "none -- explicitly 'no goal-pace-specific case' in either enum" }
+      ]
+    }
+  ],
+  "hypotheses": [
+    { "hypothesisId": "H1", "statement": "WorkoutProgressionDefinition is explicitly a KEY_SESSION-only contract.", "verdict": "CONTRADICTED", "evidence": ["No Role field on WorkoutProgressionStageDefinition", "2 of 7 v10 stages target EASY family, not just QUALITY/KEY_SESSION-compatible families"], "counterEvidence": [] },
+    { "hypothesisId": "H2", "statement": "Current data contains only key-session workout candidates, but the contract is role-agnostic.", "verdict": "PARTIALLY_SUPPORTED", "evidence": ["Contract has no role field (role-agnostic confirmed)"], "counterEvidence": ["Current data is NOT only key-session-family: EASY_STANDARD stages exist too. The premise 'only key-session candidates' is false; the contract-is-role-agnostic half is true."] },
+    { "hypothesisId": "H3", "statement": "EligibleWorkoutKeys (or its v10-actual sibling EligibleWorkouts) is an eligibility whitelist, not a selection mechanism.", "verdict": "SUPPORTED", "evidence": ["All 3-4 consumption sites are VALIDATION_ONLY or ELIGIBILITY_FILTER; none selects a single workout; field is a Set, not an ordered list"], "counterEvidence": [] },
+    { "hypothesisId": "H4", "statement": "EASY_SUPPORT -> EASY_STANDARD is not currently encoded.", "verdict": "SUPPORTED", "evidence": ["No JSON/schema/validator field states this mapping"], "counterEvidence": ["EASY_STANDARD is the only reachable EASY-family workout and IS stage-scheduled, making the inference low-ambiguity even though unencoded"] },
+    { "hypothesisId": "H5", "statement": "LONG_RUN -> LONG_RUN_STANDARD is not currently encoded.", "verdict": "SUPPORTED", "evidence": ["No JSON/schema/validator field states this mapping", "LONG_RUN_STANDARD is not even stage-reachable, only eligible-list-reachable"], "counterEvidence": [] },
+    { "hypothesisId": "H6", "statement": "LONG_RUN progression is intentionally delegated to Phase 4F.7 prescription.", "verdict": "NOT_SUPPORTED", "evidence": ["No document states this delegation; the actual documented status is 'open decision deferred for a future, explicitly-scoped follow-up', which is a Phase 4F.6-adjacent catalog/product gap, not a stated Phase 4F.7 prescription concern"], "counterEvidence": ["Personalized long-run DISTANCE/PACE is legitimately Phase 4F.7's concern; but WORKOUT IDENTITY (which key represents a long run) is not the same question and is not documented as deferred to 4F.7 specifically"] },
+    { "hypothesisId": "H7", "statement": "LONG_RUN progression was intended but omitted.", "verdict": "PARTIALLY_SUPPORTED", "evidence": ["The fixture (tier-1 evidence) clearly evidences a LONG_RUN_PROGRESSION concept was used in a real generated plan", "Three separate audit documents explicitly discuss it and explicitly decline to create it as a catalog artifact, citing open ownership"], "counterEvidence": ["It was not 'omitted' by oversight -- its non-creation was a conscious, documented, explicit deferral, not an accidental gap"] },
+    { "hypothesisId": "H8", "statement": "A static role-binding policy is required before Phase 4F.6B.", "verdict": "INSUFFICIENT_EVIDENCE", "evidence": ["No mechanism currently exists (A1-Q04); BUILD/RACE_SPECIFIC weeks have zero EASY-family stages to fill 2 EASY_SUPPORT slots, and no phase has any LONG_RUN-family stage"], "counterEvidence": ["Whether the SOLUTION must be a new versioned policy artifact, vs. some other design (e.g. a default-fill rule, a layout-carried reference, or expanding level-modifier scope) is a genuine open design question this audit does not resolve"] },
+    { "hypothesisId": "H9", "statement": "No new role-binding schema is needed because an existing deterministic mechanism already exists.", "verdict": "CONTRADICTED", "evidence": ["RoleCompatibleFamilies (A1-Q04) only checks family-closure membership at publish time; it never selects a specific workout for a specific week/slot and is not consumed by backend runtime at all"], "counterEvidence": [] },
+    { "hypothesisId": "H10", "statement": "A new training-domain evidence registry is likely required.", "verdict": "PARTIALLY_SUPPORTED", "evidence": ["evidence-log.json is explicitly scoped ('Runtime resolver thresholds', 4 named condition types) and would require an explicit scope-extension decision to cover stage-level dosage/exposure/compression claims", "PilotDomainContentAudit.cs is the closer analog (records field-level provenance including workout-progression stages) but is hand-authored C# code, not an appendable structured registry with the requested atomic-claim/supports/doesNotSupport/evidence-strength shape"], "counterEvidence": ["No conclusive evidence that EXTENDING one of the two existing artifacts is impossible -- only that doing so would require an explicit scope decision, which is exactly why this is PARTIALLY_SUPPORTED rather than SUPPORTED"] }
+  ],
+  "roleOwnershipFindings": [
+    { "role": "KEY_SESSION", "layoutConfirmed": true, "stageControlled": "PARTIALLY (5 of 7 stages produce family-compatible candidates, but no stage is EXPLICITLY bound to this role)", "reachableWorkouts": ["FARTLEK", "THRESHOLD_TEMPO", "GOAL_PACE_TEN_K"], "resolutionClass": "MECHANICALLY_DERIVED" },
+    { "role": "EASY_SUPPORT", "layoutConfirmed": true, "stageControlled": "PARTIALLY (2 of 7 stages, FOUNDATION+TAPER only -- BUILD/RACE_SPECIFIC weeks have none)", "reachableWorkouts": ["EASY_STANDARD"], "resolutionClass": "ARCHITECTURAL_INFERENCE for the binding; MECHANICALLY_DERIVED for stage/family facts" },
+    { "role": "LONG_RUN", "layoutConfirmed": true, "stageControlled": "NOT AT ALL (0 of 7 stages target LONG_RUN family in any phase)", "reachableWorkouts": ["LONG_RUN_STANDARD (eligible-list only, never stage-reachable)"], "resolutionClass": "MECHANICALLY_DERIVED for the absence; GOVERNANCE_DECISION_REQUIRED for resolution given the LONG_RUN_PROGRESSION fixture evidence" }
+  ],
+  "eligibleWorkoutKeyUsage": [
+    { "field": "LevelModifierDefinition.EligibleWorkoutKeys (legacy, bare string set)", "usedBy": "LevelModifierValidator, SchemaVersionShapeValidator, TemplateCombinationValidator.ValidateEffectiveWorkoutSet, CatalogBundleAssembler (legacy branch)", "classification": "VALIDATION_ONLY and ELIGIBILITY_FILTER (mixed, per call site)", "orderSemantic": false, "collectionType": "SET (IReadOnlySet<string>)", "selectsAWorkout": false },
+    { "field": "LevelModifierDefinition.EligibleWorkouts (exact, versioned reference list -- the field v10 actually uses)", "usedBy": "WorkoutClosureResolver.ComputeExactClosureRefs (union with stage candidates), CandidatePublishGraphValidator.ValidateLayoutCoverage", "classification": "ELIGIBILITY_FILTER (closure union)", "orderSemantic": false, "collectionType": "List, deduplicated/sorted by the resolver itself", "selectsAWorkout": false }
+  ],
+  "roleBindingMechanisms": [
+    { "mechanism": "CandidatePublishGraphValidator.RoleCompatibleFamilies", "location": "plan-catalog/src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs:185-191", "explicitOrImplicit": "EXPLICIT", "versioned": false, "deterministic": true, "usedAtRuntime": false, "grain": "role->family only, never role->exact workout key" }
+  ],
+  "longRunHistory": [
+    { "term": "LONG_RUN_PROGRESSION", "location": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json", "classification": "EXAMPLE_ONLY" },
+    { "term": "LONG_RUN_PROGRESSION", "location": "docs/archive/golden-fixture-v2/golden-10k-intermediate-4d-12w_v2_plandocument.json", "classification": "EXAMPLE_ONLY (predecessor fixture)" },
+    { "term": "LONG_RUN_PROGRESSION discussion", "location": "artifacts/audits/domain-wave1-schema-necessity-audit.md", "classification": "DOCUMENTATION_ONLY (explicit non-substitutability statement)" },
+    { "term": "LONG_RUN_PROGRESSION / STEADY_FINISH discussion", "location": "artifacts/audits/ten-k-pilot-vocabulary-decisions.md", "classification": "PROPOSED_NEVER_ACCEPTED (explicitly deferred)" },
+    { "term": "LONG_RUN_PROGRESSION discussion", "location": "artifacts/audits/workout-components-ownership-audit.{json,md}", "classification": "DOCUMENTATION_ONLY" },
+    { "term": "LONG_RUN_PROGRESSION as catalog artifact", "location": "plan-catalog/catalog/ (searched, zero matches)", "classification": "NOT_FOUND" }
+  ],
+  "publicWorkoutTypeFindings": [
+    { "workoutKey": "EASY_STANDARD", "publicMapping": "MISSING", "source": "PlanCatalogDomainMapper.cs" },
+    { "workoutKey": "LONG_RUN_STANDARD", "publicMapping": "MISSING", "source": "PlanCatalogDomainMapper.cs" },
+    { "workoutKey": "FARTLEK", "publicMapping": "MISSING", "source": "PlanCatalogDomainMapper.cs" },
+    { "workoutKey": "THRESHOLD_TEMPO", "publicMapping": "MISSING", "source": "PlanCatalogDomainMapper.cs" },
+    { "workoutKey": "GOAL_PACE_TEN_K", "publicMapping": "MISSING", "source": "PlanCatalogDomainMapper.cs" }
+  ],
+  "missingFields": [
+    { "missingId": "M01", "artifactOrStage": "All 5 workout definitions", "field": "public workout-type mapping", "whyMarkedMissing": "PlanCatalogDomainMapper explicitly classifies all 5 as RequiresNewField", "expectedBy": "backend presentation layer", "classification": "SCHEMA_DECISION_REQUIRED", "severity": "BLOCKER_FOR_4F7", "nextStep": "Decide ownership (catalog vs backend) and add the mapping before any public schedule is generated" },
+    { "missingId": "M02", "artifactOrStage": "All 5 workout definitions", "field": "eligibleLevels", "whyMarkedMissing": "No such field exists on WORKOUT_DEFINITION; eligibility is inverted via LevelModifier.eligibleWorkouts", "expectedBy": "none (out of contract)", "classification": "NON_BLOCKING_INFORMATIONAL", "severity": "NON_BLOCKING", "nextStep": "None -- ownership is already correctly inverted, not missing" },
+    { "missingId": "M03", "artifactOrStage": "All 5 workout definitions", "field": "dosageFieldsAllowedBySchema (numeric distance/duration/volume)", "whyMarkedMissing": "No numeric prescription field exists on WORKOUT_DEFINITION at all", "expectedBy": "none yet (intentionally deferred)", "classification": "INTENTIONALLY_DEFERRED", "severity": "BLOCKER_FOR_4F7", "nextStep": "Phase 4F.7 prescription concern, not a Phase 4F.6 gap" },
+    { "missingId": "M04", "artifactOrStage": "StageDistributionBehavior / tie-break scheduling policy", "field": "(no such field exists at any level)", "whyMarkedMissing": "Schema explicitly forbids weekNumber/calendarDate/week on any stage; no distribution-behavior field exists", "expectedBy": "future IWorkoutStageScheduler contract", "classification": "SCHEMA_DECISION_REQUIRED", "severity": "BLOCKER_FOR_4F6B", "nextStep": "Design decision for Phase 4F.6B, not yet needed for 4F.6A" },
+    { "missingId": "M05", "artifactOrStage": "Structural role -> exact workout key mapping", "field": "(no such field/mechanism exists beyond family-closure validation)", "whyMarkedMissing": "Only RoleCompatibleFamilies (family-grain, tooling-only) exists; no workout-key-grain mechanism anywhere", "expectedBy": "future runtime scheduler", "classification": "SCHEMA_DECISION_REQUIRED", "severity": "BLOCKER_FOR_4F6B", "nextStep": "Must be resolved before any concrete role-population logic is implemented" },
+    { "missingId": "M06", "artifactOrStage": "FOUNDATION_EASY_BASE, BUILD, TAPER_SHARPEN stages", "field": "minimumExposures / maximumExposures", "whyMarkedMissing": "AUD-014: PLACEHOLDER_UNCONFIRMED, invented, no canonical dosage source", "expectedBy": "product/coaching decision", "classification": "EVIDENCE_ASSESSMENT_REQUIRED", "severity": "BLOCKER_FOR_STEP_B", "nextStep": "Step B evidence mapping" },
+    { "missingId": "M07", "artifactOrStage": "All 7 stages", "field": "compressionBehavior / extensionBehavior", "whyMarkedMissing": "AUD-015: PLACEHOLDER_UNCONFIRMED, invented vocabulary and per-stage assignment", "expectedBy": "product/coaching decision", "classification": "EVIDENCE_ASSESSMENT_REQUIRED", "severity": "BLOCKER_FOR_STEP_B", "nextStep": "Step B evidence mapping" },
+    { "missingId": "M08", "artifactOrStage": "TEN_K_MASTER phases", "field": "compressionPriority / extensionPriority (phase-level)", "whyMarkedMissing": "AUD-008: PLACEHOLDER_UNCONFIRMED, ordering priorities invented", "expectedBy": "product/coaching decision", "classification": "EVIDENCE_ASSESSMENT_REQUIRED", "severity": "BLOCKER_FOR_STEP_B", "nextStep": "Step B evidence mapping" },
+    { "missingId": "M09", "artifactOrStage": "TEN_K_MASTER phases", "field": "minimumWeeks / maximumWeeks per-phase split", "whyMarkedMissing": "AUD-004/005: PLACEHOLDER_UNCONFIRMED, only the sum was mandated", "expectedBy": "product/coaching decision", "classification": "EVIDENCE_ASSESSMENT_REQUIRED", "severity": "BLOCKER_FOR_STEP_B", "nextStep": "Step B evidence mapping" },
+    { "missingId": "M10", "artifactOrStage": "TEN_K_MASTER phases", "field": "intents vocabulary (AEROBIC_BASE etc.)", "whyMarkedMissing": "AUD-006: PLACEHOLDER_UNCONFIRMED, invented vocabulary", "expectedBy": "product decision", "classification": "PRODUCT_DECISION_REQUIRED", "severity": "NON_BLOCKING", "nextStep": "Not consumed anywhere; low urgency" },
+    { "missingId": "M11", "artifactOrStage": "FOUNDATION/BUILD/TAPER stage keys (non-brief-sourced)", "field": "stageKey identity", "whyMarkedMissing": "AUD-013: invented for pilot completeness, only RACE_SPECIFIC's stage keys trace to the brief", "expectedBy": "documentation/governance", "classification": "DOCUMENTATION_GAP", "severity": "NON_BLOCKING", "nextStep": "Low urgency; naming, not behavior" },
+    { "missingId": "M12", "artifactOrStage": "content hash", "field": "metadata.contentHash", "whyMarkedMissing": "Populated only at publish time; all catalog/ files are pre-publish DRAFT", "expectedBy": "publish tooling", "classification": "INTENTIONALLY_DEFERRED", "severity": "NON_BLOCKING", "nextStep": "None -- expected pre-publish state" },
+    { "missingId": "M13", "artifactOrStage": "LONG_RUN structural role", "field": "any stage/workout binding at all", "whyMarkedMissing": "Zero stages target LONG_RUN family; LONG_RUN_STANDARD is eligible-list-only", "expectedBy": "future scheduler", "classification": "PRODUCT_DECISION_REQUIRED", "severity": "BLOCKER_FOR_4F6B", "nextStep": "Must be resolved before 4F6B can populate the LONG_RUN slot for any week" },
+    { "missingId": "M14", "artifactOrStage": "INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2", "field": "maximumComplexityTier", "whyMarkedMissing": "Schema forbids the field for schemaVersion!=1; GOAL_PACE_TEN_K's complexityTier=2 cannot be mechanically gated against it", "expectedBy": "N/A per current schema", "classification": "NON_BLOCKING_INFORMATIONAL", "severity": "NON_BLOCKING", "nextStep": "None -- schema-intentional, not a defect" },
+    { "missingId": "M15", "artifactOrStage": "PilotCatalogStructuralTests.cs ('golden' test)", "field": "assertions targeting v10's actual dependency versions", "whyMarkedMissing": "Test hardcodes stale versions (TEN_K_MASTER v2, RUN_LAYOUT_4D v1, etc.), not v10's v6/v2/v6/v5 graph", "expectedBy": "test maintenance", "classification": "DOCUMENTATION_GAP", "severity": "NON_BLOCKING", "nextStep": "Recommend updating the golden test to target v10 explicitly, or documenting why it intentionally targets earlier versions" }
+  ],
+  "compressionExtensionGovernance": [
+    { "stage": "ALL 7 stages", "field": "minimumExposures/maximumExposures", "currentValue": "see Step A stage table", "currentGovernanceStatus": "PLACEHOLDER_UNCONFIRMED (AUD-014)", "laterDecisionFound": false, "needsStepB": true, "needsStepC": false },
+    { "stage": "ALL 7 stages", "field": "compressionBehavior/extensionBehavior", "currentValue": "see Step A stage table", "currentGovernanceStatus": "PLACEHOLDER_UNCONFIRMED (AUD-015)", "laterDecisionFound": false, "needsStepB": true, "needsStepC": false },
+    { "stage": "N/A (phase-level, TEN_K_MASTER)", "field": "compressionPriority/extensionPriority", "currentValue": "1,2,3,4 (each)", "currentGovernanceStatus": "PLACEHOLDER_UNCONFIRMED (AUD-008)", "laterDecisionFound": false, "needsStepB": true, "needsStepC": false }
+  ],
+  "evidenceRegistryAudit": [
+    { "artifact": "PilotDomainContentAudit.cs", "currentScope": "Field-level domain-content provenance/governance for the entire TEN_K/4D/INTERMEDIATE pilot catalog (all artifact types)", "storesBibliography": false, "storesClaims": true, "storesDecisions": true, "storesGovernanceStatus": true, "appendOnly": "Effectively yes (new AUD-xxx entries added per wave; old ones never mutated)", "suitableForTrainingDomainEvidence": "PARTIALLY -- it records WHAT was decided and its classification, but not scientific-source/claim/supports/doesNotSupport/evidence-strength in the requested atomic shape" },
+    { "artifact": "evidence-log.json / evidence-log.md", "currentScope": "Explicitly scoped to 4 runtime-resolver threshold decisions (GOAL_FEASIBILITY_IN, PACE_SOURCE_IN, TIME_ADEQUACY_IN, CORE_ENTRY_READINESS_IN) per its own stated Purpose section", "storesBibliography": true, "storesClaims": true, "storesDecisions": false, "storesGovernanceStatus": true, "appendOnly": "Yes, explicitly documented as append-only", "suitableForTrainingDomainEvidence": "PARTIALLY -- has the right atomic shape (source, qualityLabel, supports, conflictsWithCanonical, status) but its own documented scope excludes workout-progression stage-level claims (exposure counts, compression/extension, phase durations)" },
+    { "artifact": "activation-readiness-risks.md/.json", "currentScope": "Non-blocking-but-activation-relevant risk notes for the TEN_K__4D__INTERMEDIATE candidate lineage", "storesBibliography": false, "storesClaims": false, "storesDecisions": false, "storesGovernanceStatus": true, "appendOnly": "Yes (living aggregator, append convention documented)", "suitableForTrainingDomainEvidence": "NO -- risk/readiness tracking only, not evidence" }
+  ],
+  "governanceStatementClassifications": [
+    { "statement": "PilotDomainContentAudit.cs is authoritative for pilot domain provenance/governance.", "classification": "TRUE -- explicitly self-described as such and consumed by PublishReadinessValidator" },
+    { "statement": "evidence-log.json is scoped to runtime resolver thresholds.", "classification": "TRUE -- explicitly stated in its own Purpose section" },
+    { "statement": "A general training-domain evidence registry already exists.", "classification": "FALSE -- neither artifact has the requested general (source/claim/supports/doesNotSupport/decisionIds/strength/provenance) shape as its primary scope" },
+    { "statement": "Extending an existing registry would violate its current scope.", "classification": "TRUE for evidence-log.json (explicit narrow scope statement would need to be revised); PARTIALLY TRUE for PilotDomainContentAudit.cs (broader scope already, but wrong shape -- decision-record, not evidence-record)" },
+    { "statement": "A new registry appears necessary.", "classification": "LIKELY, but requires explicit governance approval -- see recommended outcome below" }
+  ],
+  "recommendedGovernanceOutcome": "NEW_TRAINING_DOMAIN_REGISTRY_RECOMMENDED",
+  "recommendedRegistryConceptualResponsibilities": ["scientific source", "atomic claim", "supports", "doesNotSupport", "affected decision IDs", "evidence strength", "provenance"],
+  "joinKeyAudit": [
+    { "existingJoinKey": "AUD-xxx (PilotDomainContentAudit.EntryId)", "mechanicallyUnique": true, "verifiedBy": "PilotDomainContentAuditTests.AllEntryIds_AreUnique (passing)", "resolvableProgrammatically": true },
+    { "existingJoinKey": "EV-xxx (evidence-log.json evidenceId)", "mechanicallyUnique": "not mechanically tested (no test found asserting EV-id uniqueness)", "resolvableProgrammatically": true },
+    { "existingJoinKey": "TD-xxx (activation-readiness-risks.md risk id)", "mechanicallyUnique": "not mechanically tested (prose markdown table only)", "resolvableProgrammatically": false },
+    { "existingJoinKey": "stageKey / phaseKey (catalog)", "mechanicallyUnique": "unique within one progression version (enforced by WorkoutProgressionValidator implicitly via RelativeOrder contiguity, not by an explicit uniqueness rule on StageKey itself)", "resolvableProgrammatically": true },
+    { "missingJoinDirection": "AUD-xxx entries do not carry a stageId-shaped field -- their JsonPath is prose-formatted ('$.phaseProgressions[RACE_SPECIFIC].stages[GOAL_PACE_REHEARSAL].requires'), resolvable by a human or a careful parser, but not a first-class structured stageId reference." },
+    { "missingJoinDirection": "TD-xxx risk entries reference candidate versions in prose ('v8 onward (inherited by v9, v10)') rather than a structured version-range field." },
+    { "duplicatedOrAmbiguousIds": "None found." }
+  ],
+  "joinKeyConventionProposal": {
+    "classification": "GOVERNANCE_DECISION_REQUIRED",
+    "proposal": "stageId, decisionId, evidenceId, auditId, riskId as parallel, structured, mechanically-resolvable fields on any future Step B/C artifact -- non-binding suggestion only, not implemented here."
+  },
+  "resolvedByRepositoryEvidence": [
+    "WorkoutProgressionStageDefinition has no role field (A1-Q01)",
+    "v10 stage candidates span EASY and QUALITY families, never LONG_RUN (A1-Q02)",
+    "EligibleWorkouts/EligibleWorkoutKeys is filter/validation-only, never selection, and is a Set (A1-Q03)",
+    "RoleCompatibleFamilies is the only role-adjacent mechanism, family-grain, tooling-only, not runtime-consumed (A1-Q04)",
+    "LONG_RUN_STANDARD is reachable only via level-modifier eligible list, never via any stage (A1-Q06)",
+    "LONG_RUN_PROGRESSION was never created as a catalog artifact; its non-substitutability for LONG_RUN_STANDARD is an explicit, already-recorded governance statement (A1-Q06/Q07)",
+    "No public workout-type mapping exists for any of the 5 keys (A1-Q09)",
+    "evidence-log.json's scope is explicitly limited to 4 runtime-resolver condition types (evidence registry audit)"
+  ],
+  "escalatedDecisions": [
+    { "group": "PRODUCT", "decision": "Whether EASY_SUPPORT should formally bind to EASY_STANDARD" },
+    { "group": "PRODUCT", "decision": "Whether LONG_RUN should formally bind to LONG_RUN_STANDARD, or whether a distinct LONG_RUN_PROGRESSION-style workout should be created first" },
+    { "group": "PRODUCT", "decision": "Whether the eligible-workout set (currently an observation of one generated plan, per AUD-045) should be formalized as an actual access policy" },
+    { "group": "SCHEMA", "decision": "Whether a versioned RoleWorkoutBindingPolicy-style artifact (or equivalent) is the right mechanism, vs. layout-carried defaults, vs. level-modifier extension" },
+    { "group": "SCHEMA", "decision": "Ownership location of the public workout-type mapping (catalog vs. backend domain layer)" },
+    { "group": "SCHEMA", "decision": "Whether complexity-tier gating should be reintroduced for the progression modifier now that schemaVersion 2 forbids it" },
+    { "group": "GOVERNANCE", "decision": "Whether evidence-log.json's scope should be extended to cover stage-level dosage/exposure/compression claims, or whether a new training-domain evidence registry should be created instead" },
+    { "group": "GOVERNANCE", "decision": "Whether the stale PilotCatalogStructuralTests.cs golden test should be updated to target v10 explicitly" },
+    { "group": "GOVERNANCE", "decision": "Whether TD-WAVE5-001 (no automated cross-check between AllowGoalPaceRehearsal and stage reachability) should be closed with a new validator rule" }
+  ],
+  "deferredToPrescription": [
+    "Personalized long-run distance/pace values (Phase 4F.7)",
+    "Personalized easy-run distance/pace values (Phase 4F.7)",
+    "Numeric dosage fields generally (no schema field exists yet for any workout)"
+  ],
+  "validationResults": [
+    { "suite": "PlanCatalog.Tests (full)", "command": "dotnet test PlanCatalog.sln -c Release --no-build", "passed": 335, "failed": 0, "skipped": 0, "total": 335 },
+    { "suite": "backend PlanCatalogDomainMapperTests", "command": "dotnet test RunningApp.sln -c Release --no-build --filter \"FullyQualifiedName~PlanCatalogDomainMapperTests\"", "passed": 10, "failed": 0, "skipped": 0, "total": 10 },
+    { "suite": "plan-catalog build", "command": "dotnet build PlanCatalog.sln -c Release", "errors": 0, "warnings": 0 },
+    { "suite": "backend build", "command": "dotnet build RunningApp.sln -c Release", "errors": 0, "warnings": 0 }
+  ],
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c6796578f08bc1d76d96f1944a80c9075455206",
+    "commitMade": false,
+    "notes": "Read-only audit. Two new artifacts created under plan-catalog/artifacts/audits/. No production code, catalog JSON, schema, evidence-log.json, PilotDomainContentAudit.cs, or canonical decision artifact was modified. An incidental generatedAtUtc timestamp regeneration in an unrelated pre-existing audit report (caused by running the PlanCatalog test suite) was reverted."
+  }
+}

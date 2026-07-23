@@ -35,39 +35,43 @@ public sealed class PlanServicesCatalogRoutingBoundaryTests
     private static AppDbContext NewContext() =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    private sealed class ThrowIfCalledPlanGenerationEngine : IPlanGenerationEngine
+    private sealed class CountingPlanGenerationEngine : IPlanGenerationEngine
     {
         public bool WasCalled { get; private set; }
 
         public Task<TemplateSelectionResult> SelectTemplateAsync(GeneratePreviewRequest request, CancellationToken ct = default)
         {
             WasCalled = true;
-            throw new InvalidOperationException(
-                "SelectTemplateAsync must never be invoked for a request routed to the catalog flow.");
+            throw new PlanTemplateNotAvailableException("No exact legacy template is available for this request.");
         }
     }
 
-    // Phase 4E.1 test: unchanged from Phase 4E.1.
+    // Phase 4F.8.2: the real v10 candidate is DRAFT and activation defaults disabled,
+    // so a real-user pilot-shaped request must not invoke the dark catalog path.
     [Fact]
-    public async Task GeneratePreviewAsync_PilotCombination_NeverInvokesSqlGenerationEngine()
+    public async Task GeneratePreviewAsync_DefaultDisabledDraftPilot_UsesLegacyExactTemplatePath()
     {
         await using var context = NewContext();
-        var spyEngine = new ThrowIfCalledPlanGenerationEngine();
+        var spyEngine = new CountingPlanGenerationEngine();
         var service = TestPlanServicesFactory.Create(context, spyEngine);
 
-        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() => service.GeneratePreviewAsync(
+        await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(() => service.GeneratePreviewAsync(
             Guid.NewGuid(),
             new GeneratePreviewRequest
             {
                 GoalType = GoalType.Race,
                 GoalDistance = GoalDistance.TenK,
-                Level = RunningBackground.RunningRegularly,
+                Level = RunningBackground.Intermediate,
                 DaysPerWeek = 4,
                 Unit = DistanceUnit.Km,
-                RaceDate = new DateOnly(2026, 12, 1),
+                RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+                PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+                LongRunDay = Weekday.Sun,
+                TargetFinishTimeSeconds = 3600,
             }));
 
-        Assert.False(spyEngine.WasCalled);
+        Assert.True(spyEngine.WasCalled);
         Assert.Empty(context.PlanPreviews);
     }
 
@@ -119,4 +123,3 @@ public sealed class PlanServicesCatalogRoutingBoundaryTests
         Assert.Empty(context.TrainingPlans);
     }
 }
-

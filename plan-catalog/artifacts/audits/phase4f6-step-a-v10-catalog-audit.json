@@ -1,0 +1,510 @@
+{
+  "auditKey": "PHASE4F6_STEP_A_V10_CATALOG_AUDIT",
+  "auditVersion": 1,
+  "candidate": {
+    "artifactId": "combination:TEN_K__4D__INTERMEDIATE:v10",
+    "value": { "key": "TEN_K__4D__INTERMEDIATE", "version": 10, "status": "DRAFT" },
+    "fieldSource": "ACTUAL_CATALOG",
+    "sourceArtifactId": "combination:TEN_K__4D__INTERMEDIATE:v10",
+    "sourcePath": "plan-catalog/catalog/combinations/ten-k-4d-intermediate.v10.json",
+    "sourceFields": ["$.metadata.key", "$.metadata.version", "$.metadata.status"],
+    "derivationRule": null,
+    "decisionId": null,
+    "evidenceIds": [],
+    "notes": "Reachable-by-tooling confirmed by plan-catalog/tests/PlanCatalog.Tests/Validation/D13GoalPaceTenKResolutionTests.cs (BuildBundle(10)). No contentHash present on the combination artifact's metadata object."
+  },
+  "resolvedDependencyGraph": [
+    {
+      "artifactId": "combination:TEN_K__4D__INTERMEDIATE:v10",
+      "artifactType": "TEMPLATE_COMBINATION", "key": "TEN_K__4D__INTERMEDIATE", "version": 10, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/combinations/ten-k-4d-intermediate.v10.json",
+      "contentHash": null, "parent": null, "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-427"
+    },
+    {
+      "artifactId": "planTemplate:TEN_K_MASTER:v6",
+      "artifactType": "PLAN_TEMPLATE", "key": "TEN_K_MASTER", "version": 6, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/templates/ten-k-master.v6.json",
+      "contentHash": null, "parent": "combination:TEN_K__4D__INTERMEDIATE:v10", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-425",
+      "notes": "Phase-level fields (coreCycle, phases[].preferredWeeks/minimumWeeks/maximumWeeks/intents/eligibleWorkoutFamilies/compressionPriority/extensionPriority/isCompressionProtected) are byte-identical to v2 per the AUD-007..AUD-425 cascade chain; only workoutProgression reference was repointed across v2->v4->v5->v6."
+    },
+    {
+      "artifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "artifactType": "WORKOUT_PROGRESSION", "key": "TEN_K_WORKOUT_PROGRESSION_V1", "version": 5, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json",
+      "contentHash": null, "parent": "planTemplate:TEN_K_MASTER:v6", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-424"
+    },
+    {
+      "artifactId": "runLayout:RUN_LAYOUT_4D:v2",
+      "artifactType": "RUN_LAYOUT", "key": "RUN_LAYOUT_4D", "version": 2, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/layouts/run-layout-4d.v2.json",
+      "contentHash": null, "parent": "combination:TEN_K__4D__INTERMEDIATE:v10", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-300",
+      "notes": "schemaVersion 2 removed the authored sequenceOrder field (AUD-300); slot order is now mechanically derived from JSON array position."
+    },
+    {
+      "artifactId": "levelModifier:INTERMEDIATE_MODIFIER:v6",
+      "artifactType": "LEVEL_MODIFIER", "key": "INTERMEDIATE_MODIFIER", "version": 6, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/level-modifiers/intermediate-modifier.v6.json",
+      "contentHash": null, "parent": "combination:TEN_K__4D__INTERMEDIATE:v10", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-426"
+    },
+    {
+      "artifactId": "progressionModifier:INTERMEDIATE_PROGRESSION_MODIFIER_V1:v2",
+      "artifactType": "PROGRESSION_MODIFIER", "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1", "version": 2, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/progression-modifiers/intermediate-progression-modifier.v2.json",
+      "contentHash": null, "parent": "levelModifier:INTERMEDIATE_MODIFIER:v6", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-331"
+    },
+    {
+      "artifactId": "rulePack:APPSEL_RACE_PLAN_V1:v4",
+      "artifactType": "RULE_PACK", "key": "APPSEL_RACE_PLAN_V1", "version": 4, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/rule-packs/appsel-race-plan.v4.json",
+      "contentHash": null, "parent": "combination:TEN_K__4D__INTERMEDIATE:v10", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-412"
+    },
+    {
+      "artifactId": "peakVolumeBandPolicy:PEAK_VOLUME_BANDS_V1:v3",
+      "artifactType": "PEAK_VOLUME_BAND_POLICY", "key": "PEAK_VOLUME_BANDS_V1", "version": 3, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/policies/peak-volume-bands.v3.json",
+      "contentHash": null, "parent": "rulePack:APPSEL_RACE_PLAN_V1:v4", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-410"
+    },
+    {
+      "artifactId": "runtimeConditionValueRegistry:RUNTIME_CONDITION_VALUES_V1:v2",
+      "artifactType": "RUNTIME_CONDITION_VALUE_REGISTRY", "key": "RUNTIME_CONDITION_VALUES_V1", "version": 2, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/registries/runtime-condition-values.v2.json",
+      "contentHash": null, "parent": "rulePack:APPSEL_RACE_PLAN_V1:v4", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-400"
+    },
+    {
+      "artifactId": "workout:EASY_STANDARD:v4",
+      "artifactType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workouts/easy-standard.v4.json",
+      "contentHash": null, "parent": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-313"
+    },
+    {
+      "artifactId": "workout:LONG_RUN_STANDARD:v4",
+      "artifactType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 4, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workouts/long-run-standard.v4.json",
+      "contentHash": null, "parent": "levelModifier:INTERMEDIATE_MODIFIER:v6", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-316",
+      "notes": "Reachable only via levelModifier.eligibleWorkouts; zero workout-progression stages reference this key in v10 -- see undocumentedAssumptions and openDecisions."
+    },
+    {
+      "artifactId": "workout:FARTLEK:v4",
+      "artifactType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 4, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workouts/fartlek.v4.json",
+      "contentHash": null, "parent": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-314"
+    },
+    {
+      "artifactId": "workout:THRESHOLD_TEMPO:v4",
+      "artifactType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workouts/threshold-tempo.v4.json",
+      "contentHash": null, "parent": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-317"
+    },
+    {
+      "artifactId": "workout:GOAL_PACE_TEN_K:v2",
+      "artifactType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2, "status": "DRAFT",
+      "sourcePath": "plan-catalog/catalog/workouts/goal-pace-ten-k.v2.json",
+      "contentHash": null, "parent": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "reachableFromCandidate": true,
+      "fieldSource": "ACTUAL_CATALOG", "evidenceIds": [], "decisionId": "AUD-420"
+    }
+  ],
+  "phases": [
+    {
+      "phaseKey": "FOUNDATION",
+      "resolvedWeekCount": { "value": 3, "fieldSource": "ACTUAL_CATALOG", "sourceArtifactId": "planTemplate:TEN_K_MASTER:v6", "sourcePath": "$.phases[0].preferredWeeks", "sourceFields": [], "derivationRule": null, "decisionId": "AUD-003", "evidenceIds": [], "notes": null },
+      "stageCount": { "value": 1, "fieldSource": "DERIVED_FROM_CATALOG", "sourceArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "sourcePath": "$.phaseProgressions[FOUNDATION].stages", "sourceFields": ["count(stages)"], "derivationRule": "stageCount = count(PhaseProgression.Stages)", "decisionId": null, "evidenceIds": [], "notes": null },
+      "sumMinimumExposures": { "value": 3, "fieldSource": "DERIVED_FROM_CATALOG", "sourceArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "sourcePath": "$.phaseProgressions[FOUNDATION].stages[*].minimumExposures", "sourceFields": ["stages[*].minimumExposures"], "derivationRule": "sum(Stage.MinimumExposures)", "decisionId": null, "evidenceIds": [], "notes": null },
+      "sumMaximumExposures": { "value": 6, "fieldSource": "DERIVED_FROM_CATALOG", "sourceArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5", "sourcePath": "$.phaseProgressions[FOUNDATION].stages[*].maximumExposures", "sourceFields": ["stages[*].maximumExposures"], "derivationRule": "sum(Stage.MaximumExposures)", "decisionId": null, "evidenceIds": [], "notes": null },
+      "eligibleCandidateUnion": { "value": ["EASY_STANDARD"], "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "distinct(union(stages[*].workoutCandidates[*].key))", "sourceFields": ["stages[*].workoutCandidates"], "decisionId": null, "evidenceIds": [], "notes": null },
+      "duplicateCandidateKeys": { "value": [], "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "keys appearing more than once within one stage's workoutCandidates list", "decisionId": null, "evidenceIds": [] },
+      "conditionalStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "count(stages where requires.length > 0)", "decisionId": null, "evidenceIds": [] },
+      "fallbackStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "count(stages where fallbackStageKey != null)", "decisionId": null, "evidenceIds": [] },
+      "exposureFeasibility": { "resolvedPhaseWeekCount": 3, "sumMinimumExposures": 3, "sumMaximumExposures": 6, "minimumFit": "EXACT", "maximumFit": "HAS_EXTENSION_CAPACITY" }
+    },
+    {
+      "phaseKey": "BUILD",
+      "resolvedWeekCount": { "value": 4, "fieldSource": "ACTUAL_CATALOG", "sourceArtifactId": "planTemplate:TEN_K_MASTER:v6", "sourcePath": "$.phases[1].preferredWeeks", "decisionId": "AUD-003", "evidenceIds": [] },
+      "stageCount": { "value": 2, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "stageCount = count(PhaseProgression.Stages)", "decisionId": null, "evidenceIds": [] },
+      "sumMinimumExposures": { "value": 3, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "sum(Stage.MinimumExposures) = 1(FARTLEK_INTRO)+2(THRESHOLD_INTRO)", "decisionId": null, "evidenceIds": [] },
+      "sumMaximumExposures": { "value": 6, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "sum(Stage.MaximumExposures) = 2+4", "decisionId": null, "evidenceIds": [] },
+      "eligibleCandidateUnion": { "value": ["FARTLEK", "THRESHOLD_TEMPO"], "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "distinct(union(stages[*].workoutCandidates[*].key))", "decisionId": null, "evidenceIds": [] },
+      "duplicateCandidateKeys": { "value": [], "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "conditionalStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "fallbackStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "exposureFeasibility": { "resolvedPhaseWeekCount": 4, "sumMinimumExposures": 3, "sumMaximumExposures": 6, "minimumFit": "UNDER_CAPACITY", "maximumFit": "HAS_EXTENSION_CAPACITY" }
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "resolvedWeekCount": { "value": 4, "fieldSource": "ACTUAL_CATALOG", "sourceArtifactId": "planTemplate:TEN_K_MASTER:v6", "sourcePath": "$.phases[2].preferredWeeks", "decisionId": "AUD-003", "evidenceIds": [] },
+      "stageCount": { "value": 3, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "sumMinimumExposures": { "value": 3, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "sum(Stage.MinimumExposures) = 1(TEN_K_SPECIFIC_INTRO)+1(GOAL_PACE_REHEARSAL)+1(CURRENT_FITNESS_SPECIFIC_REHEARSAL)", "decisionId": null, "evidenceIds": [] },
+      "sumMaximumExposures": { "value": 5, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "sum(Stage.MaximumExposures) = 2+2+1", "decisionId": null, "evidenceIds": [] },
+      "eligibleCandidateUnion": { "value": ["THRESHOLD_TEMPO", "GOAL_PACE_TEN_K"], "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "distinct(union(stages[*].workoutCandidates[*].key)) -- THRESHOLD_TEMPO is reused by two distinct stages (TEN_K_SPECIFIC_INTRO, CURRENT_FITNESS_SPECIFIC_REHEARSAL); this is cross-stage reuse, not a within-stage duplicate", "decisionId": null, "evidenceIds": [] },
+      "duplicateCandidateKeys": { "value": [], "fieldSource": "DERIVED_FROM_CATALOG", "notes": "No stage's own workoutCandidates array contains a repeated key. THRESHOLD_TEMPO's reuse is cross-stage, tracked separately.", "decisionId": null, "evidenceIds": [] },
+      "conditionalStageCount": { "value": 1, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "count(stages where requires.length > 0) -- GOAL_PACE_REHEARSAL", "decisionId": null, "evidenceIds": [] },
+      "fallbackStageCount": { "value": 1, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "count(stages where fallbackStageKey != null) -- GOAL_PACE_REHEARSAL -> CURRENT_FITNESS_SPECIFIC_REHEARSAL", "decisionId": null, "evidenceIds": [] },
+      "fallbackStaysWithinPhase": { "value": true, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "target stage's owning phaseKey == source stage's owning phaseKey", "decisionId": null, "evidenceIds": [] },
+      "exposureFeasibility": { "resolvedPhaseWeekCount": 4, "sumMinimumExposures": 3, "sumMaximumExposures": 5, "minimumFit": "UNDER_CAPACITY", "maximumFit": "HAS_EXTENSION_CAPACITY" }
+    },
+    {
+      "phaseKey": "TAPER",
+      "resolvedWeekCount": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "sourceArtifactId": "planTemplate:TEN_K_MASTER:v6", "sourcePath": "$.phases[3].preferredWeeks", "decisionId": "AUD-003", "evidenceIds": [] },
+      "stageCount": { "value": 1, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "sumMinimumExposures": { "value": 1, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "sumMaximumExposures": { "value": 2, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "eligibleCandidateUnion": { "value": ["EASY_STANDARD"], "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "duplicateCandidateKeys": { "value": [], "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "conditionalStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "fallbackStageCount": { "value": 0, "fieldSource": "DERIVED_FROM_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "exposureFeasibility": { "resolvedPhaseWeekCount": 1, "sumMinimumExposures": 1, "sumMaximumExposures": 2, "minimumFit": "EXACT", "maximumFit": "HAS_EXTENSION_CAPACITY" }
+    }
+  ],
+  "stages": [
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:FOUNDATION:FOUNDATION_EASY_BASE",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "FOUNDATION", "stageKey": "FOUNDATION_EASY_BASE",
+      "relativeOrder": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-RELATIVE_ORDER", "evidenceIds": [] },
+      "workoutCandidateKeys": { "value": ["EASY_STANDARD:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 3, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 6, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "AUD-013 (workout-progression v1) classified this stage key as PLACEHOLDER_UNCONFIRMED ('invented for pilot completeness'); no v5-anchored re-confirmation entry exists. AUD-014/AUD-015 classify min/maxExposures and compression/extensionBehavior as PLACEHOLDER_UNCONFIRMED (invented, no canonical dosage source) for v1; AUD-320/AUD-310 cascade notes confirm these values were carried forward unchanged through v2-v5, so the same unconfirmed classification applies to v5's actual values."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:BUILD:FARTLEK_INTRO",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "BUILD", "stageKey": "FARTLEK_INTRO",
+      "relativeOrder": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-RELATIVE_ORDER", "evidenceIds": [] },
+      "workoutCandidateKeys": { "value": ["FARTLEK:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-FARTLEK_INTRO-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "AUD-013/AUD-014/AUD-015 (see FOUNDATION_EASY_BASE note) apply identically: stage key, exposure bounds, and compression/extension behavior remain PLACEHOLDER_UNCONFIRMED for their originating version, carried forward unchanged to v5."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:BUILD:THRESHOLD_INTRO",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "BUILD", "stageKey": "THRESHOLD_INTRO",
+      "relativeOrder": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-RELATIVE_ORDER", "evidenceIds": [] },
+      "workoutCandidateKeys": { "value": ["THRESHOLD_TEMPO:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 4, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-BUILD-THRESHOLD_INTRO-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "Same unconfirmed-carried-forward classification as FOUNDATION_EASY_BASE."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:TEN_K_SPECIFIC_INTRO",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "RACE_SPECIFIC", "stageKey": "TEN_K_SPECIFIC_INTRO",
+      "relativeOrder": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-RELATIVE_ORDER", "evidenceIds": ["AUD-010"] },
+      "workoutCandidateKeys": { "value": ["THRESHOLD_TEMPO:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "AUD-010 (brief-sourced, CANONICAL_CONFIRMED for v1's ordering '1. TEN_K_SPECIFIC_INTRO, 2. GOAL_PACE_REHEARSAL'): DIRECT link quality for relativeOrder=1 specifically; exposure bounds/compression/extension remain PLACEHOLDER_UNCONFIRMED (AUD-014/015 lineage)."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:GOAL_PACE_REHEARSAL",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "RACE_SPECIFIC", "stageKey": "GOAL_PACE_REHEARSAL",
+      "relativeOrder": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-RELATIVE_ORDER", "evidenceIds": ["AUD-010"] },
+      "workoutCandidateKeys": { "value": ["GOAL_PACE_TEN_K:v2"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "PROTECTED", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "FIXED_EXPOSURE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [{ "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] }], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-REQUIRES", "evidenceIds": ["AUD-011"] },
+      "fallbackStageKey": { "value": "CURRENT_FITNESS_SPECIFIC_REHEARSAL", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-FALLBACK_STAGE", "evidenceIds": ["AUD-012"] },
+      "fallbackStageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:CURRENT_FITNESS_SPECIFIC_REHEARSAL",
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "The single most evidence-linked stage in the catalog. AUD-010/011/012 (brief-sourced, DIRECT for the ordering/requires/fallback shape) plus AUD-424 (DIRECT, confirms v5's exact structure byte-identical to v4 except the GOAL_PACE_TEN_K v1->v2 reference) plus activation-readiness-risks.md risk TD-WAVE5-001 (DIRECT, explicitly about v10: notes the AllowGoalPaceRehearsal flag is never actually read by any runtime guard -- GOAL_FEASIBILITY_IN is the only real gate). Exposure bounds remain PLACEHOLDER_UNCONFIRMED (AUD-014 lineage)."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:CURRENT_FITNESS_SPECIFIC_REHEARSAL",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "RACE_SPECIFIC", "stageKey": "CURRENT_FITNESS_SPECIFIC_REHEARSAL",
+      "relativeOrder": { "value": 3, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-RELATIVE_ORDER", "evidenceIds": [] },
+      "workoutCandidateKeys": { "value": ["THRESHOLD_TEMPO:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "COMPRESSIBLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "EXTENDABLE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-CURRENT_FITNESS_SPECIFIC_REHEARSAL-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "This stage's own requires is empty -- it is unconditionally eligible once reached, so the GOAL_PACE_REHEARSAL fallback chain always terminates successfully in v10's actual data (no unresolved-terminal-fallback scenario exists today)."
+    },
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:TAPER:TAPER_SHARPEN",
+      "progressionArtifactId": "workoutProgression:TEN_K_WORKOUT_PROGRESSION_V1:v5",
+      "phaseKey": "TAPER", "stageKey": "TAPER_SHARPEN",
+      "relativeOrder": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-RELATIVE_ORDER", "evidenceIds": [] },
+      "workoutCandidateKeys": { "value": ["EASY_STANDARD:v4"], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-WORKOUT_CANDIDATE_KEYS", "evidenceIds": [] },
+      "minimumExposures": { "value": 1, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-MINIMUM_EXPOSURES", "evidenceIds": [] },
+      "maximumExposures": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-MAXIMUM_EXPOSURES", "evidenceIds": [] },
+      "compressionBehavior": { "value": "PROTECTED", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-COMPRESSION_BEHAVIOR", "evidenceIds": [] },
+      "extensionBehavior": { "value": "FIXED_EXPOSURE", "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-EXTENSION_BEHAVIOR", "evidenceIds": [] },
+      "requires": { "value": [], "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-REQUIRES", "evidenceIds": [] },
+      "fallbackStageKey": { "value": null, "fieldSource": "ACTUAL_CATALOG", "decisionId": "STAGE-TEN_K-TAPER-TAPER_SHARPEN-FALLBACK_STAGE", "evidenceIds": [] },
+      "fallbackStageId": null,
+      "arrayOrderMatchesRelativeOrder": true,
+      "validationStatus": "VALID",
+      "notes": "Only TAPER stage; EASY_STANDARD workout key, not a distinct 'race-week workout' -- no RACE-family workout definition is referenced by any stage anywhere in v10's progression, though the master template's own TAPER phase eligibleWorkoutFamilies explicitly permits QUALITY and RACE (AUD-007)."
+    }
+  ],
+  "workoutDefinitions": [
+    {
+      "workoutArtifactId": "workout:EASY_STANDARD:v4", "workoutKey": "EASY_STANDARD", "version": 4, "status": "DRAFT",
+      "family": "EASY", "complexityTier": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "Absent by schema design for schemaVersion 3 (workout-definition.schema.json forbids complexityTier when schemaVersion is not 1 or 2); removed at WAVE3 (AUD-313)." },
+      "eligiblePhases": { "value": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"], "fieldSource": "ACTUAL_CATALOG" },
+      "eligibleLevels": { "value": null, "fieldSource": "MISSING", "notes": "No 'eligibleLevels' concept exists on WORKOUT_DEFINITION; level eligibility is governed entirely by which LEVEL_MODIFIER documents list this workout in their own eligibleWorkouts array (inverted ownership, not a field on the workout itself)." },
+      "allowedPrescriptionModes": { "value": ["DISTANCE"], "fieldSource": "ACTUAL_CATALOG" },
+      "componentSchema": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "No components array present -- valid per schema (EASY_STANDARD is continuous; AUD-302 confirms components are optional/omitted by design, not missing data)." },
+      "paceFieldsAllowedBySchema": { "value": false, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "'PACE_BASED' not in allowedPrescriptionModes" },
+      "dosageFieldsAllowedBySchema": { "value": false, "fieldSource": "MISSING", "notes": "Schema has no explicit numeric-dosage field at all (distance/duration/volume); prescription mode governs only which ACCOUNTING category applies, not a stored numeric target." },
+      "sourcePath": "plan-catalog/catalog/workouts/easy-standard.v4.json",
+      "referencedByStages": ["TEN_K_WORKOUT_PROGRESSION_V1:v5:FOUNDATION:FOUNDATION_EASY_BASE", "TEN_K_WORKOUT_PROGRESSION_V1:v5:TAPER:TAPER_SHARPEN"],
+      "publicWorkoutTypeMapping": { "value": null, "fieldSource": "MISSING", "notes": "backend RunningApp.Application.RuntimeCatalog.PlanCatalogDomainMapper.ClassifyWorkoutKeys classifies EASY_STANDARD as BackendRepresentationSupport.RequiresNewField: 'TrainingDayType.Easy loosely matches this workout's FAMILY, but the exact catalog workout key/version identity is not preserved by any existing field.' No mapping into GeneratedCatalogWorkoutType {Easy,Interval,Tempo,LongRun,RecoveryEasy} exists either." },
+      "validationStatus": "VALID"
+    },
+    {
+      "workoutArtifactId": "workout:LONG_RUN_STANDARD:v4", "workoutKey": "LONG_RUN_STANDARD", "version": 4, "status": "DRAFT",
+      "family": "LONG_RUN", "complexityTier": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "Absent by schema design (schemaVersion 3); removed at WAVE3 (AUD-316)." },
+      "eligiblePhases": { "value": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"], "fieldSource": "ACTUAL_CATALOG" },
+      "eligibleLevels": { "value": null, "fieldSource": "MISSING", "notes": "Same as EASY_STANDARD -- no eligibleLevels concept exists on WORKOUT_DEFINITION." },
+      "allowedPrescriptionModes": { "value": ["DISTANCE"], "fieldSource": "ACTUAL_CATALOG" },
+      "componentSchema": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "No components; valid per schema (AUD-306)." },
+      "paceFieldsAllowedBySchema": { "value": false, "fieldSource": "DERIVED_FROM_CATALOG" },
+      "dosageFieldsAllowedBySchema": { "value": false, "fieldSource": "MISSING" },
+      "sourcePath": "plan-catalog/catalog/workouts/long-run-standard.v4.json",
+      "referencedByStages": [],
+      "notes": "ZERO stages in v10's actual workoutProgression reference this key -- reachable ONLY via levelModifier.eligibleWorkouts closure membership (CandidatePublishGraphValidator's ValidateLayoutCoverage union), never via any stage.workoutCandidates entry. See openDecisions / undocumentedAssumptions.",
+      "publicWorkoutTypeMapping": { "value": null, "fieldSource": "MISSING", "notes": "PlanCatalogDomainMapper.ClassifyWorkoutKeys: 'TrainingDayType.LongRun loosely matches this workout's FAMILY, but the exact catalog workout key/version identity is not preserved by any existing field.'" },
+      "validationStatus": "VALID"
+    },
+    {
+      "workoutArtifactId": "workout:FARTLEK:v4", "workoutKey": "FARTLEK", "version": 4, "status": "DRAFT",
+      "family": "QUALITY", "complexityTier": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "Absent by schema design (schemaVersion 3); removed at WAVE3 (AUD-314)." },
+      "eligiblePhases": { "value": ["BUILD"], "fieldSource": "ACTUAL_CATALOG" },
+      "eligibleLevels": { "value": null, "fieldSource": "MISSING" },
+      "allowedPrescriptionModes": { "value": ["MIXED"], "fieldSource": "ACTUAL_CATALOG" },
+      "componentSchema": { "value": [
+        { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+        { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "SURGE_AND_FLOAT" },
+        { "sequenceOrder": 3, "componentType": "RECOVERY", "intensityDescriptor": "EASY_JOG" },
+        { "sequenceOrder": 4, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+      ], "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "paceFieldsAllowedBySchema": { "value": false, "fieldSource": "DERIVED_FROM_CATALOG" },
+      "dosageFieldsAllowedBySchema": { "value": false, "fieldSource": "MISSING" },
+      "sourcePath": "plan-catalog/catalog/workouts/fartlek.v4.json",
+      "referencedByStages": ["TEN_K_WORKOUT_PROGRESSION_V1:v5:BUILD:FARTLEK_INTRO"],
+      "publicWorkoutTypeMapping": { "value": null, "fieldSource": "MISSING", "notes": "PlanCatalogDomainMapper.ClassifyWorkoutKeys: 'TrainingDayType.Interval is a plausible loose family match, but the exact catalog workout key is not preserved.' NOT an exact/confirmed mapping to public INTERVAL -- explicitly documented as a loose guess only." },
+      "validationStatus": "VALID"
+    },
+    {
+      "workoutArtifactId": "workout:THRESHOLD_TEMPO:v4", "workoutKey": "THRESHOLD_TEMPO", "version": 4, "status": "DRAFT",
+      "family": "QUALITY", "complexityTier": { "value": null, "fieldSource": "ACTUAL_CATALOG", "notes": "Absent by schema design (schemaVersion 3); removed at WAVE3 (AUD-317)." },
+      "eligiblePhases": { "value": ["BUILD", "RACE_SPECIFIC"], "fieldSource": "ACTUAL_CATALOG" },
+      "eligibleLevels": { "value": null, "fieldSource": "MISSING" },
+      "allowedPrescriptionModes": { "value": ["MIXED"], "fieldSource": "ACTUAL_CATALOG" },
+      "componentSchema": { "value": [
+        { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+        { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "THRESHOLD" },
+        { "sequenceOrder": 3, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+      ], "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": [] },
+      "paceFieldsAllowedBySchema": { "value": false, "fieldSource": "DERIVED_FROM_CATALOG" },
+      "dosageFieldsAllowedBySchema": { "value": false, "fieldSource": "MISSING" },
+      "sourcePath": "plan-catalog/catalog/workouts/threshold-tempo.v4.json",
+      "referencedByStages": ["TEN_K_WORKOUT_PROGRESSION_V1:v5:BUILD:THRESHOLD_INTRO", "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:TEN_K_SPECIFIC_INTRO", "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:CURRENT_FITNESS_SPECIFIC_REHEARSAL"],
+      "publicWorkoutTypeMapping": { "value": null, "fieldSource": "MISSING", "notes": "PlanCatalogDomainMapper.ClassifyWorkoutKeys: 'TrainingDayType.Tempo is a plausible loose family match, but the exact catalog workout key is not preserved.' NOT an exact/confirmed mapping to public TEMPO." },
+      "validationStatus": "VALID"
+    },
+    {
+      "workoutArtifactId": "workout:GOAL_PACE_TEN_K:v2", "workoutKey": "GOAL_PACE_TEN_K", "version": 2, "status": "DRAFT",
+      "family": "QUALITY", "complexityTier": { "value": 2, "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": ["AUD-421"], "notes": "AUD-421 classifies this as EXPLICIT_PRODUCT_DEFAULT, not CANONICAL_CONFIRMED -- required by schema (schemaVersion 1) but no canonical source assigns the specific tier value 2." },
+      "eligiblePhases": { "value": ["RACE_SPECIFIC"], "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": ["AUD-420"] },
+      "eligibleLevels": { "value": null, "fieldSource": "MISSING" },
+      "allowedPrescriptionModes": { "value": ["PACE_BASED"], "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": ["AUD-422"] },
+      "componentSchema": { "value": [
+        { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+        { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "GOAL_PACE" },
+        { "sequenceOrder": 3, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+      ], "fieldSource": "ACTUAL_CATALOG", "decisionId": null, "evidenceIds": ["AUD-423"] },
+      "paceFieldsAllowedBySchema": { "value": true, "fieldSource": "DERIVED_FROM_CATALOG", "derivationRule": "'PACE_BASED' in allowedPrescriptionModes -- schema allows a pace field category; no personalized numeric pace value exists anywhere in this artifact." },
+      "dosageFieldsAllowedBySchema": { "value": false, "fieldSource": "MISSING" },
+      "sourcePath": "plan-catalog/catalog/workouts/goal-pace-ten-k.v2.json",
+      "referencedByStages": ["TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:GOAL_PACE_REHEARSAL"],
+      "publicWorkoutTypeMapping": { "value": null, "fieldSource": "MISSING", "notes": "PlanCatalogDomainMapper.ClassifyWorkoutKeys: 'No field anywhere stores the exact catalog WORKOUT KEY... TrainingDayType has no goal-pace-specific case (closest lossy fits: Tempo or Interval).' No distinct public type exists for GOAL_PACE_TEN_K." },
+      "validationStatus": "VALID"
+    }
+  ],
+  "runtimeEligibilityConditions": [
+    {
+      "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:GOAL_PACE_REHEARSAL",
+      "conditionType": "GOAL_FEASIBILITY_IN",
+      "allowedValuesOnStage": ["REALISTIC", "CHALLENGING"],
+      "registryArtifactId": "runtimeConditionValueRegistry:RUNTIME_CONDITION_VALUES_V1:v2",
+      "registryAllowedValues": ["REALISTIC", "CHALLENGING", "UNSUPPORTED", "NOT_REQUESTED"],
+      "conditionTypeExistsInRegistry": true,
+      "allStageValuesExistInRegistry": true,
+      "resolverImplementation": "backend/RunningApp.Application/RuntimeCatalog/Resolvers/GoalFeasibilityResolver.cs (Phase 4C/4D) -- implemented; outputs GoalFeasibilityResolutionStatus values including Realistic/Challenging/Unsupported/NotRequested per repository's own established resolver pattern.",
+      "outcomeDomain": ["REALISTIC", "CHALLENGING", "UNSUPPORTED", "NOT_REQUESTED"],
+      "fallbackIfIneligible": "CURRENT_FITNESS_SPECIFIC_REHEARSAL (unconditional, requires=[])",
+      "currentReachability": "This stage's requires is the ONLY runtime-condition reference anywhere in v10's workoutProgression -- confirmed by direct inspection of ten-k-workout-progression.v5.json (single 'requires' block in the whole document) and by AUD-406 ('repository-wide search... found zero references to PACE_SOURCE_IN, TIME_ADEQUACY_IN, or CORE_ENTRY_READINESS_IN outside the registry artifact itself').",
+      "valid": true,
+      "fieldSource": "ACTUAL_CATALOG",
+      "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-REQUIRES",
+      "evidenceIds": ["AUD-011", "AUD-400"]
+    }
+  ],
+  "fallbackChains": [
+    {
+      "chainId": "CHAIN-RACE_SPECIFIC-GOAL_PACE_REHEARSAL",
+      "sourceStageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:GOAL_PACE_REHEARSAL",
+      "chain": [
+        { "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:GOAL_PACE_REHEARSAL", "requires": [{ "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] }] },
+        { "stageId": "TEN_K_WORKOUT_PROGRESSION_V1:v5:RACE_SPECIFIC:CURRENT_FITNESS_SPECIFIC_REHEARSAL", "requires": [] }
+      ],
+      "targetExistsInSameProgressionVersion": true,
+      "samePhase": true,
+      "circular": false,
+      "fallbackCandidateWorkoutsVerified": ["THRESHOLD_TEMPO:v4"],
+      "fallbackRuntimeConditionsVerified": [],
+      "fallbackCanItselfFailEligibility": false,
+      "terminalOutcomeIfAllFallbacksIneligible": "NOT_REACHABLE_IN_V10 -- CURRENT_FITNESS_SPECIFIC_REHEARSAL has requires=[] and is therefore always eligible once reached; no scenario in the current catalog data causes the entire chain to fail. General terminal-failure behavior (what happens if a fallback chain's last stage is itself ineligible) is not represented anywhere in the current catalog/validator contract -- classified MISSING/OPEN_DECISION for any FUTURE stage that might have both a fallback and a conditional fallback target, which does not exist in v10 today.",
+      "fieldSource": "DERIVED_FROM_CATALOG",
+      "derivationRule": "graph traversal of fallbackStageKey references within one phaseProgression, validated by WorkoutProgressionValidator.DetectCircularFallback and TemplateCombinationValidator's TC_STAGE_UNREACHABLE reachability check",
+      "decisionId": null,
+      "evidenceIds": []
+    }
+  ],
+  "phaseExposureFeasibility": [
+    { "phaseKey": "FOUNDATION", "sumMinimumExposures": 3, "sumMaximumExposures": 6, "resolvedPhaseWeekCount": 3, "minimumFit": "EXACT", "maximumFit": "HAS_EXTENSION_CAPACITY" },
+    { "phaseKey": "BUILD", "sumMinimumExposures": 3, "sumMaximumExposures": 6, "resolvedPhaseWeekCount": 4, "minimumFit": "UNDER_CAPACITY", "maximumFit": "HAS_EXTENSION_CAPACITY" },
+    { "phaseKey": "RACE_SPECIFIC", "sumMinimumExposures": 3, "sumMaximumExposures": 5, "resolvedPhaseWeekCount": 4, "minimumFit": "UNDER_CAPACITY", "maximumFit": "HAS_EXTENSION_CAPACITY" },
+    { "phaseKey": "TAPER", "sumMinimumExposures": 1, "sumMaximumExposures": 2, "resolvedPhaseWeekCount": 1, "minimumFit": "EXACT", "maximumFit": "HAS_EXTENSION_CAPACITY" }
+  ],
+  "structuralRoleCompatibility": {
+    "explicitInCatalogData": [],
+    "mechanicallyImpliedByValidatedFamilyConstraints": [
+      { "role": "LONG_RUN", "compatibleFamilies": ["LONG_RUN"], "source": "plan-catalog/src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs RoleCompatibleFamilies()", "appliesToCheck": "LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT", "note": "Checks CLOSURE membership only (progression stage candidates UNION level-modifier eligibleWorkouts) -- not stage schedulability. LONG_RUN_STANDARD satisfies this check via level-modifier membership alone; zero stages actually target it." },
+      { "role": "EASY_SUPPORT", "compatibleFamilies": ["EASY"], "source": "same as above" },
+      { "role": "KEY_SESSION", "compatibleFamilies": ["QUALITY", "RACE"], "source": "same as above" }
+    ],
+    "assumedByTestsOrDocsOnly": [],
+    "missingRequiringLaterDecision": [
+      "Exact WORKOUT (not merely family) selection per structural role per week -- no catalog field or validator states this at any granularity finer than family-closure membership.",
+      "How the LONG_RUN role is ever populated at all, given zero workout-progression stages target the LONG_RUN family in v10 -- LONG_RUN_STANDARD is reachable only via level-modifier eligibleWorkouts, never via a stage.",
+      "Backend runtime (RunningApp.Application.RuntimeCatalog.Schedule.Materialization) treats StructuralRole as an opaque string end-to-end (CatalogRunLayoutSlots/CatalogWeekSkeletonCalendarMaterializer) -- confirmed by source inspection; no role-to-family or role-to-workout logic exists in the backend at all, so this catalog-side (Process A tooling) mapping is not currently consumed by Process B (backend) in any form."
+    ]
+  },
+  "existingEvidenceLinks": [
+    { "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-REQUIRES", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-011 (PilotDomainContentAudit.cs), plan-catalog/artifacts/audits/activation-readiness-risks.md#TD-WAVE5-001", "linkQuality": "DIRECT" },
+    { "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-FALLBACK_STAGE", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-012, AUD-424 (PilotDomainContentAudit.cs)", "linkQuality": "DIRECT" },
+    { "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-TEN_K_SPECIFIC_INTRO-RELATIVE_ORDER", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-010 (PilotDomainContentAudit.cs)", "linkQuality": "DIRECT" },
+    { "decisionId": "STAGE-TEN_K-RACE_SPECIFIC-GOAL_PACE_REHEARSAL-RELATIVE_ORDER", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-010 (PilotDomainContentAudit.cs)", "linkQuality": "DIRECT" },
+    { "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-MINIMUM_EXPOSURES", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-014 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED", "linkQuality": "INDIRECT" },
+    { "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-MAXIMUM_EXPOSURES", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-014 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED", "linkQuality": "INDIRECT" },
+    { "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-COMPRESSION_BEHAVIOR", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-015 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED", "linkQuality": "INDIRECT" },
+    { "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-EXTENSION_BEHAVIOR", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-015 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED", "linkQuality": "INDIRECT" },
+    { "decisionId": "STAGE-TEN_K-FOUNDATION-FOUNDATION_EASY_BASE-RELATIVE_ORDER", "existingEvidenceIds": [], "existingDecisionArtifact": "none found beyond AUD-013's general 'stage keys outside the brief's RACE_SPECIFIC example were invented' note", "linkQuality": "NONE" },
+    { "decisionId": "PHASE-*-COMPRESSION_EXTENSION_PRIORITY", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-008 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED, 'Ordering priorities invented; no canonical source'", "linkQuality": "INDIRECT" },
+    { "decisionId": "LEVEL_MODIFIER-INTERMEDIATE_MODIFIER-ELIGIBLE_WORKOUT_SET", "existingEvidenceIds": [], "existingDecisionArtifact": "AUD-045 (PilotDomainContentAudit.cs) -- PLACEHOLDER_UNCONFIRMED, carried forward unchanged through v3/v4/v5/v6 cascades", "linkQuality": "INDIRECT" }
+  ],
+  "undocumentedAssumptions": [
+    {
+      "assumption": "Backend runtime consumes zero workout-progression stage-level fields today (relativeOrder, workoutCandidates, minimumExposures, maximumExposures, compressionBehavior, extensionBehavior, requires, fallbackStageKey).",
+      "location": "backend/RunningApp.Application/RuntimeCatalog/PlanCatalogBundleLoader.cs, PlanCatalogCandidateSummary.cs (confirmed via direct source search: zero references to WorkoutCandidate/workoutCandidates)",
+      "encodedInCatalog": false,
+      "currentEffect": "Phase 4F.2's CatalogStageToWeekMaterializer treats 'stage' as the PHASE-level phaseKey (FOUNDATION/BUILD/...) only, not the finer catalog stageKey. No behavior is currently broken by this since nothing reads the finer data, but it means the entire per-stage authoring surface audited here is presently inert in the running backend.",
+      "requiresLaterDecision": true
+    },
+    {
+      "assumption": "LONG_RUN_STANDARD is assumed reachable/usable for the LONG_RUN structural role despite zero workout-progression stages referencing it.",
+      "location": "plan-catalog/src/PlanCatalog.Core/Validation/CandidatePublishGraphValidator.cs (ValidateLayoutCoverage uses UNION closure, not stage-reachability)",
+      "encodedInCatalog": false,
+      "currentEffect": "CandidatePublishGraphValidator's LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT check passes for the LONG_RUN role purely via level-modifier list membership, not via any actually-schedulable stage. A future scheduler assuming 'the layout-coverage validator passing means every role has a reachable stage' would be wrong.",
+      "requiresLaterDecision": true
+    },
+    {
+      "assumption": "PilotCatalogStructuralTests.cs ('golden' structural test) hardcodes obsolete artifact versions (TEN_K_MASTER v2, RUN_LAYOUT_4D v1, INTERMEDIATE_PROGRESSION_MODIFIER_V1 v1, PEAK_VOLUME_BANDS_V1 v2, INTERMEDIATE_MODIFIER v1, TEN_K_WORKOUT_PROGRESSION_V1 v1, RUNTIME_CONDITION_VALUES_V1 v1) that no longer match the versions v10 actually references.",
+      "location": "plan-catalog/tests/PlanCatalog.Tests/Golden/PilotCatalogStructuralTests.cs",
+      "encodedInCatalog": false,
+      "currentEffect": "No automated test in this file directly exercises v10's actual dependency graph; D13GoalPaceTenKResolutionTests.cs (BuildBundle(10)) is the only test that resolves the literal v10 bundle end-to-end, and it does so generically (assembly/version assertions) rather than re-asserting the 'golden' structural claims (layout slot shape, core-cycle sum, etc.) against v10 specifically.",
+      "requiresLaterDecision": false
+    },
+    {
+      "assumption": "A stage's single-candidate workoutCandidates array (every v10 stage has exactly one candidate) means candidate ranking/selection-among-multiple-candidates is untested and unspecified.",
+      "location": "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json (every stage has workoutCandidates.length == 1)",
+      "encodedInCatalog": true,
+      "currentEffect": "No JSON-array-order-implies-ranking assumption is currently exercised anywhere for v10, since there is never more than one candidate to rank. This is a latent, not yet manifest, question for any future multi-candidate stage.",
+      "requiresLaterDecision": true
+    },
+    {
+      "assumption": "GOAL_PACE_TEN_K's schema-required complexityTier (=2) and INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2's absence of maximumComplexityTier together mean the complexity-tier gate cannot currently be mechanically evaluated for v10's dependency graph at all.",
+      "location": "plan-catalog/schemas/progression-modifier.schema.json (maximumComplexityTier forbidden for schemaVersion != 1); plan-catalog/catalog/progression-modifiers/intermediate-progression-modifier.v2.json (schemaVersion 2, no such field)",
+      "encodedInCatalog": true,
+      "currentEffect": "The audit task's own question 'whether all candidate complexity tiers are allowed by the progression modifier, if represented by current contracts' cannot be answered as TRUE or FALSE -- it is N/A because the gating field was deliberately removed from the schema version v10 actually resolves.",
+      "requiresLaterDecision": false
+    }
+  ],
+  "missingFields": [
+    { "field": "contentHash", "expectedOn": "every artifact's metadata object (schema allows it)", "schemaShouldHaveCaught": false, "genuineDefectOrOutOfContract": "OUT_OF_CONTRACT -- contentHash is populated only at publish time by CatalogStamper/CatalogBundleAssembler tooling, never authored by hand; all catalog/ source files are pre-publish DRAFT documents, so its absence here is expected, not a defect." },
+    { "field": "public workout-type mapping (catalog workout key -> GeneratedCatalogWorkoutType or TrainingDayType)", "expectedOn": "backend domain layer, for every one of the 5 catalog workout keys reachable from v10", "schemaShouldHaveCaught": false, "genuineDefectOrOutOfContract": "OUT_OF_CONTRACT for the catalog itself (no catalog schema claims to define this); a genuine, already-documented gap on the backend side (PlanCatalogDomainMapper.ClassifyWorkoutKeys), explicitly classified RequiresNewField for all 5 keys, not newly discovered by this audit." },
+    { "field": "StageDistributionBehavior / stage-to-week scheduling tie-break policy", "expectedOn": "workout-progression.schema.json (would need a new property)", "schemaShouldHaveCaught": false, "genuineDefectOrOutOfContract": "OUT_OF_CONTRACT -- explicitly not yet part of the current schema; the schema explicitly FORBIDS weekNumber/calendarDate/week fields on any stage, confirming catalog authoring intentionally stays phase-relative only." },
+    { "field": "structural role -> exact workout key mapping", "expectedOn": "run-layout.schema.json or workout-progression.schema.json", "schemaShouldHaveCaught": false, "genuineDefectOrOutOfContract": "OUT_OF_CONTRACT today; only family-level closure coverage is validated (LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT), never a specific stage/workout assignment per role." }
+  ],
+  "openDecisions": [
+    "How the LONG_RUN structural role's session is ever produced by any future scheduler, given zero stages in v10's progression target the LONG_RUN workout family.",
+    "Whether/how the future IWorkoutStageScheduler should read phaseAllocation.compressionPriority/extensionPriority (phase-level, present in TEN_K_MASTER v6) versus the entirely absent stage-level distribution/extension-priority/tie-break fields (not present at any version).",
+    "Terminal behavior when a fallback chain's final stage is itself ineligible -- not reachable in v10's actual data (CURRENT_FITNESS_SPECIFIC_REHEARSAL has no requires), but unspecified in the contract for any future stage that does have a conditional fallback target.",
+    "Whether workoutCandidates array order should ever be treated as a ranking/preference signal once a stage has more than one candidate (no v10 stage currently has more than one, so this is untested)."
+  ],
+  "validationResults": [
+    { "suite": "PlanCatalog.Tests (full)", "command": "dotnet test PlanCatalog.sln -c Release --no-build", "passed": 335, "failed": 0, "skipped": 0, "total": 335 },
+    { "suite": "Pilot-focused subset", "command": "dotnet test PlanCatalog.sln -c Release --no-build --filter \"FullyQualifiedName~PilotCatalogStructuralTests|FullyQualifiedName~PilotDomainContentAuditTests|FullyQualifiedName~PilotWorkoutFixtureConfirmationTests|FullyQualifiedName~TaperPhaseFamilyEligibilityTests|FullyQualifiedName~D13GoalPaceTenKResolutionTests|FullyQualifiedName~D3RuntimeConditionRegistryResolutionTests|FullyQualifiedName~D4PeakVolumeBandResolutionTests\"", "passed": 66, "failed": 0, "skipped": 0, "total": 66 },
+    { "suite": "dotnet build PlanCatalog.sln -c Release", "warnings": 0, "errors": 0 }
+  ],
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c6796578f08bc1d76d96f1944a80c9075455206",
+    "commitMade": false,
+    "notes": "Audit is read-only; two new audit artifacts created under plan-catalog/artifacts/audits/. No production code, catalog JSON, schema, evidence-log.json, or canonical decision artifact was modified."
+  }
+}

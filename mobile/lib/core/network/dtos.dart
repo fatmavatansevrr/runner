@@ -26,55 +26,165 @@ class BootstrapResponse {
   }
 }
 
-class GeneratePreviewRequest {
-  GeneratePreviewRequest({
-    required this.goalType,
+/// Nested "recent race" contract — a previously-completed race result,
+/// distinct from the target race (`GeneratePreviewRequest.raceName`/
+/// `raceDate`/`targetFinishTimeSeconds`). Mapping this object must never
+/// write into those target-race fields.
+class RecentRaceRequest {
+  const RecentRaceRequest({
+    required this.distance,
+    required this.finishTimeSeconds,
+    required this.raceDate,
+  });
+
+  /// Canonical goal-distance wire token ("five_k"/"ten_k"/"half_marathon"/"marathon").
+  final String distance;
+  final int finishTimeSeconds;
+  final String raceDate; // yyyy-MM-dd
+
+  Map<String, dynamic> toJson() => {
+        'distance': distance,
+        'finish_time_seconds': finishTimeSeconds,
+        'race_date': raceDate,
+      };
+}
+
+/// Canonical public wire values for how a race request's target finish
+/// time was derived — must be sent atomically with the target time itself
+/// (see `OnboardingNotifier.setProductAverageTarget`/`setUserDefinedTarget`).
+/// Not a Dart `enum` (this file has no other wire-value enum wrapper
+/// convention — every other enum-like field here is a plain lowercase
+/// string constant, e.g. `goalType`/`level`), kept consistent with that.
+abstract final class TargetFinishTimeSourceWire {
+  static const String productAverage = 'product_average';
+  static const String userDefined = 'user_defined';
+}
+
+/// Public transport DTO for `POST /plans/generate-preview/race`. Contains
+/// only race and shared fields — no habit/custom/legacy properties exist on
+/// this type at all.
+class GenerateRacePlanPreviewRequestDto {
+  GenerateRacePlanPreviewRequestDto({
     required this.goalDistance,
     required this.level,
     required this.daysPerWeek,
     required this.unit,
+    required this.startDate,
+    required this.preferredDays,
+    required this.longRunDay,
+    required this.raceDate,
+    required this.targetFinishTimeSeconds,
+    required this.targetFinishTimeSource,
     this.raceName,
-    this.raceDate,
-    this.targetFinishTimeSeconds,
-    this.preferredDays,
-    this.longRunDay,
-    this.habitPlanType,
-    this.customGoalType,
-    this.customDurationWeeks,
-    this.customTargetTimeSeconds,
+    this.recentWeeklyVolumeKm,
+    this.recentLongestRunKm,
+    this.recentRunsPerWeek,
+    this.recentRace,
   });
 
-  final String goalType;
   final String goalDistance;
+
+  /// Running Background V2 wire value — one of "beginner", "intermediate",
+  /// "advanced", "experienced" (see `RunningBackground.wireValue`). New
+  /// code must never send a legacy alias.
   final String level;
+
   final int daysPerWeek;
   final String unit;
+
+  /// Required. The first day of the plan's first 7-day window — it does
+  /// not need to be a Monday.
+  final String startDate; // yyyy-MM-dd
+
+  /// Required. Canonical lowercase 3-letter weekday tokens (mon..sun),
+  /// distinct, length must equal [daysPerWeek].
+  final List<String> preferredDays;
+
+  /// Required; must also be a member of [preferredDays].
+  final String longRunDay;
+
+  final String raceDate;
   final String? raceName;
-  final String? raceDate;
-  final int? targetFinishTimeSeconds;
-  final String? preferredDays;
-  final String? longRunDay;
-  final String? habitPlanType;
-  final String? customGoalType;
-  final int? customDurationWeeks;
-  final int? customTargetTimeSeconds;
+
+  /// Required and positive. Resolved client-side (custom entry or "go with
+  /// average") before this request is ever built — the backend never
+  /// invents this value.
+  final int targetFinishTimeSeconds;
+
+  /// Required. One of [TargetFinishTimeSourceWire.productAverage]/
+  /// [TargetFinishTimeSourceWire.userDefined] — always set atomically with
+  /// [targetFinishTimeSeconds].
+  final String targetFinishTimeSource;
+
+  /// Average weekly distance over the last 4 weeks, in kilometers. `null`
+  /// omits the field entirely (backend treats a missing field as
+  /// NOT_PROVIDED, distinct from an explicit `0`).
+  final double? recentWeeklyVolumeKm;
+
+  /// Longest single run in the last 4 weeks, in kilometers.
+  final double? recentLongestRunKm;
+
+  /// Recent typical runs per week.
+  final int? recentRunsPerWeek;
+
+  /// Optional previously-completed race result. Always serialized as an
+  /// explicit `null` key when absent (not omitted).
+  final RecentRaceRequest? recentRace;
 
   Map<String, dynamic> toJson() {
     return {
-      'goal_type': goalType,
       'goal_distance': goalDistance,
       'level': level,
       'days_per_week': daysPerWeek,
       'unit': unit,
+      'start_date': startDate,
+      'preferred_days': preferredDays,
+      'long_run_day': longRunDay,
+      'race_date': raceDate,
       if (raceName != null) 'race_name': raceName,
-      if (raceDate != null) 'race_date': raceDate,
-      if (targetFinishTimeSeconds != null) 'target_finish_time_seconds': targetFinishTimeSeconds,
-      if (preferredDays != null) 'preferred_days': preferredDays,
+      'target_finish_time_seconds': targetFinishTimeSeconds,
+      'target_finish_time_source': targetFinishTimeSource,
+      if (recentWeeklyVolumeKm != null) 'recent_weekly_volume_km': recentWeeklyVolumeKm,
+      if (recentLongestRunKm != null) 'recent_longest_run_km': recentLongestRunKm,
+      if (recentRunsPerWeek != null) 'recent_runs_per_week': recentRunsPerWeek,
+      'recent_race': recentRace?.toJson(),
+    };
+  }
+}
+
+/// Public transport DTO for `POST /plans/generate-preview/habit`. Contains
+/// only habit and shared fields — no race/target-time/recent-race/custom
+/// properties exist on this type at all.
+class GenerateHabitPlanPreviewRequestDto {
+  GenerateHabitPlanPreviewRequestDto({
+    required this.goalDistance,
+    required this.level,
+    required this.daysPerWeek,
+    required this.unit,
+    required this.startDate,
+    required this.preferredDays,
+    this.longRunDay,
+  });
+
+  final String goalDistance;
+  final String level;
+  final int daysPerWeek;
+  final String unit;
+  final String startDate; // yyyy-MM-dd
+  final List<String> preferredDays;
+
+  /// Optional for Habit. If provided, must be a member of [preferredDays].
+  final String? longRunDay;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'goal_distance': goalDistance,
+      'level': level,
+      'days_per_week': daysPerWeek,
+      'unit': unit,
+      'start_date': startDate,
+      'preferred_days': preferredDays,
       if (longRunDay != null) 'long_run_day': longRunDay,
-      if (habitPlanType != null) 'habit_plan_type': habitPlanType,
-      if (customGoalType != null) 'custom_goal_type': customGoalType,
-      if (customDurationWeeks != null) 'custom_duration_weeks': customDurationWeeks,
-      if (customTargetTimeSeconds != null) 'custom_target_time_seconds': customTargetTimeSeconds,
     };
   }
 }
@@ -269,7 +379,7 @@ class ActivePlanSummaryDto {
 
 class TrainingDayResponse {
   TrainingDayResponse({
-    required this.dayId,
+    this.dayId,
     required this.date,
     required this.dayType,
     required this.status,
@@ -286,7 +396,9 @@ class TrainingDayResponse {
     required this.canMarkNotToday,
   });
 
-  final String dayId;
+  /// Null for a synthetic rest/no-session day not backed by a persisted
+  /// TrainingDay row (e.g. a calendar gap). Never a placeholder GUID.
+  final String? dayId;
   final DateTime date;
   final String dayType;
   final String status;
@@ -304,7 +416,7 @@ class TrainingDayResponse {
 
   factory TrainingDayResponse.fromJson(Map<String, dynamic> json) {
     return TrainingDayResponse(
-      dayId: json['day_id'] ?? '',
+      dayId: json['day_id'] as String?,
       date: DateTime.parse(json['date']),
       dayType: json['day_type'] ?? '',
       status: json['status'] ?? '',

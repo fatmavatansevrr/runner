@@ -1,0 +1,165 @@
+{
+  "classification": "RUNNING_BACKGROUND_V2_1_CLOSED",
+  "date": "2026-07-16",
+  "publication_boundary": {
+    "candidate_key": "TEN_K__4D__INTERMEDIATE",
+    "candidate_version": 10,
+    "real_on_disk_status": "DRAFT",
+    "published_or_activated": false,
+    "ledger_entry_created": false,
+    "activation_default": "disabled (CatalogLivePilot.Enabled defaults false, unchanged)"
+  },
+  "active_contract": {
+    "values": ["beginner", "intermediate", "advanced", "experienced"],
+    "used_to_run_present": false,
+    "legacy_values_removed_from_active_contract": ["new_to_running", "used_to_run", "running_regularly"]
+  },
+  "historical_compatibility": {
+    "classification": "READ_ONLY_LEGACY_COMPATIBILITY_REQUIRED",
+    "evidence_before_deciding": {
+      "training_plans_level_legacy_rows_found": 320,
+      "training_plans_level_canonical_rows_found_before_migration": 144,
+      "training_plans_level_legacy_value": "running_regularly",
+      "plan_templates_level_legacy_rows_found": 0,
+      "plan_previews_preview_payload_json_rows_with_legacy_text": 166,
+      "plan_previews_total_rows": 221,
+      "plan_previews_expired_rows": 212,
+      "plan_previews_live_rows": 9,
+      "plan_previews_live_rows_with_legacy_text": 0,
+      "daily_tip_sets_level_legacy_rows_found": 0
+    },
+    "action_taken": {
+      "training_plans_level": "migrated_to_canonical",
+      "migration": "20260716185115_RunningBackgroundV2_1_MigrateLegacyTrainingPlanLevels",
+      "rows_migrated": 320,
+      "post_migration_verification": "SELECT Level, COUNT(*) FROM TrainingPlans GROUP BY Level -> intermediate: 464 (only value present)",
+      "plan_previews_preview_payload_json": "not_migrated_immutable_hash_verified_snapshot_legacy_reader_retained",
+      "plan_templates_level": "already_migrated_in_v2_no_action_needed"
+    },
+    "retained_boundaries": {
+      "public_http_request_boundary": "NONE - RunningBackgroundCanonicalJsonConverter rejects all legacy aliases with typed 400",
+      "ef_postgres_persistence_boundary": "RunningBackgroundCompatibilityConverter retained as permanent documented safety net",
+      "internal_preview_snapshot_json_boundary": "RunningBackgroundJsonConverter retained, applied only via property-level attribute on ResolverInputSnapshot.Level",
+      "frontend": "NONE - no legacy alias handling anywhere in mobile/lib"
+    }
+  },
+  "unsupported_cycle_length_root_cause": {
+    "owning_component_before_fix": "V1LiveCatalogPilotRoutingPolicy.Evaluate (LivePlanPreviewRouting.cs)",
+    "defect": "cycle-length bounds [8,14] were a hardcoded literal duplicated from, not sourced from, the real TEN_K_MASTER v6 master-template coreCycle artifact",
+    "real_artifact_bounds": { "minimum_weeks": 8, "default_weeks": 12, "maximum_weeks": 14, "source_file": "plan-catalog/catalog/templates/ten-k-master.v6.json" },
+    "prior_session_specific_failure_explanation": "that specific earlier HTTP test used race_date 2026-12-01 against server date 2026-07-16 (~20 weeks out), genuinely exceeding the (also correct at the time) hardcoded 14-week maximum - a test-input choice, not a code defect in isolation",
+    "actual_defect_scope": "architectural drift risk - a future TEN_K_MASTER version change would silently desynchronize the routing gate from the real bounds used elsewhere (CatalogVolumeAndLongRunPlanner already read the real artifact)"
+  },
+  "cycle_selection_fix": {
+    "fix_owner": "V1LiveCatalogPilotRoutingPolicy.Evaluate",
+    "before": "if (cycleLength is null or < 8 or > 14) -> UnsupportedCycleLength",
+    "after": "bounds sourced from PlanCatalogCandidateSummary.CoreCycle (candidateMinimumWeeks, candidateMaximumWeeks), loaded via IPlanCatalogBundleLoader.LoadCandidateAsync, same source CatalogVolumeAndLongRunPlanner already trusted",
+    "policy_type": "inclusive range check against real bounds, not clamp/nearest/default",
+    "eight_week_explicit_zero_check": "untouched - literal 8, unchanged behavior",
+    "decide_restructure": "identity-mismatch/missing-race-date requests still short-circuit with zero bundle I/O; pilot-identity-matching requests with a race date now load the candidate before the cycle check runs (necessary consequence of sourcing real bounds)",
+    "validator_change": "LivePlanPreviewRouteDecisionValidator's redundant hardcoded [8,14] invariant replaced with a non-null check only"
+  },
+  "intermediate_http_flow": {
+    "request": { "goal_type": "race", "goal_distance": "ten_k", "level": "intermediate", "days_per_week": 4, "race_date": "2026-10-08", "weeks_out": 12 },
+    "route": "CatalogLive",
+    "candidate_key": "TEN_K__4D__INTERMEDIATE",
+    "candidate_version": 10,
+    "cycle_length_weeks": 12,
+    "lifecycle_status_effective": "PUBLISHED (via Development-only LocalCatalogAcceptance override; real on-disk status remains DRAFT)",
+    "reason": "PilotPublishedAndActivated",
+    "http_status": 200,
+    "preview_id": "991b534c-6a0d-4172-a584-4648806ad105",
+    "template_id": "TEN_K__4D__INTERMEDIATE",
+    "weeks_returned": 12
+  },
+  "intermediate_confirmation": {
+    "plan_id": "f0ca08fd-50e7-465e-abe2-3c5734a2d316",
+    "first_confirm_status": "active",
+    "repeated_confirm_returns_same_plan_id": true,
+    "duplicate_row_created": false,
+    "training_plans_row_count_for_id": 1,
+    "generation_source": "CATALOG",
+    "level": "intermediate",
+    "days_per_week": 4,
+    "training_weeks_count": 12,
+    "training_days_total": 48,
+    "training_days_per_week": 4,
+    "training_days_by_type": { "easy": 28, "interval": 3, "long_run": 12, "tempo": 5 },
+    "persisted_rest_days": 0
+  },
+  "cycle_matrix": [
+    { "weeks": 8, "scenario": "minimum_supported", "outcome": "CatalogLive" },
+    { "weeks": 8, "scenario": "minimum_supported_explicit_zero_volume", "outcome": "CatalogGenerationInfeasible/KnownInfeasibleEightWeekExplicitZero", "note": "preserved, not fixed by this change" },
+    { "weeks": 12, "scenario": "default", "outcome": "CatalogLive" },
+    { "weeks": 14, "scenario": "maximum_supported", "outcome": "CatalogLive" },
+    { "weeks": 9, "scenario": "between_supported", "outcome": "CatalogLive" },
+    { "weeks": 10, "scenario": "between_supported", "outcome": "CatalogLive" },
+    { "weeks": 11, "scenario": "between_supported", "outcome": "CatalogLive" },
+    { "weeks": 13, "scenario": "between_supported", "outcome": "CatalogLive" },
+    { "weeks": 15, "scenario": "above_maximum", "outcome": "CatalogRequestUnsupported/UnsupportedCycleLength", "note": "no clamp, no fallback" },
+    { "weeks": 20, "scenario": "above_maximum", "outcome": "CatalogRequestUnsupported/UnsupportedCycleLength", "note": "confirmed unaffected by local-acceptance override" },
+    { "weeks": 1, "scenario": "insufficient_time", "outcome": "CatalogRequestUnsupported/UnsupportedCycleLength" },
+    { "weeks": 5, "scenario": "insufficient_time", "outcome": "CatalogRequestUnsupported/UnsupportedCycleLength" },
+    { "weeks": 7, "scenario": "insufficient_time", "outcome": "CatalogRequestUnsupported/UnsupportedCycleLength" }
+  ],
+  "frontend_cleanup": {
+    "files_changed": [
+      "mobile/lib/core/models/running_background.dart",
+      "mobile/lib/features/onboarding/presentation/plan_preview_page.dart",
+      "mobile/test/running_background_v2_test.dart"
+    ],
+    "legacy_alias_handling_removed": true,
+    "only_four_values_confirmed": true,
+    "repo_wide_search_result": "zero remaining new_to_running/used_to_run/running_regularly references under mobile/lib (excluding doc comments describing their absence)"
+  },
+  "backend_cleanup": {
+    "public_json_boundary": "RunningBackgroundCanonicalJsonConverter (new) - type-level default and GeneratePreviewRequest.Level property-level override, canonical-only, typed 400 rejection verified live for all 3 legacy aliases",
+    "persistence_boundary": "RunningBackgroundCompatibilityConverter retained, 320 real legacy TrainingPlans rows migrated to canonical",
+    "pilot_mapping": "V1CatalogPilotIdentityPolicy.Level = RunningBackground.Intermediate, no active-code references to RunningRegularly/used_to_run/running_regularly remain",
+    "swagger": "DtoExamplesSchemaFilter.cs fixed (5 occurrences), live /swagger/v1/swagger.json confirmed zero legacy occurrences"
+  },
+  "legacy_occurrence_classification": [
+    { "file": "backend/RunningApp.Persistence/Converters/RunningBackgroundCompatibilityConverter.cs", "classification": "MIGRATION_COMPATIBILITY" },
+    { "file": "backend/RunningApp.Domain/Enums/RunningBackgroundJsonConverter.cs", "classification": "MIGRATION_COMPATIBILITY" },
+    { "file": "backend/RunningApp.Application/RuntimeCatalog/Resolvers/ResolverInputSnapshot.cs", "classification": "MIGRATION_COMPATIBILITY" },
+    { "file": "backend/RunningApp.IntegrationTests/RunningBackgroundV2Tests.cs", "classification": "TEST_FIXTURE_REQUIRING_UPDATE", "outcome": "fixed" },
+    { "file": "backend/RunningApp.IntegrationTests/UserJourneyTests.cs", "classification": "TEST_FIXTURE_REQUIRING_UPDATE", "outcome": "fixed" },
+    { "file": "backend/RunningApp.IntegrationTests/PlanGeneration/FitnessEvidenceInputContractTests.cs", "classification": "TEST_FIXTURE_REQUIRING_UPDATE", "outcome": "fixed" },
+    { "file": "backend/RunningApp.IntegrationTests/ResetEndpointRelationalScenarioTests.cs", "classification": "TEST_FIXTURE_REQUIRING_UPDATE", "outcome": "fixed" },
+    { "file": "backend/RunningApp.Api/Swagger/DtoExamplesSchemaFilter.cs", "classification": "STALE_ACTIVE_CODE", "outcome": "fixed" },
+    { "file": "backend/RunningApp.Persistence/Migrations/20260716185115_RunningBackgroundV2_1_MigrateLegacyTrainingPlanLevels.cs", "classification": "MIGRATION_COMPATIBILITY" },
+    { "file": "backend/RunningApp.Persistence/Migrations/20260716175426_RunningBackgroundV2FourLevelModel.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Domain/Enums/RunningBackground.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Domain/Enums/RunningBackgroundCanonicalJsonConverter.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Application/DTOs/Plan/GeneratePreviewRequest.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Application/RuntimeCatalog/PreviewRouting/V1CatalogPilotIdentityPolicy.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Persistence/AppDbContext.cs", "classification": "HISTORICAL_DOCUMENTATION" },
+    { "file": "backend/RunningApp.Persistence/Migrations/*.Designer.cs (all pre-existing)", "classification": "HISTORICAL_DOCUMENTATION", "note": "auto-generated EF snapshots, never rewritten" },
+    { "file": "plan-catalog/artifacts/audits/*.json (pre-existing)", "classification": "HISTORICAL_DOCUMENTATION", "note": "not rewritten per do-not-rewrite-historical-audit-facts instruction" },
+    { "file": "plan-catalog/src/PlanCatalog.Core/Audit/PilotDomainContentAudit.cs", "classification": "HISTORICAL_DOCUMENTATION", "note": "audit-log-as-code entries describing Phase 4F.8.2-era decision text verbatim, not rewritten" }
+  ],
+  "advanced_experienced_boundary": {
+    "accepted_by_canonical_contract": true,
+    "coerced_to_intermediate": false,
+    "candidate_or_template_fabricated": false,
+    "http_verification": "race/ten_k/4day requests for both levels route Legacy/NotPilotRequest then 404 PLAN_TEMPLATE_NOT_FOUND",
+    "plan_authoring_status": "deferred_to_subsequent_phases_not_a_defect_here"
+  },
+  "tests": {
+    "backend": { "passed": 861, "failed": 0, "total": 861, "delta_from_v2": "+22" },
+    "plan_catalog": { "passed": 335, "failed": 0, "total": 335, "unaffected": true },
+    "ef_migrations_has_pending_model_changes": "none",
+    "frontend": { "running_background_suite_passed": 14, "running_background_suite_total": 14, "full_suite_passed": 14, "full_suite_pre_existing_unrelated_failure": "widget_test.dart Onboarding smoke test (confirmed unrelated in prior V2 phase via git-stash baseline reproduction)" },
+    "http_relational": "successful Intermediate preview -> confirm -> repeated confirm (idempotent) -> persisted round-trip verified against real Postgres"
+  },
+  "publication_status": {
+    "candidate_status": "DRAFT",
+    "activation_enabled_default": false,
+    "ledger_entry_created": false
+  },
+  "remaining_gaps": [
+    "Advanced/Experienced plan authoring deferred (explicitly out of scope, not a defect)",
+    "already_active flag semantics for a repeated confirm of the same preview_id after the plan is already active returned false on both calls in manual verification - idempotency itself (same plan_id, no duplicate row) is proven, but the flag's exact intended semantics for this specific repeat pattern were not deeply audited",
+    "Read DTOs (home/calendar/day-detail) still do not expose catalog phase/stage/workout-identity fields (flagged in Phase 4F.9.3, unchanged)"
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "auditKey": "PHASE4F8_2_SCOPED_LIVE_PILOT_ROUTING",
+  "auditVersion": 1,
+  "pilotScope": {
+    "goalType": "Race",
+    "goalDistance": "TenK",
+    "level": "RunningRegularly",
+    "daysPerWeek": 4,
+    "cycleLengthWeeks": { "minimum": 8, "maximum": 14 },
+    "candidateKey": "TEN_K__4D__INTERMEDIATE",
+    "candidateVersion": 10
+  },
+  "routingPolicy": {
+    "policyKey": "V1_LIVE_CATALOG_PILOT_ROUTING_POLICY",
+    "policyVersion": 1,
+    "deterministic": true,
+    "typedRequestMatching": true,
+    "normalRouteSelectionIsNotExceptionDriven": true
+  },
+  "routeDecisions": [
+    "CATALOG_LIVE",
+    "LEGACY",
+    "CATALOG_SUPPORTED_BUT_NOT_PUBLISHED",
+    "CATALOG_SUPPORTED_BUT_ACTIVATION_DISABLED",
+    "CATALOG_REQUEST_UNSUPPORTED",
+    "CATALOG_GENERATION_INFEASIBLE",
+    "REQUEST_INVALID"
+  ],
+  "lifecycleGate": {
+    "requiredStatusForCatalogLive": "PUBLISHED",
+    "currentV10Status": "DRAFT",
+    "draftCanRouteCatalogLive": false,
+    "activationCanOverrideLifecycle": false
+  },
+  "activationControl": {
+    "optionSection": "CatalogLivePilot",
+    "optionName": "Enabled",
+    "configurationPath": "CatalogLivePilot:Enabled",
+    "defaultEnabled": false,
+    "productionDefaultChanged": false
+  },
+  "legacyFallbackMatrix": [
+    { "case": "non_pilot_supported_legacy_request", "fallbackPermitted": true, "target": "LEGACY_SQL" },
+    { "case": "pilot_candidate_not_published", "fallbackPermitted": true, "target": "LEGACY_SQL exact-template boundary" },
+    { "case": "pilot_activation_disabled", "fallbackPermitted": true, "target": "LEGACY_SQL exact-template boundary" },
+    { "case": "invalid_request", "fallbackPermitted": false, "target": "typed rejection" },
+    { "case": "unsupported_cycle", "fallbackPermitted": false, "target": "typed rejection" },
+    { "case": "8_week_explicit_zero", "fallbackPermitted": false, "target": "typed generation-infeasible rejection" },
+    { "case": "catalog_artifact_or_snapshot_failure", "fallbackPermitted": false, "target": "typed catalog failure" },
+    { "case": "catalog_confirmation", "fallbackPermitted": false, "target": "fail-closed confirmation" }
+  ],
+  "snapshotRouteProvenance": {
+    "catalog": "CatalogPreviewSnapshot.GenerationSource = CATALOG",
+    "legacy": "legacy GeneratePreviewResponse JSON / no catalog snapshot",
+    "hashChanged": false,
+    "migrationAdded": false
+  },
+  "confirmBoundary": {
+    "catalogConfirmPersistenceImplemented": false,
+    "catalogPreviewMaterializationExceptionPreserved": true,
+    "trainingPlanWrites": 0,
+    "trainingWeekWrites": 0,
+    "trainingDayWrites": 0
+  },
+  "unsupportedPathHandling": [
+    {
+      "case": "8-week cycle plus explicit-zero RecentWeeklyVolumeKm",
+      "decision": "CATALOG_GENERATION_INFEASIBLE",
+      "reason": "KnownInfeasibleEightWeekExplicitZero",
+      "fallbackPermitted": false,
+      "snapshotCreated": false,
+      "payloadReturned": false,
+      "weeklyVolumeRaised": false
+    }
+  ],
+  "observability": {
+    "fields": [
+      "policyKey",
+      "policyVersion",
+      "route",
+      "candidateKey",
+      "candidateVersion",
+      "lifecycleStatus",
+      "activationEnabled",
+      "reason",
+      "fallbackPermitted"
+    ],
+    "excludesSensitiveOnboardingText": true,
+    "excludesPayloads": true,
+    "excludesSecrets": true
+  },
+  "governanceEntries": [
+    "AUD-540",
+    "AUD-541",
+    "AUD-542",
+    "AUD-543",
+    "AUD-544",
+    "AUD-545",
+    "AUD-546",
+    "AUD-547",
+    "AUD-548",
+    "AUD-549"
+  ],
+  "typedFailures": [
+    "CatalogLiveRoutingException",
+    "CatalogLivePilotNotPublishedException",
+    "CatalogLivePilotActivationDisabledException",
+    "CatalogLivePilotRequestUnsupportedException",
+    "CatalogLivePilotGenerationInfeasibleException",
+    "CatalogLiveRouteDecisionInvalidException",
+    "CatalogLiveFallbackNotPermittedException"
+  ],
+  "blockers": [],
+  "nonBlockingGaps": [
+    "Catalog confirmation/persistence remains intentionally unimplemented.",
+    "Candidate v10 remains DRAFT and requires a future publication decision.",
+    "Production activation remains disabled by default.",
+    "8-week explicit-zero allocation infeasibility remains deferred."
+  ],
+  "validationResults": [],
+  "repositoryState": {
+    "candidateStatusChanged": false,
+    "activationEnabledInDefaults": false,
+    "publicationLedgerAdded": false,
+    "migrationAdded": false,
+    "publicDtoChanged": false
+  }
+}

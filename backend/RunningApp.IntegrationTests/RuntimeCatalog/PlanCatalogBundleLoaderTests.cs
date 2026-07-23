@@ -115,10 +115,10 @@ public sealed class PlanCatalogBundleLoaderTests
         Assert.Equal(
             new[]
             {
-                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("FOUNDATION", 3),
-                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("BUILD", 4),
-                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("RACE_SPECIFIC", 4),
-                new RunningApp.Application.RuntimeCatalog.PlanCatalogPhaseAllocation("TAPER", 1),
+                new PlanCatalogPhaseAllocation("FOUNDATION", 2, 3, 4, 1, 1, false),
+                new PlanCatalogPhaseAllocation("BUILD", 3, 4, 5, 2, 2, false),
+                new PlanCatalogPhaseAllocation("RACE_SPECIFIC", 2, 4, 4, 3, 3, false),
+                new PlanCatalogPhaseAllocation("TAPER", 1, 1, 1, 4, 4, true),
             },
             summary.PhaseAllocations);
 

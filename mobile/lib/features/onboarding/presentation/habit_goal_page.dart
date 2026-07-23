@@ -73,7 +73,17 @@ class _HabitGoalPageState extends ConsumerState<HabitGoalPage> {
                     icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => context.go(AppRoutes.runningBackground),
+                    onPressed: () {
+                      // Running Background V2 (§11): mirrors the goal-time
+                      // back-button rule for the habit-goal flow.
+                      final skipped = ref
+                          .read(onboardingProvider)
+                          .runningBackground
+                          .skipsRunnerBackgroundDetails;
+                      context.go(skipped
+                          ? AppRoutes.runningBackground
+                          : AppRoutes.runnerBackgroundDetails);
+                    },
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(

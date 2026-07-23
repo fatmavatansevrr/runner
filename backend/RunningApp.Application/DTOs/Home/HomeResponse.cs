@@ -24,7 +24,8 @@ public class ActivePlanSummaryDto
 
 public class TrainingDayResponse
 {
-    public Guid DayId { get; set; }
+    /// <summary>Null for a synthetic rest/no-session day not backed by a persisted TrainingDay row.</summary>
+    public Guid? DayId { get; set; }
     public DateTime Date { get; set; }
     public TrainingDayType DayType { get; set; }
     public TrainingDayStatus Status { get; set; }

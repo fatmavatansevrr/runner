@@ -55,6 +55,25 @@ public class AppDbContext : DbContext
             }
         }
 
+        // Running Background V2 — override the generic SnakeCaseEnumConverter
+        // for every RunningBackground-typed property with the compatibility
+        // converter, so existing rows storing the legacy values
+        // ("new_to_running", "used_to_run", "running_regularly") remain
+        // readable while all new writes use only the four canonical values.
+        // Must run AFTER the generic loop above so this registration wins.
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                var type = property.ClrType;
+                var underlying = Nullable.GetUnderlyingType(type) ?? type;
+                if (underlying == typeof(RunningBackground))
+                {
+                    property.SetValueConverter(new Converters.RunningBackgroundCompatibilityConverter());
+                }
+            }
+        }
+
         // ── Users ────────────────────────────────────────────────────────────
         modelBuilder.Entity<User>()
             .HasIndex(u => new { u.ExternalAuthProvider, u.ExternalUserId })
@@ -237,6 +256,14 @@ public class AppDbContext : DbContext
             .Property(a => a.AffectedDaysJson)
             .HasColumnType("jsonb");
 
+        modelBuilder.Entity<TrainingPlan>()
+            .Property(p => p.CatalogDependencyVersionsJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<TrainingDay>()
+            .Property(d => d.CatalogPrescriptionJson)
+            .HasColumnType("jsonb");
+
         // ── Indexes ───────────────────────────────────────────────────────────
         modelBuilder.Entity<PlanTemplate>()
             .HasIndex(t => t.TemplateId)
@@ -254,6 +281,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TrainingPlan>()
             .HasIndex(p => new { p.InternalUserId, p.Status })
             .HasDatabaseName("IX_TrainingPlans_InternalUserId_Status");
+
+        modelBuilder.Entity<TrainingPlan>()
+            .HasIndex(p => p.SourcePreviewId)
+            .IsUnique()
+            .HasDatabaseName("IX_TrainingPlans_SourcePreviewId")
+            .HasFilter("\"SourcePreviewId\" IS NOT NULL");
 
         modelBuilder.Entity<TrainingDay>()
             .HasIndex(d => new { d.PlanId, d.Date });
@@ -315,7 +348,7 @@ public class AppDbContext : DbContext
                 Version = 1,
                 GoalType = GoalType.Habit,
                 GoalDistance = GoalDistance.FiveK,
-                Level = RunningBackground.NewToRunning,
+                Level = RunningBackground.Beginner,
                 DaysPerWeek = 3,
                 Unit = DistanceUnit.Km,
                 DataJson = "{\"templateId\":\"habit_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"habit\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z2\"}]}]}",
@@ -328,7 +361,7 @@ public class AppDbContext : DbContext
                 Version = 1,
                 GoalType = GoalType.Habit,
                 GoalDistance = GoalDistance.FiveK,
-                Level = RunningBackground.NewToRunning,
+                Level = RunningBackground.Beginner,
                 DaysPerWeek = 4,
                 Unit = DistanceUnit.Km,
                 DataJson = "{\"templateId\":\"habit_5k_beginner_4day_km_v1\",\"version\":1,\"goalType\":\"habit\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":4,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"easy\",\"distanceKm\":2.0,\"durationMin\":20,\"intensity\":\"z2\"},{\"slotIndex\":3,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":4,\"dayType\":\"long_run\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z2\"}]}]}",
@@ -341,7 +374,7 @@ public class AppDbContext : DbContext
                 Version = 1,
                 GoalType = GoalType.Race,
                 GoalDistance = GoalDistance.FiveK,
-                Level = RunningBackground.NewToRunning,
+                Level = RunningBackground.Beginner,
                 DaysPerWeek = 3,
                 Unit = DistanceUnit.Km,
                 DataJson = "{\"templateId\":\"race_5k_beginner_3day_km_v1\",\"version\":1,\"goalType\":\"race\",\"goalDistance\":\"five_k\",\"level\":\"beginner\",\"daysPerWeek\":3,\"unit\":\"km\",\"weeks\":[{\"weekNumber\":1,\"weekType\":\"build\",\"days\":[{\"slotIndex\":1,\"dayType\":\"easy\",\"distanceKm\":2.5,\"durationMin\":25,\"intensity\":\"z2\"},{\"slotIndex\":2,\"dayType\":\"interval\",\"distanceKm\":3.0,\"durationMin\":30,\"intensity\":\"z4\"},{\"slotIndex\":3,\"dayType\":\"long_run\",\"distanceKm\":4.0,\"durationMin\":40,\"intensity\":\"z2\"}]}]}",

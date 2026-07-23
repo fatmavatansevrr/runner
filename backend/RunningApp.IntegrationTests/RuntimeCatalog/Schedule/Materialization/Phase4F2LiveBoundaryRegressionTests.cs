@@ -45,25 +45,29 @@ public sealed class Phase4F2LiveBoundaryRegressionTests
     }
 
     [Fact]
-    public async Task RealCatalogPreviewGeneration_StillProducesNullGeneratedPreviewPlanPayload_AndRejectsAsUnpublished()
+    public async Task RealCatalogPreviewGeneration_CurrentDefaultRoute_DoesNotExposeCatalogPayload()
     {
-        // Re-exercises the real (non-dry-run) pilot preview path end-to-end,
-        // exactly as in Phase 4E.1/4F.1: v10 is DRAFT, so this must still
-        // fail at the eligibility gate, never reaching a point where a
-        // schedule payload of any kind (skeleton or final) could be attached.
+        // Phase 4F.8.2 keeps the repository non-live: v10 is DRAFT and
+        // CatalogLivePilot activation defaults disabled. The request therefore
+        // reaches the existing exact legacy template boundary and never exposes
+        // a catalog payload.
         await using var context = NewContext();
         var service = TestPlanServicesFactory.Create(context);
 
-        await Assert.ThrowsAsync<CatalogCandidateNotPublishedException>(() => service.GeneratePreviewAsync(
+        await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(() => service.GeneratePreviewAsync(
             Guid.NewGuid(),
             new RunningApp.Application.DTOs.Plan.GeneratePreviewRequest
             {
                 GoalType = GoalType.Race,
                 GoalDistance = GoalDistance.TenK,
-                Level = RunningBackground.RunningRegularly,
+                Level = RunningBackground.Intermediate,
                 DaysPerWeek = 4,
                 Unit = DistanceUnit.Km,
-                RaceDate = new DateOnly(2026, 12, 1),
+                RaceDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(84),
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1),
+                PreferredDays = new[] { Weekday.Mon, Weekday.Wed, Weekday.Fri, Weekday.Sun },
+                LongRunDay = Weekday.Sun,
+                TargetFinishTimeSeconds = 3600,
             }));
 
         Assert.Empty(context.PlanPreviews);

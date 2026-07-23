@@ -1,11 +1,14 @@
 // [ignoring loop detection]
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RunningApp.Application.Commands.Plan;
 using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.PlanGeneration;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
+using RunningApp.Application.RuntimeCatalog.Schedule;
+using RunningApp.Application.Validation;
 using RunningApp.Domain.Entities;
 using RunningApp.Domain.Enums;
 using RunningApp.Persistence;
@@ -72,45 +75,98 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         _catalogConfirmationService = catalogConfirmationService;
     }
 
+    /// <summary>
+    /// Public entry point for <c>POST /api/v1/plans/generate-preview/race</c>.
+    /// <paramref name="command"/> is already validated by
+    /// <c>GenerateRacePlanPreviewRequestValidator</c> at the controller
+    /// boundary — this just bridges into the unchanged internal pipeline.
+    /// </summary>
+    public Task<GeneratePreviewResponse> GenerateRacePlanPreviewAsync(Guid internalUserId, RacePlanPreviewCommand command, CancellationToken ct = default) =>
+        GeneratePreviewAsync(internalUserId, GeneratePreviewCommandMapper.ToInternalRequest(command), ct);
+
+    /// <summary>
+    /// Public entry point for <c>POST /api/v1/plans/generate-preview/habit</c>.
+    /// <paramref name="command"/> is already validated by
+    /// <c>GenerateHabitPlanPreviewRequestValidator</c> at the controller
+    /// boundary — this just bridges into the unchanged internal pipeline.
+    /// </summary>
+    public Task<GeneratePreviewResponse> GenerateHabitPlanPreviewAsync(Guid internalUserId, HabitPlanPreviewCommand command, CancellationToken ct = default) =>
+        GeneratePreviewAsync(internalUserId, GeneratePreviewCommandMapper.ToInternalRequest(command), ct);
+
     public async Task<GeneratePreviewResponse> GeneratePreviewAsync(Guid internalUserId, GeneratePreviewRequest request, CancellationToken ct = default)
     {
         // ── Input validation ────────────────────────────────────────────────
-        if (request.DaysPerWeek < 1 || request.DaysPerWeek > 7)
+        GeneratePreviewRequestValidator.Validate(request);
+
+        // ── Fail-closed horizon guard (temporary safety constraint) ─────────
+        // Runs before template selection, route decision, catalog generation,
+        // and any persistence — for BOTH the legacy and catalog paths. See
+        // RaceHorizonPolicy — the single source of truth for this
+        // calculation and classification, reused by the catalog routing
+        // policy below so the two can never disagree.
+        if (request.GoalType == GoalType.Race && request.RaceDate is { } raceDateForHorizonCheck)
         {
-            throw new ArgumentException($"DaysPerWeek must be between 1 and 7, but was {request.DaysPerWeek}.");
+            var availableWeeks = RaceHorizonPolicy.CalculateAvailableWeeks(request.StartDate, raceDateForHorizonCheck);
+            var classification = RaceHorizonPolicy.Classify(availableWeeks);
+
+            if (classification == RaceHorizonClassification.CompositionRequired)
+            {
+                // Long-horizon preparation + race-core composition is not yet
+                // implemented; a horizon above the approved standalone
+                // maximum must never silently receive a shorter core anchored
+                // at StartDate with RaceDate left unreached.
+                _logger.LogWarning(
+                    "GeneratePreview: race horizon requires not-yet-implemented preparation + race-core composition. " +
+                    "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaxSupportedStandaloneWeeks={MaxSupportedStandaloneWeeks}",
+                    request.StartDate, raceDateForHorizonCheck, availableWeeks, RaceHorizonPolicy.MaximumSupportedStandaloneWeeks);
+                throw new PlanHorizonCompositionRequiredException(
+                    "The available race-plan horizon requires a preparation block before the supported race-training core. " +
+                    $"Available horizon is approximately {availableWeeks} weeks; the currently supported standalone maximum is " +
+                    $"{RaceHorizonPolicy.MaximumSupportedStandaloneWeeks} weeks.");
+            }
+
+            if (classification == RaceHorizonClassification.CoreLengthRecognizedButNotImplemented)
+            {
+                // Within the nominal 8-14 week range, but not the one exact
+                // length (12) proven to align with RaceDate — the catalog
+                // phase allocator is not yet horizon-aware and always emits
+                // its fixed default allocation regardless of this horizon,
+                // which would silently misalign with RaceDate (verified live
+                // for both shorter and longer in-range horizons).
+                var reasonCode = RaceHorizonPolicy.GetCoreHorizonUnsupportedReasonCode(availableWeeks);
+                _logger.LogWarning(
+                    "GeneratePreview: race core horizon recognized but not yet implemented. " +
+                    "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, " +
+                    "ExactSupportedStandaloneWeeks={ExactSupportedStandaloneWeeks}, ReasonCode={ReasonCode}",
+                    request.StartDate, raceDateForHorizonCheck, availableWeeks,
+                    RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks, reasonCode);
+                throw new PlanCoreHorizonUnsupportedException(
+                    "The requested race-plan horizon is recognized, but this exact core length is not yet implemented safely. " +
+                    $"Available horizon is approximately {availableWeeks} weeks; the only currently implemented standalone core " +
+                    $"length is {RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks} weeks. Reason: {reasonCode}.");
+            }
+
+            // BelowMinimum and ExactStandaloneCoreSupported: continue —
+            // BelowMinimum is a separate, pre-existing concern this guard
+            // does not change; ExactStandaloneCoreSupported is the one
+            // horizon currently proven safe to generate.
         }
 
-        // ── Phase 4B fitness-evidence input validation ──────────────────────
-        // Conservative shape checks only (positive-if-provided). No product
-        // thresholds: does not reject low volume/short runs, does not compare
-        // race-date recency, does not implement any readiness/adequacy logic.
-        if (request.RecentLongestRunKm is <= 0)
-        {
-            throw new ArgumentException($"RecentLongestRunKm must be positive if provided, but was {request.RecentLongestRunKm}.");
-        }
-        if (request.RecentWeeklyVolumeKm is <= 0)
-        {
-            throw new ArgumentException($"RecentWeeklyVolumeKm must be positive if provided, but was {request.RecentWeeklyVolumeKm}.");
-        }
-        if (request.RecentRunsPerWeek is <= 0)
-        {
-            throw new ArgumentException($"RecentRunsPerWeek must be positive if provided, but was {request.RecentRunsPerWeek}.");
-        }
-        if (request.RecentRaceDistanceKm is <= 0)
-        {
-            throw new ArgumentException($"RecentRaceDistanceKm must be positive if provided, but was {request.RecentRaceDistanceKm}.");
-        }
-        if (request.RecentRaceFinishTimeSeconds is <= 0)
-        {
-            throw new ArgumentException($"RecentRaceFinishTimeSeconds must be positive if provided, but was {request.RecentRaceFinishTimeSeconds}.");
-        }
+        // Typed command, produced only after validation guarantees every
+        // race-only/habit-only field is exactly as required -- see
+        // GeneratePreviewCommandMapper's own docs for why this is the only
+        // place a null-forgiving operator is allowed for these fields.
+        // Used below by ConfirmPlanAsync-equivalent logic in this method's
+        // callers and directly by the legacy-path field mapping later in
+        // this method.
+        var command = GeneratePreviewCommandMapper.ToCommand(request);
 
         // ── Sanitized input logging (no PII) ────────────────────────────────
         _logger.LogInformation(
             "GeneratePreview: goalType={GoalType}, goalDistance={GoalDistance}, level={Level}, " +
             "daysPerWeek={DaysPerWeek}, preferredDays={PreferredDays}, unit={Unit}",
-            request.GoalType, request.GoalDistance, request.Level,
-            request.DaysPerWeek, request.PreferredDays ?? "(null)", request.Unit);
+            command.GoalType, command.GoalDistance, command.Level,
+            command.DaysPerWeek, WeekdayCsv.ToCsv(command.PreferredDays) ?? "(null)", command.Unit);
 
         // ── Backend Integration Phase 4E.1: route decision, computed once, ──
         // before any generation begins. There is no "try catalog, catch,
@@ -139,21 +195,21 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             throw new InvalidOperationException("Plan template data is invalid or empty.");
         }
 
-        // 3. Map slot indices to actual dates starting from the next upcoming Monday
-        var startOfWeek1 = DateTime.UtcNow.Date.AddDays(((int)DayOfWeek.Monday - (int)DateTime.UtcNow.DayOfWeek + 7) % 7);
-        if (startOfWeek1 == DateTime.UtcNow.Date && DateTime.UtcNow.Hour >= 22)
-        {
-            // If it's already late Monday, start next Monday
-            startOfWeek1 = startOfWeek1.AddDays(7);
-        }
+        // 3. Map slot indices to actual dates starting from the request's own StartDate.
+        // StartDate is the first day of the plan's first 7-day window and does not
+        // need to be a Monday (Backend Integration contract alignment).
+        // DateTimeKind.Utc is explicit here (matching every other DateTime.UtcNow-based
+        // value in this class) -- DateOnly.ToDateTime defaults to Kind=Unspecified, which
+        // Npgsql rejects for "timestamp with time zone" columns (TrainingDay.Date,
+        // TrainingWeek.StartDate, TrainingPlan.StartedAt/EstimatedEndDate all map to one).
+        var startOfWeek1 = request.StartDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
         var previewWeeks = new List<PreviewWeekDto>();
-        
+
         // ── Resolve preferred running days ──────────────────────────────────
-        // PreferredDays comes as "Mon,Wed,Sat" from the client.
-        // If missing, generate a sensible default spread across the week
-        // based on daysPerWeek so the plan always gets valid dates.
-        var preferredDays = ResolvePreferredDays(request.PreferredDays, request.DaysPerWeek);
+        // PreferredDays is required (validated above); bridged to the legacy
+        // full-day-name CSV shape this method's own weekday resolution expects.
+        var preferredDays = ResolvePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays), request.DaysPerWeek);
 
         for (int i = 0; i < templateData.Weeks.Count; i++)
         {
@@ -167,17 +223,21 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
                 var dayIndex = Math.Max(0, tempDay.SlotIndex - 1);
                 var dayName = preferredDays[dayIndex % preferredDays.Length];
 
-                int dayOffset = dayName switch
+                // Maps dayName into the unique date inside [weekStart, weekStart + 6]
+                // having that weekday — works regardless of which weekday weekStart
+                // itself falls on (mirrors CatalogWeekSkeletonCalendarMaterializer.MapWeekdayToDateInWeek).
+                var targetDayOfWeek = dayName switch
                 {
-                    "Monday"    => 0,
-                    "Tuesday"   => 1,
-                    "Wednesday" => 2,
-                    "Thursday"  => 3,
-                    "Friday"    => 4,
-                    "Saturday"  => 5,
-                    "Sunday"    => 6,
-                    _           => 0
+                    "Monday"    => DayOfWeek.Monday,
+                    "Tuesday"   => DayOfWeek.Tuesday,
+                    "Wednesday" => DayOfWeek.Wednesday,
+                    "Thursday"  => DayOfWeek.Thursday,
+                    "Friday"    => DayOfWeek.Friday,
+                    "Saturday"  => DayOfWeek.Saturday,
+                    "Sunday"    => DayOfWeek.Sunday,
+                    _           => DayOfWeek.Monday
                 };
+                var dayOffset = ((int)targetDayOfWeek - (int)weekStart.DayOfWeek + 7) % 7;
 
                 previewDays.Add(new PreviewDayDto
                 {
@@ -271,12 +331,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             Level = request.Level,
             DaysPerWeek = request.DaysPerWeek,
             Unit = request.Unit,
-            // Empty: stage-to-week scheduling remains unimplemented (every
-            // prior Phase 4D resolver phase's own explicit boundary). The
-            // full frozen resolution snapshot -- including AsOfDate,
-            // candidate/dependency identities, and every resolver result --
-            // is what gets persisted below, not a generated plan payload.
-            Weeks = new List<PreviewWeekDto>(),
+            Weeks = MapCatalogPreviewWeeks(snapshot.GeneratedPreviewPlanPayload),
             FallbackUsed = false,
             FallbackReason = null,
         };
@@ -298,6 +353,47 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         await _context.SaveChangesAsync(ct);
 
         return previewResponse;
+    }
+
+    private static List<PreviewWeekDto> MapCatalogPreviewWeeks(GeneratedCatalogPlanPayload? payload)
+    {
+        if (payload is null) return new List<PreviewWeekDto>();
+
+        return payload.Weeks
+            .OrderBy(w => w.WeekNumber)
+            .Select(w => new PreviewWeekDto
+            {
+                WeekNumber = w.WeekNumber,
+                WeekType = w.Provenance.SourcePhaseKey switch
+                {
+                    "FOUNDATION" => TrainingWeekType.Base,
+                    "BUILD" => TrainingWeekType.Build,
+                    "RACE_SPECIFIC" => TrainingWeekType.Peak,
+                    "TAPER" => TrainingWeekType.Taper,
+                    _ => TrainingWeekType.Build
+                },
+                Days = w.Sessions
+                    .OrderBy(s => s.Date)
+                    .Select((s, index) => new PreviewDayDto
+                    {
+                        SlotIndex = index + 1,
+                        DayType = s.WorkoutType switch
+                        {
+                            GeneratedCatalogWorkoutType.Easy => TrainingDayType.Easy,
+                            GeneratedCatalogWorkoutType.Interval => TrainingDayType.Interval,
+                            GeneratedCatalogWorkoutType.Tempo => TrainingDayType.Tempo,
+                            GeneratedCatalogWorkoutType.LongRun => TrainingDayType.LongRun,
+                            GeneratedCatalogWorkoutType.RecoveryEasy => TrainingDayType.RecoveryEasy,
+                            _ => TrainingDayType.Easy
+                        },
+                        DistanceKm = s.TargetDistanceKm ?? s.EstimatedDistanceKm ?? 0,
+                        DurationMin = s.TargetDurationMinutes ?? s.EstimatedDurationMinutes ?? 0,
+                        Intensity = s.PlannedIntensity ?? s.PacePrescription.EffortLabel ?? string.Empty,
+                        Date = s.Date.ToDateTime(TimeOnly.MinValue),
+                    })
+                    .ToList()
+            })
+            .ToList();
     }
 
     public async Task<ConfirmPlanResponse> ConfirmPlanAsync(Guid internalUserId, ConfirmPlanRequest request, CancellationToken ct = default)
@@ -395,31 +491,38 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         // Race plans: CustomGoalType and HabitPlanType must be null.
         // Habit plans: CustomGoalType is only set for the "custom" habit branch;
         //              normalize empty/whitespace to null.
+        // requestData was persisted only after GeneratePreviewRequestValidator
+        // already passed on it (GeneratePreviewAsync validates before saving
+        // the PlanPreview row), so mapping it through the same command mapper
+        // here is safe and replaces manual isRace-ternary null handling with
+        // a pattern match against already-guaranteed-non-null command fields.
         var isRace = previewData.GoalType == GoalType.Race;
+        var command = GeneratePreviewCommandMapper.ToCommand(requestData);
 
         string? customGoalType = null;
         string? habitPlanType = null;
         string? raceName = null;
         DateOnly? raceDate = null;
         int? targetFinishTimeSeconds = null;
+        Weekday? longRunDayValue = null;
 
-        if (isRace)
+        if (command is RacePlanPreviewCommand raceCommand)
         {
-            raceName = requestData.RaceName;
-            raceDate = requestData.RaceDate;
-            targetFinishTimeSeconds = requestData.TargetFinishTimeSeconds;
+            raceName = raceCommand.RaceName;
+            raceDate = raceCommand.RaceDate;
+            targetFinishTimeSeconds = raceCommand.TargetFinishTimeSeconds;
+            longRunDayValue = raceCommand.LongRunDay;
             // CustomGoalType and HabitPlanType stay null for race plans.
         }
-        else
+        else if (command is HabitPlanPreviewCommand habitCommand)
         {
+            longRunDayValue = habitCommand.LongRunDay;
             habitPlanType = NullIfEmpty(requestData.HabitPlanType);
-            
+
             // CustomGoalType should only be populated when the habit flow explicitly selected a custom habit goal.
             if (string.Equals(habitPlanType, "custom", StringComparison.OrdinalIgnoreCase))
             {
-                customGoalType = requestData.GoalType == GoalType.Habit
-                    ? MapCustomGoalType(requestData.CustomGoalType)
-                    : null;
+                customGoalType = MapCustomGoalType(requestData.CustomGoalType);
             }
 
             // Validate CustomGoalType against the allowed CHECK constraint values.
@@ -431,16 +534,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             }
         }
 
-        string? longRunDay = null;
-        if (!string.IsNullOrWhiteSpace(requestData.LongRunDay))
-        {
-            longRunDay = RunningDay.Normalize(requestData.LongRunDay);
-            if (longRunDay == null)
-            {
-                throw new ArgumentException(
-                    $"LongRunDay must be a valid day name, but was '{requestData.LongRunDay}'.");
-            }
-        }
+        var longRunDay = WeekdayCsv.ToCsv(longRunDayValue);
 
         var plan = new TrainingPlan
         {
@@ -459,7 +553,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             TargetFinishTimeSeconds = targetFinishTimeSeconds,
             // Snapshot onboarding answers — frozen at confirm time so template
             // changes never alter historical plan data.
-            PreferredDays      = RunningDay.NormalizeList(requestData.PreferredDays), 
+            PreferredDays      = RunningDay.NormalizeList(WeekdayCsv.ToCsv(requestData.PreferredDays)),
             WeeklyAvailability = requestData.WeeklyAvailability,
             PreferredPace      = requestData.PreferredPace,
             LongRunDay              = longRunDay,
@@ -666,17 +760,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         return response;
     }
 
-    private static double GetGoalDistanceInKm(GoalDistance distance)
-    {
-        return distance switch
-        {
-            GoalDistance.FiveK => 5.0,
-            GoalDistance.TenK => 10.0,
-            GoalDistance.HalfMarathon => 21.0975,
-            GoalDistance.Marathon => 42.195,
-            _ => 5.0
-        };
-    }
+    private static double GetGoalDistanceInKm(GoalDistance distance) => GoalDistanceKm.Resolve(distance);
 
     private static string GetTitleForDay(TrainingDayType dayType, double distance)
     {
@@ -818,4 +902,3 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         }
     }
 }
-

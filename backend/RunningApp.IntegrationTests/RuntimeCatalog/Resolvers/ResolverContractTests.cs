@@ -51,7 +51,7 @@ public sealed class ResolverContractTests
             RaceDate = new DateOnly(2026, 10, 25),
             TargetFinishTimeSeconds = 3000,
             DaysPerWeek = 4,
-            Level = RunningBackground.RunningRegularly,
+            Level = RunningBackground.Intermediate,
         };
 
         Assert.Equal(8.0, snapshot.RequestedTargetDistanceKm);

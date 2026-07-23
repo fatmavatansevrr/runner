@@ -1,0 +1,171 @@
+{
+  "auditKey": "PHASE4F6_STEP_A2_EASY_SUPPORT_COVERAGE_AND_BLOCKER_CLASSIFICATION",
+  "auditVersion": 1,
+  "sourceArtifacts": [
+    "plan-catalog/artifacts/audits/phase4f6-step-a-v10-catalog-audit.json",
+    "plan-catalog/artifacts/audits/phase4f6-step-a-v10-catalog-audit.md",
+    "plan-catalog/artifacts/audits/phase4f6-step-a1-role-ownership-and-gap-clarification.json",
+    "plan-catalog/artifacts/audits/phase4f6-step-a1-role-ownership-and-gap-clarification.md"
+  ],
+  "scopeNote": "LONG_RUN is explicitly out of scope for this step per Step A.1's prior finding that its absence is complete (0 of 7 stages) rather than partial, and remains a separate Step C / 4F.6B decision. This audit concerns only EASY_SUPPORT and the partial (2 of 7 stages) EASY-family coverage in the v10 workout progression.",
+  "easyFamilyStages": [
+    {
+      "progressionArtifactId": "TEN_K_WORKOUT_PROGRESSION_V1 v5",
+      "phaseKey": "FOUNDATION",
+      "stageKey": "FOUNDATION_EASY_BASE",
+      "relativeOrder": 1,
+      "workoutCandidateKey": "EASY_STANDARD",
+      "workoutFamily": "EASY",
+      "workoutDefinitionVersion": 4,
+      "minimumExposures": 3,
+      "maximumExposures": 6,
+      "runtimeConditions": [],
+      "fallback": null,
+      "sourcePath": "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json $.phaseProgressions[FOUNDATION].stages[FOUNDATION_EASY_BASE]",
+      "governanceClassification": "AUD-013 (stageKey itself PlaceholderUnconfirmed, invented for pilot completeness, not brief-sourced); AUD-014 (exposure bounds PlaceholderUnconfirmed); AUD-015 (compression/extension behavior PlaceholderUnconfirmed)",
+      "explicitStructuralRole": "ABSENT — verified: WorkoutProgressionStageDefinition.cs has no Role/SlotRole/StructuralRole field",
+      "evidenceThatItPopulatesEasySupport": "NOT_FOUND — no field, schema constraint, or validator rule ties this stage to the EASY_SUPPORT layout role; the connection is inference only (see contractGapAnalysis)"
+    },
+    {
+      "progressionArtifactId": "TEN_K_WORKOUT_PROGRESSION_V1 v5",
+      "phaseKey": "TAPER",
+      "stageKey": "TAPER_SHARPEN",
+      "relativeOrder": 1,
+      "workoutCandidateKey": "EASY_STANDARD",
+      "workoutFamily": "EASY",
+      "workoutDefinitionVersion": 4,
+      "minimumExposures": 1,
+      "maximumExposures": 2,
+      "runtimeConditions": [],
+      "fallback": null,
+      "sourcePath": "plan-catalog/catalog/workout-progressions/ten-k-workout-progression.v5.json $.phaseProgressions[TAPER].stages[TAPER_SHARPEN]",
+      "governanceClassification": "AUD-013/014/015, same as above; compressionBehavior=PROTECTED/extensionBehavior=FIXED_EXPOSURE for this stage specifically (also PlaceholderUnconfirmed)",
+      "explicitStructuralRole": "ABSENT — same as above",
+      "evidenceThatItPopulatesEasySupport": "NOT_FOUND — same as above"
+    }
+  ],
+  "candidateIdentityAnalysis": {
+    "candidateKeys": ["EASY_STANDARD"],
+    "isGeneralOrSpecializedVariant": "Both stages target the same single general-easy definition, EASY_STANDARD (family=EASY, allowedPrescriptionModes=[DISTANCE], allowedDistanceAccountingModes=[EXACT_SESSION_TOTAL], eligiblePhases=[FOUNDATION,BUILD,RACE_SPECIFIC,TAPER]). No specialized EASY variant (e.g. a strides/quality-embedded easy run) exists as an actual catalog artifact.",
+    "resolutionClass": "REPOSITORY_CONFIRMED",
+    "nameComponentDistinguish": "EASY_STANDARD's schema-declared shape (flat DISTANCE prescription, EXACT_SESSION_TOTAL accounting, no components field populated in this catalog artifact) does not distinguish sub-variants — there is only one EASY-family workout definition in the active catalog.",
+    "isEitherCandidateSuitableOnlyForEasySupport": "NOT_FOUND as an explicit constraint. EASY_STANDARD.eligiblePhases lists all 4 phases (not phase-restricted), and no schema field restricts a workout definition to a specific structural role at all — WorkoutDefinition has no role-eligibility field of any kind.",
+    "couldEitherBeUsedInAnotherStructuralRole": "Under the current schema, yes, mechanically nothing prevents it — WorkoutDefinition carries no role restriction. Under CandidatePublishGraphValidator.RoleCompatibleFamilies (family:EASY -> role:EASY_SUPPORT only), it is family-INcompatible with KEY_SESSION (needs Quality/Race) and LONG_RUN (needs LongRun family), so that one validator would reject it in those roles — but that validator is publish-time tooling logic, not a runtime constraint.",
+    "doesAnyTestAssertItPopulatesEasySupport": "NOT_FOUND. Exhaustive grep of all EASY_SUPPORT references in tests/production code (see testAndFixtureFindings) confirms every reference is to the structural role STRING (counting, slot-key naming, layout-shape assertions) — zero tests assert that EASY_STANDARD (or any workout key) actually fills an EASY_SUPPORT slot at runtime."
+  },
+  "phaseCoverageMatrix": [
+    { "phase": "FOUNDATION", "numberOfStages": 1, "easyFamilyStages": 1, "easyFamilyCandidateKeys": ["EASY_STANDARD"], "hasEasyProgressionCoverage": true },
+    { "phase": "BUILD", "numberOfStages": 2, "easyFamilyStages": 0, "easyFamilyCandidateKeys": [], "hasEasyProgressionCoverage": false },
+    { "phase": "RACE_SPECIFIC", "numberOfStages": 3, "easyFamilyStages": 0, "easyFamilyCandidateKeys": [], "hasEasyProgressionCoverage": false },
+    { "phase": "TAPER", "numberOfStages": 1, "easyFamilyStages": 1, "easyFamilyCandidateKeys": ["EASY_STANDARD"], "hasEasyProgressionCoverage": true }
+  ],
+  "structuralScheduleFact": {
+    "layout": "RUN_LAYOUT_4D v2",
+    "slotsPerWeek": ["KEY_SESSION", "EASY_SUPPORT", "EASY_SUPPORT", "LONG_RUN"],
+    "easySupportSlotsPerWeek": 2,
+    "appliesEveryWeekRegardlessOfPhase": true,
+    "resolutionClass": "REPOSITORY_CONFIRMED"
+  },
+  "mechanicalComparison": {
+    "statement": "2 of 4 phases (FOUNDATION, TAPER) have at least one EASY-family stage candidate; all 4 phases have 2 EASY_SUPPORT structural slots per week regardless of phase. This is a structural fact about slot COUNT vs. stage COVERAGE, not a claim that a stage must (or does not) populate every easy slot — whether stage output is even intended to populate EASY_SUPPORT at all is unresolved (see contractGapAnalysis).",
+    "resolutionClass": "MECHANICALLY_DERIVED"
+  },
+  "runtimeBehavior": {
+    "pipelineTraced": "CatalogPreviewGenerator.GenerateAsync -> BuildDarkInternalDatedSkeleton -> ICatalogPlanSkeletonOrchestrator.Build (phase allocation + structural skeleton, Phase 4F.2/4F.3) -> ICatalogWeekSkeletonCalendarMaterializer.Materialize (calendar assignment, Phase 4F.5) -> IDatedGeneratedCatalogPlanSkeletonValidator.Validate (Phase 4F.5.1)",
+    "doesAnyStepAssignWorkoutIdentityToAnySlot": false,
+    "evidence": [
+      "CatalogCalendarAssignmentContracts.cs: DatedGeneratedCatalogWeekSkeleton and DatedGeneratedCatalogSessionSlotSkeleton carry only SlotOrderInWeek, LayoutSlotKey, StructuralRole (raw role string), SessionDate, SessionDayOfWeek, and provenance — no WorkoutKey/WorkoutDefinition/Family/PrescriptionMode/Pace/Distance/Duration field exists on either record. Doc comments explicitly state: 'Carries no workout prescription, distance, duration, pace, intensity, segment, or weekly-volume field — those remain out of scope for this phase.'",
+      "CatalogRunLayoutSlots.cs: StructuralRoles is IReadOnlyList<string> of role strings only, sourced verbatim from the layout document's slots[].role array — no accompanying workout reference per role.",
+      "CatalogPlanSkeletonOrchestrator.cs / CatalogPlanSkeletonOrchestrationResult: exposes only RunLayout (role strings) and Skeleton (structural, dateless) — never selects or assigns a workout to a role.",
+      "GeneratedCatalogPlanPayload.cs DOES contain workout-identity fields (SourceWorkoutKey, PacePrescription, TargetDistanceKm, TargetDurationMinutes, PrescriptionBasis) but this is the separate Phase 4F.1 public/final contract, never constructed by or connected to the dark skeleton/calendar-materialization pipeline (confirmed: CatalogPreviewGenerator never builds a GeneratedCatalogPlanPayload from the orchestrator/materializer/validator chain)."
+    ],
+    "answerBuildRaceSpecificEasySupportSlotsReceiveWorkoutIdentityToday": "NO",
+    "explanation": "This is both true simultaneously for two reasons that must not be conflated: (1) workout-identity assignment of ANY kind, for ANY slot role (not just EASY_SUPPORT, not just BUILD/RACE_SPECIFIC), is not implemented anywhere in the current dark pipeline — the underlying contract records have no field capable of holding a workout key at all; this is expected, scoped-out-on-purpose behavior for Phase 4F.1-4F.5.1, not a defect. (2) Independently, even if workout-identity assignment existed today, BUILD/RACE_SPECIFIC phases would have no EASY-family stage output to draw from — a separate, phase-content-level gap.",
+    "isCurrentRuntimeDefect": false,
+    "is4F6BReadinessGapPossibly": true,
+    "resolutionClass": "REPOSITORY_CONFIRMED for the pipeline trace and field absence; MECHANICALLY_DERIVED for the phase-content coverage gap; the combination is stated explicitly, not assumed"
+  },
+  "testAndFixtureFindings": [
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/Schedule/Materialization/CatalogRunLayoutResolverTests.cs (multiple lines)", "assertionType": "role-string presence/count/order in layout resolution", "classification": "PRODUCTION_BEHAVIOR_ASSERTION", "note": "Asserts structural role strings only; no workout identity involved" },
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/Schedule/Materialization/CatalogStageToWeekMaterializerTests.cs:312-347", "assertionType": "per-role slot-key naming (EASY_SUPPORT_1/EASY_SUPPORT_2) and role-count assertions", "classification": "PRODUCTION_BEHAVIOR_ASSERTION", "note": "Confirms slot NAMING/COUNTING behavior, not workout binding" },
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/Schedule/Materialization/CatalogWeekSkeletonCalendarMaterializerTests.cs:99-119,272-275", "assertionType": "role-order fixtures and an explicit comment disclaiming any EASY_SUPPORT-specific behavior check", "classification": "PRODUCTION_BEHAVIOR_ASSERTION", "note": "Line 272-275 comment explicitly states no EASY_SUPPORT-specific assertion exists beyond successful materialization — direct evidence of the gap, not an assumption of coverage" },
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/PlanCatalogBundleLoaderTests.cs:101", "assertionType": "SlotRoles array equality against catalog layout data", "classification": "CATALOG_VALIDATION_ASSERTION", "note": "Verifies loader fidelity to catalog JSON, not runtime binding" },
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/PlanCatalogDomainMapperTests.cs:81", "assertionType": "asserts EASY_SUPPORT is classified NotSupported as a backend SlotRole concept", "classification": "PRODUCTION_BEHAVIOR_ASSERTION", "note": "Confirms a DIFFERENT fact (backend has no SlotRole concept at all) — not about workout binding" },
+    { "location": "backend/RunningApp.IntegrationTests/RuntimeCatalog/Schedule/GeneratedCatalogPlanPayloadFixtures.cs:129", "assertionType": "fixture sets SourceLayoutSlotRole = \"EASY_SUPPORT\" on a hand-built payload for the separate Phase 4F.1 public-contract test suite", "classification": "TEST_FIXTURE_ASSUMPTION", "note": "This fixture is for the public GeneratedCatalogPlanPayload contract, unrelated to and not exercised by the dark pipeline under audit; it demonstrates the public contract CAN hold a slot role + workout key together once populated by a future producer, but no such producer exists yet" },
+    { "location": "plan-catalog/tests/PlanCatalog.Tests/Publishing/CatalogPublisherTests.cs:135-138, Validation/DomainWave2ResolutionTests.cs:50-51", "assertionType": "layout JSON role-shape fixtures", "classification": "TEST_FIXTURE_ASSUMPTION", "note": "Plan-catalog-side structural fixtures only" },
+    { "location": "plan-catalog/tests/PlanCatalog.Tests/Validation/PilotDomainContentAuditTests.cs:76", "assertionType": "comment restating AUD-016's layout-shape confirmation", "classification": "GOVERNANCE_PLACEHOLDER", "note": "References the governance record, not a runtime behavior" },
+    { "location": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json (23 EASY_SUPPORT slot occurrences across 12 weeks)", "assertionType": "hand-authored/generated example plan document showing EASY_SUPPORT populated with EASY_STANDARD in every week including BUILD and RACE_SPECIFIC weeks, plus one EASY_SHAKEOUT (a non-catalog workout key) at W12_D3", "classification": "DOCUMENTATION_EXAMPLE", "note": "This is the single most consequential finding of the test/fixture audit: the tier-1 canonical fixture DEMONSTRATES full-coverage EASY_SUPPORT population across all phases, using both a workout key not in the active catalog (EASY_SHAKEOUT) and a phase (BUILD/RACE_SPECIFIC) where the current stage system has zero EASY-family output. This is target/example documentation of an end-state, not evidence of current runtime capability — the dark pipeline audited in runtimeBehavior above does not and cannot reproduce this today." }
+  ],
+  "governanceHistory": {
+    "searchedFor": ["EASY_SUPPORT", "EASY_STANDARD", "EASY_WITH_STRIDES", "easy progression", "easy stage", "role binding", "default easy workout", "support workout"],
+    "searchedIn": ["PilotDomainContentAudit.cs", "activation-readiness-risks.md", "canonical decision documents", "phase documents", "golden fixtures", "catalog attribution artifacts"],
+    "findings": [
+      { "term": "EASY_SUPPORT (layout slot shape only)", "location": "PilotDomainContentAudit.cs AUD-016", "content": "'1 KEY_SESSION, 2 EASY_SUPPORT, 1 LONG_RUN' — CanonicalConfirmed, brief-sourced (brief §20), corroborated by Golden Fixture v3's every-week slot-role shape. Confirms the SHAPE only, not any stage-to-slot binding.", "classification": "KNOWN_DEFERRED_DESIGN scope: NO — this AUD entry is about layout cardinality, not about workout binding; binding itself is simply absent from this or any other AUD entry" },
+      { "term": "EASY_WITH_STRIDES / EASY_SHAKEOUT (fixture-only workout keys)", "location": "ten-k-pilot-vocabulary-decisions.md:28,50; workout-components-ownership-audit.md:35-39,184-186; Appsel_Master_Template_Catalog_Authoring_Process.md:239 (example vocabulary list)", "content": "Explicitly documented, same pattern as LONG_RUN_PROGRESSION: 'a components-bearing variant of easy... training exists in the domain, but as a different, non-substitutable workout key, not as an alternate shape of EASY_STANDARD.' EMBEDDED_COMPONENTS distance-accounting mode is 'vocabulary confirmed; not yet assigned to any pilot workout.'", "classification": "KNOWN_DEFERRED_DESIGN for the EASY_WITH_STRIDES/EASY_SHAKEOUT workout-key question specifically (mirrors the LONG_RUN_PROGRESSION precedent exactly)" },
+      { "term": "role binding / default easy workout / support workout (general mechanism)", "location": "searched across all listed sources", "content": "NOT_FOUND. No governance artifact anywhere discusses a mechanism, deferred or otherwise, for binding a workout-progression stage's output to a structural EASY_SUPPORT slot, or for defaulting BUILD/RACE_SPECIFIC easy-slot content.", "classification": "PREVIOUSLY_UNRECORDED_GAP for the binding-mechanism question specifically" }
+    ],
+    "conflictReport": "No direct conflict between findings, but a layered distinction must be preserved: the WORKOUT-KEY question (is EASY_WITH_STRIDES/EASY_SHAKEOUT a needed catalog addition?) IS a known, deferred, documented design question — same class as LONG_RUN_PROGRESSION. The separate BINDING-MECHANISM question (how does any EASY-family stage output reach an EASY_SUPPORT slot at all, and what fills BUILD/RACE_SPECIFIC weeks?) has never been recorded anywhere as a known gap — it is previously unrecorded. Both are true at once about different dimensions of the same structural role.",
+    "governanceClassificationOverall": "COMBINATION: KNOWN_DEFERRED_DESIGN (workout-key vocabulary dimension) + PREVIOUSLY_UNRECORDED_GAP (binding-mechanism dimension)"
+  },
+  "contractGapAnalysis": {
+    "question": "Does the repository contain a deterministic mechanism that maps an EASY_SUPPORT structural slot to a workout identity?",
+    "result": "CONTRACT_ABSENT",
+    "resolutionClass": "REPOSITORY_CONFIRMED",
+    "evidence": [
+      "No field on WorkoutProgressionStageDefinition designates a target role.",
+      "No field on LayoutSlotDefinition references a workout or stage.",
+      "CandidatePublishGraphValidator.RoleCompatibleFamilies (role->family) is the closest existing mechanism, but it is publish-time-only tooling logic (family-grained, not workout-key-grained), never consumed by backend runtime, and only used for a closure-membership VALIDATION rule (LAYOUT_SLOT_HAS_NO_ELIGIBLE_WORKOUT) — it does not assign or select a workout for any specific slot instance.",
+      "The dark pipeline's own contract records (DatedGeneratedCatalogWeekSkeleton/SessionSlotSkeleton) have no field capable of holding a workout identity at all (see runtimeBehavior)."
+    ]
+  },
+  "contentGapAnalysis": {
+    "question": "Assuming the current stage system were intended to contribute to EASY_SUPPORT binding, does every relevant phase contain sufficient EASY-family candidate content?",
+    "result": "CONTENT_NOT_APPLICABLE_PENDING_CONTRACT_DECISION",
+    "resolutionClass": "ARCHITECTURAL_INFERENCE",
+    "reasoning": "Because contractGapAnalysis found CONTRACT_ABSENT, the premise of this question ('the stage system is intended to populate EASY_SUPPORT') is itself unestablished by repository evidence — no document or code states that workout-progression stages are the mechanism responsible for filling EASY_SUPPORT slots. It is therefore incorrect to declare BUILD/RACE_SPECIFIC a definitive CONTENT_ABSENT gap, since that presumes an intended responsibility that has not been confirmed. What CAN be stated without presuming the contract: IF stage output is later chosen as the binding mechanism, BUILD and RACE_SPECIFIC phases currently have zero EASY-family stage candidates and would need new content to achieve full coverage; this is reported as a conditional fact, not a confirmed gap.",
+    "conditionalFinding": "IF workout-progression stages become the EASY_SUPPORT binding source: FOUNDATION=CONTENT_COMPLETE (1 stage, exposures 3-6, structurally plausible for a phase of 2-4 weeks with 2 slots/week), TAPER=CONTENT_COMPLETE (1 stage, exposures 1-2, plausible for a 1-week phase), BUILD=CONTENT_ABSENT (0 stages, but 3-5 weeks x 2 slots/week = 6-10 EASY_SUPPORT slot-instances need filling), RACE_SPECIFIC=CONTENT_ABSENT (0 stages, but 2-4 weeks x 2 slots/week = 4-8 EASY_SUPPORT slot-instances need filling)."
+  },
+  "combinedClassification": "COMBINED_CONTENT_AND_CONTRACT_GAP",
+  "combinedClassificationReasoning": "Two genuinely independent dimensions both apply and neither subsumes the other. Contract dimension: no deterministic role-to-workout binding mechanism exists at all, for any role, consumed by runtime (CONTRACT_ABSENT, REPOSITORY_CONFIRMED). Content dimension: even setting the contract question aside, IF the workout-progression stage system is eventually chosen as the binding source, 2 of 4 phases (BUILD, RACE_SPECIFIC) currently have zero EASY-family stage candidates to draw from — a conditional but concrete content shortfall (ARCHITECTURAL_INFERENCE, conditional on a contract decision not yet made). Resolving the contract question alone would not resolve the content question, and adding EASY-family stage content to BUILD/RACE_SPECIFIC would not resolve the contract question. Both must be decided.",
+  "blockerFindings": [
+    { "finding": "No deterministic role-to-workout-key binding mechanism exists at runtime for EASY_SUPPORT (or any role)", "primaryBlockerClass": "BLOCKER_FOR_4F6B", "secondaryImpacts": ["BLOCKER_FOR_STEP_C (a schema/product decision must resolve the mechanism design before 4F.6B can proceed)"] },
+    { "finding": "BUILD and RACE_SPECIFIC phases have zero EASY-family workout-progression stages", "primaryBlockerClass": "BLOCKER_FOR_4F6B", "secondaryImpacts": ["Conditional — only a blocker if/once stage-driven binding is the chosen mechanism; otherwise NON_BLOCKING for that specific design"] },
+    { "finding": "The dark pipeline's contract records have no field capable of holding workout identity for any slot", "primaryBlockerClass": "BLOCKER_FOR_4F6B", "secondaryImpacts": ["SCHEMA_DECISION_REQUIRED: new fields/records will need to be added to whichever layer implements binding"] },
+    { "finding": "EASY_WITH_STRIDES/EASY_SHAKEOUT (fixture-evidenced easy-training variants) are not active catalog artifacts", "primaryBlockerClass": "BLOCKER_FOR_STEP_C", "secondaryImpacts": ["Not a blocker for Step B's currently-scoped evidence questions (exposure bounds, compression/extension, phase durations) since those apply to EASY_STANDARD regardless"] },
+    { "finding": "Stage exposure bounds, compression/extension behavior for FOUNDATION_EASY_BASE and TAPER_SHARPEN are PlaceholderUnconfirmed", "primaryBlockerClass": "BLOCKER_FOR_STEP_B_SUBTOPIC", "secondaryImpacts": ["Scoped narrowly to the exposure-bounds/compression-extension evidence subtopic for these 2 stages specifically; does not block other Step B subtopics"] },
+    { "finding": "No test asserts EASY_SUPPORT slot population by any workout key", "primaryBlockerClass": "NON_BLOCKING", "secondaryImpacts": ["Expected consequence of the contract being absent — closing the contract gap will naturally require new tests, not a standalone defect"] }
+  ],
+  "isBlockerFor4F6B": true,
+  "isBlockerFor4F6BExactPrerequisite": [
+    "Role-to-workout(-key) binding contract/mechanism (currently CONTRACT_ABSENT — this is the primary unresolved prerequisite)",
+    "Once the mechanism is chosen: if stage-driven, EASY-family stage content for BUILD and RACE_SPECIFIC phases (currently zero)",
+    "Ownership decision (Step A.1 A1-Q08): which bounded context is responsible for implementing the mechanism"
+  ],
+  "stepBReadiness": "STEP_B_CAN_BEGIN",
+  "stepBScope": [
+    "Evidence-check the exposure bounds (minimumExposures/maximumExposures) for FOUNDATION_EASY_BASE (3-6) and TAPER_SHARPEN (1-2) against training-science sources",
+    "Evidence-check the compression/extension behavior classifications (COMPRESSIBLE/EXTENDABLE for FOUNDATION_EASY_BASE; PROTECTED/FIXED_EXPOSURE for TAPER_SHARPEN) against training-science sources",
+    "Evidence-check phase-level duration bounds (minimumWeeks/preferredWeeks/maximumWeeks) for all 4 phases, independent of the EASY_SUPPORT binding question",
+    "Evidence-check the other 5 non-EASY stages' exposure bounds and compression/extension behavior (already in scope from Step A, unaffected by this audit)",
+    "Evidence-check the general appropriateness of EASY_STANDARD's schema shape (DISTANCE prescription mode, EXACT_SESSION_TOTAL accounting) for an easy/recovery run, independent of role binding"
+  ],
+  "stepCDeferrals": [
+    "Design of the role-to-workout(-key) binding mechanism itself (versioned policy artifact vs. layout-carried default vs. level-modifier extension vs. runtime-scheduler logic) — SCHEMA_DECISION_REQUIRED",
+    "Whether EASY_SUPPORT should formally bind to EASY_STANDARD, and how BUILD/RACE_SPECIFIC weeks' EASY_SUPPORT slots should be populated absent any current stage content — PRODUCT_DECISION_REQUIRED",
+    "Whether EASY_WITH_STRIDES / EASY_SHAKEOUT should be created as new catalog workout artifacts to diversify EASY_SUPPORT content beyond a single repeated EASY_STANDARD session — PRODUCT_DECISION_REQUIRED",
+    "Which bounded context (Appsel.PlanCatalog vs Appsel.PlanGeneration) owns implementing the binding mechanism, consistent with Step A.1's A1-Q08 finding that this split is only a 'suggested', non-finalized document — GOVERNANCE_DECISION_REQUIRED",
+    "LONG_RUN role binding (explicitly out of scope for this step, already deferred by Step A.1)"
+  ],
+  "validationResults": [
+    { "suite": "PlanCatalog.Tests (full)", "command": "dotnet test PlanCatalog.sln -c Release --no-build", "passed": 335, "failed": 0, "skipped": 0, "total": 335, "warnings": 0 },
+    { "suite": "plan-catalog build", "command": "dotnet build PlanCatalog.sln -c Release", "errors": 0, "warnings": 0 },
+    { "suite": "backend build", "command": "dotnet build RunningApp.sln -c Release", "errors": 0, "warnings": 0 },
+    { "suite": "backend relevant Phase4F5/4F5.1/mapper/materializer/orchestrator/validator tests", "command": "dotnet test RunningApp.sln -c Release --no-build --filter \"FullyQualifiedName~Phase4F5|FullyQualifiedName~PlanCatalogDomainMapperTests|FullyQualifiedName~CatalogRunLayoutResolverTests|FullyQualifiedName~CatalogWeekSkeletonCalendarMaterializerTests|FullyQualifiedName~CatalogStageToWeekMaterializerTests|FullyQualifiedName~DatedGeneratedCatalogPlanSkeletonValidatorTests|FullyQualifiedName~CatalogPlanSkeletonOrchestratorTests\"", "passed": 131, "failed": 0, "skipped": 0, "total": 131, "warnings": 0 }
+  ],
+  "repositoryState": {
+    "branch": "main",
+    "head": "0c6796578f08bc1d76d96f1944a80c9075455206",
+    "commitMade": false,
+    "notes": "Read-only audit. Two new artifacts created under plan-catalog/artifacts/audits/. No production code, catalog JSON, schema, evidence-log.json, PilotDomainContentAudit.cs, canonical decision artifact, Step A, or Step A.1 artifact was modified. Incidental generatedAtUtc/nuget-cache drift from running the plan-catalog and backend test suites was detected and reverted via git checkout --."
+  }
+}

@@ -33,6 +33,8 @@ public class TestingController : ControllerBase
             return StatusCode(403, new { message = "Testing endpoints are only available in Development mode." });
         }
 
+        await _context.Database.MigrateAsync(ct);
+
         var internalUserId = _currentUser.InternalUserId;
 
         var planIds = await _context.TrainingPlans
