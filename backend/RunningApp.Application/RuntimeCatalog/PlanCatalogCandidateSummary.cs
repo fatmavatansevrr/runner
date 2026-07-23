@@ -14,16 +14,34 @@ public sealed record PlanCatalogReference(string Key, int Version);
 public sealed record PlanCatalogCoreCycle(int MinimumWeeks, int DefaultWeeks, int? MaximumWeeks);
 
 /// <summary>
-/// Backend Integration Phase 4F.3 — one phase's own declared week-count
-/// preference, read verbatim from a PLAN_TEMPLATE's <c>phases[]</c> array
+/// Backend Integration Phase 4G.3B.1 — one phase's complete declared week
+/// constraints and allocation priorities, read verbatim from a PLAN_TEMPLATE's <c>phases[]</c> array
 /// (e.g. <c>templates/ten-k-master.v6.json</c>: <c>{"phaseKey":"BUILD",
-/// "preferredWeeks":4,...}</c>). <see cref="PhaseKey"/> is the catalog's
+/// "minimumWeeks":3,"preferredWeeks":4,"maximumWeeks":5,...}</c>).
+/// <see cref="PhaseKey"/> is the catalog's
 /// week-allocation granularity — distinct from the catalog's finer,
 /// workout-selection-level <c>stageKey</c> (nested inside a phase's own
 /// <c>workoutProgression</c> entry), which carries no week-count of its own
 /// and is not represented here.
 /// </summary>
-public sealed record PlanCatalogPhaseAllocation(string PhaseKey, int PreferredWeeks);
+public sealed record PlanCatalogPhaseAllocation(
+    string PhaseKey,
+    int MinimumWeeks,
+    int PreferredWeeks,
+    int MaximumWeeks,
+    int CompressionPriority,
+    int ExtensionPriority,
+    bool IsCompressionProtected)
+{
+    /// <summary>
+    /// Compatibility constructor for existing hand-built test candidates. Catalog loading never
+    /// uses this constructor and never defaults missing artifact fields.
+    /// </summary>
+    public PlanCatalogPhaseAllocation(string phaseKey, int preferredWeeks)
+        : this(phaseKey, preferredWeeks, preferredWeeks, preferredWeeks, 1, 1, false)
+    {
+    }
+}
 
 /// <summary>
 /// Read-only summary of a Process A plan-catalog TEMPLATE_COMBINATION candidate,
@@ -89,8 +107,8 @@ public sealed class PlanCatalogCandidateSummary
     public required IReadOnlyList<string> PhaseKeys { get; init; }
 
     /// <summary>
-    /// Backend Integration Phase 4F.3 — each phase's own declared
-    /// <c>preferredWeeks</c>, in the same order as <see cref="PhaseKeys"/>
+    /// Backend Integration Phase 4G.3B.1 — each phase's complete declared
+    /// constraint metadata, in the same order as <see cref="PhaseKeys"/>
     /// (both are populated from the same pass over the same <c>phases[]</c>
     /// array, so they can never drift relative to each other). Additive:
     /// <see cref="PhaseKeys"/> is kept unchanged for backward compatibility

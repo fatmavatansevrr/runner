@@ -69,14 +69,9 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
             var phaseKeys = template.RootElement.TryGetProperty("phases", out var phasesEl) && phasesEl.ValueKind == JsonValueKind.Array
                 ? phasesEl.EnumerateArray().Select(p => RequireString(p, "phaseKey", "templates", masterTemplateRef)).ToList()
                 : throw new PlanCatalogLoadException($"'phases' is missing on templates/{masterTemplateRef.Key} v{masterTemplateRef.Version}.");
-            // Backend Integration Phase 4F.3: also preserve each phase's own preferredWeeks
-            // (previously read only for phaseKey and discarded) -- same single pass over the
-            // same phases[] array, so PhaseKeys and PhaseAllocations can never drift apart.
-            var phaseAllocations = phasesEl.EnumerateArray()
-                .Select(p => new PlanCatalogPhaseAllocation(
-                    RequireString(p, "phaseKey", "templates", masterTemplateRef),
-                    RequireInt(p, "preferredWeeks", "templates", masterTemplateRef)))
-                .ToList();
+            // Backend Integration Phase 4G.3B.1: preserve the complete schema-authored phase
+            // constraint contract. Validation rejects malformed data; it never clamps or defaults.
+            var phaseAllocations = ReadPhaseAllocations(phasesEl, masterTemplateRef);
             var workoutProgressionRef = ReadReference(template, "workoutProgression");
 
             var runsPerWeek = RequireInt(layout, "runsPerWeek", "layouts", layoutRef);
@@ -162,6 +157,68 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
             : null;
 
         return new PlanCatalogCoreCycle(minimumWeeks, defaultWeeks, maximumWeeks);
+    }
+
+    private static List<PlanCatalogPhaseAllocation> ReadPhaseAllocations(JsonElement phases, PlanCatalogReference owner)
+    {
+        var allocations = phases.EnumerateArray()
+            .Select(phase => new PlanCatalogPhaseAllocation(
+                RequireString(phase, "phaseKey", "templates", owner),
+                RequireInt(phase, "minimumWeeks", "templates", owner),
+                RequireInt(phase, "preferredWeeks", "templates", owner),
+                RequireInt(phase, "maximumWeeks", "templates", owner),
+                RequireInt(phase, "compressionPriority", "templates", owner),
+                RequireInt(phase, "extensionPriority", "templates", owner),
+                RequireBool(phase, "isCompressionProtected", "templates", owner)))
+            .ToList();
+
+        var requiredPhaseKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER",
+        };
+        var invalidIdentities = allocations.Where(p => !requiredPhaseKeys.Contains(p.PhaseKey)).Select(p => p.PhaseKey).ToList();
+        if (invalidIdentities.Count > 0)
+        {
+            throw new PlanCatalogLoadException(
+                $"templates/{owner.Key} v{owner.Version} declares invalid phase identity/identities: {string.Join(", ", invalidIdentities)}.");
+        }
+
+        var duplicates = allocations.GroupBy(p => p.PhaseKey, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        if (duplicates.Count > 0)
+        {
+            throw new PlanCatalogLoadException(
+                $"templates/{owner.Key} v{owner.Version} declares duplicate phase definition(s): {string.Join(", ", duplicates)}.");
+        }
+
+        var missing = requiredPhaseKeys.Except(allocations.Select(p => p.PhaseKey), StringComparer.Ordinal).ToList();
+        if (missing.Count > 0)
+        {
+            throw new PlanCatalogLoadException(
+                $"templates/{owner.Key} v{owner.Version} is missing required pilot phase definition(s): {string.Join(", ", missing)}.");
+        }
+
+        foreach (var phase in allocations)
+        {
+            if (phase.MinimumWeeks < 0 || phase.PreferredWeeks < 0 || phase.MaximumWeeks < 0)
+            {
+                throw new PlanCatalogLoadException(
+                    $"templates/{owner.Key} v{owner.Version} phase '{phase.PhaseKey}' has negative week constraints.");
+            }
+
+            if (phase.MinimumWeeks > phase.PreferredWeeks || phase.PreferredWeeks > phase.MaximumWeeks)
+            {
+                throw new PlanCatalogLoadException(
+                    $"templates/{owner.Key} v{owner.Version} phase '{phase.PhaseKey}' must satisfy minimumWeeks <= preferredWeeks <= maximumWeeks.");
+            }
+
+            if (phase.CompressionPriority < 1 || phase.ExtensionPriority < 1)
+            {
+                throw new PlanCatalogLoadException(
+                    $"templates/{owner.Key} v{owner.Version} phase '{phase.PhaseKey}' allocation priorities must be positive integers.");
+            }
+        }
+
+        return allocations;
     }
 
     private static List<PlanCatalogReference> ReadEligibleWorkouts(JsonDocument levelModifier, PlanCatalogReference owner)
@@ -278,5 +335,17 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
 
         throw new PlanCatalogLoadException(
             $"Required integer field '{propertyName}' is missing on a {subfolder}/{owner.Key} v{owner.Version} document (or a nested element within it).");
+    }
+
+    private static bool RequireBool(JsonElement element, string propertyName, string subfolder, PlanCatalogReference owner)
+    {
+        if (element.TryGetProperty(propertyName, out var value) &&
+            (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False))
+        {
+            return value.GetBoolean();
+        }
+
+        throw new PlanCatalogLoadException(
+            $"Required boolean field '{propertyName}' is missing on a {subfolder}/{owner.Key} v{owner.Version} document (or a nested element within it).");
     }
 }
