@@ -1,4 +1,4 @@
-﻿{
+{
   "auditId": "ACTIVATION-READINESS-RISKS-001",
   "generatedAtUtc": "2026-07-09T16:00:00Z",
   "readOnly": true,
@@ -138,6 +138,92 @@
       "status": "OPEN"
     },
     {
+      "id": "TD-EASY-WORKOUT-REGISTRY-001",
+      "title": "Tier-1 Golden Fixture references EASY_SHAKEOUT, but no validated, versioned EASY_SHAKEOUT workout definition exists in the resolved v10 catalog bundle",
+      "recordedInPass": "Phase 4F.6 Pre-Implementation Step C (V1 Pilot Workout Progression, Fixed Role Binding, and Governance Decisions); originally proposed during Step B (phase4f6-step-b-training-science-evidence-mapping.json, easyShakeoutRiskRecommendation) following the user's own preceding proposal",
+      "source": "docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json (workoutKey=EASY_SHAKEOUT, W12_D3); artifacts/audits/phase4f6-step-a2-easy-support-coverage-and-blocker-classification.json; artifacts/audits/phase4f6-step-b-training-science-evidence-mapping.json; PHASE4F_6_STEP_C_V1_PILOT_WORKOUT_AND_BINDING_DECISIONS.md (D-C12, D-C13)",
+      "statement": "The tier-1 canonical Golden Fixture v3 references a workout key, EASY_SHAKEOUT, that does not exist as a validated, versioned workout definition anywhere in the resolved v10 catalog bundle (catalog/workouts/ contains no easy-shakeout.*.json). EASY_WITH_STRIDES (named only in architecture-spec example vocabulary and other governance prose) shares the same divergence pattern. The V1 pilot's fixed EASY_SUPPORT binding (D-C07: EASY_SUPPORT -> EASY_STANDARD) deliberately does not add either key.",
+      "classification": "ACTIVATION_READINESS / CATALOG_FIXTURE_DIVERGENCE",
+      "severity": "See blocking scope below (non-uniform across steps)",
+      "affectedAreas": [
+        "Golden Fixture v3 (docs/canonical/golden-fixture-v3/)",
+        "V1 EASY_SUPPORT role binding (D-C07)",
+        "future EASY-family workout-vocabulary decisions (D-C12)",
+        "v10 publication readiness"
+      ],
+      "requiredResolution": [
+        "Add a validated, versioned EASY_SHAKEOUT (and/or EASY_WITH_STRIDES) workout definition and an explicit binding/policy referencing it; or",
+        "Revise Golden Fixture v3 to use only accepted catalog keys; or",
+        "Explicitly reclassify the fixture field as illustrative/non-canonical.",
+        "Do not add EASY_SHAKEOUT or EASY_WITH_STRIDES to the catalog to close this risk without an explicit product/schema decision (D-C12 remains DEFERRED)."
+      ],
+      "blockingByStep": {
+        "stepB": "NON_BLOCKING_FOR_STEP_B",
+        "phase4F6B": "BLOCKER_FOR_4F6B_COMPLETION",
+        "publication": "BLOCKER_FOR_PUBLICATION_IF_UNRESOLVED"
+      },
+      "currentRuntimeImpact": "None — workout binding is not yet implemented (Phase 4F.6B is not started) and the fixture is not consumed as a production workout-definition source.",
+      "closureNote": "Phase 4F.6B (V1 Exact Workout Definition Binding): closed via the third requiredResolution option — 'explicitly reclassify the fixture field as illustrative/non-canonical' — not via renaming the fixture (first option) or adding EASY_SHAKEOUT to the catalog (explicitly prohibited). Direct inspection of the fixture's EASY_SHAKEOUT occurrence (docs/canonical/golden-fixture-v3/golden-10k-intermediate-4d-12w.v3.plandocument.json, W12_D3) shows fields with no equivalent in EASY_STANDARD's schema at all: raceEveShakeout=true and raceEveDistanceCapKm=4 — a specialized, race-eve-specific shakeout-run semantic (a capped, short distance the day before a race), not a stylistic variant of a generic easy run. Renaming this occurrence to EASY_STANDARD (the first requiredResolution option) would therefore be factually incorrect, not merely conservative — it would erase real, distinct semantic content the fixture actually encodes. This mirrors the repository's own already-accepted precedent for the exact analogous case: domain-wave1-schema-necessity-audit.md's finding that the fixture's LONG_RUN_PROGRESSION key 'is a distinct, non-substitutable workout key, not evidence for LONG_RUN_STANDARD itself.' Applying the same reasoning here: EASY_SHAKEOUT is formally reclassified as an illustrative reference to a distinct, richer, not-yet-built V1 workout concept (a specialized race-eve taper session) — never evidence that V1's EASY_SUPPORT binding should resolve to anything other than the accepted EASY_STANDARD fixed default (D-C07). The fixture itself was NOT modified — it remains an accurate historical/reference artifact; only its governance interpretation for V1 binding purposes is now formally recorded. EASY_WITH_STRIDES (architecture-spec example vocabulary only, never present in the fixture itself) is unaffected by this closure and remains a separate, still-open vocabulary question if/when it is ever proposed as a real catalog artifact.",
+      "closureCriteriaSatisfied": "Third requiredResolution option ('explicitly reclassify the fixture field as illustrative/non-canonical') fully satisfied for EASY_SHAKEOUT specifically. First and second options not pursued (renaming would be factually incorrect; adding the workout definition remains explicitly deferred, D-C12).",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any TEN_K__4D__INTERMEDIATE version (fixture/catalog-vocabulary-level gap, not specific to any single candidate version)",
+      "status": "CLOSED"
+    },
+    {
+      "id": "TD-GOAL-FEASIBILITY-001",
+      "title": "GoalFeasibilityResolver PACE_SOURCE_IN=TARGET_TIME branch could not distinguish a product-average planning reference from an unverified user-typed performance claim",
+      "recordedInPass": "Phase 4D.4.1 (Product-Average Target-Time GOAL_FEASIBILITY_IN Classification), triggered by acceptance test SW-02",
+      "source": "PHASE4D_4_1_PRODUCT_AVERAGE_TARGET_TIME_GOAL_FEASIBILITY_CLASSIFICATION.md; backend/RunningApp.Application/RuntimeCatalog/Resolvers/GoalFeasibilityResolver.cs; backend/RunningApp.Application/RuntimeCatalog/Resolvers/PaceSourceResolver.cs",
+      "statement": "Every target finish time reaching GoalFeasibilityResolver via PACE_SOURCE_IN=TARGET_TIME collapsed into one NotEvaluated/PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE outcome (HTTP 422 via NotEvaluatedReasonClassifier/ApplyNotEvaluatedGovernancePolicy), with no contract-level way to distinguish the Flutter client's own canonical 'go with average' planning reference from an unverified user-typed capability claim. SW-02 (a fully valid 10K/Intermediate/4-day/12-week product-average request) was rejected as a direct consequence.",
+      "classification": "CONTRACT_GAP_BLOCKS_VALID_REQUEST",
+      "severity": "BLOCKS_VALID_PRODUCT_DEFAULT_REQUEST",
+      "affectedAreas": [
+        "GoalFeasibilityResolver (GOAL_FEASIBILITY_IN)",
+        "Public generate-preview/race request contract",
+        "SW-02 acceptance behavior"
+      ],
+      "requiredResolution": [
+        "Add an explicit, required target_finish_time_source field to the Race request contract distinguishing product_average from user_defined; or",
+        "Otherwise formally approve treating every target time identically regardless of provenance (rejected as unsafe -- would either weaken user-defined safety or keep product-average blocked)."
+      ],
+      "blockingByStep": {
+        "sw02": "BLOCKER_FOR_SW02_UNTIL_RESOLVED"
+      },
+      "currentRuntimeImpact": "None remaining -- product_average requests now receive an explicit Evaluated/CHALLENGING classification; user_defined requests are completely unaffected.",
+      "closureNote": "Phase 4D.4.1: target_finish_time_source (product_average/user_defined) added to ResolverInputSnapshot and threaded from the new GenerateRacePlanPreviewRequest public contract. GoalFeasibilityResolver's TARGET_TIME branch now returns Evaluated/CHALLENGING/PACE_SOURCE_TARGET_TIME_PRODUCT_AVERAGE_ACCEPTED for product_average (value validated against CanonicalTargetFinishTimePolicy at the request-validation boundary, HTTP 400 on mismatch, before this resolver ever runs). user_defined (and any legacy/unset caller) keeps the exact prior NotEvaluated/PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE behavior, unchanged. No registry value, golden fixture, or candidate status was modified.",
+      "closureCriteriaSatisfied": "First requiredResolution option fully satisfied: target_finish_time_source is now an explicit, required, validated field on the Race contract, and GoalFeasibilityResolver branches on it deterministically.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any candidate consuming GOAL_FEASIBILITY_IN with a Race target time (not specific to a single candidate version)",
+      "status": "CLOSED"
+    },
+    {
+      "id": "TD-FOUNDATION-COMPRESSION-001",
+      "title": "Foundation Compression Readiness Gate Is Undefined",
+      "recordedInPass": "Phase 4G.3A — Eight-Week Race-Core Allocation Audit (governance follow-up)",
+      "source": "PHASE4G_3A_EIGHT_WEEK_CORE_ALLOCATION_AUDIT.md section 5a (Clarification -- N=8 mootness does not resolve the general C-03 question); backend/RunningApp.Application/RuntimeCatalog/Resolvers/CoreEntryReadinessResolver.cs; backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/CatalogPhaseAllocation.cs; plan-catalog/catalog/templates/ten-k-master.v6.json",
+      "statement": "For the current exact-8-week TEN_K__4D__INTERMEDIATE core (the only 8-week allocation the catalog's own minimums permit: F2/B3/RS2/T1), Foundation does not compress to 1 week -- the active catalog minimum for FOUNDATION is 2, so this question is not applicable to today's pilot. This does NOT resolve the general product/runtime rule for future horizons or candidates where Foundation=1 may become structurally possible (e.g. a shorter horizon, a revised candidate, or a future catalog minimum change): no confirmed repository artifact currently defines which CORE_ENTRY_READINESS_IN outcomes (READY/CAUTION/NOT_READY) would permit Foundation=1 if and when it becomes structurally reachable. Future horizon-aware compression work must not enable Foundation=1 without an explicit readiness-gating decision. The runtime already resolves CORE_ENTRY_READINESS_IN for every catalog-routed request today (CoreEntryReadinessResolver is registered in production DI and invoked by RuntimeConditionResolutionService.ResolveAllResults) and its result is already in scope at the phase-allocation call site -- so the open issue is decision/contract ownership (which readiness outcomes permit Foundation=1, and which layer decides), not absence of the signal itself.",
+      "classification": "DECISION_REQUIRED",
+      "severity": "ACTIVATION_RISK",
+      "affectedAreas": [
+        "Future horizon-aware CatalogPhaseAllocationResolver (not yet implemented)",
+        "CORE_ENTRY_READINESS_IN consumption contract",
+        "FOUNDATION phase compression policy",
+        "Any future sub-12-week race-core implementation phase (e.g. Phase 4G.3B and beyond)"
+      ],
+      "requiredResolution": [
+        "Before any future allocation permits Foundation=1, explicitly define whether CORE_ENTRY_READINESS_IN=READY permits Foundation=1.",
+        "Explicitly define whether CAUTION permits Foundation=1, forbids it, or requires a different (non-Foundation=1) allocation instead.",
+        "Explicitly define whether NOT_READY always forbids Foundation=1.",
+        "Identify which layer owns this eligibility decision (e.g. the phase-allocation resolver itself, an upstream routing/service-layer guard, or a dedicated policy).",
+        "Define how the phase allocator consumes CORE_ENTRY_READINESS_IN's already-computed result without re-running or duplicating resolver evaluation.",
+        "Define the typed, fail-closed result that applies when a target horizon structurally requires Foundation=1 but the runner's CORE_ENTRY_READINESS_IN outcome is not eligible.",
+        "Do not enable Foundation=1 for any allocation without this decision being explicitly recorded first -- do not silently infer it from the N=8 finding, which does not apply (N8_STATUS: NOT_APPLICABLE_DUE_TO_CATALOG_MINIMUM_2)."
+      ],
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "Any TEN_K__4D__INTERMEDIATE version or descendant candidate whose future horizon-aware core allocation would require FOUNDATION below its currently-active catalog minimum of 2 weeks -- not applicable to any currently-supported horizon, including the current exact-12-week pilot and the current exact-8-week audit finding (F2/B3/RS2/T1)",
+      "status": "OPEN"
+    },
+    {
       "id": "TD-TESTFLAKE-001",
       "title": "Transient reset-endpoint HTTP 500s observed once during Phase 4G.3B.1 validation, not reproduced since",
       "recordedInPass": "Phase 4G.3B.1 validation evidentiary follow-up (2026-07-23)",
@@ -184,7 +270,7 @@
       "status": "OPEN"
     }
   ],
-  "currentAppendOnlyStatus": "TD-TESTFLAKE-001 appends one OPEN, non-blocking observation. The historical finalStatus text below is retained unchanged under the append-only convention.",
+  "currentAppendOnlyStatus": "TD-EASY-WORKOUT-REGISTRY-001, TD-GOAL-FEASIBILITY-001, and TD-FOUNDATION-COMPRESSION-001 are now recorded alongside the previously appended governance records. 12 risks are recorded in total: 10 OPEN and 2 CLOSED. The historical finalStatus text below is retained unchanged under the append-only convention.",
   "howToUse": "Before any publish/activate/release action against TEN_K__4D__INTERMEDIATE v8 or a descendant, review every entry in `risks` regardless of the candidate's blocker/decision count. This file is additive across passes -- future passes should append new risk entries here rather than creating a new aggregator.",
   "finalStatus": "7 risks recorded (TD-D3-001, TD-WAVE5-001, TD-BACKEND-001, TD-REGISTRY-001, TD-PACESOURCE-001, TD-PACESOURCE-002, TD-CORE-READINESS-001), all OPEN. TD-BACKEND-001 is the most fundamental: no backend/plan-catalog integration exists at all. TD-REGISTRY-001 (added Phase 4A.1) is UNRELATED to and unaffected by TD-CORE-READINESS-001 -- it tracks the golden-fixture STANDARD vocabulary defect specifically, still unresolved. TD-PACESOURCE-001 and TD-PACESOURCE-002 (added Phase 4D.2.5) are activation risks on the already-implemented PaceSourceResolver. TD-CORE-READINESS-001 (added Phase 4D.3, thresholds approved and resolver activated in Phase 4D.3.1 per EV-008 -- see its resolutionNote) now tracks only the residual risk that CoreEntryReadinessResolver, though implementing real owner-approved V1 logic, remains unwired from live generation."
 }
