@@ -158,6 +158,30 @@
       "blocking": false,
       "appliesToCandidateRootsFrom": "Repository-wide relational validation infrastructure; not candidate-version-specific",
       "status": "OPEN"
+    },
+    {
+      "id": "TD-ALLOCATION-PRIORITY-001",
+      "title": "Phase compression and extension priorities remain unconfirmed catalog-authoring placeholders",
+      "recordedInPass": "Phase 4G.3B.2 generic target-week-count phase allocator governance follow-up",
+      "source": "plan-catalog/artifacts/audits/ten-k-pilot-domain-decision-audit.md AUD-008; plan-catalog/artifacts/audits/phase4f6-step-a1-role-ownership-and-gap-clarification.json M08; PHASE4G_3B_2_GENERIC_PHASE_ALLOCATOR.md section 4",
+      "statement": "TEN_K_MASTER v6 carries CompressionPriority and ExtensionPriority values 1/2/3/4, but AUD-008 classifies the combined priority field as PLACEHOLDER_UNCONFIRMED: the ordering was invented and has no canonical product or coaching source. The golden fixture exercises only the 12-week preferred allocation and therefore cannot validate compression or extension ordering. Phase 4G.3B.2 transports and mechanically applies the authored values without claiming they are product-approved. AllocationOrderCorrectnessVerifier consequently reports DECISION_REQUIRED for feasible non-preferred allocations whose specific per-phase distribution depends on those priorities, except the order-independent 8-week and 14-week fully-exhausted boundary allocations.",
+      "classification": "CATALOG_AUTHORING_DECISION_REQUIRED",
+      "severity": "BLOCKS_NON_PREFERRED_ALLOCATION_SAFETY_APPROVAL",
+      "affectedAreas": [
+        "Generic target-week-count phase allocation",
+        "Compression ordering",
+        "Extension ordering",
+        "Future non-12-week horizon safety verification"
+      ],
+      "requiredResolution": [
+        "Obtain an explicit product/coaching decision confirming or replacing each phase's compression priority.",
+        "Obtain an explicit product/coaching decision confirming or replacing each phase's extension priority independently rather than assuming it must mirror compression order.",
+        "Update the authoritative catalog and AUD-008 governance classification through the normal versioned catalog-authoring process before treating priority-dependent non-preferred allocations as verified safe."
+      ],
+      "currentRuntimeImpact": "None. The target-week-count allocator and AllocationOrderCorrectnessVerifier are not called by live routing; public support remains exact-12-week only.",
+      "blocking": false,
+      "appliesToCandidateRootsFrom": "TEN_K__4D__INTERMEDIATE v10 and any descendant retaining TEN_K_MASTER v6 priority values; revisit independently for other templates",
+      "status": "OPEN"
     }
   ],
   "currentAppendOnlyStatus": "TD-TESTFLAKE-001 appends one OPEN, non-blocking observation. The historical finalStatus text below is retained unchanged under the append-only convention.",
