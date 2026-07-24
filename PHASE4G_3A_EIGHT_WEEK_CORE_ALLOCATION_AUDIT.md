@@ -339,6 +339,27 @@ Confirmed rule for future implementation: exactly 8 plan weeks; 32 run sessions;
 Sunday-before-Monday-race convention); no session after `RaceDate`; Taper is Week 8; no persisted rest
 rows (unchanged, synthetic-rest-at-read-time convention from the Home-endpoint work).
 
+> **CORRECTION / ADDENDUM — Race-Date Alignment Guard Scope**
+>
+> Added during the Phase 4G.3B standalone `RaceDateAlignmentVerifier` work (2026-07-24).
+>
+> The characterization immediately above — that `CatalogRaceDateAlignmentInvalidException`'s invariant
+> is "horizon-agnostic" and "ready for Phase 4G.3B as-is... no code change needed" — was incomplete.
+>
+> Later direct source inspection (`CatalogPreviewGenerator.cs`, method `BuildDarkInternalDatedSkeleton`)
+> confirmed that the live guard combines two independent concerns in one condition:
+>
+> 1. exact standalone-core week-count enforcement (`datedSkeleton.Weeks.Count != RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks`); and
+> 2. final-session-to-race-date tolerance enforcement (`0 <= daysBeforeRace <= 7`).
+>
+> Only the date-tolerance component is horizon-independent — the formula-level analysis above (`EndDate = StartDate + N*7 - 1`)
+> was correct as far as it went. The **combined live guard is not horizon-independent**, because it also rejects any week count
+> other than `RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks` (currently 12), even when the dates themselves are correctly
+> aligned. The original statement above is preserved as historical context, but it must not be used as evidence that the combined
+> live guard is suitable as-is for future non-12-week horizon activation.
+>
+> Tracked by: `TD-RACEDATE-CHECK-NOT-HORIZON-AGNOSTIC-001`. See also `ARCHITECTURAL_CLAIM_VERIFICATION_GOVERNANCE.md`.
+
 ## 16. Final 8-week eligibility classification (Audit Question K)
 
 **D. `NOT_YET_SUPPORTABLE`** — not because the arithmetic is infeasible (§5/§8 determine it uniquely is: 8
@@ -439,7 +460,7 @@ recommendation only.
 | Exact workout exposure counts by key | `DEFERRED` (requires an actual scheduler run, §13) |
 | `CORE_ENTRY_READINESS_IN` → Foundation mapping | `DECISION_REQUIRED` (reframed as whole-core eligibility, §7) |
 | `CORE_ENTRY_READINESS_IN` → phase-allocation wiring feasibility | `EVIDENCE_BACKED` — feasible without duplicating resolver logic (§6.4) |
-| Race-date alignment invariant readiness for 8 weeks | `EVIDENCE_BACKED` — formula-ready, empirically unexercised at N=8 (§15) |
+| Race-date alignment invariant readiness for 8 weeks | `EVIDENCE_BACKED` — formula-ready, empirically unexercised at N=8 (§15; see §15's correction addendum and `TD-RACEDATE-CHECK-NOT-HORIZON-AGNOSTIC-001` — the *complete* live guard also gates on exact-12-week count, not just this date formula) |
 | RACE_SPECIFIC=2 stage reachability | `DECISION_REQUIRED` / needs verification (§10/§11) |
 | Volume/long-run numeric safety at 8-week ratio | `DECISION_REQUIRED` (§14) |
 
