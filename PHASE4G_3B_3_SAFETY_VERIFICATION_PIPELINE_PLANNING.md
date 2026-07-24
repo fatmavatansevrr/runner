@@ -65,12 +65,32 @@ as verifier "one of nine" in any future report.
   parameters, no I/O, no constructor/instance state.
 - None are called from any file under `RunningApp.Application` or
   `RunningApp.Api` production code — each has its own reflection or
-  regex-based "no call site" test proving this.
+  regex-based "no call site" test proving this (except
+  `SafetyVerificationOrchestrator`, a legitimate but still-dark caller of
+  all nine — see the orchestration status below).
 - None wire into `CatalogPreviewGenerator`, `PlanServices`, or any live
   request path.
-- No orchestrating pipeline exists yet that composes any of them — each
-  is a standalone, independently testable unit until an explicit future
-  phase wires them together.
+
+## Orchestration status
+
+**Standalone safety verification orchestrator: COMPLETE — DARK / UNWIRED**
+(Phase 4G.3B.4b). `SafetyVerificationOrchestrator.Run` composes and
+aggregates all nine canonical verifiers' real results against one already-
+produced typed `SafetyVerificationContext`, in the fixed canonical order,
+with zero production call sites and no DI registration. See
+`PHASE4G_3B_4B_SAFETY_VERIFICATION_ORCHESTRATOR.md` for the full design
+record, outcome-normalization table, and real 8-14 matrix.
+
+This is composition/aggregation only — it does not change what "COMPLETE —
+DARK / UNWIRED" means for the nine underlying verifiers, does not resolve
+`TD-ALLOCATION-PRIORITY-001` (`AllocationOrderCorrectnessVerifier` remains
+outside this orchestrator by design), does not enable any new horizon, and
+does not close any governance risk.
+
+- **Support registry: NOT STARTED.**
+- **Live wiring / activation: NOT STARTED.** No verifier and no orchestrator
+  result is consumed by `CatalogPreviewGenerator`, `PlanServices`, any
+  controller, DI, or startup composition.
 
 ## Next step
 
