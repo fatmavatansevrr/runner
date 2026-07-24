@@ -132,8 +132,7 @@ public sealed class WorkoutExposureVerifierTests
         Assert.Equal(a.Outcome, b.Outcome); Assert.Equal(a.WorkoutKeyExposureCounts, b.WorkoutKeyExposureCounts);
         var source = File.ReadAllText(Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application", "RuntimeCatalog", "Schedule", "Materialization", "WorkoutExposureVerifier.cs"));
         foreach (var forbidden in new[] { "AllocationOrderCorrectnessVerifier", "PhaseConstraintVerifier", "RaceSpecificCapacityVerifier", "StageReachabilityVerifier", "activation-readiness-risks", "TD-" }) Assert.DoesNotContain(forbidden, source);
-        foreach (var root in new[] { "RunningApp.Application", "RunningApp.Api" }.Select(p => Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", p)))
-        foreach (var file in Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories).Where(f => !f.Contains("\\bin\\") && !f.Contains("\\obj\\") && !f.EndsWith("WorkoutExposureVerifier.cs"))) Assert.DoesNotContain("WorkoutExposureVerifier.Verify(", File.ReadAllText(file));
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(WorkoutExposureVerifier));
     }
 
     private static WorkoutExposureVerificationResult Verify(RealArtifacts x) => WorkoutExposureVerifier.Verify(x.Allocation, x.Skeleton, x.Bound, x.Progression, x.Roles);

@@ -186,22 +186,6 @@ public sealed class PhaseConstraintVerifierTests
     [Fact]
     public void PhaseConstraintVerifier_HasNoCallSiteInApplicationOrApiProductionCode()
     {
-        var applicationRoot = Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application");
-        var apiRoot = Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Api");
-        var callSite = new Regex(@"PhaseConstraintVerifier\.Verify\(", RegexOptions.Compiled);
-
-        foreach (var root in new[] { applicationRoot, apiRoot })
-        {
-            var files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
-                .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
-                    && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                    && !f.EndsWith($"{Path.DirectorySeparatorChar}PhaseConstraintVerifier.cs", StringComparison.OrdinalIgnoreCase));
-
-            foreach (var file in files)
-            {
-                var content = File.ReadAllText(file);
-                Assert.False(callSite.IsMatch(content), $"Unexpected PhaseConstraintVerifier.Verify(...) call found in production file: {file}");
-            }
-        }
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(PhaseConstraintVerifier));
     }
 }

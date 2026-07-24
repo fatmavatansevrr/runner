@@ -260,3 +260,55 @@ are the only caller.
 None of the nine verifier implementation files, nor
 `AllocationOrderCorrectnessVerifier.cs`, was modified in this phase
 (hash-verified byte-identical before/after — see final report §23).
+
+## Dark Reachability Semantics After Orchestration
+
+The orchestrator is the one permitted production-code caller of each of the
+nine standalone verifiers. This is architectural composition, not live
+activation. The verifier reachability tests therefore enforce a two-level
+invariant: each verifier has exactly one real `Verify` reference in
+`SafetyVerificationOrchestrator.cs` and no reference anywhere else in
+production; the orchestrator itself has no production caller, DI/startup
+registration, or reflection-based activation. The scanner ignores comments,
+XML documentation, and string prose so textual mentions are not mistaken for
+runtime reachability. Synthetic tests prove both the allowed orchestrator edge
+and rejection of a direct live caller. The support registry and live wiring
+remain unimplemented, and this semantic correction changes no verifier or
+orchestrator production logic.
+
+### Phase 4G.3B.4b.1 — method-group/delegate detection fix
+
+An independent validation pass confirmed a real gap in the reachability
+scanner: its original pattern required an invoking `(` immediately after
+`Verify`, so a bare method-group reference (`var f = Type.Verify;`,
+`items.Select(Type.Verify)`, `Func<...> f = Type.Verify;`) would not have
+been detected had one existed. No such reference exists anywhere in the
+real codebase (confirmed by the same validation pass), so this was a latent
+gap in the guarantee's scope, not an active violation.
+
+**Fix**: `DarkReachabilityAssertions`'s member-access pattern was widened
+from `\b{Type}\s*\.\s*Verify\s*\(` to `\b{Type}\s*\.\s*Verify\b` — dropping
+the invoking-parenthesis requirement so any reference to `Type.Verify` as a
+member-access expression is caught, invoked or not, while a trailing word
+boundary still correctly excludes a differently-named member sharing the
+prefix (e.g. `VerifyOrDefault`). No Roslyn/syntax-tree dependency was added:
+none exists anywhere in the backend solution today, and adding one solely
+to close this narrow, well-bounded pattern-matching gap was judged
+disproportionate to the problem.
+
+**Helper's final, honest, bounded contract** (per
+`ARCHITECTURAL_CLAIM_VERIFICATION_GOVERNANCE.md`'s rule that absence claims
+require explicit scope): the scanner DOES detect direct invocation syntax
+(including multi-line and irregularly-whitespaced calls) and bare
+method-group references (assignment, argument, explicit delegate-typed
+assignment) as source-text member-access patterns, ignoring comments, XML
+docs, and string/verbatim-string literal content; it remains deliberately
+over-inclusive (not a false negative) for code inside a disabled `#if`
+block, since it does not evaluate compilation symbols. It does **not**
+claim to detect reflection-based/late-bound invocation via
+`Type.GetType("...")` + `MethodInfo.Invoke`, expression trees that
+reference the method without the literal source text appearing, or any
+call synthesized by a source generator — these remain outside a
+regex-over-source-text scanner's reach by construction, and the helper's
+own doc comment now states this explicitly rather than implying it catches
+everything.

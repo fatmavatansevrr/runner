@@ -200,10 +200,7 @@ public sealed class StageReachabilityVerifierTests
     [Fact]
     public void StageReachabilityVerifier_HasNoProductionCallSite()
     {
-        var repo = TestPlanServicesFactory.RepoRoot();
-        foreach (var root in new[] { Path.Combine(repo, "backend", "RunningApp.Application"), Path.Combine(repo, "backend", "RunningApp.Api") })
-        foreach (var file in Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories).Where(f => !f.Contains("\\bin\\") && !f.Contains("\\obj\\") && !f.EndsWith("StageReachabilityVerifier.cs")))
-            Assert.DoesNotContain("StageReachabilityVerifier.Verify(", File.ReadAllText(file));
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(StageReachabilityVerifier));
     }
 
     private static async Task<(PlanCatalogCandidateSummary, CatalogWorkoutProgressionDefinition)> LoadRealAsync()

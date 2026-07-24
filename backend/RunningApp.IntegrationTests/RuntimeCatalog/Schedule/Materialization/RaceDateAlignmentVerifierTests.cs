@@ -160,19 +160,7 @@ public sealed class RaceDateAlignmentVerifierTests
     [Fact]
     public void RaceDateAlignmentVerifier_HasNoCallSiteInApplicationOrApiProductionCode()
     {
-        var repoRoot = TestPlanServicesFactory.RepoRoot();
-        foreach (var root in new[] { Path.Combine(repoRoot, "backend", "RunningApp.Application"), Path.Combine(repoRoot, "backend", "RunningApp.Api") })
-        {
-            var files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
-                .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
-                    && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                    && !f.EndsWith($"{Path.DirectorySeparatorChar}RaceDateAlignmentVerifier.cs", StringComparison.OrdinalIgnoreCase));
-            foreach (var file in files)
-            {
-                var content = File.ReadAllText(file);
-                Assert.DoesNotContain("RaceDateAlignmentVerifier.Verify(", content, StringComparison.Ordinal);
-            }
-        }
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(RaceDateAlignmentVerifier));
     }
 
     [Fact]

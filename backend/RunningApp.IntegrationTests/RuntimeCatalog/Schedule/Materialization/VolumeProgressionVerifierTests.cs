@@ -148,19 +148,7 @@ public sealed class VolumeProgressionVerifierTests
     [Fact]
     public void VolumeProgressionVerifier_HasNoCallSiteInApplicationOrApiProductionCode()
     {
-        var repoRoot = TestPlanServicesFactory.RepoRoot();
-        foreach (var root in new[] { Path.Combine(repoRoot, "backend", "RunningApp.Application"), Path.Combine(repoRoot, "backend", "RunningApp.Api") })
-        {
-            var files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
-                .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
-                    && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                    && !f.EndsWith($"{Path.DirectorySeparatorChar}VolumeProgressionVerifier.cs", StringComparison.OrdinalIgnoreCase));
-            foreach (var file in files)
-            {
-                var content = File.ReadAllText(file);
-                Assert.DoesNotContain("VolumeProgressionVerifier.Verify(", content, StringComparison.Ordinal);
-            }
-        }
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(VolumeProgressionVerifier));
     }
 
     [Fact]
