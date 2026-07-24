@@ -27,13 +27,31 @@ as verifier "one of nine" in any future report.
 | 2 | `RaceSpecificCapacityVerifier` | **Done** (Phase 4G.3B.3a) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/RaceSpecificCapacityVerifier.cs` |
 | 3 | `StageReachabilityVerifier` | **Done** (Phase 4G.3B.3b) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/StageReachabilityVerifier.cs` |
 | 4 | `WorkoutExposureVerifier` | **Done** (Phase 4G.3B.3, undated sub-letter) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/WorkoutExposureVerifier.cs` |
-| 5 | `GoalPaceReachabilityVerifier` | Not started | — |
-| 6 | `ReadinessEligibilityVerifier` | Not started | — |
-| 7 | `VolumeProgressionVerifier` | Not started | — |
-| 8 | `LongRunProgressionVerifier` | Not started | — |
-| 9 | `RaceDateAlignmentVerifier` | Not started | — |
+| 5 | `GoalPaceReachabilityVerifier` | **COMPLETE — DARK / UNWIRED** (Phase 4G.3B.3, checkpoint commit `b32a9f5`) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/GoalPaceReachabilityVerifier.cs` |
+| 6 | `ReadinessEligibilityVerifier` | **COMPLETE — DARK / UNWIRED** (Phase 4G.3B.3, checkpoint commit `1d9596e`) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/ReadinessEligibilityVerifier.cs` |
+| 7 | `VolumeProgressionVerifier` | **COMPLETE — DARK / UNWIRED** (Phase 4G.3B.3, checkpoint commit `a11203b`) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/VolumeProgressionVerifier.cs` |
+| 8 | `LongRunProgressionVerifier` | **COMPLETE — DARK / UNWIRED** (Phase 4G.3B.3, checkpoint commit `80e9f99`) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/LongRunProgressionVerifier.cs` |
+| 9 | `RaceDateAlignmentVerifier` | **COMPLETE — DARK / UNWIRED** (Phase 4G.3B.3, checkpoint commit `1b5f376`) | `backend/RunningApp.Application/RuntimeCatalog/Schedule/Materialization/RaceDateAlignmentVerifier.cs` |
 
-**4 of 9 complete, 5 remaining.**
+**9 of 9 complete.**
+
+> **Status note (Phase 4G.3B.4a checkpoint audit):** all nine canonical
+> standalone safety verifiers listed above are implemented, tested, and
+> committed. "COMPLETE — DARK / UNWIRED" is a status vocabulary addition
+> introduced by this note (this document previously had no completed-status
+> term beyond the informal **Done** used for verifiers 1-4) — it means
+> exactly what "Done" already meant for verifiers 1-4 (implemented, tested,
+> committed, zero production call sites, not registered in DI) and carries
+> no different or stronger claim. Completion of these nine verifiers does
+> **not** mean any of the following: no safety-verification orchestration
+> pipeline exists yet (remains **not started** — see the "Common
+> properties" section below, unchanged); none of the nine is wired into
+> `CatalogPreviewGenerator`, `PlanServices`, or any live request path;
+> no support registry exists; no new public race-plan horizon has been
+> enabled by this or any verifier's completion. This note updates only the
+> stale status cells above to reflect repository truth as of the Phase
+> 4G.3B.4a checkpoint audit — it does not revise the design, the canonical
+> nine-verifier list, or the framing decision below.
 
 ## Separate, earlier addition (not one of the nine)
 

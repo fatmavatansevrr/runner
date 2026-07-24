@@ -567,31 +567,41 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             }
 
             // ── Defensive race-date alignment invariant (fail-closed backstop) ──
-            // Phase 4G.2: now safe to enforce. Every request reaching this
-            // method has already passed PlanServices.GeneratePreviewAsync's
-            // upstream guard, which only allows RaceHorizonPolicy.Classify ==
-            // ExactStandaloneCoreSupported (exactly 12 weeks) through to
-            // catalog generation — the one horizon live-verified to produce
-            // a schedule ending exactly one day before RaceDate (established
-            // convention: StartDate=2026-07-20/RaceDate=2026-10-12 -> final
-            // session 2026-10-11). A second, independent check on the actual
-            // materialized output, so a future regression anywhere upstream
-            // (e.g. a horizon-aware allocator change that doesn't correctly
-            // honor this convention) cannot silently reintroduce a
-            // misaligned plan. Deliberately NOT in the catch filter below —
-            // it must propagate as itself, not be rewrapped into a 500.
+            // Phase 4G.3B.4a: this guard validates date-tolerance alignment
+            // ONLY. Whether a given standalone week count is publicly
+            // supported at all is owned exclusively by RaceHorizonPolicy /
+            // the preview-routing layer (PlanServices.GeneratePreviewAsync's
+            // upstream horizon guard, mirrored independently by
+            // LivePlanPreviewRouting's route decision) — this method never
+            // duplicates that decision. Production call-path audit (Phase
+            // 4G.3B.4a) confirmed the only week count that can ever reach
+            // this method in production is exactly
+            // RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks (12): every
+            // other classification (BelowMinimum, CoreLengthRecognizedButNotImplemented,
+            // CompositionRequired) is rejected upstream, before catalog
+            // generation, by either the PlanServices guard or the route
+            // decider's independent cycle-length check — so removing the
+            // week-count comparison here does not change any public result.
+            // What remains is a second, independent check on the actual
+            // materialized output's date alignment, so a future regression
+            // anywhere upstream (e.g. a horizon-aware allocator change that
+            // doesn't correctly honor the RaceDate convention) cannot
+            // silently reintroduce a misaligned plan. Deliberately NOT in the
+            // catch filter below — it must propagate as itself, not be
+            // rewrapped into a 500. See
+            // PHASE4G_3B_4A_HORIZON_GATE_ALIGNMENT_GUARD_SEPARATION.md and
+            // TD-RACEDATE-CHECK-NOT-HORIZON-AGNOSTIC-001.
             if (request.RaceDate is { } raceDateForAlignment)
             {
-                var expectedWeekCount = RunningApp.Application.Common.RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks;
                 var daysBeforeRace = raceDateForAlignment.DayNumber - datedSkeleton.EndDate.DayNumber;
                 const int maxAllowedTrailingGapDays = 7;
-                if (datedSkeleton.Weeks.Count != expectedWeekCount || daysBeforeRace < 0 || daysBeforeRace > maxAllowedTrailingGapDays)
+                if (daysBeforeRace < 0 || daysBeforeRace > maxAllowedTrailingGapDays)
                 {
                     throw new CatalogRaceDateAlignmentInvalidException(
                         $"Generated schedule for candidate '{candidate.CandidateKey}' v{candidate.CandidateVersion}' has " +
                         $"{datedSkeleton.Weeks.Count} week(s) ending {datedSkeleton.EndDate:yyyy-MM-dd}, which is not aligned to " +
-                        $"RaceDate {raceDateForAlignment:yyyy-MM-dd} (expected exactly {expectedWeekCount} weeks ending within " +
-                        $"{maxAllowedTrailingGapDays} days before the race, never after it).");
+                        $"RaceDate {raceDateForAlignment:yyyy-MM-dd} (must end within {maxAllowedTrailingGapDays} days before the " +
+                        "race, never after it).");
                 }
             }
         }
