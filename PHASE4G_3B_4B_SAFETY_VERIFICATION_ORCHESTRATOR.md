@@ -129,6 +129,21 @@ Each per-verifier summary honestly preserves its own true NotApplicable
 tier. Overall aggregation (§9) never uses these per-summary values directly
 to decide NotApplicable — only the root allocation flag does.
 
+## 8b. Semantics clarification (Phase 4G.3B.6.5, documentation-only)
+
+GoalPaceReachabilityVerifier's `DecisionRequired` result at every real
+target week count does not mean the currently-live ProductAverage 12-week
+request path is runtime-unsafe. It means the universal verifier has not
+yet proven the catalog's theoretical fallback contract complete under all
+registered values including synthetic NotEvaluated. Phase 4G.3B.6.1
+independently confirmed via real HTTP end-to-end testing that the
+ProductAverage path resolves Evaluated/CHALLENGING (HTTP 200) and never
+touches this fallback question at all. See
+PHASE4G_3B_6_4_GOALPACE_VERIFIER_RUNTIME_REACHABILITY_SEMANTICS_AUDIT.md
+for the full semantics audit (reason-code reachability table, the three
+named upstream invariants this scoping depends on, and the recommended
+Option A/C staging).
+
 ## 9. Root-allocation NotApplicable behavior and aggregation precedence
 
 ```

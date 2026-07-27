@@ -55,6 +55,23 @@ internal sealed record GoalPaceReachabilityVerificationResult(
 /// eligibility/fallback decision is confirmed correct and complete,
 /// including the exact TD-NOTEVALUATED-FALLBACK-001 gap.
 ///
+/// Semantics clarification (Phase 4G.3B.6.5, documentation-only -- no
+/// logic below this comment changed): this verifier does NOT measure a
+/// specific request's runtime-reachable safety outcome. It evaluates,
+/// for every registered GOAL_FEASIBILITY_IN value plus a synthetic
+/// NotEvaluated case, whether the catalog's stage/fallback contract is
+/// theoretically complete -- regardless of whether a given value is
+/// actually reachable for any specific real request. Reason codes that
+/// runtime governance (CatalogPreviewGenerator.ApplyNotEvaluatedGovernancePolicy)
+/// rejects before stage scheduling ever runs (see
+/// NotEvaluatedReasonClassifier) may still be included in this
+/// universal completeness check -- their inclusion here is not a claim
+/// that they are reachable at runtime. See
+/// PHASE4G_3B_6_4_GOALPACE_VERIFIER_RUNTIME_REACHABILITY_SEMANTICS_AUDIT.md
+/// for the full reachability analysis (a complete reason-code table
+/// across all four resolvers) and the three named upstream invariants
+/// this scoping currently depends on.
+///
 /// Reuse, not duplication: this verifier calls the real
 /// ProgressionStageAllocator.Allocate directly -- the same public entry
 /// point StageReachabilityVerifier itself calls -- rather than
