@@ -23,6 +23,8 @@ public class TrainingPlan
     public DateTime? CancelledAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public PlanScheduleStrategy ScheduleStrategy { get; set; } = PlanScheduleStrategy.StaticComplete;
+    public Guid? LongHorizonRollingPlanStateId { get; set; }
 
     // Onboarding snapshot fields — copied from PlanPreview at confirm time.
     // Template changes must never affect these historical values.

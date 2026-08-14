@@ -32,19 +32,22 @@ public class QueryAndMutationServices :
     private readonly AppDbContext _context;
     private readonly IAdaptationEngine _adaptationEngine;
     private readonly ILogger<QueryAndMutationServices> _logger;
+    private readonly ILongHorizonActiveReadModelProvider _rollingReadProvider;
 
     public QueryAndMutationServices(
         AppDbContext context, 
         IAdaptationEngine adaptationEngine,
-        ILogger<QueryAndMutationServices> logger)
+        ILogger<QueryAndMutationServices> logger,
+        ILongHorizonActiveReadModelProvider rollingReadProvider)
     {
         _context = context;
         _adaptationEngine = adaptationEngine;
         _logger = logger;
+        _rollingReadProvider = rollingReadProvider;
     }
 
     // ─── HOME QUERY SERVICE ──────────────────────────────────────────────────
-    public async Task<HomeResponse> GetHomeAsync(Guid internalUserId, CancellationToken ct = default)
+    public async Task<object> GetHomeAsync(Guid internalUserId, CancellationToken ct = default)
     {
         var plan = await _context.TrainingPlans
             .AsNoTracking()
@@ -65,6 +68,9 @@ public class QueryAndMutationServices :
             };
         }
 
+        if (plan.ScheduleStrategy == PlanScheduleStrategy.RollingLongHorizon)
+            return await _rollingReadProvider.GetHomeAsync(internalUserId, plan.Id, ct);
+
         var today = DateTime.UtcNow.Date;
 
         // Fetch today's workout
@@ -72,10 +78,19 @@ public class QueryAndMutationServices :
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.PlanId == plan.Id && d.Date == today, ct);
 
+        // Loaded once, reused for todayWorkout/weekSummary provenance mapping
+        // below and for the plan-level current-week summary — avoids any
+        // per-day N+1 TrainingWeek query.
+        var weeksById = await _context.TrainingWeeks
+            .AsNoTracking()
+            .Where(w => w.PlanId == plan.Id)
+            .ToDictionaryAsync(w => w.Id, ct);
+
         TrainingDayResponse todayWorkout;
         if (todayDay != null)
         {
-            todayWorkout = MapToResponse(todayDay);
+            weeksById.TryGetValue(todayDay.WeekId, out var todayWeek);
+            todayWorkout = MapToResponse(todayDay, todayWeek);
         }
         else
         {
@@ -98,25 +113,22 @@ public class QueryAndMutationServices :
 
         // Determine the plan's current training week from real TrainingWeek
         // boundaries (StartDate), not a Monday-Sunday calendar week — plans
-        // can start on any weekday. Bounded query: one plan typically has a
-        // handful of weeks (e.g. 12), never an unrelated user's data.
-        var weeks = await _context.TrainingWeeks
-            .AsNoTracking()
-            .Where(w => w.PlanId == plan.Id)
-            .OrderBy(w => w.WeekNumber)
-            .ToListAsync(ct);
+        // can start on any weekday. Reuses weeksById (already loaded above)
+        // rather than a second TrainingWeeks query.
+        var weeks = weeksById.Values.OrderBy(w => w.WeekNumber).ToList();
 
         var totalWeeks = weeks.Count;
 
         DateTime weekStart;
         DateTime weekEnd;
         int currentWeekNumber;
+        TrainingWeek? currentWeek = null;
         if (weeks.Count > 0)
         {
             // Last week whose start is on/before today; if today precedes the
             // plan's first week (not started yet), show week 1; if today is
             // past the last week's end (plan finished), show the final week.
-            var currentWeek = weeks.LastOrDefault(w => w.StartDate.Date <= today) ?? weeks[0];
+            currentWeek = weeks.LastOrDefault(w => w.StartDate.Date <= today) ?? weeks[0];
             currentWeekNumber = currentWeek.WeekNumber;
             weekStart = currentWeek.StartDate.Date;
             weekEnd = weekStart.AddDays(6);
@@ -146,7 +158,8 @@ public class QueryAndMutationServices :
             var existing = weekDays.FirstOrDefault(d => d.Date == date);
             if (existing != null)
             {
-                weekSummary.Add(MapToResponse(existing));
+                weeksById.TryGetValue(existing.WeekId, out var existingWeek);
+                weekSummary.Add(MapToResponse(existing, existingWeek));
             }
             else
             {
@@ -173,6 +186,10 @@ public class QueryAndMutationServices :
             ? $"Week {currentWeekNumber} of {totalWeeks}"
             : $"Week {currentWeekNumber}";
 
+        // Phase 4G.6D: independent, entity-derived provenance -- never
+        // parsed from planProgressText.
+        var (_, currentWeekType, currentRunwayBlock) = MapWeekProvenance(currentWeek);
+
         return new HomeResponse
         {
             ActivePlan = new ActivePlanSummaryDto
@@ -181,7 +198,11 @@ public class QueryAndMutationServices :
                 GoalType = EnumSnakeCase.ToSnakeCase(plan.GoalType),
                 GoalDistance = EnumSnakeCase.ToSnakeCase(plan.GoalDistance),
                 Level = EnumSnakeCase.ToSnakeCase(plan.Level),
-                ProgressText = planProgressText
+                ProgressText = planProgressText,
+                CurrentWeekNumber = currentWeek?.WeekNumber,
+                TotalWeeks = totalWeeks > 0 ? totalWeeks : null,
+                CurrentWeekType = currentWeekType,
+                CurrentRunwayBlock = currentRunwayBlock
             },
             TodayWorkout = todayWorkout,
             DailyTip = dailyTip,
@@ -191,7 +212,7 @@ public class QueryAndMutationServices :
     }
 
     // ─── CALENDAR QUERY SERVICE ──────────────────────────────────────────────
-    public async Task<List<TrainingDayResponse>> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default)
+    public async Task<object> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default)
     {
         var swTotal = System.Diagnostics.Stopwatch.StartNew();
         
@@ -208,6 +229,9 @@ public class QueryAndMutationServices :
             return new List<TrainingDayResponse>();
         }
 
+        if (plan.ScheduleStrategy == PlanScheduleStrategy.RollingLongHorizon)
+            return await _rollingReadProvider.GetCalendarAsync(internalUserId, plan.Id, month, ct);
+
         if (!DateTime.TryParseExact($"{month}-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var startOfMonth))
         {
             throw new ArgumentException("Invalid month format. Expected YYYY-MM.");
@@ -219,32 +243,63 @@ public class QueryAndMutationServices :
         var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
         var swQuery = System.Diagnostics.Stopwatch.StartNew();
-        var days = await _context.TrainingDays
+        // Phase 4G.6D: WeekNumber/WeekType/CatalogPhaseKey are pulled via the
+        // TrainingDay.Week navigation in the SAME query (EF translates this
+        // to one SQL JOIN — no N+1) rather than a separate per-day lookup.
+        // Projected as raw values first (EnumSnakeCase.ToSnakeCase and the
+        // runway-only conditional are plain C# calls, not translatable to
+        // SQL) and mapped to TrainingDayResponse afterward.
+        var rawDays = await _context.TrainingDays
             .AsNoTracking()
             .Where(d => d.PlanId == plan.Id && d.Date >= startOfMonth && d.Date <= endOfMonth)
-            .Select(d => new TrainingDayResponse
+            .Select(d => new
             {
-                DayId = d.Id,
-                Date = d.Date,
-                DayType = d.DayType,
-                Status = d.Status,
-                Title = d.Title,
-                Description = d.Description,
-                PlannedDistanceKm = d.PlannedDistanceKm,
-                PlannedDurationMin = d.PlannedDurationMin,
-                PlannedPaceMinKm = d.PlannedPaceMinKm,
-                Intensity = d.Intensity,
-                ActualDistanceKm = d.ActualDistanceKm,
-                ActualDurationMin = d.ActualDurationMin,
-                IsLongRun = d.IsLongRun,
-                CanMarkComplete = d.CanMarkComplete,
-                CanMarkNotToday = d.CanMarkNotToday
+                d.Id,
+                d.Date,
+                d.DayType,
+                d.Status,
+                d.Title,
+                d.Description,
+                d.PlannedDistanceKm,
+                d.PlannedDurationMin,
+                d.PlannedPaceMinKm,
+                d.Intensity,
+                d.ActualDistanceKm,
+                d.ActualDurationMin,
+                d.IsLongRun,
+                d.CanMarkComplete,
+                d.CanMarkNotToday,
+                WeekNumber = (int?)d.Week.WeekNumber,
+                WeekType = (TrainingWeekType?)d.Week.WeekType,
+                CatalogPhaseKey = d.Week.CatalogPhaseKey
             })
             .ToListAsync(ct);
         swQuery.Stop();
 
         var swMap = System.Diagnostics.Stopwatch.StartNew();
-        
+
+        var days = rawDays.Select(d => new TrainingDayResponse
+        {
+            DayId = d.Id,
+            Date = d.Date,
+            DayType = d.DayType,
+            Status = d.Status,
+            Title = d.Title,
+            Description = d.Description,
+            PlannedDistanceKm = d.PlannedDistanceKm,
+            PlannedDurationMin = d.PlannedDurationMin,
+            PlannedPaceMinKm = d.PlannedPaceMinKm,
+            Intensity = d.Intensity,
+            ActualDistanceKm = d.ActualDistanceKm,
+            ActualDurationMin = d.ActualDurationMin,
+            IsLongRun = d.IsLongRun,
+            CanMarkComplete = d.CanMarkComplete,
+            CanMarkNotToday = d.CanMarkNotToday,
+            WeekNumber = d.WeekNumber,
+            WeekType = d.WeekType.HasValue ? EnumSnakeCase.ToSnakeCase(d.WeekType.Value) : null,
+            RunwayBlock = d.WeekType == TrainingWeekType.PreparationRunway ? d.CatalogPhaseKey : null
+        }).ToList();
+
         // Use dictionary with grouping to safely handle any potential duplicate dates
         var daysDict = days
             .GroupBy(d => d.Date)
@@ -288,14 +343,19 @@ public class QueryAndMutationServices :
     // ─── TRAINING DAY SERVICE ────────────────────────────────────────────────
     public async Task<TrainingDayDetailResponse> GetTrainingDayDetailAsync(Guid internalUserId, Guid trainingDayId, CancellationToken ct = default)
     {
+        // Phase 4G.6D: .Include(d => d.Week) — one bounded read (day + its
+        // single owning week), not the full 15-20 week plan.
         var day = await _context.TrainingDays
             .AsNoTracking()
+            .Include(d => d.Week)
             .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
 
         if (day == null)
         {
             throw new NotFoundAppException("Training day not found.");
         }
+
+        var (weekNumber, weekType, runwayBlock) = MapWeekProvenance(day.Week);
 
         return new TrainingDayDetailResponse
         {
@@ -314,7 +374,12 @@ public class QueryAndMutationServices :
             IsLongRun = day.IsLongRun,
             CanMarkComplete = day.CanMarkComplete,
             CanMarkNotToday = day.CanMarkNotToday,
-            CompletedAt = day.CompletedAt
+            CompletedAt = day.CompletedAt,
+            WeekNumber = weekNumber,
+            WeekType = weekType,
+            RunwayBlock = runwayBlock,
+            Source = day.Source.HasValue ? EnumSnakeCase.ToSnakeCase(day.Source.Value) : null,
+            AdaptedFromId = day.AdaptedFromId
         };
     }
 
@@ -636,8 +701,28 @@ public class QueryAndMutationServices :
     }
 
     // ─── PRIVATE HELPERS ─────────────────────────────────────────────────────
-    private TrainingDayResponse MapToResponse(TrainingDay d)
+
+    /// <summary>
+    /// Backend Integration Phase 4G.6D — the single source-of-truth mapping
+    /// from a persisted TrainingWeek to the additive provenance fields every
+    /// active-plan response now carries. RunwayBlock is CatalogPhaseKey ONLY
+    /// when WeekType is PreparationRunway — a Core week's CatalogPhaseKey
+    /// (FOUNDATION/BUILD/RACE_SPECIFIC/TAPER) is never exposed as a runway
+    /// block. Never derives anything from week number, plan length, or any
+    /// preview/catalog state — <paramref name="week"/> must be the real
+    /// persisted entity.
+    /// </summary>
+    private static (int? weekNumber, string? weekType, string? runwayBlock) MapWeekProvenance(TrainingWeek? week)
     {
+        if (week is null) return (null, null, null);
+        var weekType = EnumSnakeCase.ToSnakeCase(week.WeekType);
+        var runwayBlock = week.WeekType == TrainingWeekType.PreparationRunway ? week.CatalogPhaseKey : null;
+        return (week.WeekNumber, weekType, runwayBlock);
+    }
+
+    private static TrainingDayResponse MapToResponse(TrainingDay d, TrainingWeek? week = null)
+    {
+        var (weekNumber, weekType, runwayBlock) = MapWeekProvenance(week);
         return new TrainingDayResponse
         {
             DayId = d.Id,
@@ -654,7 +739,10 @@ public class QueryAndMutationServices :
             ActualDurationMin = d.ActualDurationMin,
             IsLongRun = d.IsLongRun,
             CanMarkComplete = d.CanMarkComplete,
-            CanMarkNotToday = d.CanMarkNotToday
+            CanMarkNotToday = d.CanMarkNotToday,
+            WeekNumber = weekNumber,
+            WeekType = weekType,
+            RunwayBlock = runwayBlock
         };
     }
 

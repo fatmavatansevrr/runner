@@ -43,7 +43,10 @@ internal interface IDatedGeneratedCatalogPlanSkeletonValidator
 /// <remarks>No DB, clock, HTTP, resolver, or catalog-loader dependency — pure structural validation of an already-built skeleton.</remarks>
 internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGeneratedCatalogPlanSkeletonValidator
 {
-    private const int MinimumKeySessionToLongRunSeparationDays = 2;
+    /// <summary>Internal (not private) so Phase 4M.3's ScheduleRepairSpacingValidator
+    /// can reuse this exact canonical threshold for live candidate spacing checks
+    /// instead of duplicating the constant -- no new spacing rule/value introduced.</summary>
+    internal const int MinimumKeySessionToLongRunSeparationDays = 2;
 
     public DatedGeneratedCatalogPlanSkeletonValidationResult Validate(
         DatedGeneratedCatalogPlanSkeleton skeleton, IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDayPreference)
@@ -87,7 +90,7 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
                 errors.Add(DatedGeneratedCatalogPlanSkeletonValidationError.WeekDateRangeIncorrect);
             }
 
-            if (week.SessionSlots.Count != 4)
+            if (week.SessionSlots.Count != preferredDays.Count)
             {
                 errors.Add(DatedGeneratedCatalogPlanSkeletonValidationError.SessionSlotCountIncorrect);
             }
@@ -135,7 +138,7 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
 
             var roleCounts = week.SessionSlots.GroupBy(s => s.StructuralRole).ToDictionary(g => g.Key, g => g.Count());
             if (roleCounts.GetValueOrDefault("KEY_SESSION") != 1 ||
-                roleCounts.GetValueOrDefault("EASY_SUPPORT") != 2 ||
+                roleCounts.GetValueOrDefault("EASY_SUPPORT") != preferredDays.Count - 2 ||
                 roleCounts.GetValueOrDefault("LONG_RUN") != 1)
             {
                 errors.Add(DatedGeneratedCatalogPlanSkeletonValidationError.RoleCountIncorrect);

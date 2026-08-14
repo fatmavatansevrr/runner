@@ -10,7 +10,7 @@ namespace RunningApp.Application.Services;
 
 public interface ICalendarQueryService
 {
-    Task<List<TrainingDayResponse>> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default);
+    Task<object> GetCalendarAsync(Guid internalUserId, string month, CancellationToken ct = default);
 }
 
 public interface IPendingConfirmationService

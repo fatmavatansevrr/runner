@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION",
+    "schemaVersion": 1,
+    "key": "FARTLEK",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "family": "QUALITY",
+  "complexityTier": 1,
+  "eligiblePhases": ["BUILD"],
+  "allowedPrescriptionModes": ["EFFORT_BASED"],
+  "components": [
+    { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+    { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "SURGE_AND_FLOAT" },
+    { "sequenceOrder": 3, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+  ]
+}

@@ -41,18 +41,22 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
         response.EnsureSuccessStatusCode();
     }
 
-    private static object RaceRequest(string startDate, string raceDate) => new
+    private static object RaceRequest(string startDate, string raceDate, string goalDistance = "ten_k", string level = "intermediate", int daysPerWeek = 4) => new
     {
-        goal_distance = "ten_k",
-        level = "intermediate",
-        days_per_week = 4,
+        goal_distance = goalDistance,
+        level = level,
+        days_per_week = daysPerWeek,
         unit = "km",
         start_date = startDate,
         preferred_days = new[] { "mon", "wed", "fri", "sun" },
         long_run_day = "sun",
         race_date = raceDate,
+        // 3480 is the ten_k canonical product-average value; non-ten_k
+        // identities must use user_defined here or the request 400s on
+        // CanonicalTargetFinishTimePolicy mismatch before ever reaching the
+        // horizon check this file exists to test.
         target_finish_time_seconds = 3480,
-        target_finish_time_source = "product_average",
+        target_finish_time_source = goalDistance == "ten_k" ? "product_average" : "user_defined",
         race_name = (string?)null,
         recent_weekly_volume_km = 20,
         recent_longest_run_km = 8,
@@ -74,12 +78,19 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
     // ── C. Verified regression case ──────────────────────────────────────────
 
     [Fact]
-    public async Task VerifiedRegressionCase_StartDate20260525_RaceDate20261012_Returns422_NoTruncatedTwelveWeekPlan()
+    public async Task VerifiedRegressionCase_NonPilotIdentity_StartDate20260525_RaceDate20261012_Returns422_NoTruncatedTwelveWeekPlan()
     {
+        // Backend Integration Phase 4G.6B: this exact 20-week span is now
+        // ACTIVATED for the pilot identity (ten_k/intermediate/4d) via the
+        // Preparation Runway preview route -- see
+        // PreparationRunwayPreview15To20WeekEndToEndTests for that new,
+        // successful behavior. Retargeted to a non-pilot identity
+        // (five_k/beginner) to keep guarding the original, identity-agnostic
+        // "no silent 12-week truncation" regression.
         await ResetAsync();
         var before = await CountRowsAsync();
 
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", RaceRequest("2026-05-25", "2026-10-12"));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", RaceRequest("2026-05-25", "2026-10-12", goalDistance: "five_k", level: "beginner"));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<JsonNode>();
@@ -96,23 +107,24 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
     }
 
     [Fact]
-    public async Task VerifiedRegressionCase_NoLegacyFallback_NoPreviewOrPlanPersistence()
+    public async Task VerifiedRegressionCase_NonPilotIdentity_NoLegacyFallback_NoPreviewOrPlanPersistence()
     {
         await ResetAsync();
         var before = await CountRowsAsync();
 
-        await _client.PostRawAsync("/api/v1/plans/generate-preview/race", RaceRequest("2026-05-25", "2026-10-12"));
+        await _client.PostRawAsync("/api/v1/plans/generate-preview/race", RaceRequest("2026-05-25", "2026-10-12", goalDistance: "five_k", level: "beginner"));
 
         var after = await CountRowsAsync();
         Assert.Equal(before, after);
     }
 
     // ── B. Unsupported long horizons ─────────────────────────────────────────
+    // 15/16/20 (pilot identity) removed from this theory: Phase 4G.6B
+    // activates them -- see PreparationRunwayPreview15To20WeekEndToEndTests.
+    // 21 and 24 remain unsupported for every identity, pilot or not.
 
     [Theory]
-    [InlineData(15)]
-    [InlineData(16)]
-    [InlineData(20)]
+    [InlineData(21)]
     [InlineData(24)]
     public async Task UnsupportedLongHorizon_Returns422_PlanHorizonCompositionRequired(int weeks)
     {
@@ -124,6 +136,31 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
         var response = await _client.PostRawAsync(
             "/api/v1/plans/generate-preview/race",
             RaceRequest(startDate.ToString("yyyy-MM-dd"), raceDate.ToString("yyyy-MM-dd")));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<JsonNode>();
+        Assert.Equal("PLAN_HORIZON_COMPOSITION_REQUIRED", error!["errorCode"]!.GetValue<string>());
+
+        var after = await CountRowsAsync();
+        Assert.Equal(before, after);
+    }
+
+    [Theory]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(20)]
+    public async Task UnsupportedLongHorizon_NonPilotIdentity_Returns422_PlanHorizonCompositionRequired(int weeks)
+    {
+        // The same 15-20 week range remains unsupported for any identity
+        // OTHER than the exact activated pilot (ten_k/intermediate/4d).
+        await ResetAsync();
+        var before = await CountRowsAsync();
+
+        var startDate = new System.DateOnly(2026, 7, 20);
+        var raceDate = startDate.AddDays(weeks * 7);
+        var response = await _client.PostRawAsync(
+            "/api/v1/plans/generate-preview/race",
+            RaceRequest(startDate.ToString("yyyy-MM-dd"), raceDate.ToString("yyyy-MM-dd"), goalDistance: "five_k", level: "beginner"));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<JsonNode>();
@@ -167,7 +204,7 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
     [Theory]
     [InlineData(8)]
     [InlineData(14)]
-    public async Task InRangeBoundaryHorizon_Returns422_PlanCoreHorizonUnsupported_NotHttp200(int weeks)
+    public async Task InRangeBoundaryHorizon_Returns200_WithExactWeekCount(int weeks)
     {
         await ResetAsync();
 
@@ -177,8 +214,8 @@ public sealed class Sw12LongHorizonFailClosedEndToEndTests
             "/api/v1/plans/generate-preview/race",
             RaceRequest(startDate.ToString("yyyy-MM-dd"), raceDate.ToString("yyyy-MM-dd")));
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        var error = await response.Content.ReadFromJsonAsync<JsonNode>();
-        Assert.Equal("PLAN_CORE_HORIZON_UNSUPPORTED", error!["errorCode"]!.GetValue<string>());
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var preview = (await response.Content.ReadFromJsonAsync<JsonNode>())!;
+        Assert.Equal(weeks, preview["weeks"]!.AsArray().Count);
     }
 }

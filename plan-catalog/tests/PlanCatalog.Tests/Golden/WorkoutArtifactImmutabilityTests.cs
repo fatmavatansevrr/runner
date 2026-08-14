@@ -90,20 +90,21 @@ public sealed class WorkoutArtifactImmutabilityTests
     [InlineData("FARTLEK")]
     [InlineData("LONG_RUN_STANDARD")]
     [InlineData("THRESHOLD_TEMPO")]
-    public void CurrentActiveResolution_SelectsV2_DeterministicallyAndRetirementAware(string key)
+    public void CurrentActiveResolution_SelectsPublishedThreeDayClosureVersion_DeterministicallyAndRetirementAware(string key)
     {
         var snapshot = LoadSnapshot();
 
         // No retirement ledger supplied: highest non-retired version wins, deterministically.
         var resolved = snapshot.FindWorkout(key);
         Assert.NotNull(resolved);
-        Assert.Equal(2, resolved!.Metadata.Version);
+        Assert.Equal(4, resolved!.Metadata.Version);
 
-        // Retiring v2 must deterministically fall back to v1, not fail or pick arbitrarily.
-        var ledger = new FakeRetirementLedger((DocumentTypes.WorkoutDefinition, key, 2));
+        // Retiring v4 must deterministically fall back to the prior validated v2,
+        // not to an unrelated draft or an arbitrary version.
+        var ledger = new FakeRetirementLedger((DocumentTypes.WorkoutDefinition, key, 4));
         var resolvedAfterRetirement = snapshot.FindWorkout(key, ledger);
         Assert.NotNull(resolvedAfterRetirement);
-        Assert.Equal(1, resolvedAfterRetirement!.Metadata.Version);
+        Assert.Equal(2, resolvedAfterRetirement!.Metadata.Version);
     }
 
     [Fact]

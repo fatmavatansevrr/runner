@@ -57,6 +57,19 @@ internal sealed record VolumeProgressionVerificationResult(
 /// its two inputs: does not call CatalogVolumeAndLongRunPlanner,
 /// CatalogPeakVolumeBandLoader, or any resolver/loader. Not called from any
 /// live request path.
+///
+/// Enforcement-status note (Phase 4G.3B.7/4G.3B.7.1, TD-VOLUME-CAP-UNENFORCED-001,
+/// now CLOSED): HardMaxWeeklyIncreaseRatio and AbsoluteWeeklyIncrementCapKm
+/// (the caps this verifier checks against) are informational/provenance-only
+/// in the real planner -- CatalogVolumeAndLongRunPlanner.BuildWeeklyPlan
+/// never reads either value back to clamp or reject a transition (see the
+/// IMPORTANT CAVEAT above, which remains accurate and unchanged). This
+/// verifier's own check therefore remains the sole place these two bounds
+/// are actually verified today, independent of any planner enforcement.
+/// Phase 4G.3B.7's decision audit (PHASE4G_3B_7_VOLUME_CAP_ENFORCEMENT_DECISION_AUDIT.md)
+/// proved algebraically that TEN_K_MASTER v6's real curves stay below both
+/// bounds by construction, not by coincidence -- see that document for the
+/// full proof and scope conditions.
 /// </summary>
 internal static class VolumeProgressionVerifier
 {
@@ -102,7 +115,7 @@ internal static class VolumeProgressionVerifier
             {
                 allowedMaxIncreaseRatio = policy.HardMaxWeeklyIncreaseRatio;
                 violatesRatio = actualRatio > policy.HardMaxWeeklyIncreaseRatio;
-                violatesAbsoluteCap = violatesRatio && changeKm > policy.AbsoluteWeeklyIncrementCapKm;
+                violatesAbsoluteCap = changeKm > policy.AbsoluteWeeklyIncrementCapKm;
 
                 if (violatesRatio || violatesAbsoluteCap)
                 {

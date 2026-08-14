@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "JQnLKms/Xkc=",
+  "dgSpecHash": "k2+lzEUaPc8=",
   "success": true,
   "projectFilePath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.IntegrationTests\\RunningApp.IntegrationTests.csproj",
   "expectedPackageFiles": [
@@ -11,6 +11,10 @@
     "C:\\Users\\vatan\\.nuget\\packages\\google.apis\\1.68.0\\google.apis.1.68.0.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\google.apis.auth\\1.68.0\\google.apis.auth.1.68.0.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\google.apis.core\\1.68.0\\google.apis.core.1.68.0.nupkg.sha512",
+    "C:\\Users\\vatan\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\vatan\\.nuget\\packages\\json.more.net\\2.0.1.2\\json.more.net.2.0.1.2.nupkg.sha512",
+    "C:\\Users\\vatan\\.nuget\\packages\\jsonpointer.net\\5.0.0\\jsonpointer.net.5.0.0.nupkg.sha512",
+    "C:\\Users\\vatan\\.nuget\\packages\\jsonschema.net\\7.2.3\\jsonschema.net.7.2.3.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.aspnetcore.mvc.testing\\9.0.9\\microsoft.aspnetcore.mvc.testing.9.0.9.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.aspnetcore.testhost\\9.0.9\\microsoft.aspnetcore.testhost.9.0.9.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
@@ -18,6 +22,7 @@
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.entityframeworkcore\\9.0.1\\microsoft.entityframeworkcore.9.0.1.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\9.0.1\\microsoft.entityframeworkcore.abstractions.9.0.1.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\9.0.1\\microsoft.entityframeworkcore.analyzers.9.0.1.nupkg.sha512",
+    "C:\\Users\\vatan\\.nuget\\packages\\microsoft.entityframeworkcore.inmemory\\9.0.1\\microsoft.entityframeworkcore.inmemory.9.0.1.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\9.0.1\\microsoft.entityframeworkcore.relational.9.0.1.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "C:\\Users\\vatan\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\9.0.1\\microsoft.extensions.caching.abstractions.9.0.1.nupkg.sha512",

@@ -18,7 +18,9 @@ internal static class CatalogFinalPrescribedPlanValidator
 
         if (boundPlan.Weeks.Count != prescribedPlan.Weeks.Count) errors.Add("FINAL_WEEK_COUNT_MISMATCH");
         if (boundSessions.Count != prescribedSessions.Count) errors.Add("FINAL_SESSION_COUNT_MISMATCH");
-        if (prescribedPlan.Weeks.Any(w => w.Sessions.Count != 4)) errors.Add("FINAL_WEEK_SESSION_COUNT_INVALID");
+        if (prescribedPlan.Weeks.Any(w =>
+            w.Sessions.Count != boundPlan.Weeks.Single(b => b.WeekNumber == w.WeekNumber).Sessions.Count))
+            errors.Add("FINAL_WEEK_SESSION_COUNT_INVALID");
         if (prescribedPlan.Sessions.Any(s => s.Prescription.Status == CatalogSessionPrescriptionStatus.BaselinePrescribedSharpeningPending))
         {
             errors.Add("FINAL_PENDING_PRESCRIPTION_STATE");
@@ -61,7 +63,8 @@ internal static class CatalogFinalPrescribedPlanValidator
             {
                 errors.Add($"FINAL_WEEK_{week.WeekNumber}_LONG_RUN_MISMATCH");
             }
-            if (prescribedLongRun is not null && prescribedLongRun.PlannedDistanceKm > week.PlannedWeeklyVolumeKm * 0.40d + ToleranceKm)
+            var hardCap = boundPlan.Weeks.Single(w => w.WeekNumber == week.WeekNumber).Sessions.Count == 3 ? 0.42d : 0.40d;
+            if (prescribedLongRun is not null && prescribedLongRun.PlannedDistanceKm > week.PlannedWeeklyVolumeKm * hardCap + ToleranceKm)
             {
                 errors.Add($"FINAL_WEEK_{week.WeekNumber}_LONG_RUN_SHARE_EXCEEDS_CAP");
             }

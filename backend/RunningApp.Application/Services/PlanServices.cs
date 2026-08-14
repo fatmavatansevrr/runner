@@ -1,6 +1,9 @@
 // [ignoring loop detection]
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RunningApp.Application.RuntimeCatalog;
+using RunningApp.Application.RuntimeCatalog.Schedule.Horizon;
 using RunningApp.Application.Commands.Plan;
 using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
@@ -29,6 +32,9 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
     private readonly IGenerationRouteDecider _routeDecider;
     private readonly ICatalogPreviewGenerator _catalogPreviewGenerator;
     private readonly ICatalogPlanConfirmationService _catalogConfirmationService;
+    private readonly PlanCatalogOptions _planCatalogOptions;
+    private readonly bool _preparationRunwayPilotActivationEnabled;
+    private readonly bool _preparationRunwayConfirmationEnabled;
 
     private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
     {
@@ -65,7 +71,9 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         ILogger<PlanServices> logger,
         IGenerationRouteDecider routeDecider,
         ICatalogPreviewGenerator catalogPreviewGenerator,
-        ICatalogPlanConfirmationService catalogConfirmationService)
+        ICatalogPlanConfirmationService catalogConfirmationService,
+        IOptions<PlanCatalogOptions> planCatalogOptions,
+        IOptions<PreparationRunwayPilotActivationOptions> preparationRunwayPilotActivationOptions)
     {
         _context = context;
         _planGenerationEngine = planGenerationEngine;
@@ -73,7 +81,22 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         _routeDecider = routeDecider;
         _catalogPreviewGenerator = catalogPreviewGenerator;
         _catalogConfirmationService = catalogConfirmationService;
+        _planCatalogOptions = planCatalogOptions.Value;
+        _preparationRunwayPilotActivationEnabled = preparationRunwayPilotActivationOptions.Value.Enabled;
+        _preparationRunwayConfirmationEnabled = preparationRunwayPilotActivationOptions.Value.ConfirmationEnabled;
     }
+
+    /// <summary>
+    /// Backend Integration Phase 4G.6B — the exact, narrow activation scope
+    /// for the 15-20 week TEN_K Preparation Runway public preview. Verified
+    /// through typed candidate identity, never inferred from distance/duration
+    /// alone.
+    /// </summary>
+    private static bool IsPreparationRunwayPilotScope(GeneratePreviewRequest request) =>
+        request.GoalType == GoalType.Race &&
+        request.GoalDistance == GoalDistance.TenK &&
+        request.Level == RunningBackground.Intermediate &&
+        request.DaysPerWeek == 4;
 
     /// <summary>
     /// Public entry point for <c>POST /api/v1/plans/generate-preview/race</c>.
@@ -98,7 +121,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         // ── Input validation ────────────────────────────────────────────────
         GeneratePreviewRequestValidator.Validate(request);
 
-        // ── Fail-closed horizon guard (temporary safety constraint) ─────────
+        // Canonical horizon decision and public fail-closed mapping.
         // Runs before template selection, route decision, catalog generation,
         // and any persistence — for BOTH the legacy and catalog paths. See
         // RaceHorizonPolicy — the single source of truth for this
@@ -106,11 +129,26 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         // policy below so the two can never disagree.
         if (request.GoalType == GoalType.Race && request.RaceDate is { } raceDateForHorizonCheck)
         {
-            var availableWeeks = RaceHorizonPolicy.CalculateAvailableWeeks(request.StartDate, raceDateForHorizonCheck);
-            var classification = RaceHorizonPolicy.Classify(availableWeeks);
+            var horizonDecision = RaceHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck);
+            var availableWeeks = horizonDecision.AvailableFullWeeks;
+            var classification = RaceHorizonPolicy.Classify(horizonDecision);
 
             if (classification == RaceHorizonClassification.CompositionRequired)
             {
+                // Backend Integration Phase 4G.6B: the ONLY narrowing of this
+                // otherwise-unchanged fail-closed gate. Scoped strictly to
+                // the exact pilot candidate (typed identity, never inferred
+                // from distance/duration alone) and the direct-runway
+                // 15-20 week range (PreparationRunwayPlusCore mode with
+                // AvailableFullWeeks in [15,20]) -- 21+ weeks and every other
+                // candidate/level/days-per-week/goal-type combination fall
+                // through unchanged to the PlanHorizonCompositionRequiredException
+                // below, exactly as before this phase.
+                if (IsPreparationRunwayPilotScope(request) && availableWeeks is >= 15 and <= 20 && _preparationRunwayPilotActivationEnabled)
+                {
+                    return await GeneratePreparationRunwayPreviewAsync(internalUserId, request, horizonDecision, asOfDate: DateOnly.FromDateTime(DateTime.UtcNow), ct);
+                }
+
                 // Long-horizon preparation + race-core composition is not yet
                 // implemented; a horizon above the approved standalone
                 // maximum must never silently receive a shorter core anchored
@@ -127,12 +165,9 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
 
             if (classification == RaceHorizonClassification.CoreLengthRecognizedButNotImplemented)
             {
-                // Within the nominal 8-14 week range, but not the one exact
-                // length (12) proven to align with RaceDate — the catalog
-                // phase allocator is not yet horizon-aware and always emits
-                // its fixed default allocation regardless of this horizon,
-                // which would silently misalign with RaceDate (verified live
-                // for both shorter and longer in-range horizons).
+                // Legacy compatibility branch. The current canonical mapping
+                // does not emit this value; compressed/extended cores map to
+                // StandaloneCoreSupported.
                 var reasonCode = RaceHorizonPolicy.GetCoreHorizonUnsupportedReasonCode(availableWeeks);
                 _logger.LogWarning(
                     "GeneratePreview: race core horizon recognized but not yet implemented. " +
@@ -146,10 +181,9 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
                     $"length is {RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks} weeks. Reason: {reasonCode}.");
             }
 
-            // BelowMinimum and ExactStandaloneCoreSupported: continue —
-            // BelowMinimum is a separate, pre-existing concern this guard
-            // does not change; ExactStandaloneCoreSupported is the one
-            // horizon currently proven safe to generate.
+            // Below-minimum handling continues at routing; compressed,
+            // preferred, and extended standalone modes proceed. Exact 12w0d
+            // remains the PreferredCore path.
         }
 
         // Typed command, produced only after validation guarantees every
@@ -344,6 +378,68 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             RequestPayloadJson = JsonSerializer.Serialize(request, SerializerOptions),
             // Deliberately the CatalogPreviewSnapshot's own JSON shape, NOT a
             // GeneratePreviewResponse -- see this method's own doc comment.
+            PreviewPayloadJson = JsonSerializer.Serialize(snapshot, SerializerOptions),
+            ExpiresAt = snapshot.ExpiresAtUtc,
+            CreatedAt = snapshot.CreatedAtUtc,
+        };
+
+        _context.PlanPreviews.Add(previewEntity);
+        await _context.SaveChangesAsync(ct);
+
+        return previewResponse;
+    }
+
+    /// <summary>
+    /// Backend Integration Phase 4G.6B — the scoped 15-20 week TEN_K
+    /// Preparation Runway public preview path. Invokes
+    /// <see cref="ICatalogPreviewGenerator.GeneratePreparationRunwayPreviewAsync"/>
+    /// exactly once (no duplicated runway generation logic here); this
+    /// method's own job is limited to persisting the resulting (deliberately
+    /// non-persistable) <see cref="CatalogPreviewSnapshot"/> and returning
+    /// the mapped public response with an explicit
+    /// <see cref="PreviewLifecycleClassification.PreparationRunwayPreviewNotConfirmable"/>
+    /// classification. On any orchestration failure, no partial preview and
+    /// no <c>PlanPreview</c> row are created -- the exception propagates
+    /// unchanged.
+    /// </summary>
+    private async Task<GeneratePreviewResponse> GeneratePreparationRunwayPreviewAsync(
+        Guid internalUserId, GeneratePreviewRequest request, CoreHorizonDecision horizonDecision, DateOnly asOfDate, CancellationToken ct)
+    {
+        var (snapshot, weeks) = await _catalogPreviewGenerator.GeneratePreparationRunwayPreviewAsync(
+            request, horizonDecision, asOfDate, _planCatalogOptions, confirmationEnabled: _preparationRunwayConfirmationEnabled, ct: ct);
+
+        var previewResponse = new GeneratePreviewResponse
+        {
+            PreviewId = Guid.NewGuid(),
+            TemplateId = snapshot.CandidateKey,
+            GoalType = request.GoalType,
+            GoalDistance = request.GoalDistance,
+            Level = request.Level,
+            DaysPerWeek = request.DaysPerWeek,
+            Unit = request.Unit,
+            Weeks = weeks.ToList(),
+            FallbackUsed = false,
+            FallbackReason = null,
+            // Phase 4G.6C: lifecycle reflects whether this snapshot actually
+            // carries a persistable payload -- never inferred, always set
+            // from the same gate state that controlled whether the mapper
+            // ran (never from GeneratedPreviewPlanPayload's mere presence).
+            Lifecycle = _preparationRunwayConfirmationEnabled
+                ? PreviewLifecycleClassification.PreparationRunwayPreviewConfirmable
+                : PreviewLifecycleClassification.PreparationRunwayPreviewNotConfirmable,
+        };
+
+        var previewEntity = new PlanPreview
+        {
+            Id = previewResponse.PreviewId,
+            InternalUserId = internalUserId,
+            TemplateId = snapshot.CandidateKey,
+            RequestPayloadJson = JsonSerializer.Serialize(request, SerializerOptions),
+            // Same CatalogPreviewSnapshot shape as the 8-14 week catalog path
+            // (GenerateCatalogPreviewAsync) -- but GeneratedPreviewPlanPayload
+            // is always null here, which is exactly what makes this preview
+            // automatically rejected by the existing, unmodified
+            // CatalogPreviewNotPersistableException guard at confirm time.
             PreviewPayloadJson = JsonSerializer.Serialize(snapshot, SerializerOptions),
             ExpiresAt = snapshot.ExpiresAtUtc,
             CreatedAt = snapshot.CreatedAtUtc,
@@ -655,6 +751,13 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         plan.Status = TrainingPlanStatus.Cancelled;
         plan.CancelledAt = DateTime.UtcNow;
 
+        // Phase 4L.6C: structured operational event, distinct from the
+        // durable PlanEvent audit row below -- this is the log-platform-
+        // queryable signal (Part 15 "Recovery: regenerate/cancel").
+        _logger.LogInformation(
+            "Plan cancelled. UserId={UserId} PlanId={PlanId} ScheduleStrategy={ScheduleStrategy}",
+            internalUserId, plan.Id, plan.ScheduleStrategy);
+
         // Log PlanCancelled event
         var planEvent = new PlanEvent
         {
@@ -693,6 +796,41 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
                 HasActivePlan = false,
                 Status = "none",
                 Weeks = new List<PlanWeekDetailDto>()
+            };
+        }
+
+        if (plan.ScheduleStrategy == PlanScheduleStrategy.RollingLongHorizon)
+        {
+            if (!plan.LongHorizonRollingPlanStateId.HasValue)
+                throw new LongHorizonReadStateCorruptException("Active rolling plan has no rolling-state authority.");
+            var aggregate = await _context.LongHorizonRollingPlanStates.AsNoTracking()
+                .Include(p => p.Weeks).ThenInclude(w => w.Sessions)
+                .SingleOrDefaultAsync(p => p.Id == plan.LongHorizonRollingPlanStateId.Value, ct)
+                ?? throw new LongHorizonReadStateCorruptException("Active rolling plan state is unavailable.");
+            var activeSessions = aggregate.Weeks
+                .Where(w => w.LifecycleState is LongHorizonPersistedLifecycleState.NumericActivated or LongHorizonPersistedLifecycleState.Completed)
+                .SelectMany(w => w.Sessions).ToList();
+            var completedWeeks = aggregate.Weeks.Count(w => w.LifecycleState == LongHorizonPersistedLifecycleState.Completed);
+            return new PlanDetailsResponse
+            {
+                PlanId = plan.Id, Status = EnumSnakeCase.ToSnakeCase(plan.Status), GoalType = plan.GoalType,
+                GoalDistance = plan.GoalDistance, Level = plan.Level, DaysPerWeek = plan.DaysPerWeek, Unit = plan.Unit,
+                RaceName = plan.RaceName, RaceDate = plan.RaceDate, TargetFinishTimeSeconds = plan.TargetFinishTimeSeconds,
+                StartedAt = plan.StartedAt, EstimatedEndDate = plan.EstimatedEndDate, TotalWeeks = aggregate.TotalWeeks,
+                CompletedWeeksCount = completedWeeks, TotalPlannedDistance = activeSessions.Sum(s => s.DistanceKm),
+                TotalCompletedDistance = activeSessions.Sum(s => s.ActualDistanceKm ?? 0), LongRunDay = plan.LongRunDay,
+                ScheduleStrategy = PlanScheduleStrategy.RollingLongHorizon,
+                CurrentWindowStartWeek = aggregate.CurrentWindowStartWeek, CurrentWindowEndWeek = aggregate.CurrentWindowEndWeek,
+                NextPendingGlobalWeek = aggregate.Weeks.Where(w => w.LifecycleState == LongHorizonPersistedLifecycleState.NumericPending).OrderBy(w => w.GlobalWeek).Select(w => (int?)w.GlobalWeek).FirstOrDefault(),
+                CheckpointReadiness = LongHorizonActiveReadModelProvider.Readiness(aggregate, activeSessions),
+                RollingStructuralWeeks = aggregate.Weeks.OrderBy(w => w.GlobalWeek).Select(w => new LongHorizonStructuralWeekDetailDto
+                {
+                    GlobalWeek = w.GlobalWeek, Phase = EnumSnakeCase.ToSnakeCase(w.SegmentType), Stage = w.Stage,
+                    StructuralStartDate = w.StructuralStartDate, StructuralEndDate = w.StructuralEndDate,
+                    LifecycleStatus = EnumSnakeCase.ToSnakeCase(w.LifecycleState),
+                    NumericDetailsAvailable = w.LifecycleState is LongHorizonPersistedLifecycleState.NumericActivated or LongHorizonPersistedLifecycleState.Completed
+                }).ToList(),
+                Weeks = []
             };
         }
 

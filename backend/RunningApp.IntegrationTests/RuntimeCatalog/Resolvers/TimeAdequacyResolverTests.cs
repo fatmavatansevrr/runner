@@ -179,10 +179,11 @@ public sealed class TimeAdequacyResolverTests
 
         Assert.Equal("12", metadata["availableWeeks"]);
         Assert.Equal("84", metadata["availableDays"]);
+        Assert.Equal("0", metadata["remainingDays"]);
         Assert.Equal("8", metadata["minimumCoreWeeks"]);
         Assert.Equal("12", metadata["defaultCoreWeeks"]);
         Assert.Equal("14", metadata["maximumCoreWeeks"]);
-        Assert.Equal("FLOOR_AVAILABLE_DAYS_DIV_7", metadata["roundingRule"]);
+        Assert.Equal("CORE_HORIZON_DECISION_FULL_WEEKS_AND_REMAINDER", metadata["roundingRule"]);
     }
 
     [Fact]

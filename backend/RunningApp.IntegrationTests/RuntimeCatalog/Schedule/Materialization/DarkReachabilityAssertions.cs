@@ -53,8 +53,21 @@ internal static class DarkReachabilityAssertions
 {
     internal const string OrchestratorFileName = "SafetyVerificationOrchestrator.cs";
 
-    public static void AssertVerifierIsReachableOnlyFromDarkOrchestrator(string verifierTypeName)
+    /// <summary>
+    /// Backend Integration Phase 4G.5H: <paramref name="additionalAllowedCallerFileNames"/>
+    /// extends this shared helper (used by all nine Phase 4G.3B.3 verifiers)
+    /// to permit exactly one more named dark caller, for the one verifier
+    /// (<c>RaceDateAlignmentVerifier</c>) a Phase 4G.5D-5H dark orchestrator
+    /// now also calls directly. Every other verifier's own test call site
+    /// passes no additional file and is therefore completely unaffected --
+    /// this is an additive, opt-in parameter, not a loosening of the
+    /// existing single-orchestrator-file default for the other eight
+    /// verifiers.
+    /// </summary>
+    public static void AssertVerifierIsReachableOnlyFromDarkOrchestrator(
+        string verifierTypeName, IReadOnlyList<string>? additionalAllowedCallerFileNames = null)
     {
+        var additionalAllowed = additionalAllowedCallerFileNames ?? Array.Empty<string>();
         var files = ProductionFiles().ToList();
         var orchestrator = files.Single(f => Path.GetFileName(f).Equals(OrchestratorFileName, StringComparison.OrdinalIgnoreCase));
         var reference = MemberAccessPattern(verifierTypeName);
@@ -62,14 +75,17 @@ internal static class DarkReachabilityAssertions
         Assert.True(orchestratorCalls.Count == 1,
             $"Expected exactly one real {verifierTypeName}.Verify reference in {orchestrator}; found {orchestratorCalls.Count}: {string.Join(" | ", orchestratorCalls)}");
 
+        bool IsAllowedCallerFile(string f) =>
+            Path.GetFileName(f).Equals(OrchestratorFileName, StringComparison.OrdinalIgnoreCase)
+            || additionalAllowed.Any(a => Path.GetFileName(f).Equals(a, StringComparison.OrdinalIgnoreCase));
+
         var unexpected = files
-            .Where(f => !Path.GetFileName(f).Equals($"{verifierTypeName}.cs", StringComparison.OrdinalIgnoreCase)
-                && !Path.GetFileName(f).Equals(OrchestratorFileName, StringComparison.OrdinalIgnoreCase))
+            .Where(f => !Path.GetFileName(f).Equals($"{verifierTypeName}.cs", StringComparison.OrdinalIgnoreCase) && !IsAllowedCallerFile(f))
             .SelectMany(f => MatchesWithLines(f, reference)).ToList();
         Assert.True(unexpected.Count == 0,
             $"Unexpected live production caller(s) of {verifierTypeName}.Verify: {string.Join(" | ", unexpected)}");
 
-        AssertNoProductionActivation(verifierTypeName, allowOrchestratorReference: true);
+        AssertNoProductionActivation(verifierTypeName, allowOrchestratorReference: true, additionalAllowedCallerFileNames: additionalAllowed);
         AssertOrchestratorHasNoLiveActivation();
     }
 
@@ -103,16 +119,20 @@ internal static class DarkReachabilityAssertions
             || Regex.IsMatch(codeWithStrings, $@"\bType\.GetType\s*\(\s*""[^""]*{Regex.Escape(typeName)}[^""]*""");
     }
 
-    private static void AssertNoProductionActivation(string typeName, bool allowOrchestratorReference)
+    private static void AssertNoProductionActivation(
+        string typeName, bool allowOrchestratorReference, IReadOnlyList<string>? additionalAllowedCallerFileNames = null)
     {
+        var additionalAllowed = additionalAllowedCallerFileNames ?? Array.Empty<string>();
         var unexpected = new List<string>();
         foreach (var file in ProductionFiles())
         {
             if (Path.GetFileName(file).Equals($"{typeName}.cs", StringComparison.OrdinalIgnoreCase)) continue;
             var content = File.ReadAllText(file);
-            if (allowOrchestratorReference && Path.GetFileName(file).Equals(OrchestratorFileName, StringComparison.OrdinalIgnoreCase))
+            var isAllowedDarkCallerFile = (allowOrchestratorReference && Path.GetFileName(file).Equals(OrchestratorFileName, StringComparison.OrdinalIgnoreCase))
+                || additionalAllowed.Any(a => Path.GetFileName(file).Equals(a, StringComparison.OrdinalIgnoreCase));
+            if (isAllowedDarkCallerFile)
             {
-                if (ContainsActivationInSource(typeName, content)) unexpected.Add(file + ": activation syntax inside orchestrator");
+                if (ContainsActivationInSource(typeName, content)) unexpected.Add(file + ": activation syntax inside allowed dark caller");
                 continue;
             }
             var code = StripCommentsAndStrings(content);

@@ -47,9 +47,9 @@ public sealed class RuntimeConditionRegistrySnapshot
 
 /// <summary>
 /// Read-only loader for a Process A RUNTIME_CONDITION_VALUE_REGISTRY document.
-/// Mirrors <see cref="PlanCatalogBundleLoader"/>'s read-only, scan-and-match-
-/// by-parsed-metadata approach. Never writes to, mutates, or creates any
-/// plan-catalog file, and is not wired into plan generation in this phase.
+/// Uses the shared authoring/published-layout resolver. Published artifacts
+/// must be manifest members and pass checksum and identity validation. Never
+/// writes to, mutates, or creates any plan-catalog file.
 /// </summary>
 public interface IRuntimeConditionRegistryReader
 {
@@ -81,89 +81,41 @@ public sealed class RuntimeConditionRegistryReader : IRuntimeConditionRegistryRe
     public async Task<RuntimeConditionRegistrySnapshot> LoadAsync(PlanCatalogReference registryRef, CancellationToken ct = default)
     {
         var root = _options.CatalogRootPath;
-        if (!Directory.Exists(root))
+        using var document = await CatalogArtifactFileResolver.LoadAsync(
+            root, Subfolder, ExpectedDocumentType, registryRef.Key, registryRef.Version, ct);
+        const string sourceDescription = "runtime-condition registry artifact";
+
+        if (!document.RootElement.TryGetProperty("conditionValueSets", out var setsEl) || setsEl.ValueKind != JsonValueKind.Array)
         {
-            throw new PlanCatalogLoadException(
-                $"Plan-catalog root directory was not found at '{root}' (configured via PlanCatalog:CatalogRootPath).");
+            throw new PlanCatalogLoadException($"The {sourceDescription} is missing the required 'conditionValueSets' array.");
         }
 
-        var directory = Path.Combine(root, Subfolder);
-        if (!Directory.Exists(directory))
+        var allowedValuesByConditionType = new Dictionary<string, IReadOnlyList<string>>();
+        foreach (var set in setsEl.EnumerateArray())
         {
-            throw new PlanCatalogLoadException($"Catalog subdirectory '{Subfolder}' was not found under '{root}'.");
-        }
-
-        var candidates = new List<(string File, string ActualKey, int ActualVersion)>();
-
-        foreach (var file in Directory.EnumerateFiles(directory, "*.json"))
-        {
-            using var document = await ParseAsync(file, ct);
-
-            if (!document.RootElement.TryGetProperty("metadata", out var metadata))
+            var conditionType = RequireString(set, "conditionType", sourceDescription);
+            if (!set.TryGetProperty("allowedValues", out var valuesEl) || valuesEl.ValueKind != JsonValueKind.Array)
             {
-                throw new PlanCatalogLoadException($"'{file}' is missing the required 'metadata' object.");
+                throw new PlanCatalogLoadException($"The {sourceDescription} conditionValueSets entry '{conditionType}' is missing 'allowedValues'.");
             }
 
-            var documentType = RequireString(metadata, "documentType", file);
-            var key = RequireString(metadata, "key", file);
-            var version = RequireInt(metadata, "version", file);
-
-            if (documentType != ExpectedDocumentType || key != registryRef.Key || version != registryRef.Version)
-            {
-                candidates.Add((file, key, version));
-                continue;
-            }
-
-            if (!document.RootElement.TryGetProperty("conditionValueSets", out var setsEl) || setsEl.ValueKind != JsonValueKind.Array)
-            {
-                throw new PlanCatalogLoadException($"'{file}' is missing the required 'conditionValueSets' array.");
-            }
-
-            var allowedValuesByConditionType = new Dictionary<string, IReadOnlyList<string>>();
-            foreach (var set in setsEl.EnumerateArray())
-            {
-                var conditionType = RequireString(set, "conditionType", file);
-                if (!set.TryGetProperty("allowedValues", out var valuesEl) || valuesEl.ValueKind != JsonValueKind.Array)
-                {
-                    throw new PlanCatalogLoadException($"'{file}' conditionValueSets entry '{conditionType}' is missing 'allowedValues'.");
-                }
-
-                allowedValuesByConditionType[conditionType] = valuesEl.EnumerateArray()
-                    .Select(v => v.GetString() ?? throw new PlanCatalogLoadException($"'{file}' conditionValueSets entry '{conditionType}' has a non-string allowedValues element."))
-                    .ToList();
-            }
-
-            var snapshot = new RuntimeConditionRegistrySnapshot
-            {
-                RegistryKey = registryRef.Key,
-                RegistryVersion = registryRef.Version,
-                AllowedValuesByConditionType = allowedValuesByConditionType,
-            };
-
-            _logger.LogInformation(
-                "RuntimeConditionRegistryReader: loaded {RegistryKey} v{RegistryVersion} with {ConditionCount} condition type(s) from '{CatalogRoot}'.",
-                registryRef.Key, registryRef.Version, allowedValuesByConditionType.Count, root);
-
-            return snapshot;
+            allowedValuesByConditionType[conditionType] = valuesEl.EnumerateArray()
+                .Select(v => v.GetString() ?? throw new PlanCatalogLoadException($"The {sourceDescription} conditionValueSets entry '{conditionType}' has a non-string allowedValues element."))
+                .ToList();
         }
 
-        throw new PlanCatalogLoadException(
-            $"No {ExpectedDocumentType} document with key='{registryRef.Key}' version={registryRef.Version} was found under " +
-            $"'{directory}'. Found {candidates.Count} other document(s) in that folder " +
-            $"({string.Join(", ", candidates.Select(c => $"{c.ActualKey} v{c.ActualVersion}"))}).");
-    }
-
-    private static async Task<JsonDocument> ParseAsync(string file, CancellationToken ct)
-    {
-        try
+        var snapshot = new RuntimeConditionRegistrySnapshot
         {
-            await using var stream = File.OpenRead(file);
-            return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-        }
-        catch (JsonException ex)
-        {
-            throw new PlanCatalogLoadException($"'{file}' contains invalid JSON and could not be parsed.", ex);
-        }
+            RegistryKey = registryRef.Key,
+            RegistryVersion = registryRef.Version,
+            AllowedValuesByConditionType = allowedValuesByConditionType,
+        };
+
+        _logger.LogInformation(
+            "RuntimeConditionRegistryReader: loaded {RegistryKey} v{RegistryVersion} with {ConditionCount} condition type(s) from '{CatalogRoot}'.",
+            registryRef.Key, registryRef.Version, allowedValuesByConditionType.Count, root);
+
+        return snapshot;
     }
 
     private static string RequireString(JsonElement element, string propertyName, string file)

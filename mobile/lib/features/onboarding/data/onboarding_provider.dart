@@ -1,8 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../plan/data/plan_repository.dart';
+import '../../plan/data/long_horizon_repository.dart';
 import '../../../core/models/running_background.dart';
 import '../../../core/models/recent_race_result.dart';
+import '../../../core/models/preparation_runway.dart';
 import '../../../core/network/dtos.dart';
+import '../../../core/network/long_horizon_dtos.dart';
+
+/// The existing static race-plan route supports 8-20 week plans. Any race
+/// whose start-to-race span exceeds this is routed to the Long-Horizon
+/// (21-52 week) endpoint instead. This is a client-side ROUTING decision
+/// only (which endpoint to call) — the backend alone decides the resulting
+/// schedule, phases, and checkpoint structure; nothing here computes a plan.
+const int _staticRaceMaxWeeks = 20;
 
 class OnboardingState {
   OnboardingState({
@@ -18,6 +28,7 @@ class OnboardingState {
     this.longRunDay = 'Sunday',
     this.startDate,
     this.previewResponse,
+    this.longHorizonPreviewResponse,
     this.selectedRunningDays = const [],
     this.preferredRunDuration = 30,
     this.customGoalDistance = 5,
@@ -51,6 +62,12 @@ class OnboardingState {
   final String longRunDay;
   final DateTime? startDate;
   final GeneratePreviewResponse? previewResponse;
+
+  /// Set instead of [previewResponse] when the race span routes to the
+  /// Long-Horizon (21-52 week) endpoint. Exactly one of the two is
+  /// populated after a successful [OnboardingNotifier.generatePreview] call
+  /// for a race goal — never both, never neither.
+  final LongHorizonPlanPreviewContract? longHorizonPreviewResponse;
   final List<String> selectedRunningDays;
   final int preferredRunDuration;
   final int customGoalDistance;
@@ -73,6 +90,40 @@ class OnboardingState {
   /// race entered in Enter Race Details.
   final RecentRaceResult? recentRaceResult;
 
+  // ── Phase 4H.1 — derived Preparation Runway preview state ──────────────
+  // All derived from [previewResponse]; never separately stored/mutated
+  // (PART 7: "do not store duplicate mutable versions of the same values
+  // when they can be derived safely").
+
+  /// [PreviewLifecycle.unknown] (fails closed) when no preview has been
+  /// generated yet — distinct from the backend's own `unknown` case, but
+  /// with the identical safe effect: the confirm CTA never enables itself
+  /// from an absent preview.
+  PreviewLifecycle get previewLifecycle =>
+      previewResponse == null ? PreviewLifecycle.unknown : previewResponse!.lifecycleValue;
+
+  /// The sole gate for whether the confirm CTA may be enabled/tapped
+  /// (PART 11) — never derived from [totalPreviewWeekCount] or any other
+  /// field.
+  bool get isPreviewConfirmable => previewLifecycle.isConfirmable;
+
+  bool get isPreparationRunwayPreview => previewResponse?.isPreparationRunwayPlan ?? false;
+
+  int get runwayWeekCount => previewResponse?.runwayWeekCount ?? 0;
+
+  int get coreWeekCount => previewResponse?.coreWeekCount ?? 0;
+
+  int get totalPreviewWeekCount => previewResponse?.totalWeekCount ?? 0;
+
+  /// Whether the most recently generated preview is the Long-Horizon shape.
+  bool get isLongHorizonPreview => longHorizonPreviewResponse != null;
+
+  /// Long-Horizon's own confirmability gate — mirrors [isPreviewConfirmable]
+  /// for the static shape but reads the backend's `confirmation_readiness`
+  /// field instead of [PreviewLifecycle].
+  bool get isLongHorizonPreviewConfirmable =>
+      longHorizonPreviewResponse?.isConfirmable ?? false;
+
   OnboardingState copyWith({
     String? goalType,
     String? goalDistance,
@@ -86,6 +137,9 @@ class OnboardingState {
     String? longRunDay,
     DateTime? startDate,
     GeneratePreviewResponse? previewResponse,
+    bool clearPreviewResponse = false,
+    LongHorizonPlanPreviewContract? longHorizonPreviewResponse,
+    bool clearLongHorizonPreviewResponse = false,
     List<String>? selectedRunningDays,
     int? preferredRunDuration,
     int? customGoalDistance,
@@ -111,7 +165,10 @@ class OnboardingState {
       targetFinishTimeSource: targetFinishTimeSource ?? this.targetFinishTimeSource,
       longRunDay: longRunDay ?? this.longRunDay,
       startDate: startDate ?? this.startDate,
-      previewResponse: previewResponse ?? this.previewResponse,
+      previewResponse: clearPreviewResponse ? null : (previewResponse ?? this.previewResponse),
+      longHorizonPreviewResponse: clearLongHorizonPreviewResponse
+          ? null
+          : (longHorizonPreviewResponse ?? this.longHorizonPreviewResponse),
       selectedRunningDays: selectedRunningDays ?? this.selectedRunningDays,
       preferredRunDuration: preferredRunDuration ?? this.preferredRunDuration,
       customGoalDistance: customGoalDistance ?? this.customGoalDistance,
@@ -132,9 +189,10 @@ class OnboardingState {
 }
 
 class OnboardingNotifier extends StateNotifier<OnboardingState> {
-  OnboardingNotifier(this._planRepository) : super(OnboardingState());
+  OnboardingNotifier(this._planRepository, this._longHorizonRepository) : super(OnboardingState());
 
   final PlanRepository _planRepository;
+  final LongHorizonRepository _longHorizonRepository;
 
   void updateGoalType(String type) => state = state.copyWith(goalType: type);
   void updateGoalDistance(String dist) => state = state.copyWith(goalDistance: dist);
@@ -232,7 +290,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   static String _formatDate(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  Future<GeneratePreviewResponse> generatePreview() async {
+  /// Generates a preview and stores it in state. For race goals whose
+  /// start-to-race span exceeds [_staticRaceMaxWeeks], this routes to the
+  /// Long-Horizon endpoint and populates [OnboardingState.longHorizonPreviewResponse]
+  /// instead of [OnboardingState.previewResponse] — exactly one of the two
+  /// is ever set by a single call. The 20-week threshold only selects which
+  /// backend endpoint is called; the backend alone decides the resulting
+  /// preview's actual shape and readiness.
+  Future<void> generatePreview() async {
     if (state.selectedRunningDays.isEmpty) {
       throw StateError('generatePreview: selectedRunningDays must be set before generating a preview.');
     }
@@ -243,15 +308,33 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final preferredDays = state.selectedRunningDays.map(_weekdayToken).toList();
     final startDate = _formatDate(state.startDate!);
 
+    if (state.goalType == 'race' && _isLongHorizonSpan()) {
+      final request = _buildRacePreviewRequest(preferredDays, startDate);
+      final response = await _longHorizonRepository.generateLongHorizonRacePlanPreview(request);
+      state = state.copyWith(longHorizonPreviewResponse: response, clearPreviewResponse: true);
+      return;
+    }
+
     final response = state.goalType == 'race'
         ? await _generateRacePreview(preferredDays, startDate)
         : await _generateHabitPreview(preferredDays, startDate);
 
-    state = state.copyWith(previewResponse: response);
-    return response;
+    state = state.copyWith(previewResponse: response, clearLongHorizonPreviewResponse: true);
   }
 
-  Future<GeneratePreviewResponse> _generateRacePreview(List<String> preferredDays, String startDate) async {
+  /// True when the race's start-to-race span exceeds the static route's
+  /// 20-week ceiling. Only meaningful for `goalType == 'race'` — habit
+  /// plans never have a race date and are never routed to Long-Horizon.
+  bool _isLongHorizonSpan() {
+    if (state.raceDate == null || state.startDate == null) return false;
+    final raceDate = DateTime.tryParse(state.raceDate!);
+    if (raceDate == null) return false;
+    final days = raceDate.difference(state.startDate!).inDays;
+    final weeks = (days / 7).ceil();
+    return weeks > _staticRaceMaxWeeks;
+  }
+
+  GenerateRacePlanPreviewRequestDto _buildRacePreviewRequest(List<String> preferredDays, String startDate) {
     if (state.raceDate == null) {
       throw StateError('generatePreview: race plans require raceDate before generating a preview.');
     }
@@ -274,7 +357,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final isBeginner = state.runningBackground == RunningBackground.beginner;
     final recentRaceResult = isBeginner ? null : state.recentRaceResult;
 
-    final request = GenerateRacePlanPreviewRequestDto(
+    return GenerateRacePlanPreviewRequestDto(
       goalDistance: state.goalDistance,
       level: state.runningBackground.wireValue,
       daysPerWeek: state.daysPerWeek,
@@ -296,6 +379,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
               raceDate: _formatDate(recentRaceResult.raceDate),
             ),
     );
+  }
+
+  Future<GeneratePreviewResponse> _generateRacePreview(List<String> preferredDays, String startDate) async {
+    final request = _buildRacePreviewRequest(preferredDays, startDate);
     return _planRepository.generateRacePlanPreview(request);
   }
 
@@ -330,5 +417,5 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 }
 
 final onboardingProvider = StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
-  return OnboardingNotifier(ref.watch(planRepositoryProvider));
+  return OnboardingNotifier(ref.watch(planRepositoryProvider), ref.watch(longHorizonRepositoryProvider));
 });

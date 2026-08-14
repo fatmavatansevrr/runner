@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "documentType": "PREPARATION_RUNWAY_BLOCK_PROGRESSION",
+    "schemaVersion": 1,
+    "key": "TEN_K_CONSISTENCY_PROGRESSION",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "distanceFamily": "TEN_K",
+  "blockType": "CONSISTENCY",
+  "steps": [
+    {
+      "stepOrder": 1,
+      "stepKey": "CONSISTENCY_STEP_1",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5 }
+      ]
+    },
+    {
+      "stepOrder": 2,
+      "stepKey": "CONSISTENCY_STEP_2",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    }
+  ]
+}

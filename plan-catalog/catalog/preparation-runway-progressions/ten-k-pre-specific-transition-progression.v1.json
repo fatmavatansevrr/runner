@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "documentType": "PREPARATION_RUNWAY_BLOCK_PROGRESSION",
+    "schemaVersion": 1,
+    "key": "TEN_K_PRE_SPECIFIC_TRANSITION_PROGRESSION",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "distanceFamily": "TEN_K",
+  "blockType": "PRE_SPECIFIC_TRANSITION",
+  "steps": [
+    {
+      "stepOrder": 1,
+      "stepKey": "PRE_SPECIFIC_TRANSITION_STEP_1",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5 }
+      ]
+    }
+  ]
+}

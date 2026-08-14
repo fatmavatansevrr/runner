@@ -28,9 +28,10 @@ namespace RunningApp.Application.RuntimeCatalog.Resolvers;
 /// below), not as missing user evidence — it throws, it does not return
 /// NotEvaluated.
 ///
-/// NOT wired into IPlanGenerationEngine/PlanServices/PlaceholderPlanGenerationEngine.
-/// Does not implement PLAN_MODE_IN.READINESS_ONLY routing or any
-/// compressed-readiness override — those remain out of scope for this phase.
+/// Wired into the catalog resolver pipeline. It consumes the same canonical
+/// CoreHorizonDecision used by routing; it does not independently calculate
+/// or round elapsed days. It does not implement PLAN_MODE_IN.READINESS_ONLY
+/// routing or a compressed-readiness override.
 /// </summary>
 public sealed class TimeAdequacyResolver : ITimeAdequacyResolver
 {
@@ -44,12 +45,9 @@ public sealed class TimeAdequacyResolver : ITimeAdequacyResolver
     private const string OutputInsufficient = "INSUFFICIENT";
 
     /// <summary>
-    /// Computes availableWeeks as <c>floor(availableDays / 7)</c> using
-    /// integer division on the (non-negative, validated) day count between
-    /// startDate and raceDate — documented explicitly because the task
-    /// instructs "do not guess silently" on rounding. Exactly 84 days (12
-    /// weeks) yields availableWeeks=12; exactly 56 days (8 weeks) yields
-    /// availableWeeks=8.
+    /// Consumes CoreHorizonDecision.AvailableFullWeeks and its separately
+    /// retained remainder-day value. Exactly 84 days yields 12 complete
+    /// weeks; exactly 56 days yields 8. Partial days never round upward.
     ///
     /// Missing-date handling depends on <see cref="ResolverInputSnapshot.GoalType"/>
     /// (Phase 4D.1.5 owner-approved validation-layer clarification):
@@ -128,8 +126,11 @@ public sealed class TimeAdequacyResolver : ITimeAdequacyResolver
                 $"RaceDate ({raceDate:yyyy-MM-dd}) must not be before StartDate ({startDate:yyyy-MM-dd}).");
         }
 
-        var availableDays = raceDate.DayNumber - startDate.DayNumber;
-        var availableWeeks = availableDays / 7; // integer division = floor for non-negative operands
+        var horizon = Common.RaceHorizonPolicy.Decide(
+            startDate, raceDate, coreCycle.MinimumWeeks, coreCycle.DefaultWeeks,
+            coreCycle.MaximumWeeks ?? int.MaxValue / 7);
+        var availableDays = horizon.AvailableDays;
+        var availableWeeks = horizon.AvailableFullWeeks;
 
         string outputValue;
         string reasonCode2;
@@ -153,9 +154,10 @@ public sealed class TimeAdequacyResolver : ITimeAdequacyResolver
         {
             ["availableWeeks"] = availableWeeks.ToString(),
             ["availableDays"] = availableDays.ToString(),
+            ["remainingDays"] = horizon.LeadingPartialDays.ToString(),
             ["minimumCoreWeeks"] = coreCycle.MinimumWeeks.ToString(),
             ["defaultCoreWeeks"] = coreCycle.DefaultWeeks.ToString(),
-            ["roundingRule"] = "FLOOR_AVAILABLE_DAYS_DIV_7",
+            ["roundingRule"] = "CORE_HORIZON_DECISION_FULL_WEEKS_AND_REMAINDER",
         };
         if (coreCycle.MaximumWeeks is not null)
         {

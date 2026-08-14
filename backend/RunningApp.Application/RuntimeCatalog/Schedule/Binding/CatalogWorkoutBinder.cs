@@ -150,6 +150,13 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                     }
 
                     var candidateReference = stageDefinition.WorkoutCandidateReferences[0];
+                    var beginnerDeferredFallback = V1BeginnerWorkoutEligibilityPolicy.IsDeferred(
+                        context.CandidateKey, candidateReference.Key);
+                    if (beginnerDeferredFallback)
+                    {
+                        candidateReference = context.ReferencedWorkouts.Single(r =>
+                            r.Key == V1BeginnerWorkoutEligibilityPolicy.DeferredFallbackWorkoutKey);
+                    }
                     var definition = await ResolveDefinitionAsync(candidateReference);
                     ValidateInClosureAndPhase(definition, datedWeek.PhaseKey);
 
@@ -169,7 +176,9 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                         SourceArtifactVersion = context.Progression.Version,
                         ConditionOutcome = stageWeek.ConditionOutcome,
                         FallbackOrigin = stageWeek.FallbackOrigin,
-                        BindingReason = "STAGE_CONTROLLED_CANDIDATE_RESOLUTION",
+                        BindingReason = beginnerDeferredFallback
+                            ? "BEGINNER_DEFERRED_WORKOUT_FALLBACK"
+                            : "STAGE_CONTROLLED_CANDIDATE_RESOLUTION",
                     };
 
                     trace = new WorkoutBindingDecisionTraceStep

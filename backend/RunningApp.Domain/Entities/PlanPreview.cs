@@ -32,4 +32,16 @@ public class PlanPreview
     /// invalidated) — only true is meaningful.
     /// </summary>
     public bool? IsInvalidated { get; set; }
+
+    // Phase 4L.3: server-owned Long-Horizon preview authority. Null for every
+    // existing static/catalog preview.
+    public string? ScheduleStrategy { get; set; }
+    public string? LongHorizonInitializationSnapshotJson { get; set; }
+    public string? NormalizedInputFingerprint { get; set; }
+    public string? StructuralRoadmapFingerprint { get; set; }
+    public string? ExecutableWindowFingerprint { get; set; }
+    public Guid? LongHorizonPlanStateId { get; set; }
+    public int? PublicContractVersion { get; set; }
+    public int? ConfirmationContractVersion { get; set; }
+    public int? RollingPersistenceContractVersion { get; set; }
 }

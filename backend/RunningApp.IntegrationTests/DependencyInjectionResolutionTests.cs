@@ -38,13 +38,10 @@ namespace RunningApp.IntegrationTests;
 /// </list>
 ///
 /// <para>
-/// No real PostgreSQL connection is opened by anything in this test.
-/// <c>AddDbContext&lt;AppDbContext&gt;</c> registers <c>AppDbContext</c>
-/// lazily — constructing the host, and constructing/resolving each service
-/// below (including <see cref="ICatalogPlanConfirmationService"/>, whose
-/// constructor merely stores its injected <c>AppDbContext</c> without
-/// touching it), does not cause Npgsql to open a socket. This test never
-/// calls any repository/query method that would.
+/// Database-connection absence is measured separately from graph resolution.
+/// <see cref="RealHost_ServiceResolution_OpensNoDatabaseConnection"/> uses the
+/// test host's EF Core connection-opening interceptor/counter, so the claim is
+/// executable without changing the production registration path.
 /// </para>
 /// </summary>
 [Collection(ApiIntegrationTestCollection.Name)]
@@ -99,22 +96,55 @@ public sealed class DependencyInjectionResolutionTests
         Assert.NotNull(service);
     }
 
+    /// <summary>
+    /// Pure unit-level check of the type's own CLR default — no host, no
+    /// configuration, no DI. Split out (Phase 4G.4C.0) from the former
+    /// <c>RealHost_CatalogLivePilotOptions_DefaultsToDisabled</c>, which
+    /// incorrectly asserted this same expectation against the real,
+    /// Development-forced host instead of the bare type default — see
+    /// CROSS_PHASE_4G_4A_TO_4G_4B_V_AND_BACKEND_BASELINE_INDEPENDENT_AUDIT.md
+    /// Part 8 (`STALE_TEST_EXPECTATION`, confirmed from source).
+    /// </summary>
     [Fact]
-    public void RealHost_CatalogLivePilotOptions_DefaultsToDisabled()
+    public void CatalogLivePilotOptions_TypeDefault_IsDisabled() =>
+        Assert.False(new CatalogLivePilotOptions().Enabled);
+
+    /// <summary>
+    /// Confirms the REAL Development host's effective, intentional value —
+    /// distinct from the type default above. `appsettings.Development.json`
+    /// explicitly sets <c>CatalogLivePilot:Enabled = true</c> and is tracked/
+    /// committed (not a local-only file), a deliberate per-environment
+    /// design decision independently re-verified in the same audit's Part 8.
+    /// This test intentionally asserts <see langword="true"/>, not
+    /// <see langword="false"/> — asserting the type default here would be
+    /// exactly the stale-expectation defect this split was created to fix.
+    /// </summary>
+    [Fact]
+    public void RealHost_CatalogLivePilotOptions_DevelopmentEffectiveValue_IsEnabled()
     {
         using var scope = _factory.Services.CreateScope();
         var options = scope.ServiceProvider.GetRequiredService<IOptions<CatalogLivePilotOptions>>();
-        Assert.False(options.Value.Enabled);
+        Assert.True(options.Value.Enabled);
     }
 
+    /// <summary>
+    /// Resolving the five catalog target services from a single scope proves
+    /// their graph is wired — if any registration were
+    /// missing or mis-scoped, ASP.NET Core's Development-mode
+    /// ValidateScopes/ValidateOnBuild would have already failed host
+    /// construction itself (see class-level doc comment). Renamed (Phase
+    /// 4G.4C.0) from ...WithNoDbConnection: that name and its final
+    /// assertion overstated coverage — resolving without an exception does
+    /// not, by itself, prove no database connection was opened. The
+    /// feature-flag value assertion this test previously also carried has
+    /// been removed entirely (it belonged to the type-default/real-host
+    /// split above, not here) and the no-DB-connection claim now has its
+    /// own instrumented test below instead of being silently implied by this
+    /// test's old name.
+    /// </summary>
     [Fact]
-    public void RealHost_AllSixTargetServices_ResolveFromOneScope_WithNoDbConnection()
+    public void RealHost_CatalogTargetServices_ResolveFromOneScope()
     {
-        // Resolving every target type from a single scope proves the whole
-        // graph is wired without requiring a live PostgreSQL connection —
-        // if any registration were missing or mis-scoped, ASP.NET Core's
-        // Development-mode ValidateScopes/ValidateOnBuild would have already
-        // failed host construction itself (see class-level doc comment).
         using var scope = _factory.Services.CreateScope();
         var sp = scope.ServiceProvider;
 
@@ -123,6 +153,28 @@ public sealed class DependencyInjectionResolutionTests
         Assert.NotNull(sp.GetRequiredService<IGeneratedCatalogPlanPayloadValidator>());
         Assert.NotNull(sp.GetRequiredService<ICatalogPlanConfirmationService>());
         Assert.NotNull(sp.GetRequiredService<ICatalogPeakVolumeBandLoader>());
-        Assert.False(sp.GetRequiredService<IOptions<CatalogLivePilotOptions>>().Value.Enabled);
+    }
+
+    /// <summary>
+    /// Phase 4G.5M closes the earlier unmeasured gap with test-only EF Core
+    /// instrumentation. The counter is reset after host construction, then
+    /// observes every connection-opening callback while the five catalog
+    /// target services resolve from one scope. Zero callbacks proves that this
+    /// resolution operation itself performs no database I/O.
+    /// </summary>
+    [Fact]
+    public void RealHost_ServiceResolution_OpensNoDatabaseConnection()
+    {
+        _factory.ConnectionOpenCounter.Reset();
+
+        using var scope = _factory.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        Assert.NotNull(sp.GetRequiredService<IGenerationRouteDecider>());
+        Assert.NotNull(sp.GetRequiredService<ICatalogPreviewGenerator>());
+        Assert.NotNull(sp.GetRequiredService<IGeneratedCatalogPlanPayloadValidator>());
+        Assert.NotNull(sp.GetRequiredService<ICatalogPlanConfirmationService>());
+        Assert.NotNull(sp.GetRequiredService<ICatalogPeakVolumeBandLoader>());
+
+        Assert.Equal(0, _factory.ConnectionOpenCounter.Count);
     }
 }

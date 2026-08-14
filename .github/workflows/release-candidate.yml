@@ -1,0 +1,166 @@
+name: Release Candidate Gate
+
+# Phase 4L.6C: heavier, release-candidate-only checks that are not
+# operationally sensible to run on every commit (migration artifact
+# generation + rehearsal, backend publish/catalog packaging assertion).
+# Triggered manually or on a release tag -- deliberately not on every push,
+# per the tiering in PHASE4L_6C's own governance document (Section 35).
+# The PR gate (pr-gate.yml) already covers backend/plan-catalog/PostgreSQL/
+# security/rollback-guard/Flutter on every commit; this workflow assumes
+# that gate already passed for the commit being promoted.
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "release-*"
+
+jobs:
+  migration-artifact:
+    name: Migration bundle artifact + empty-DB rehearsal
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: antigravity_empty_rc
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ github.run_id }}_rc_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d antigravity_empty_rc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore dotnet-ef (repository-local tool manifest)
+        run: dotnet tool restore
+        working-directory: backend
+        continue-on-error: true # tool manifest is residual debt (Phase 4L.6B Section 13); falls back to global install below if absent
+
+      - name: Ensure dotnet-ef available
+        run: dotnet tool install --global dotnet-ef --version 9.* || dotnet tool update --global dotnet-ef --version 9.*
+
+      - name: Generate migration bundle
+        run: >
+          dotnet ef migrations bundle
+          --project RunningApp.Persistence/RunningApp.Persistence.csproj
+          --startup-project RunningApp.Api/RunningApp.Api.csproj
+          --output ${{ runner.temp }}/runningapp-migrate
+          --force --self-contained -r linux-x64
+        working-directory: backend
+
+      - name: Secret scan the migration artifact
+        run: |
+          if grep -a -c "Password=postgres;" ${{ runner.temp }}/runningapp-migrate | grep -qv '^0$'; then
+            echo "::error::Migration artifact contains a known local/development credential fragment."
+            exit 1
+          fi
+          echo "Secret scan passed: no known local/development credential fragment found."
+
+      - name: Checksum the migration artifact
+        run: sha256sum ${{ runner.temp }}/runningapp-migrate | tee ${{ runner.temp }}/runningapp-migrate.sha256
+
+      - name: Empty database -> latest rehearsal
+        run: |
+          chmod +x ${{ runner.temp }}/runningapp-migrate
+          ${{ runner.temp }}/runningapp-migrate --connection "Host=localhost;Port=5432;Database=antigravity_empty_rc;Username=postgres;Password=${{ github.run_id }}_rc_only"
+
+      - name: Idempotent rerun (no-op expected)
+        run: ${{ runner.temp }}/runningapp-migrate --connection "Host=localhost;Port=5432;Database=antigravity_empty_rc;Username=postgres;Password=${{ github.run_id }}_rc_only"
+
+      - name: Invalid-connection failure behavior (must be non-zero exit)
+        run: |
+          if ${{ runner.temp }}/runningapp-migrate --connection "Host=nonexistent-host-xyz;Port=5432;Database=x;Username=postgres;Password=x"; then
+            echo "::error::Migration artifact must fail (non-zero exit) against an invalid connection."
+            exit 1
+          fi
+          echo "Invalid-connection behavior verified: non-zero exit as required."
+
+      - name: Upload migration artifact + checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-bundle
+          path: |
+            ${{ runner.temp }}/runningapp-migrate
+            ${{ runner.temp }}/runningapp-migrate.sha256
+          retention-days: 90
+
+  publish:
+    name: Backend Release publish + catalog packaging assertion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Publish Release
+        run: dotnet publish -c Release -o ${{ runner.temp }}/publish
+        working-directory: backend/RunningApp.Api
+
+      - name: Assert catalog packaging (71 canonical runtime JSON files)
+        run: |
+          count=$(find ${{ runner.temp }}/publish -path "*plan-catalog*" -name "*.json" | wc -l)
+          echo "Catalog JSON file count: $count"
+          if [ "$count" -ne 71 ]; then
+            echo "::error::Expected 71 packaged catalog JSON files, found $count."
+            exit 1
+          fi
+
+      - name: Assert no committed database credential in published binaries
+        run: |
+          if grep -a -c "Password=postgres" ${{ runner.temp }}/publish/RunningApp.Api.dll | grep -qv '^0$'; then
+            echo "::error::Published RunningApp.Api.dll contains a known local/development credential fragment."
+            exit 1
+          fi
+
+      - name: Assert appsettings.json has no usable Production connection string
+        run: |
+          if grep -q '"DefaultConnection": ""' ${{ runner.temp }}/publish/appsettings.json; then
+            echo "appsettings.json DefaultConnection is empty, as required for Production."
+          else
+            echo "::error::appsettings.json must not contain a usable DefaultConnection value."
+            exit 1
+          fi
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-publish
+          path: ${{ runner.temp }}/publish
+          retention-days: 90
+
+  android-release-build:
+    name: Android release-like build (signing-gated)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for production signing credentials
+        id: signing
+        run: |
+          if [ -z "${{ secrets.APPSEL_RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report mobile release status
+        run: |
+          if [ "${{ steps.signing.outputs.available }}" = "true" ]; then
+            echo "Production signing credentials present -- a signed release build would run here."
+          else
+            echo "::warning::No production Android signing credentials configured (APPSEL_RELEASE_* secrets absent). Mobile production release artifact remains blocked -- this job intentionally does NOT fabricate a signed build. See TD-LONG-HORIZON-MOBILE-RELEASE-ARTIFACT-BACKEND-CATALOG-PACKAGING-001."
+          fi
+      # A signed build step is deliberately not implemented here: doing so
+      # without real, approved production signing credentials and a real,
+      # approved non-example application ID would either fail or produce a
+      # build that falsely looks like release evidence. This job's PASS
+      # condition is "correctly reports the blocker," not "produces an APK."

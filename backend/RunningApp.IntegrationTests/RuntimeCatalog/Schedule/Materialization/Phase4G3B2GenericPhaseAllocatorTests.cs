@@ -242,18 +242,29 @@ public sealed class Phase4G3B2GenericPhaseAllocatorTests
     // ── Requirement 8: new overload unreachable from any live request path ──
 
     [Fact]
-    public void Resolve_TargetWeekCountOverload_HasNoCallSiteInApplicationProductionCode()
+    public void Resolve_TargetWeekCountOverload_HasNoCallSiteOutsideTheOneApprovedDarkConsumer()
     {
         // Structural proof, not just an assertion: scans every .cs file under
         // RunningApp.Application and RunningApp.Api for a two-argument call
         // to a receiver named per this resolver's established field/variable
         // convention (`_phaseAllocationResolver`/`phaseAllocationResolver`,
         // confirmed by inspection -- CatalogPlanSkeletonOrchestrator is the
-        // only production consumer, and always calls the candidate-only
-        // overload with exactly one argument). Narrower than matching every
-        // `.Resolve(...)` call in the codebase, which also matches unrelated
-        // resolvers (e.g. CatalogGoalDistanceResolver.Resolve,
+        // only *fixed-week* production consumer, and always calls the
+        // candidate-only overload with exactly one argument). Narrower than
+        // matching every `.Resolve(...)` call in the codebase, which also
+        // matches unrelated resolvers (e.g. CatalogGoalDistanceResolver.Resolve,
         // GoalDistanceKm.Resolve) and would false-positive.
+        //
+        // Reconciled (Phase 4G.5D): the two-argument overload now has exactly
+        // one legitimate call site, DynamicCoreWeekSkeletonOrchestrator.cs --
+        // itself fully dark and unwired (zero production call sites of its
+        // own, no DI registration; see
+        // DynamicCoreWeekSkeletonOrchestratorTests.DarkReachability_NoProductionCallSite
+        // and .DarkReachability_NoDiRegistration). The overload therefore
+        // remains structurally unreachable from any LIVE request path, which
+        // is this test's actual invariant -- it is no longer literally
+        // zero-call-site, and the test/title were updated to say so rather
+        // than silently widening the exclusion list without explanation.
         var applicationRoot = Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application");
         var apiRoot = Path.Combine(TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Api");
         var twoArgPhaseAllocationResolveCall = new Regex(
@@ -268,7 +279,10 @@ public sealed class Phase4G3B2GenericPhaseAllocatorTests
                     // comments legitimately reference the new overload's full
                     // signature (e.g. <see cref="...Resolve(PlanCatalogCandidateSummary, int)"/>),
                     // which is not a call site.
-                    && !f.EndsWith($"{Path.DirectorySeparatorChar}CatalogPhaseAllocation.cs", StringComparison.OrdinalIgnoreCase));
+                    && !f.EndsWith($"{Path.DirectorySeparatorChar}CatalogPhaseAllocation.cs", StringComparison.OrdinalIgnoreCase)
+                    // Excludes the one approved dark consumer (Phase 4G.5D) --
+                    // see the reconciliation note above.
+                    && !f.EndsWith($"{Path.DirectorySeparatorChar}DynamicCoreWeekSkeletonOrchestrator.cs", StringComparison.OrdinalIgnoreCase));
 
             foreach (var file in files)
             {

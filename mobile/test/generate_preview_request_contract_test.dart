@@ -7,6 +7,8 @@ import 'package:antigravity_app/core/network/api_client.dart';
 import 'package:antigravity_app/core/network/dtos.dart';
 import 'package:antigravity_app/features/onboarding/data/onboarding_provider.dart';
 import 'package:antigravity_app/features/plan/data/plan_repository.dart';
+import 'package:antigravity_app/features/plan/data/long_horizon_repository.dart';
+import 'support/noop_long_horizon_repository.dart';
 
 /// Captures the last race/habit request passed to the repository instead of
 /// making a network call, so tests can assert on the exact serialized shape.
@@ -195,7 +197,10 @@ void main() {
 
     setUp(() {
       repo = _CapturingPlanRepository();
-      container = ProviderContainer(overrides: [planRepositoryProvider.overrideWithValue(repo)]);
+      container = ProviderContainer(overrides: [
+        planRepositoryProvider.overrideWithValue(repo),
+        longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+      ]);
       addTearDown(container.dispose);
     });
 

@@ -54,6 +54,39 @@ commit `fe850446d1382ae950942dff7062ef2a89d941ca`.
 | `RoundingIncrementKm` | `0.5` | `CatalogVolumeAndLongRunPlanner.cs:23` (`RoundingIncrementKm`) | V1 technical default, no external source — a display/planning-granularity choice, not a training-science claim |
 | `RoundingRule` | `"round_nearest_0.5km_after_each_week_value_then_validate"` | `CatalogVolumeAndLongRunPlanner.cs:24` (`RoundingRule`) | V1 technical default, no external source (describes the mechanical rounding procedure paired with `RoundingIncrementKm`) |
 
+## Enforcement-status classification (Phase 4G.3B.7 / 4G.3B.7.1 — TD-VOLUME-CAP-UNENFORCED-001, now CLOSED)
+
+`HardMaxWeeklyIncreaseRatio` and `AbsoluteWeeklyIncrementCapKm` are
+**informational/provenance-only**: both are threaded into `ReachablePeakDecision`
+purely for decision-trace purposes and are never read back by
+`CatalogVolumeAndLongRunPlanner.BuildWeeklyPlan` to clamp or reject an
+actual week-to-week transition. This was discovered by
+`VolumeProgressionVerifier`'s implementation pass and tracked as
+`TD-VOLUME-CAP-UNENFORCED-001`. Phase 4G.3B.7's decision audit
+(`PHASE4G_3B_7_VOLUME_CAP_ENFORCEMENT_DECISION_AUDIT.md`) proved
+algebraically that the planner's per-step interpolation ratio —
+`(GoldenFixtureResolvedPeakKm / GoldenFixtureStartingVolumeKm - 1) /
+GoldenFixtureNonTaperTransitions` — is independent of both starting
+volume and target week count for `TEN_K_MASTER v6`'s current constants
+(the transition count cancels out of the formula algebraically), and
+stays structurally below both fields' values by construction, not by
+coincidence of the specific inputs tested. The TD was closed on this
+basis (Option B: document as informational, do not implement active
+enforcement) rather than resolved by implementing a clamp (Option A,
+evaluated and rejected as unnecessary given the proof, and as carrying
+real redesign cost with zero benefit to current behavior).
+
+This classification is scoped to `TEN_K_MASTER v6`'s current
+`GoldenFixtureStartingVolumeKm`/`GoldenFixtureResolvedPeakKm`/
+`GoldenFixtureNonTaperTransitions` constants and core-cycle/peak-volume-band
+bounds. It would need re-verifying if any of those constants change, or if
+a future candidate/catalog revision introduces different
+starting-volume/peak-volume/core-cycle constants for which this algebraic
+cancellation may no longer hold. `VolumeProgressionVerifier` remains the
+sole place these two bounds are actually checked today, independent of
+planner enforcement — see `PHASE4G_3B_7_VOLUME_CAP_ENFORCEMENT_DECISION_AUDIT.md`
+for the full proof and evidence.
+
 `PolicyVersion = "APPSEL_RACE_VOLUME_SAFETY_V1"` is new (Phase 4G.3B.0) — a stable version identifier for
 this exact set of values, so any future value change can be traced by bumping this string.
 

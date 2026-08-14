@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "documentType": "LONG_HORIZON_GE_STAGE_FAMILY_CATALOG",
+    "schemaVersion": 1,
+    "key": "TEN_K_LONG_HORIZON_GE_STAGE_FAMILIES",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "distanceFamily": "TEN_K",
+  "stageFamilies": [
+    {
+      "stageFamilyKey": "ENTRY",
+      "eligibleContexts": ["SHORT_EXTENSION"],
+      "recoveryCompatible": false,
+      "maxConsecutiveMesocycles": 0,
+      "roleAssignments": [
+        { "role": "KEY_SESSION", "profile": "CONSISTENCY_NEEDED", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "KEY_SESSION", "profile": "CORE_ENTRY_READY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "EASY_SUPPORT", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "LONG_RUN", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 6 }] }
+      ]
+    },
+    {
+      "stageFamilyKey": "BASE_DEVELOPMENT",
+      "eligibleContexts": ["MESOCYCLE", "SHORT_EXTENSION", "TERMINAL_REMAINDER"],
+      "recoveryCompatible": false,
+      "maxConsecutiveMesocycles": 1,
+      "roleAssignments": [
+        { "role": "KEY_SESSION", "profile": "CONSISTENCY_NEEDED", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "KEY_SESSION", "profile": "CORE_ENTRY_READY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 2 }] },
+        { "role": "EASY_SUPPORT", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "LONG_RUN", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 6 }] }
+      ]
+    },
+    {
+      "stageFamilyKey": "AEROBIC_DURABILITY",
+      "eligibleContexts": ["MESOCYCLE"],
+      "recoveryCompatible": false,
+      "maxConsecutiveMesocycles": 2,
+      "roleAssignments": [
+        { "role": "KEY_SESSION", "profile": "CONSISTENCY_NEEDED", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "KEY_SESSION", "profile": "CORE_ENTRY_READY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_PROGRESSED", "version": 2 }] },
+        { "role": "EASY_SUPPORT", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "LONG_RUN", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 6 }] }
+      ]
+    },
+    {
+      "stageFamilyKey": "CONSOLIDATION",
+      "eligibleContexts": ["MESOCYCLE"],
+      "recoveryCompatible": true,
+      "maxConsecutiveMesocycles": 0,
+      "roleAssignments": [
+        { "role": "KEY_SESSION", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "EASY_SUPPORT", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "LONG_RUN", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 6 }] }
+      ]
+    },
+    {
+      "stageFamilyKey": "PRE_RUNWAY_ALIGNMENT",
+      "eligibleContexts": ["SHORT_EXTENSION", "TERMINAL_REMAINDER"],
+      "recoveryCompatible": false,
+      "maxConsecutiveMesocycles": 0,
+      "roleAssignments": [
+        { "role": "KEY_SESSION", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "EASY_SUPPORT", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 6 }] },
+        { "role": "LONG_RUN", "profile": "ANY", "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 6 }] }
+      ]
+    }
+  ]
+}

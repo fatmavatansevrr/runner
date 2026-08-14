@@ -1,0 +1,112 @@
+name: PR Gate
+
+# Phase 4L.6C: fast, per-commit release gate. Runs on every push/PR against
+# main. Every job here is a hard blocker -- no continue-on-error, no ignored
+# test filters, no hidden skip for Long-Horizon suites. Heavier
+# release-candidate-only checks (migration bundle rehearsal, rollback guard
+# regression as a dedicated pass, backend publish/catalog artifact) live in
+# release-candidate.yml so this stays fast enough to run on every commit.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend, plan-catalog, PostgreSQL, security
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: antigravity_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ github.run_id }}_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d antigravity_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # CI-local credential, scoped to the ephemeral runner's own Postgres
+      # service container -- never a production secret. Distinct per run
+      # (${{ github.run_id }}) so it is never a fixed, guessable value even
+      # inside CI logs.
+      CI_TEST_CONNECTION: Host=localhost;Port=5432;Database=antigravity_ci;Username=postgres;Password=${{ github.run_id }}_ci_only
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore RunningApp.sln
+        working-directory: backend
+
+      - name: Backend Release build
+        run: dotnet build RunningApp.sln -c Release --no-restore
+        working-directory: backend
+
+      - name: Restore plan-catalog
+        run: dotnet restore PlanCatalog.sln
+        working-directory: plan-catalog
+
+      - name: Plan-catalog full suite (includes governance ledger parity)
+        run: dotnet test PlanCatalog.sln -c Release --no-restore --logger "trx;LogFileName=plan-catalog.trx"
+        working-directory: plan-catalog
+
+      # Full backend suite: static/Habit/Long-Horizon, PostgreSQL
+      # integration, auth, leakage, restart, concurrency, production
+      # configuration/security, and the Phase 4L.6B.2 rollback-guard
+      # regression (RollbackCompatibilityGuardTests) all run in this one
+      # authoritative pass -- no separate suite is allowed to silently skip
+      # Long-Horizon coverage.
+      - name: Full backend suite (real PostgreSQL)
+        run: >
+          dotnet test RunningApp.IntegrationTests -c Release --no-build
+          --logger "trx;LogFileName=backend-full.trx"
+        working-directory: backend
+        env:
+          ConnectionStrings__DefaultConnection: ${{ env.CI_TEST_CONNECTION }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-gate-test-results
+          path: |
+            backend/**/TestResults/**/*.trx
+            plan-catalog/**/TestResults/**/*.trx
+          retention-days: 14
+
+  flutter:
+    name: Flutter analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: flutter pub get
+        run: flutter pub get
+        working-directory: mobile
+
+      - name: flutter analyze
+        run: flutter analyze
+        working-directory: mobile
+
+      - name: flutter test (full suite)
+        run: flutter test
+        working-directory: mobile

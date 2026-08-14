@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
+using RunningApp.Application.Common;
 using RunningApp.Application.RuntimeCatalog.Schedule;
 using RunningApp.Domain.Entities;
 using RunningApp.Domain.Enums;
@@ -577,7 +578,12 @@ public sealed class CatalogPlanConfirmationService : ICatalogPlanConfirmationSer
             DaysPerWeek = payload.DaysPerWeek,
             Unit = DistanceUnit.Km,
             RaceDate = snapshot.NormalizedInput.RaceDate,
+            RaceName = snapshot.NormalizedInput.RaceName,
             TargetFinishTimeSeconds = snapshot.NormalizedInput.TargetFinishTimeSeconds,
+            PreferredDays = RunningDay.NormalizeList(WeekdayCsv.ToCsv(snapshot.NormalizedInput.PreferredDays)),
+            WeeklyAvailability = snapshot.NormalizedInput.WeeklyAvailability,
+            PreferredPace = snapshot.NormalizedInput.PreferredPace,
+            LongRunDay = WeekdayCsv.ToCsv(snapshot.NormalizedInput.LongRunDay),
             StartedAt = AsUtcDateTime(payload.StartDate),
             EstimatedEndDate = AsUtcDateTime(payload.EndDate),
             CreatedAt = now,
@@ -730,6 +736,12 @@ public sealed class CatalogPlanConfirmationService : ICatalogPlanConfirmationSer
         "BUILD" => TrainingWeekType.Build,
         "RACE_SPECIFIC" => TrainingWeekType.Peak,
         "TAPER" => TrainingWeekType.Taper,
+        // Backend Integration Phase 4G.6C: the four Preparation Runway block
+        // names (see PreparationRunwayPublicPreviewMapper.RunwayBlockPublicName)
+        // carried through PreparationRunwayPersistablePlanMapper's
+        // GeneratedCatalogWeekProvenance.SourcePhaseKey -- never mislabeled
+        // as Foundation/Build/Taper.
+        "CONSISTENCY" or "GENERAL_ENDURANCE" or "AEROBIC_STRENGTH" or "PRE_SPECIFIC_TRANSITION" => TrainingWeekType.PreparationRunway,
         _ => TrainingWeekType.Build
     };
 

@@ -276,7 +276,7 @@ public sealed class DomainWave5D2ResolutionTests
     /// distance or day-count) pointing at the same INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2 artifact.
     /// This test walks every combination in the catalog that resolves (via its LevelModifier) to
     /// INTERMEDIATE_PROGRESSION_MODIFIER_V1 v2 and asserts it belongs to the approved TEN_K / INTERMEDIATE /
-    /// 4-runs-per-week scope. It will FAIL the moment a second, unrelated combination family gains a
+    /// approved 3D/4D scope. It will FAIL the moment an unrelated combination family gains a
     /// reachable reference to this artifact — making the ownership boundary documented in
     /// domain-wave5-d2-ownership.md executable, not just descriptive.
     /// </summary>
@@ -300,13 +300,13 @@ public sealed class DomainWave5D2ResolutionTests
 
         foreach (var x in reachingCombinations)
         {
-            Assert.Equal("TEN_K__4D__INTERMEDIATE", x.Combination.Metadata.Key);
+            Assert.Contains(x.Combination.Metadata.Key, new[] { "TEN_K__3D__INTERMEDIATE", "TEN_K__4D__INTERMEDIATE" });
 
             var master = snapshot.PlanTemplates.Single(m => m.Metadata.Key == x.Combination.MasterTemplate.Key && m.Metadata.Version == x.Combination.MasterTemplate.Version);
             var layout = snapshot.RunLayouts.Single(l => l.Metadata.Key == x.Combination.Layout.Key && l.Metadata.Version == x.Combination.Layout.Version);
 
             Assert.Equal(Contracts.Enums.DistanceFamily.TenK, master.DistanceFamily);
-            Assert.Equal(4, layout.RunsPerWeek);
+            Assert.Contains(layout.RunsPerWeek, new[] { 3, 4 });
             Assert.Equal(Contracts.Enums.RunningExperience.Intermediate, x.LevelModifier!.Experience);
         }
     }
@@ -314,10 +314,12 @@ public sealed class DomainWave5D2ResolutionTests
     // ---------- 18: no values created for other levels ----------
 
     [Fact]
-    public void NoProgressionModifierArtifactsExistForOtherExperienceLevels()
+    public void ProgressionModifierArtifactsExistOnlyForActivatedIntermediateAndGatedBeginnerLevels()
     {
         var snapshot = LoadSnapshot();
-        Assert.All(snapshot.ProgressionModifiers, m => Assert.Equal(Contracts.Enums.RunningExperience.Intermediate, m.Experience));
+        Assert.All(snapshot.ProgressionModifiers, m =>
+            Assert.Contains(m.Experience, new[] { Contracts.Enums.RunningExperience.Intermediate, Contracts.Enums.RunningExperience.New }));
+        Assert.Single(snapshot.ProgressionModifiers, m => m.Experience == Contracts.Enums.RunningExperience.New);
     }
 
     // ---------- 19-23: candidate closure / blocker reduction ----------

@@ -10,6 +10,8 @@ import 'package:antigravity_app/core/routing/app_router.dart';
 import 'package:antigravity_app/features/onboarding/data/onboarding_provider.dart';
 import 'package:antigravity_app/features/onboarding/presentation/plan_preview_page.dart';
 import 'package:antigravity_app/features/plan/data/plan_repository.dart';
+import 'package:antigravity_app/features/plan/data/long_horizon_repository.dart';
+import 'support/noop_long_horizon_repository.dart';
 
 /// A [PlanRepository] double that never touches the network. `generatePreview`
 /// always succeeds (so tests can legitimately populate
@@ -109,7 +111,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [planRepositoryProvider.overrideWithValue(fakeRepo)],
+          overrides: [
+            planRepositoryProvider.overrideWithValue(fakeRepo),
+            longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+          ],
           child: Consumer(
             builder: (context, ref, _) {
               container = ProviderScope.containerOf(context);
@@ -161,7 +166,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [planRepositoryProvider.overrideWithValue(fakeRepo)],
+          overrides: [
+            planRepositoryProvider.overrideWithValue(fakeRepo),
+            longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+          ],
           child: Consumer(
             builder: (context, ref, _) {
               container = ProviderScope.containerOf(context);
@@ -204,7 +212,10 @@ void main() {
   group('OnboardingNotifier.reset()', () {
     test('clears every onboarding answer back to fresh defaults', () {
       final container = ProviderContainer(
-        overrides: [planRepositoryProvider.overrideWithValue(_FakePlanRepository())],
+        overrides: [
+          planRepositoryProvider.overrideWithValue(_FakePlanRepository()),
+          longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(onboardingProvider.notifier);
@@ -261,7 +272,10 @@ void main() {
       // abandoned prior onboarding attempt, then reset() before the user
       // reaches goal-selection again.
       final container = ProviderContainer(
-        overrides: [planRepositoryProvider.overrideWithValue(_FakePlanRepository())],
+        overrides: [
+          planRepositoryProvider.overrideWithValue(_FakePlanRepository()),
+          longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(onboardingProvider.notifier);

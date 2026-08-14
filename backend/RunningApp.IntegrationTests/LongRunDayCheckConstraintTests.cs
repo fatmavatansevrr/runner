@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,8 @@ namespace RunningApp.IntegrationTests;
 /// allowed 3-letter abbreviations) that was only exposed once a real
 /// PostgreSQL connection became available for relational testing.
 /// </summary>
-public sealed class LongRunDayCheckConstraintTests : IClassFixture<CustomWebApplicationFactory>
+[Collection(ApiIntegrationTestCollection.Name)]
+public sealed class LongRunDayCheckConstraintTests
 {
     private readonly CustomWebApplicationFactory _factory;
 
@@ -109,6 +111,25 @@ public sealed class LongRunDayCheckConstraintTests : IClassFixture<CustomWebAppl
         ctx.TrainingPlans.Add(plan);
 
         await Assert.ThrowsAsync<DbUpdateException>(() => ctx.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task ExpectedConstraintFailure_IsNotWrappedByLogging_AndSubsequentResetSucceeds()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            ctx.TrainingPlans.Add(MinimalPlan("NOT_A_WEEKDAY"));
+
+            var exception = await Record.ExceptionAsync(() => ctx.SaveChangesAsync());
+            Assert.IsType<DbUpdateException>(exception);
+            Assert.IsNotType<AggregateException>(exception);
+            Assert.DoesNotContain("EventLog", exception.ToString(), StringComparison.OrdinalIgnoreCase);
+        }
+
+        using var client = _factory.CreateClient();
+        var reset = await client.PostRawAsync("/api/v1/testing/reset");
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
     }
 
     [Fact]

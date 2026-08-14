@@ -96,51 +96,8 @@ public sealed class CatalogWorkoutDefinitionLoader : ICatalogWorkoutDefinitionLo
     {
         const string subfolder = "workouts";
         const string expectedDocumentType = "WORKOUT_DEFINITION";
-
-        var directory = Path.Combine(catalogRoot, subfolder);
-        if (!Directory.Exists(directory))
-        {
-            throw new PlanCatalogLoadException($"Catalog subdirectory '{subfolder}' was not found under '{catalogRoot}'.");
-        }
-
-        var candidates = new List<(string File, string ActualKey, int ActualVersion)>();
-
-        foreach (var file in Directory.EnumerateFiles(directory, "*.json"))
-        {
-            JsonDocument document;
-            try
-            {
-                await using var stream = File.OpenRead(file);
-                document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-            }
-            catch (JsonException ex)
-            {
-                throw new PlanCatalogLoadException($"'{file}' contains invalid JSON and could not be parsed.", ex);
-            }
-
-            if (!document.RootElement.TryGetProperty("metadata", out var metadata))
-            {
-                document.Dispose();
-                throw new PlanCatalogLoadException($"'{file}' is missing the required 'metadata' object.");
-            }
-
-            var documentType = RequireString(metadata, "documentType", new PlanCatalogReference(expectedKey, expectedVersion));
-            var key = RequireString(metadata, "key", new PlanCatalogReference(expectedKey, expectedVersion));
-            var version = RequireInt(metadata, "version", new PlanCatalogReference(expectedKey, expectedVersion));
-
-            if (documentType == expectedDocumentType && key == expectedKey && version == expectedVersion)
-            {
-                return document;
-            }
-
-            candidates.Add((file, key, version));
-            document.Dispose();
-        }
-
-        throw new PlanCatalogLoadException(
-            $"No {expectedDocumentType} document with key='{expectedKey}' version={expectedVersion} was found under " +
-            $"'{directory}'. Found {candidates.Count} other document(s) in that folder " +
-            $"({string.Join(", ", candidates.Select(c => $"{c.ActualKey} v{c.ActualVersion}"))}).");
+        return await CatalogArtifactFileResolver.LoadAsync(
+            catalogRoot, subfolder, expectedDocumentType, expectedKey, expectedVersion, ct);
     }
 
     private static string RequireString(JsonElement element, string propertyName, PlanCatalogReference owner)

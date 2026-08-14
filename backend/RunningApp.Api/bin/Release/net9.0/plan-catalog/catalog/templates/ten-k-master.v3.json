@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "documentType": "PLAN_TEMPLATE",
+    "schemaVersion": 2,
+    "key": "TEN_K_MASTER",
+    "version": 3,
+    "status": "VALIDATED"
+  },
+  "distanceFamily": "TEN_K",
+  "coreCycle": {
+    "minimumWeeks": 8,
+    "defaultWeeks": 12,
+    "maximumWeeks": 14
+  },
+  "supportedRunsPerWeek": [3, 4, 5],
+  "phases": [
+    {
+      "phaseKey": "FOUNDATION",
+      "minimumWeeks": 2,
+      "preferredWeeks": 3,
+      "maximumWeeks": 4,
+      "intents": ["AEROBIC_BASE"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN"],
+      "compressionPriority": 1,
+      "extensionPriority": 1,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "BUILD",
+      "minimumWeeks": 3,
+      "preferredWeeks": 4,
+      "maximumWeeks": 5,
+      "intents": ["VOLUME_BUILD"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 2,
+      "extensionPriority": 2,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "minimumWeeks": 2,
+      "preferredWeeks": 4,
+      "maximumWeeks": 4,
+      "intents": ["RACE_SPECIFIC_SHARPENING"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 3,
+      "extensionPriority": 3,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "TAPER",
+      "minimumWeeks": 1,
+      "preferredWeeks": 1,
+      "maximumWeeks": 1,
+      "intents": ["TAPER"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY", "RACE"],
+      "compressionPriority": 4,
+      "extensionPriority": 4,
+      "isCompressionProtected": true
+    }
+  ],
+  "workoutProgression": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "key": "TEN_K_WORKOUT_PROGRESSION_V1",
+    "version": 2
+  },
+  "requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"]
+}

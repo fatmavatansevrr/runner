@@ -24,47 +24,57 @@ import '../../features/onboarding/presentation/goal_time_page.dart';
 import '../../features/onboarding/presentation/preferred_run_duration_page.dart';
 import '../../features/onboarding/presentation/plan_generation_page.dart';
 import '../../features/onboarding/presentation/plan_preview_page.dart';
-import '../../features/home/presentation/home_page.dart';
-import '../../features/calendar/presentation/calendar_page.dart';
+import '../../features/onboarding/presentation/long_horizon_plan_preview_page.dart';
+import '../../features/plan/presentation/long_horizon_regenerate_plan_page.dart';
+import '../../features/calendar/presentation/active_calendar_dispatcher_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/plan/presentation/plan_details_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/pending_confirmation/presentation/pending_confirmation_page.dart';
 import '../../features/training_day/presentation/training_day_detail_page.dart';
+import '../../features/training_day/presentation/rolling_session_detail_page.dart';
+import '../../features/home/presentation/active_home_dispatcher_page.dart';
 import '../theme/app_colors.dart';
 
 /// Route names — use these constants everywhere to avoid typos.
 abstract final class AppRoutes {
-  static const String splash            = '/';
-  static const String welcome           = '/auth';
+  static const String splash = '/';
+  static const String welcome = '/auth';
+
   /// Alias for [welcome] — the auth decision screen (Sign Up / Sign In / social).
-  static const String authEntry         = welcome;
-  static const String signUp            = '/auth/signup';
-  static const String signIn            = '/auth/signin';
-  static const String introCarousel     = '/intro';
-  static const String goalSelection     = '/onboarding/goal';
-  static const String raceDetails       = '/onboarding/race-details';
+  static const String authEntry = welcome;
+  static const String signUp = '/auth/signup';
+  static const String signIn = '/auth/signin';
+  static const String introCarousel = '/intro';
+  static const String goalSelection = '/onboarding/goal';
+  static const String raceDetails = '/onboarding/race-details';
   static const String runningBackground = '/onboarding/background';
-  static const String runnerBackgroundDetails = '/onboarding/background-details';
-  static const String recentRaceResult  = '/onboarding/recent-race-result';
-  static const String habitGoal         = '/onboarding/habit-goal';
-  static const String customGoal        = '/onboarding/custom-goal';
+  static const String runnerBackgroundDetails =
+      '/onboarding/background-details';
+  static const String recentRaceResult = '/onboarding/recent-race-result';
+  static const String habitGoal = '/onboarding/habit-goal';
+  static const String customGoal = '/onboarding/custom-goal';
   static const String customGoalWithTime = '/onboarding/custom-goal-time';
-  static const String weeklyFrequency   = '/onboarding/frequency';
-  static const String runningDays       = '/onboarding/days';
-  static const String longRunDay        = '/onboarding/long-run-day';
-  static const String startDate         = '/onboarding/start-date';
-  static const String goalTime          = '/onboarding/goal-time';
+  static const String weeklyFrequency = '/onboarding/frequency';
+  static const String runningDays = '/onboarding/days';
+  static const String longRunDay = '/onboarding/long-run-day';
+  static const String startDate = '/onboarding/start-date';
+  static const String goalTime = '/onboarding/goal-time';
   static const String preferredDuration = '/onboarding/preferred-duration';
-  static const String planGeneration    = '/onboarding/generating';
-  static const String planPreview       = '/onboarding/plan-preview';
-  static const String home              = '/home';
-  static const String calendar          = '/calendar';
-  static const String profile           = '/profile';
-  static const String planDetails       = '/profile/plan-details';
-  static const String settings          = '/settings';
+  static const String planGeneration = '/onboarding/generating';
+  static const String planPreview = '/onboarding/plan-preview';
+  static const String longHorizonPlanPreview =
+      '/onboarding/plan-preview/long-horizon';
+  static const String longHorizonRegeneratePlan =
+      '/plan/regenerate-long-horizon';
+  static const String home = '/home';
+  static const String calendar = '/calendar';
+  static const String profile = '/profile';
+  static const String planDetails = '/profile/plan-details';
+  static const String settings = '/settings';
   static const String pendingConfirmation = '/pending-confirmation';
-  static const String trainingDayDetail  = '/training-day/:dayId';
+  static const String trainingDayDetail = '/training-day/:dayId';
+  static const String rollingSessionDetail = '/training-day/rolling/:sessionId';
 
   /// Maps a bootstrap `nextScreen` value to the route that should follow.
   /// Used after splash, sign in, and social login so the decision lives
@@ -85,178 +95,202 @@ abstract final class AppRoutes {
 
 /// Routes that are accessible without a Firebase session.
 const _publicPaths = {
-  '/',          // splash
-  '/auth',      // welcome
+  '/', // splash
+  '/auth', // welcome
   '/auth/signup',
   '/auth/signin',
   '/intro',
 };
 
 bool _isPublicPath(String location) =>
-    _publicPaths.contains(location) ||
-    location.startsWith('/intro');
+    _publicPaths.contains(location) || location.startsWith('/intro');
 
 /// Central router configuration using go_router.
 abstract final class AppRouter {
-  // Listens to Firebase auth state and notifies GoRouter to re-evaluate
-  // redirects on every sign-in / sign-out event.
-  static final _authNotifier = _AuthChangeNotifier();
+  static final AuthNavigationState _authState = FirebaseAuthNavigationState();
 
-  static final GoRouter router = GoRouter(
-    initialLocation: AppRoutes.splash,
-    debugLogDiagnostics: true,
-    refreshListenable: _authNotifier,
+  static final GoRouter router = createRouter(authState: _authState);
 
-    /// Route guard: unauthenticated requests to protected paths are sent to the
-    /// auth welcome screen. Public paths (splash, auth, intro) are always
-    /// accessible so the login flow is never blocked.
-    redirect: (context, state) {
-      final isLoggedIn = FirebaseAuth.instance.currentUser != null;
-      final loc = state.matchedLocation;
+  /// Builds the production route graph around an app-owned authentication
+  /// navigation state. Production still delegates to Firebase; tests can use
+  /// [AuthNavigationState] directly without initializing Firebase.
+  static GoRouter createRouter({
+    required AuthNavigationState authState,
+    String initialLocation = AppRoutes.splash,
+  }) =>
+      GoRouter(
+        initialLocation: initialLocation,
+        debugLogDiagnostics: true,
+        refreshListenable: authState,
 
-      if (!isLoggedIn && !_isPublicPath(loc)) {
-        return AppRoutes.welcome;
-      }
-      return null;
-    },
-    routes: [
-      // ── Launch ───────────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.splash,
-        builder: (_, __) => const SplashPage(),
-      ),
+        /// Route guard: unauthenticated requests to protected paths are sent to the
+        /// auth welcome screen. Public paths (splash, auth, intro) are always
+        /// accessible so the login flow is never blocked.
+        redirect: (context, state) {
+          final loc = state.matchedLocation;
 
-      // ── Auth & Entry ──────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.welcome,
-        builder: (_, __) => const AuthWelcomePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.signUp,
-        builder: (_, __) => const SignUpPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.signIn,
-        builder: (_, __) => const SignInPage(),
-      ),
-
-      // ── Onboarding ───────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.introCarousel,
-        builder: (_, __) => const IntroCarouselPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.goalSelection,
-        builder: (_, __) => const GoalSelectionPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.raceDetails,
-        builder: (_, __) => const RaceDetailsPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.runningBackground,
-        builder: (_, __) => const RunningBackgroundPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.runnerBackgroundDetails,
-        builder: (_, __) => const RunnerBackgroundDetailsPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.recentRaceResult,
-        builder: (_, state) => RecentRaceResultPage(
-          initialResult: state.extra as RecentRaceResult?,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.habitGoal,
-        builder: (_, __) => const HabitGoalPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.customGoal,
-        builder: (_, __) => const CustomGoalPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.customGoalWithTime,
-        builder: (_, __) => const CustomGoalWithTimePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.weeklyFrequency,
-        builder: (_, __) => const WeeklyFrequencyPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.runningDays,
-        builder: (_, __) => const RunningDaysSelectionPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.longRunDay,
-        builder: (_, __) => const LongRunDayPreferencePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.startDate,
-        builder: (_, __) => const StartDateSelectionPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.goalTime,
-        builder: (_, __) => const GoalTimePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.preferredDuration,
-        builder: (_, __) => const PreferredRunDurationPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.planGeneration,
-        builder: (_, __) => const PlanGenerationPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.planPreview,
-        builder: (_, __) => const PlanPreviewPage(),
-      ),
-
-      // ── Main app (shell with bottom nav) ─────────────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => _MainShell(child: child),
+          if (_isPublicPath(loc)) return null;
+          if (authState.status == AuthNavigationStatus.loading) {
+            return AppRoutes.splash;
+          }
+          if (authState.status == AuthNavigationStatus.unauthenticated) {
+            return AppRoutes.welcome;
+          }
+          return null;
+        },
         routes: [
+          // ── Launch ───────────────────────────────────────────────────────────
           GoRoute(
-            path: AppRoutes.home,
-            builder: (_, __) => const HomePage(),
+            path: AppRoutes.splash,
+            builder: (_, __) => const SplashPage(),
+          ),
+
+          // ── Auth & Entry ──────────────────────────────────────────────────────
+          GoRoute(
+            path: AppRoutes.welcome,
+            builder: (_, __) => const AuthWelcomePage(),
           ),
           GoRoute(
-            path: AppRoutes.calendar,
-            builder: (_, __) => const CalendarPage(),
+            path: AppRoutes.signUp,
+            builder: (_, __) => const SignUpPage(),
           ),
           GoRoute(
-            path: AppRoutes.profile,
-            builder: (_, __) => const ProfilePage(),
+            path: AppRoutes.signIn,
+            builder: (_, __) => const SignInPage(),
+          ),
+
+          // ── Onboarding ───────────────────────────────────────────────────────
+          GoRoute(
+            path: AppRoutes.introCarousel,
+            builder: (_, __) => const IntroCarouselPage(),
           ),
           GoRoute(
-            path: AppRoutes.planDetails,
-            builder: (_, __) => const PlanDetailsPage(),
+            path: AppRoutes.goalSelection,
+            builder: (_, __) => const GoalSelectionPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.raceDetails,
+            builder: (_, __) => const RaceDetailsPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.runningBackground,
+            builder: (_, __) => const RunningBackgroundPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.runnerBackgroundDetails,
+            builder: (_, __) => const RunnerBackgroundDetailsPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.recentRaceResult,
+            builder: (_, state) => RecentRaceResultPage(
+              initialResult: state.extra as RecentRaceResult?,
+            ),
+          ),
+          GoRoute(
+            path: AppRoutes.habitGoal,
+            builder: (_, __) => const HabitGoalPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.customGoal,
+            builder: (_, __) => const CustomGoalPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.customGoalWithTime,
+            builder: (_, __) => const CustomGoalWithTimePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.weeklyFrequency,
+            builder: (_, __) => const WeeklyFrequencyPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.runningDays,
+            builder: (_, __) => const RunningDaysSelectionPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.longRunDay,
+            builder: (_, __) => const LongRunDayPreferencePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.startDate,
+            builder: (_, __) => const StartDateSelectionPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.goalTime,
+            builder: (_, __) => const GoalTimePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.preferredDuration,
+            builder: (_, __) => const PreferredRunDurationPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.planGeneration,
+            builder: (_, __) => const PlanGenerationPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.planPreview,
+            builder: (_, __) => const PlanPreviewPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.longHorizonPlanPreview,
+            builder: (_, __) => const LongHorizonPlanPreviewPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.longHorizonRegeneratePlan,
+            builder: (_, __) => const LongHorizonRegeneratePlanPage(),
+          ),
+
+          // ── Main app (shell with bottom nav) ─────────────────────────────────
+          ShellRoute(
+            builder: (context, state, child) => _MainShell(child: child),
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (_, __) => const ActiveHomeDispatcherPage(),
+              ),
+              GoRoute(
+                path: AppRoutes.calendar,
+                builder: (_, __) => const ActiveCalendarDispatcherPage(),
+              ),
+              GoRoute(
+                path: AppRoutes.profile,
+                builder: (_, __) => const ProfilePage(),
+              ),
+              GoRoute(
+                path: AppRoutes.planDetails,
+                builder: (_, __) => const PlanDetailsPage(),
+              ),
+            ],
+          ),
+
+          // ── Settings ─────────────────────────────────────────────────────────
+          GoRoute(
+            path: AppRoutes.settings,
+            builder: (_, __) => const SettingsPage(),
+          ),
+
+          // ── Pending Confirmations ────────────────────────────────────────────
+          GoRoute(
+            path: AppRoutes.pendingConfirmation,
+            builder: (_, __) => const PendingConfirmationPage(),
+          ),
+
+          // ── Training Day Detail ──────────────────────────────────────────────
+          GoRoute(
+            path: AppRoutes.trainingDayDetail,
+            builder: (_, state) {
+              final dayId = state.pathParameters['dayId'] ?? '';
+              return TrainingDayDetailPage(dayId: dayId);
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.rollingSessionDetail,
+            builder: (_, state) {
+              final sessionId = state.pathParameters['sessionId'] ?? '';
+              return RollingSessionDetailPage(sessionId: sessionId);
+            },
           ),
         ],
-      ),
-
-      // ── Settings ─────────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.settings,
-        builder: (_, __) => const SettingsPage(),
-      ),
-
-      // ── Pending Confirmations ────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.pendingConfirmation,
-        builder: (_, __) => const PendingConfirmationPage(),
-      ),
-
-      // ── Training Day Detail ──────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.trainingDayDetail,
-        builder: (_, state) {
-          final dayId = state.pathParameters['dayId'] ?? '';
-          return TrainingDayDetailPage(dayId: dayId);
-        },
-      ),
-    ],
-  );
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -265,10 +299,32 @@ abstract final class AppRouter {
 // trigger an immediate route re-evaluation without any manual navigation call.
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AuthChangeNotifier extends ChangeNotifier {
-  _AuthChangeNotifier() {
-    _sub = FirebaseAuth.instance.authStateChanges().listen((_) {
-      notifyListeners();
+enum AuthNavigationStatus { loading, unauthenticated, authenticated }
+
+/// Narrow routing seam: it contains no token, profile, or Firebase payload.
+/// Updating it only asks GoRouter to re-run the existing redirect policy.
+class AuthNavigationState extends ChangeNotifier {
+  AuthNavigationState(this._status);
+
+  AuthNavigationStatus _status;
+  AuthNavigationStatus get status => _status;
+
+  void update(AuthNavigationStatus value) {
+    if (_status == value) return;
+    _status = value;
+    notifyListeners();
+  }
+}
+
+class FirebaseAuthNavigationState extends AuthNavigationState {
+  FirebaseAuthNavigationState()
+      : super(FirebaseAuth.instance.currentUser == null
+            ? AuthNavigationStatus.unauthenticated
+            : AuthNavigationStatus.authenticated) {
+    _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      update(user == null
+          ? AuthNavigationStatus.unauthenticated
+          : AuthNavigationStatus.authenticated);
     });
   }
 
@@ -307,7 +363,8 @@ class _MainShell extends StatelessWidget {
         decoration: const BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+            BoxShadow(
+                color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
           ],
         ),
         child: Row(
@@ -322,8 +379,12 @@ class _MainShell extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      index == 0 ? Icons.calendar_month : Icons.calendar_month_outlined,
-                      color: index == 0 ? AppColors.navActive : AppColors.navInactive,
+                      index == 0
+                          ? Icons.calendar_month
+                          : Icons.calendar_month_outlined,
+                      color: index == 0
+                          ? AppColors.navActive
+                          : AppColors.navInactive,
                       size: 22,
                     ),
                     const SizedBox(height: 4),
@@ -332,8 +393,11 @@ class _MainShell extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'GeneralSans',
                         fontSize: 11,
-                        fontWeight: index == 0 ? FontWeight.w600 : FontWeight.w500,
-                        color: index == 0 ? AppColors.navActive : AppColors.navInactive,
+                        fontWeight:
+                            index == 0 ? FontWeight.w600 : FontWeight.w500,
+                        color: index == 0
+                            ? AppColors.navActive
+                            : AppColors.navInactive,
                       ),
                     ),
                   ],
@@ -374,7 +438,9 @@ class _MainShell extends StatelessWidget {
                   children: [
                     Icon(
                       index == 2 ? Icons.person : Icons.person_outline,
-                      color: index == 2 ? AppColors.navActive : AppColors.navInactive,
+                      color: index == 2
+                          ? AppColors.navActive
+                          : AppColors.navInactive,
                       size: 22,
                     ),
                     const SizedBox(height: 4),
@@ -383,8 +449,11 @@ class _MainShell extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'GeneralSans',
                         fontSize: 11,
-                        fontWeight: index == 2 ? FontWeight.w600 : FontWeight.w500,
-                        color: index == 2 ? AppColors.navActive : AppColors.navInactive,
+                        fontWeight:
+                            index == 2 ? FontWeight.w600 : FontWeight.w500,
+                        color: index == 2
+                            ? AppColors.navActive
+                            : AppColors.navInactive,
                       ),
                     ),
                   ],

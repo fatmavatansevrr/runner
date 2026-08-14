@@ -75,6 +75,28 @@ public sealed class VolumeProgressionVerifierTests
     }
 
     [Fact]
+    public void Verify_AbsoluteCapFailsIndependentlyWhenRatioPasses()
+    {
+        var plan = SyntheticPlan(Week(1, "BUILD", 100, false), Week(2, "BUILD", 102.5, false));
+        var result = VolumeProgressionVerifier.Verify(plan, VolumeSafetyPolicy.ThreeDayIntermediate);
+        var check = Assert.Single(result.TransitionChecks);
+        Assert.False(check.ViolatesRatio);
+        Assert.True(check.ViolatesAbsoluteCapKm);
+        Assert.Equal(VolumeProgressionOutcome.Fail, result.Outcome);
+    }
+
+    [Fact]
+    public void Verify_RatioFailsIndependentlyWhenAbsolutePasses()
+    {
+        var plan = SyntheticPlan(Week(1, "BUILD", 10, false), Week(2, "BUILD", 11, false));
+        var result = VolumeProgressionVerifier.Verify(plan, VolumeSafetyPolicy.ThreeDayIntermediate);
+        var check = Assert.Single(result.TransitionChecks);
+        Assert.True(check.ViolatesRatio);
+        Assert.False(check.ViolatesAbsoluteCapKm);
+        Assert.Equal(VolumeProgressionOutcome.Fail, result.Outcome);
+    }
+
+    [Fact]
     public void Verify_SyntheticTaperMultiplierViolation_OutcomeIsFail_DistinctFromRatioViolation()
     {
         var plan = SyntheticPlan(

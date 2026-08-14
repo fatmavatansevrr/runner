@@ -163,7 +163,7 @@ public sealed class Phase4G3B4AHorizonGateAlignmentGuardSeparationTests
         var asOfDate = StartDate;
         // Real 12-week schedule ends at StartDate + 83 days. A RaceDate ten
         // days after that final session leaves daysBeforeRace = 10 > 7.
-        var farRaceDate = StartDate.AddDays(83 + 10);
+        var farRaceDate = StartDate.AddDays(15 * 7);
 
         var ex = await Assert.ThrowsAsync<CatalogRaceDateAlignmentInvalidException>(() =>
             generator.GenerateAsync(PilotRequest(StartDate, farRaceDate), asOfDate));
@@ -224,7 +224,7 @@ public sealed class Phase4G3B4AHorizonGateAlignmentGuardSeparationTests
     }
 
     [Fact]
-    public void AlignmentGuard_PublicEightWeekRouting_RemainsRejectedByHorizonPolicy()
+    public void AlignmentGuard_PublicEightWeekRouting_IsActivatedByHorizonPolicy()
     {
         // Companion assertion to the internal-ownership test above: the
         // public 8-week horizon is still classified as not-yet-implemented
@@ -235,7 +235,7 @@ public sealed class Phase4G3B4AHorizonGateAlignmentGuardSeparationTests
         // Sw13ExactTwelveWeekOnlyEndToEndTests.VerifiedEightWeekRegressionCase_*
         // tests -- not duplicated here.
         Assert.Equal(
-            RunningApp.Application.Common.RaceHorizonClassification.CoreLengthRecognizedButNotImplemented,
+            RunningApp.Application.Common.RaceHorizonClassification.StandaloneCoreSupported,
             RunningApp.Application.Common.RaceHorizonPolicy.Classify(8));
     }
 

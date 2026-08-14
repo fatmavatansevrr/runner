@@ -51,31 +51,23 @@ public sealed class CatalogPreviewSnapshot
 
     /// <summary>
     /// Stage keys selected as primary/eligible during this preview attempt.
-    /// Always empty in Phase 4E.1 — stage-to-week scheduling remains
-    /// unimplemented (consistent with every prior Phase 4D resolver phase's
-    /// own explicit boundary). Present in the schema for forward
-    /// compatibility with the future phase that populates it.
+    /// Populated by the current fixed or dynamic core orchestration and frozen
+    /// for confirmation; never recomputed by a read model.
     /// </summary>
     public required IReadOnlyList<string> SelectedStageKeys { get; init; }
 
-    /// <summary>Fallback stage keys used (see <see cref="StageEligibilityEvaluator"/>). Always empty in Phase 4E.1, for the same reason as <see cref="SelectedStageKeys"/>.</summary>
+    /// <summary>Fallback stage keys used by the completed orchestration, if any (see <see cref="StageEligibilityEvaluator"/>).</summary>
     public required IReadOnlyList<string> FallbackStagesUsed { get; init; }
 
     /// <summary>
-    /// The actual generated plan payload (weeks/days), once stage-to-week
-    /// scheduling exists. Always null in Phase 4E.1/4E.2 — there is no plan
-    /// content to freeze yet. Present in the schema for forward
-    /// compatibility, explicitly documented as unpopulated rather than
-    /// silently omitted.
+    /// The actual generated plan payload (weeks/days), populated for every
+    /// successful current catalog preview and persisted exactly at confirm.
     ///
     /// Backend Integration Phase 4F.1: retyped from <c>object?</c> to the
     /// strongly typed <see cref="GeneratedCatalogPlanPayload"/> contract
     /// (Decision 2 — never <c>object</c>/<c>dynamic</c>/<c>JsonElement</c>/an
     /// untyped dictionary as the domain contract). This is a type-safety
-    /// change only: no production code path passes a non-null value here
-    /// (verified — <c>CatalogPreviewGenerator.GenerateAsync</c> never
-    /// supplies this parameter), so every real snapshot's value is
-    /// unaffected: still <c>null</c>.
+    /// change that now provides the typed confirmation boundary.
     /// </summary>
     public GeneratedCatalogPlanPayload? GeneratedPreviewPlanPayload { get; init; }
 

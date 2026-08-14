@@ -21,10 +21,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RunningApp.Api\RunningApp.Api.csproj" />
     <ProjectReference Include="..\RunningApp.Application\RunningApp.Application.csproj" />
     <ProjectReference Include="..\RunningApp.Persistence\RunningApp.Persistence.csproj" />
     <ProjectReference Include="..\RunningApp.Domain\RunningApp.Domain.csproj" />
+    <!-- Phase 4G.5O test-only publication fixture: exercises the real Process A
+         publisher into a temporary immutable release root. Production projects
+         do not reference PlanCatalog authoring/infrastructure assemblies. -->
+    <ProjectReference Include="..\..\plan-catalog\src\PlanCatalog.Contracts\PlanCatalog.Contracts.csproj" />
+    <ProjectReference Include="..\..\plan-catalog\src\PlanCatalog.Core\PlanCatalog.Core.csproj" />
+    <ProjectReference Include="..\..\plan-catalog\src\PlanCatalog.Infrastructure\PlanCatalog.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

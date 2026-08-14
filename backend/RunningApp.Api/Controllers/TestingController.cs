@@ -41,6 +41,10 @@ public class TestingController : ControllerBase
             .Where(x => x.InternalUserId == internalUserId)
             .Select(x => x.Id)
             .ToListAsync(ct);
+        var rollingPlanStateIds = await _context.TrainingPlans
+            .Where(x => x.InternalUserId == internalUserId && x.LongHorizonRollingPlanStateId != null)
+            .Select(x => x.LongHorizonRollingPlanStateId!.Value)
+            .ToListAsync(ct);
 
         // Delete in FK-safe order:
         // 1. Tables with RESTRICT FKs pointing to TrainingDays must go first.
@@ -74,6 +78,14 @@ public class TestingController : ControllerBase
 
         var plans = _context.TrainingPlans.Where(x => x.InternalUserId == internalUserId);
         _context.TrainingPlans.RemoveRange(plans);
+
+        // Phase 4L.3: rolling state is intentionally not owned by fake
+        // TrainingWeek/TrainingDay rows. Remove the now-unreferenced aggregate
+        // roots selected through the user's TrainingPlan ownership rows; their
+        // structural/session children cascade in the database.
+        var rollingStates = _context.LongHorizonRollingPlanStates
+            .Where(x => rollingPlanStateIds.Contains(x.Id));
+        _context.LongHorizonRollingPlanStates.RemoveRange(rollingStates);
 
         // 5. UserProfile last — the auth middleware recreates it on the
         //    next request so the user lands back at onboarding.

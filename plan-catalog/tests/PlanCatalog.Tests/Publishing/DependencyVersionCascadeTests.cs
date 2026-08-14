@@ -112,18 +112,19 @@ public sealed class DependencyVersionCascadeTests
         Assert.Equal("INTERMEDIATE_MODIFIER", bundle.LevelModifier.Key);
         Assert.Equal(1, bundle.LevelModifier.Version);
 
-        // Every effective workout must resolve to the corrected v2, not the restored-legacy v1.
+        // Key-based effective workout resolution selects the highest validated
+        // version, now v4 from the published 3D dependency closure.
         Assert.NotEmpty(bundle.Workouts);
-        Assert.All(bundle.Workouts.Where(w => w.Key != "GOAL_PACE_TEN_K"), w => Assert.Equal(2, w.Version));
+        Assert.All(bundle.Workouts.Where(w => w.Key != "GOAL_PACE_TEN_K"), w => Assert.Equal(4, w.Version));
     }
 
     [Fact]
     public void HistoricalCombinations_RemainIndependentlyVerifiable()
     {
         var snapshot = LoadSnapshot();
-        var result1 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Version == 1), snapshot);
-        var result2 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Version == 2), snapshot);
-        var result3 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Version == 3), snapshot);
+        var result1 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Key == "TEN_K__4D__INTERMEDIATE" && c.Metadata.Version == 1), snapshot);
+        var result2 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Key == "TEN_K__4D__INTERMEDIATE" && c.Metadata.Version == 2), snapshot);
+        var result3 = TemplateCombinationValidator.Validate(snapshot.Combinations.Single(c => c.Metadata.Key == "TEN_K__4D__INTERMEDIATE" && c.Metadata.Version == 3), snapshot);
 
         Assert.True(result1.IsValid);
         Assert.True(result2.IsValid);

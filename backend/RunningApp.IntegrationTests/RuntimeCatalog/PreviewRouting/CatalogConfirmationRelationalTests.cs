@@ -28,6 +28,7 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog.PreviewRouting;
 /// so unique-index violations, check constraints, and real transaction
 /// rollback are exercised for real rather than approximated.
 /// </summary>
+[Collection(RunningApp.IntegrationTests.ApiIntegrationTestCollection.Name)]
 public sealed class CatalogConfirmationRelationalTests
 {
     private const string ConnectionString =

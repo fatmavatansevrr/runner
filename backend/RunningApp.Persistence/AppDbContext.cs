@@ -26,6 +26,17 @@ public class AppDbContext : DbContext
     public DbSet<DailyTipSet> DailyTipSets => Set<DailyTipSet>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 
+    // ── Phase 4L.2: dark Long-Horizon rolling persistence (unwired) ────────
+    public DbSet<LongHorizonRollingPlanState> LongHorizonRollingPlanStates => Set<LongHorizonRollingPlanState>();
+    public DbSet<LongHorizonRollingWeekState> LongHorizonRollingWeekStates => Set<LongHorizonRollingWeekState>();
+    public DbSet<LongHorizonRollingSessionState> LongHorizonRollingSessionStates => Set<LongHorizonRollingSessionState>();
+    public DbSet<LongHorizonActivationWindowRecord> LongHorizonActivationWindowRecords => Set<LongHorizonActivationWindowRecord>();
+    public DbSet<LongHorizonCheckpointRecord> LongHorizonCheckpointRecords => Set<LongHorizonCheckpointRecord>();
+    public DbSet<LongHorizonRunwayState> LongHorizonRunwayStates => Set<LongHorizonRunwayState>();
+    public DbSet<LongHorizonCoreContextRecord> LongHorizonCoreContextRecords => Set<LongHorizonCoreContextRecord>();
+    public DbSet<LongHorizonBlockRetryRecord> LongHorizonBlockRetryRecords => Set<LongHorizonBlockRetryRecord>();
+    public DbSet<LongHorizonAdaptationDecisionRecord> LongHorizonAdaptationDecisionRecords => Set<LongHorizonAdaptationDecisionRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -252,6 +263,10 @@ public class AppDbContext : DbContext
             .Property(p => p.PreviewPayloadJson)
             .HasColumnType("jsonb");
 
+        modelBuilder.Entity<PlanPreview>()
+            .Property(p => p.LongHorizonInitializationSnapshotJson)
+            .HasColumnType("jsonb");
+
         modelBuilder.Entity<AdaptationEvent>()
             .Property(a => a.AffectedDaysJson)
             .HasColumnType("jsonb");
@@ -259,6 +274,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TrainingPlan>()
             .Property(p => p.CatalogDependencyVersionsJson)
             .HasColumnType("jsonb");
+
+        modelBuilder.Entity<TrainingPlan>()
+            .Property(p => p.ScheduleStrategy)
+            .HasConversion<string>()
+            .HasDefaultValue(PlanScheduleStrategy.StaticComplete);
 
         modelBuilder.Entity<TrainingDay>()
             .Property(d => d.CatalogPrescriptionJson)
@@ -287,6 +307,19 @@ public class AppDbContext : DbContext
             .IsUnique()
             .HasDatabaseName("IX_TrainingPlans_SourcePreviewId")
             .HasFilter("\"SourcePreviewId\" IS NOT NULL");
+
+        modelBuilder.Entity<TrainingPlan>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(p => p.LongHorizonRollingPlanStateId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TrainingPlan>()
+            .HasIndex(p => p.LongHorizonRollingPlanStateId)
+            .IsUnique()
+            .HasDatabaseName("IX_TrainingPlans_LongHorizonRollingPlanStateId")
+            .HasFilter("\"LongHorizonRollingPlanStateId\" IS NOT NULL");
 
         modelBuilder.Entity<TrainingDay>()
             .HasIndex(d => new { d.PlanId, d.Date });
@@ -329,6 +362,191 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PlanEvent>()
             .HasIndex(p => p.PlanId)
             .HasDatabaseName("IX_PlanEvents_PlanId");
+
+        // ── Phase 4L.2: dark Long-Horizon rolling persistence ──────────────────
+        modelBuilder.Entity<LongHorizonRollingPlanState>()
+            .Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
+        modelBuilder.Entity<LongHorizonRollingPlanState>()
+            .HasMany(p => p.Weeks)
+            .WithOne(w => w.Plan)
+            .HasForeignKey(w => w.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonRollingWeekState>()
+            .HasIndex(w => new { w.PlanStateId, w.GlobalWeek })
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonRollingWeekStates_PlanStateId_GlobalWeek");
+
+        modelBuilder.Entity<LongHorizonRollingWeekState>()
+            .HasMany(w => w.Sessions)
+            .WithOne(s => s.Week)
+            .HasForeignKey(s => s.WeekStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .HasIndex(s => new { s.WeekStateId, s.SessionOrdinal })
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonRollingSessionStates_WeekStateId_SessionOrdinal");
+
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .Property(s => s.OutcomeStatus)
+            .HasColumnName("CompletionStatus")
+            .HasConversion<string>()
+            .HasDefaultValue(LongHorizonRollingSessionOutcomeStatus.Planned);
+
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .Property(s => s.OutcomeVersion)
+            .IsConcurrencyToken();
+
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .HasIndex(s => s.AssignedDate)
+            .HasDatabaseName("IX_LongHorizonRollingSessionStates_AssignedDate");
+
+        modelBuilder.Entity<LongHorizonActivationWindowRecord>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(a => a.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonActivationWindowRecord>()
+            .HasIndex(a => a.IdempotencyKey)
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonActivationWindowRecords_IdempotencyKey");
+
+        modelBuilder.Entity<LongHorizonActivationWindowRecord>()
+            .HasIndex(a => new { a.PlanStateId, a.StartGlobalWeek, a.EndGlobalWeek })
+            .HasDatabaseName("IX_LongHorizonActivationWindowRecords_PlanStateId_Range");
+
+        modelBuilder.Entity<LongHorizonCheckpointRecord>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(c => c.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonCheckpointRecord>()
+            .HasIndex(c => new { c.PlanStateId, c.AsOfDate, c.SourceWindowStartWeek })
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonCheckpointRecords_PlanStateId_AsOfDate_Window");
+
+        modelBuilder.Entity<LongHorizonRunwayState>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(r => r.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonRunwayState>()
+            .HasIndex(r => r.PlanStateId)
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonRunwayStates_PlanStateId");
+
+        modelBuilder.Entity<LongHorizonRunwayState>()
+            .Property(r => r.PrescriptionPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<LongHorizonRunwayState>()
+            .Property(r => r.CalendarProjectionPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<LongHorizonRunwayState>()
+            .Property(r => r.TargetLockPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<LongHorizonCoreContextRecord>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(c => c.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonCoreContextRecord>()
+            .HasIndex(c => new { c.PlanStateId, c.ContextVersionSequence })
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonCoreContextRecords_PlanStateId_ContextVersionSequence");
+
+        modelBuilder.Entity<LongHorizonCoreContextRecord>()
+            .Property(c => c.ConditionResultSummaryJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<LongHorizonCoreContextRecord>()
+            .Property(c => c.SelectedCoreWeeksPayloadJson)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<LongHorizonBlockRetryRecord>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(b => b.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LongHorizonBlockRetryRecord>()
+            .HasIndex(b => new { b.PlanStateId, b.CreatedAtUtc })
+            .HasDatabaseName("IX_LongHorizonBlockRetryRecords_PlanStateId_CreatedAtUtc");
+
+        // ── Phase 4M.2: Adaptation V1 persistence, lineage, provenance ─────────
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .Property(s => s.PlanningStatus)
+            .HasConversion<string>()
+            .HasDefaultValue(LongHorizonPersistedSessionPlanningStatus.Active);
+
+        // Direct-child lineage uniqueness (Phase 4M.2 §F): a persisted
+        // session may be AdaptedFrom by at most one direct replacement
+        // child. Enforced at the DB level via a partial unique index, not
+        // merely an application-level check-then-insert -- this is the
+        // real concurrency-safety boundary the phase requires, in addition
+        // to WindowExecutionSummaryBuilder's existing application-level
+        // fail-fast validation (Phase 4M.1), which remains a second,
+        // independent defensive layer.
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .HasIndex(s => s.AdaptedFromSessionId)
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonRollingSessionStates_AdaptedFromSessionId")
+            .HasFilter("\"AdaptedFromSessionId\" IS NOT NULL");
+
+        modelBuilder.Entity<LongHorizonRollingSessionState>()
+            .HasOne<LongHorizonRollingSessionState>()
+            .WithMany()
+            .HasForeignKey(s => s.AdaptedFromSessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .HasOne<LongHorizonRollingPlanState>()
+            .WithMany()
+            .HasForeignKey(a => a.PlanStateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Natural Rev3.1 idempotency key (Phase 4M.2 §H) and the DB-level
+        // concurrency boundary (§I): a concurrent duplicate INSERT for the
+        // same TriggerSessionId fails on this constraint, not merely on an
+        // application-level pre-check.
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .HasIndex(a => a.TriggerSessionId)
+            .IsUnique()
+            .HasDatabaseName("IX_LongHorizonAdaptationDecisionRecords_TriggerSessionId");
+
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .HasOne<LongHorizonRollingSessionState>()
+            .WithMany()
+            .HasForeignKey(a => a.TriggerSessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .HasOne<LongHorizonRollingSessionState>()
+            .WithMany()
+            .HasForeignKey(a => a.ReplacementSessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .HasOne<LongHorizonRollingSessionState>()
+            .WithMany()
+            .HasForeignKey(a => a.SupersededSessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LongHorizonAdaptationDecisionRecord>()
+            .Property(a => a.DecisionType)
+            .HasConversion<string>();
 
         // Seed data
         SeedData(modelBuilder);

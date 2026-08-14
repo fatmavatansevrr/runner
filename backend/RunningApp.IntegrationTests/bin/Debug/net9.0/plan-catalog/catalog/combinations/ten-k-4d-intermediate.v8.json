@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "documentType": "TEMPLATE_COMBINATION",
+    "schemaVersion": 1,
+    "key": "TEN_K__4D__INTERMEDIATE",
+    "version": 8,
+    "status": "DRAFT"
+  },
+  "masterTemplate": {
+    "documentType": "PLAN_TEMPLATE",
+    "key": "TEN_K_MASTER",
+    "version": 5
+  },
+  "layout": {
+    "documentType": "RUN_LAYOUT",
+    "key": "RUN_LAYOUT_4D",
+    "version": 2
+  },
+  "levelModifier": {
+    "documentType": "LEVEL_MODIFIER",
+    "key": "INTERMEDIATE_MODIFIER",
+    "version": 5
+  },
+  "rulePack": {
+    "documentType": "RULE_PACK",
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 3
+  }
+}

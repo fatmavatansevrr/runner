@@ -1,0 +1,145 @@
+using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayEngine;
+using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayWorkoutBinding;
+
+namespace RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayWeekMaterialization;
+
+/// <summary>
+/// Structural roles supplied by the canonical four-day run layout. A key
+/// session is the week's single defining session; the role does not imply a
+/// hard or quality-only stimulus.
+/// </summary>
+internal enum PreparationRunwaySlotRole
+{
+    KeySession,
+    EasySupport,
+    LongRun,
+}
+
+internal enum PreparationRunwayWorkoutSlotSource
+{
+    Anchor,
+    SupportPolicy,
+}
+
+internal sealed record PreparationRunwayCanonicalWeeklyLayout(
+    PlanCatalogReference SourceLayout,
+    IReadOnlyList<PreparationRunwaySlotRole> OrderedRoles);
+
+/// <summary>
+/// Enriches the existing binder output with the progression provenance the
+/// pure binder deliberately does not own. A future orchestrator may build
+/// this adapter, but this phase keeps that composition dark and direct-test
+/// only.
+/// </summary>
+internal sealed record PreparationRunwayMaterializationBlockBinding<TKey>(
+    TKey BlockKey,
+    PreparationRunwayBlockWorkoutBinding<TKey> Binding,
+    string ProgressionId,
+    int ProgressionVersion,
+    IReadOnlyList<int> OrderedProgressionStepNumbers) where TKey : notnull;
+
+/// <summary>
+/// Explicit block/step-to-anchor-role policy. Role selection is never
+/// inferred from a workout family or a horizon length.
+/// </summary>
+internal sealed record PreparationRunwayBlockWeekRolePolicy<TKey>(
+    TKey BlockKey,
+    int CanonicalOrder,
+    string PolicyId,
+    int PolicyVersion,
+    IReadOnlyDictionary<int, PreparationRunwaySlotRole> AnchorRoleByProgressionStep) where TKey : notnull;
+
+/// <summary>
+/// Versioned defaults used only for slots not occupied by the selected
+/// anchor. Workout literals live in the policy factory, not in the engine.
+/// </summary>
+internal sealed record PreparationRunwaySupportWorkoutPolicy(
+    string PolicyId,
+    int PolicyVersion,
+    PreparationRunwayWorkoutReference KeySessionDefault,
+    PreparationRunwayWorkoutReference EasySupportDefault,
+    PreparationRunwayWorkoutReference LongRunDefault);
+
+internal sealed record PreparationRunwayWeekMaterializationRequest<TKey>(
+    string ProfileKey,
+    string CandidateKey,
+    int CandidateVersion,
+    string AllocationPolicyId,
+    int AllocationPolicyVersion,
+    PreparationRunwayCanonicalWeeklyLayout CanonicalWeeklyLayout,
+    IReadOnlyList<PreparationRunwayBlockAllocationOutcome<TKey>> OrderedBlockAllocations,
+    IReadOnlyList<PreparationRunwayMaterializationBlockBinding<TKey>> OrderedBlockBindings,
+    IReadOnlyList<PreparationRunwayBlockWeekRolePolicy<TKey>> BlockRolePolicies,
+    PreparationRunwaySupportWorkoutPolicy SupportWorkoutPolicy) where TKey : notnull;
+
+internal sealed record PreparationRunwayMaterializedWorkoutSlot<TKey>(
+    PreparationRunwaySlotRole SlotRole,
+    int SlotOrdinal,
+    int RoleOrdinal,
+    string WorkoutId,
+    int WorkoutVersion,
+    TKey SourceBlockType,
+    string SourceProgressionId,
+    int SourceProgressionVersion,
+    int SourceProgressionStep,
+    PreparationRunwayWorkoutSlotSource SourceKind,
+    string SourceMaterializationPolicyId,
+    int SourceMaterializationPolicyVersion) where TKey : notnull;
+
+internal sealed record PreparationRunwayMaterializedWeek<TKey>(
+    int RunwayWeekNumber,
+    TKey BlockType,
+    int BlockWeekOrdinal,
+    string ProgressionId,
+    int ProgressionVersion,
+    int ProgressionStepNumber,
+    int CanonicalBlockOrder,
+    IReadOnlyList<PreparationRunwayMaterializedWorkoutSlot<TKey>> OrderedWorkoutSlots,
+    PreparationRunwayMaterializedWeekProvenance Provenance) where TKey : notnull;
+
+internal sealed record PreparationRunwayMaterializedWeekProvenance(
+    string ProfileKey,
+    string CandidateKey,
+    int CandidateVersion,
+    string AllocationPolicyId,
+    int AllocationPolicyVersion,
+    string SupportWorkoutPolicyId,
+    int SupportWorkoutPolicyVersion,
+    PlanCatalogReference SourceLayout);
+
+internal enum PreparationRunwayWeekMaterializationFailureCode
+{
+    InvalidMaterializationRequest,
+    DuplicateBlockAllocation,
+    MissingBlockBinding,
+    BlockBindingMismatch,
+    BindingCountMismatch,
+    InvalidBlockOrder,
+    UnsupportedBlockRolePolicy,
+    AnchorWorkoutReferenceInvalid,
+    AnchorRoleIncompatible,
+    SupportWorkoutReferenceInvalid,
+    WeekRoleCardinalityViolation,
+    NonContiguousWeekNumber,
+    NonContiguousBlockWeekOrdinal,
+    MaterializationInvariantViolation,
+}
+
+/// <summary>Failure never carries a partial week skeleton.</summary>
+internal sealed record PreparationRunwayWeekMaterializationResult<TKey>(
+    bool IsSuccess,
+    IReadOnlyList<PreparationRunwayMaterializedWeek<TKey>>? Weeks,
+    int? TotalWeekCount,
+    PreparationRunwayWeekMaterializationFailureCode? FailureCode,
+    string? FailureReason,
+    IReadOnlyList<string> Trace) where TKey : notnull
+{
+    public static PreparationRunwayWeekMaterializationResult<TKey> Success(
+        IReadOnlyList<PreparationRunwayMaterializedWeek<TKey>> weeks,
+        IReadOnlyList<string> trace) => new(true, weeks, weeks.Count, null, null, trace);
+
+    public static PreparationRunwayWeekMaterializationResult<TKey> Failure(
+        PreparationRunwayWeekMaterializationFailureCode code,
+        string reason,
+        IReadOnlyList<string> trace) => new(false, null, null, code, reason, trace);
+}

@@ -21,4 +21,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Phase 4L.6A: package only the runtime catalog authoring tree. Schemas,
+       audits, docs, tests, and repository-local outputs remain excluded. -->
+  <ItemGroup>
+    <Content Include="..\..\plan-catalog\catalog\**\*.json"
+             Link="plan-catalog\catalog\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

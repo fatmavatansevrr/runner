@@ -35,58 +35,36 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
             throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} does not match the V1 four-day session shape.");
         }
 
-        var residual = Round(weekly.PlannedWeeklyVolumeKm - longRun.PlannedLongRunDistanceKm);
-        var requiredMinimum = MinimumKeySessionDistanceKm + (2 * MinimumEasySupportDistanceKm);
-        if (residual + ToleranceKm < requiredMinimum)
+        FourDaySessionDistanceAllocation distances;
+        try
         {
-            throw new CatalogSessionPrescriptionInfeasibleException(
-                $"Week {weekly.WeekNumber} residual volume {residual:0.##}km cannot support V1 key/easy minimums.");
+            distances = FourDaySessionDistanceAllocationPolicy.Allocate(
+                weekly.PlannedWeeklyVolumeKm, longRun.PlannedLongRunDistanceKm);
         }
-
-        var key = Round(Math.Max(MinimumKeySessionDistanceKm, residual * 0.50d));
-        var easyResidual = Round(residual - key);
-        if (easyResidual < 2 * MinimumEasySupportDistanceKm)
+        catch (CatalogSessionPrescriptionInfeasibleException exception)
         {
-            easyResidual = 2 * MinimumEasySupportDistanceKm;
-            key = Round(residual - easyResidual);
-        }
-
-        var firstEasy = Round(easyResidual / 2d);
-        var secondEasy = Round(residual - key - firstEasy);
-        if (secondEasy < MinimumEasySupportDistanceKm)
-        {
-            secondEasy = MinimumEasySupportDistanceKm;
-            firstEasy = Round(residual - key - secondEasy);
-        }
-
-        var total = Round(key + firstEasy + secondEasy + longRun.PlannedLongRunDistanceKm);
-        var delta = Round(weekly.PlannedWeeklyVolumeKm - total);
-        if (Math.Abs(delta) > ToleranceKm)
-        {
-            secondEasy = Round(secondEasy + delta);
-        }
-
-        if (key <= 0 || firstEasy <= 0 || secondEasy <= 0)
-        {
-            throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} allocation produced a non-positive session distance.");
+            var detail = exception.Message.StartsWith("V1 ", StringComparison.Ordinal)
+                ? exception.Message[3..]
+                : char.ToLowerInvariant(exception.Message[0]) + exception.Message[1..];
+            throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} {detail}");
         }
 
         return new V1FourDayWeekAllocation(
             weekly.WeekNumber,
             weekly.PlannedWeeklyVolumeKm,
             longRun.PlannedLongRunDistanceKm,
-            residual,
-            key,
-            firstEasy,
-            secondEasy,
+            distances.ResidualVolumeKm,
+            distances.KeySessionDistanceKm,
+            distances.FirstEasySupportDistanceKm,
+            distances.SecondEasySupportDistanceKm,
             new SessionVolumeAllocationTrace(
                 weekly.WeekNumber,
                 weekly.PlannedWeeklyVolumeKm,
                 longRun.PlannedLongRunDistanceKm,
-                residual,
-                key,
-                firstEasy,
-                secondEasy,
+                distances.ResidualVolumeKm,
+                distances.KeySessionDistanceKm,
+                distances.FirstEasySupportDistanceKm,
+                distances.SecondEasySupportDistanceKm,
                 PolicyKey,
                 PolicyVersion));
     }

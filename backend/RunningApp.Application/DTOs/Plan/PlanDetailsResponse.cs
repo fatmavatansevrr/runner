@@ -2,6 +2,7 @@
 using RunningApp.Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace RunningApp.Application.DTOs.Plan;
 
@@ -35,6 +36,30 @@ public class PlanDetailsResponse
     public double TotalPlannedDistance { get; set; }
     public double TotalCompletedDistance { get; set; }
     public List<PlanWeekDetailDto> Weeks { get; set; } = new();
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PlanScheduleStrategy? ScheduleStrategy { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CurrentWindowStartWeek { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CurrentWindowEndWeek { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? NextPendingGlobalWeek { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LongHorizonCheckpointReadiness? CheckpointReadiness { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<LongHorizonStructuralWeekDetailDto>? RollingStructuralWeeks { get; set; }
+}
+
+public sealed class LongHorizonStructuralWeekDetailDto
+{
+    public int GlobalWeek { get; set; }
+    public string Phase { get; set; } = string.Empty;
+    public string Stage { get; set; } = string.Empty;
+    public DateOnly StructuralStartDate { get; set; }
+    public DateOnly StructuralEndDate { get; set; }
+    public string LifecycleStatus { get; set; } = string.Empty;
+    public bool NumericDetailsAvailable { get; set; }
 }
 
 public class PlanWeekDetailDto

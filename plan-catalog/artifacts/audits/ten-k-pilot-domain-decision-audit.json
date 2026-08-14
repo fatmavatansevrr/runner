@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-23T10:47:17.6067478Z",
+  "generatedAtUtc": "2026-08-13T12:16:13.4367475Z",
   "boundaryAudit": {
     "contractsFiles": [
       "Bundles/PublishedTemplateBundle.cs",
@@ -30,6 +30,10 @@
       "Catalog/CatalogSourceSnapshot.cs",
       "Catalog/WorkoutClosureResolver.cs",
       "Enums/CatalogStatus.cs",
+      "LongHorizon/LongHorizonGeCatalogContracts.cs",
+      "LongHorizon/LongHorizonGeCatalogSelector.cs",
+      "LongHorizon/LongHorizonGeCatalogValidator.cs",
+      "LongHorizon/LongHorizonGeStageFamilyCatalog.cs",
       "Metadata/CatalogDocumentMetadata.cs",
       "Models/CoreCycleDefinition.cs",
       "Models/LayoutSlotDefinition.cs",

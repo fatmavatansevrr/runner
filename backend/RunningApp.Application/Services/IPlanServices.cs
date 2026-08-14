@@ -28,6 +28,15 @@ public interface IPlanConfirmationService
     Task<ConfirmPlanResponse> ConfirmPlanAsync(Guid internalUserId, ConfirmPlanRequest request, CancellationToken ct = default);
 }
 
+public interface ILongHorizonPublicPlanService
+{
+    Task<RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PublicPreview.LongHorizonPlanPreviewContract> GeneratePreviewAsync(
+        Guid internalUserId, RacePlanPreviewCommand command, CancellationToken ct = default);
+
+    Task<LongHorizonConfirmPlanResponse> ConfirmAsync(
+        Guid internalUserId, LongHorizonConfirmPlanRequest request, CancellationToken ct = default);
+}
+
 public interface IPlanManagementService
 {
     Task<CancelPlanResponse> CancelPlanAsync(Guid internalUserId, Guid planId, CancelPlanRequest request, CancellationToken ct = default);

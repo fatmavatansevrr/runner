@@ -67,7 +67,7 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
         var skeleton = context.PlanSkeleton;
 
         ValidateSkeletonRoleStructure(skeleton);
-        var preferredDays = ValidatePreferredDays(context.PreferredDays);
+        var preferredDays = ValidatePreferredDays(context.PreferredDays, skeleton.DaysPerWeek);
         var longRunDay = ValidateLongRunDay(context.LongRunDayPreference, preferredDays);
 
         if (skeleton.StartDate != context.StartDate)
@@ -121,18 +121,18 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     private static void ValidateSkeletonRoleStructure(GeneratedCatalogPlanSkeleton skeleton)
     {
-        if (skeleton.DaysPerWeek != 4)
+        if (skeleton.DaysPerWeek is not (3 or 4))
         {
             throw new CatalogCalendarRoleStructureInvalidException(
-                $"Pilot calendar assignment requires DaysPerWeek == 4, but the source skeleton declares {skeleton.DaysPerWeek}.");
+                $"Core calendar assignment supports resolved 3D/4D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
         }
 
         foreach (var week in skeleton.Weeks)
         {
-            if (week.SessionSlots.Count != 4)
+            if (week.SessionSlots.Count != skeleton.DaysPerWeek)
             {
                 throw new CatalogCalendarRoleStructureInvalidException(
-                    $"Week {week.WeekNumber} has {week.SessionSlots.Count} session slots; expected exactly 4.");
+                    $"Week {week.WeekNumber} has {week.SessionSlots.Count} session slots; expected {skeleton.DaysPerWeek} from resolved RunLayout.");
             }
 
             var roleCounts = week.SessionSlots.GroupBy(s => s.StructuralRole).ToDictionary(g => g.Key, g => g.Count());
@@ -150,11 +150,12 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             var easyCount = roleCounts.GetValueOrDefault("EASY_SUPPORT");
             var longCount = roleCounts.GetValueOrDefault("LONG_RUN");
 
-            if (keyCount != 1 || easyCount != 2 || longCount != 1 || keyCount + easyCount + longCount != 4)
+            var expectedEasy = skeleton.DaysPerWeek - 2;
+            if (keyCount != 1 || easyCount != expectedEasy || longCount != 1 || keyCount + easyCount + longCount != skeleton.DaysPerWeek)
             {
                 throw new CatalogCalendarRoleStructureInvalidException(
-                    $"Week {week.WeekNumber} must contain exactly one KEY_SESSION, two EASY_SUPPORT, and one " +
-                    $"LONG_RUN slot, but found KEY_SESSION={keyCount}, EASY_SUPPORT={easyCount}, LONG_RUN={longCount}.");
+                    $"Week {week.WeekNumber} does not match resolved RunLayout cardinality: expected KEY_SESSION=1, " +
+                    $"EASY_SUPPORT={expectedEasy}, LONG_RUN=1; found KEY_SESSION={keyCount}, EASY_SUPPORT={easyCount}, LONG_RUN={longCount}.");
             }
 
             var expectedEnd = week.StartDate.AddDays(6);
@@ -168,7 +169,7 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     // ── Step 2: PreferredDays / LongRunDayPreference domain validation ───────
 
-    private static IReadOnlyList<DayOfWeek> ValidatePreferredDays(IReadOnlyList<DayOfWeek> preferredDays)
+    private static IReadOnlyList<DayOfWeek> ValidatePreferredDays(IReadOnlyList<DayOfWeek> preferredDays, int expectedCount)
     {
         if (preferredDays.Count == 0)
         {
@@ -176,10 +177,10 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
                 "Race-plan catalog calendar assignment requires PreferredDays, but none was supplied.");
         }
 
-        if (preferredDays.Count != 4)
+        if (preferredDays.Count != expectedCount)
         {
             throw new CatalogPreferredDayCountInvalidException(
-                $"Race-plan pilot requires exactly 4 distinct PreferredDays, but {preferredDays.Count} were supplied.");
+                $"PreferredDays.Count must equal resolved RunLayout.RunsPerWeek ({expectedCount}), but {preferredDays.Count} were supplied.");
         }
 
         if (preferredDays.Distinct().Count() != preferredDays.Count)

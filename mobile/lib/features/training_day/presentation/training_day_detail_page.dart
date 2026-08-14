@@ -14,6 +14,7 @@ import '../../home/data/home_repository.dart';
 import '../../home/data/home_provider.dart';
 import '../../calendar/data/calendar_provider.dart';
 import '../../profile/data/profile_provider.dart';
+import '../../../core/models/preparation_runway.dart';
 
 /// Full-page detail view for a single training day.
 /// Opened from Calendar day taps and Home workout card taps.
@@ -33,8 +34,7 @@ class TrainingDayDetailPage extends ConsumerStatefulWidget {
       _TrainingDayDetailPageState();
 }
 
-class _TrainingDayDetailPageState
-    extends ConsumerState<TrainingDayDetailPage> {
+class _TrainingDayDetailPageState extends ConsumerState<TrainingDayDetailPage> {
   final _distanceController = TextEditingController();
   final _durationController = TextEditingController();
   bool _isSubmitting = false;
@@ -50,24 +50,39 @@ class _TrainingDayDetailPageState
 
   String _formatDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday'
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
     ];
     return '${weekdays[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}';
   }
 
   String _formatWorkoutType(String dayType) => switch (dayType) {
-        'easy'           => 'Easy Run',
-        'long_run'       => 'Long Run',
-        'interval'       => 'Interval',
-        'tempo'          => 'Tempo Run',
-        'recovery_easy'  => 'Recovery Run',
-        'rest'           => 'Rest Day',
-        _                => dayType,
+        'easy' => 'Easy Run',
+        'long_run' => 'Long Run',
+        'interval' => 'Interval',
+        'tempo' => 'Tempo Run',
+        'recovery_easy' => 'Recovery Run',
+        'rest' => 'Rest Day',
+        _ => dayType,
       };
 
   // ── Completion sheet ─────────────────────────────────────────────────────
@@ -131,17 +146,16 @@ class _TrainingDayDetailPageState
               const SizedBox(height: AppSpacing.lg),
               if (_isSubmitting)
                 const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.completed))
+                    child:
+                        CircularProgressIndicator(color: AppColors.completed))
               else
                 AppPrimaryButton(
                   label: 'Save Workout',
                   onPressed: () async {
-                    final dist = double.tryParse(
-                            _distanceController.text.trim()) ??
-                        day.plannedDistanceKm;
-                    final dur = int.tryParse(
-                            _durationController.text.trim()) ??
+                    final dist =
+                        double.tryParse(_distanceController.text.trim()) ??
+                            day.plannedDistanceKm;
+                    final dur = int.tryParse(_durationController.text.trim()) ??
                         day.plannedDurationMin;
 
                     setModalState(() => _isSubmitting = true);
@@ -227,8 +241,7 @@ class _TrainingDayDetailPageState
               const SizedBox(height: AppSpacing.md),
               if (_isSubmitting)
                 const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.primary))
+                    child: CircularProgressIndicator(color: AppColors.primary))
               else
                 AppPrimaryButton(
                   label: 'Skip Workout',
@@ -237,10 +250,9 @@ class _TrainingDayDetailPageState
                     setState(() => _isSubmitting = true);
                     try {
                       final repo = ref.read(homeRepositoryProvider);
-                      final decision = await repo
-                          .createNotTodayDecision(day.dayId, selectedReason);
-                      await repo
-                          .confirmNotTodayDecision(decision.decisionId);
+                      final decision = await repo.createNotTodayDecision(
+                          day.dayId, selectedReason);
+                      await repo.confirmNotTodayDecision(decision.decisionId);
                       _invalidateAll();
                       if (context.mounted) Navigator.pop(context);
                       if (mounted) context.pop();
@@ -276,6 +288,17 @@ class _TrainingDayDetailPageState
   @override
   Widget build(BuildContext context) {
     final detailState = ref.watch(trainingDayDetailProvider(widget.dayId));
+    // Phase 4H.6 PART 9 -- stale-Detail-after-cancel protection. Cancelling
+    // the active plan invalidates `activePlanDetailsProvider` (see
+    // ProfilePage._showCancelPlanDialog) but this page's own
+    // `trainingDayDetailProvider(dayId)` has no way to know a cancel
+    // happened, so without this guard a Detail route left open across a
+    // cancel would keep showing stale Planned data with live Complete/Not
+    // Today buttons wired to a plan that no longer exists. Watching the
+    // authoritative active-plan signal here closes that gap without a new
+    // provider-invalidation-family/routing mechanism.
+    final activePlan = ref.watch(activePlanDetailsProvider);
+    final planWasCancelled = activePlan.valueOrNull?.hasActivePlan == false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -291,41 +314,64 @@ class _TrainingDayDetailPageState
         ),
       ),
       body: SafeArea(
-        child: detailState.when(
-          loading: () => const LoadingState(message: 'Loading workout...'),
-          error: (err, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_off_rounded,
-                      size: 64, color: AppColors.textMuted),
-                  const SizedBox(height: AppSpacing.md),
-                  Text('Could not load workout',
-                      style: AppTextStyles.h2),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(err.toString(),
-                      style: AppTextStyles.bodyMedium,
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppPrimaryButton(
-                    label: 'Retry',
-                    onPressed: () =>
-                        ref.invalidate(trainingDayDetailProvider(widget.dayId)),
+        child: planWasCancelled
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.event_busy_rounded,
+                          size: 64, color: AppColors.textMuted),
+                      const SizedBox(height: AppSpacing.md),
+                      Text('This workout is no longer available',
+                          style: AppTextStyles.h2, textAlign: TextAlign.center),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Your training plan has been stopped, so this day can no longer be updated.',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              )
+            : detailState.when(
+                loading: () =>
+                    const LoadingState(message: 'Loading workout...'),
+                error: (err, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.cloud_off_rounded,
+                            size: 64, color: AppColors.textMuted),
+                        const SizedBox(height: AppSpacing.md),
+                        Text('Could not load workout', style: AppTextStyles.h2),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(err.toString(),
+                            style: AppTextStyles.bodyMedium,
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: AppSpacing.lg),
+                        AppPrimaryButton(
+                          label: 'Retry',
+                          onPressed: () => ref.invalidate(
+                              trainingDayDetailProvider(widget.dayId)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                data: (day) => _DayDetailContent(
+                  day: day,
+                  formatDate: _formatDate,
+                  formatType: _formatWorkoutType,
+                  onComplete: () => _showCompletionSheet(day),
+                  onNotToday: () => _showNotTodaySheet(day),
+                ),
               ),
-            ),
-          ),
-          data: (day) => _DayDetailContent(
-            day: day,
-            formatDate: _formatDate,
-            formatType: _formatWorkoutType,
-            onComplete: () => _showCompletionSheet(day),
-            onNotToday: () => _showNotTodaySheet(day),
-          ),
-        ),
       ),
     );
   }
@@ -352,13 +398,17 @@ class _DayDetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (day.dayType == 'rest') return _RestDayView(day: day, formatDate: formatDate);
+    if (day.dayType == 'rest')
+      return _RestDayView(day: day, formatDate: formatDate);
 
     return switch (day.status) {
-      'completed' => _CompletedView(day: day, formatDate: formatDate, formatType: formatType),
-      'missed'    => _MissedView(day: day, formatDate: formatDate, formatType: formatType),
-      'skipped'   => _MissedView(day: day, formatDate: formatDate, formatType: formatType),
-      _           => _PlannedView(
+      'completed' => _CompletedView(
+          day: day, formatDate: formatDate, formatType: formatType),
+      'missed' =>
+        _MissedView(day: day, formatDate: formatDate, formatType: formatType),
+      'skipped' =>
+        _MissedView(day: day, formatDate: formatDate, formatType: formatType),
+      _ => _PlannedView(
           day: day,
           formatDate: formatDate,
           formatType: formatType,
@@ -441,8 +491,7 @@ class _PlannedView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Date + status ────────────────────────────────────────────────
-          Text(formatDate(day.date).toUpperCase(),
-              style: AppTextStyles.label),
+          Text(formatDate(day.date).toUpperCase(), style: AppTextStyles.label),
           const SizedBox(height: AppSpacing.sm),
 
           // ── Hero card ────────────────────────────────────────────────────
@@ -495,8 +544,7 @@ class _PlannedView extends StatelessWidget {
                   _MetricCell(
                     icon: Icons.speed_rounded,
                     label: 'TARGET PACE',
-                    value:
-                        '${day.plannedPaceMinKm!.toStringAsFixed(2)} /km',
+                    value: '${day.plannedPaceMinKm!.toStringAsFixed(2)} /km',
                   ),
                 if (day.intensity != null)
                   _MetricCell(
@@ -507,6 +555,15 @@ class _PlannedView extends StatelessWidget {
               ],
             ),
           ),
+
+          // ── Provenance/plan-context section (Phase 4H.4 PART 11) ──────────
+          // Only rendered when the backend supplied typed week provenance
+          // (a real Phase 4G.6D response) -- absent entirely for a legacy
+          // response, never fabricated.
+          if (day.weekProvenance != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ProvenanceCard(day: day),
+          ],
           const SizedBox(height: AppSpacing.lg),
 
           // ── Action buttons ───────────────────────────────────────────────
@@ -643,6 +700,16 @@ class _CompletedView extends StatelessWidget {
               ],
             ),
           ),
+
+          // ── Provenance/plan-context section (Phase 4H.6 PART 3) ───────────
+          // Same authoritative week/source context as _PlannedView -- a
+          // completed day is still the same persisted TrainingDay and its
+          // provenance does not change on completion, so it must not
+          // disappear once the status flips.
+          if (day.weekProvenance != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ProvenanceCard(day: day),
+          ],
         ],
       ),
     );
@@ -725,6 +792,15 @@ class _MissedView extends StatelessWidget {
               ],
             ),
           ),
+
+          // ── Provenance/plan-context section (Phase 4H.6 PART 3) ───────────
+          // Same authoritative week/source context as _PlannedView -- a
+          // missed day is still the same persisted TrainingDay and its
+          // provenance does not change after a not-today decision.
+          if (day.weekProvenance != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ProvenanceCard(day: day),
+          ],
         ],
       ),
     );
@@ -732,6 +808,77 @@ class _MissedView extends StatelessWidget {
 }
 
 // ── Shared sub-widgets ────────────────────────────────────────────────────────
+
+/// Phase 4H.4 — the plan-context/provenance card. Week number/segment/block
+/// come from `day.weekProvenance` (see PART 3's authoritative precedence:
+/// week_type decides the segment, runway_block is a secondary label only
+/// for a runway week). Source shows the real persisted value; the raw
+/// `adaptedFromId` GUID is never shown as visible text (PART 11) — only a
+/// safe "Adapted from an earlier workout" line when non-null.
+class _ProvenanceCard extends StatelessWidget {
+  const _ProvenanceCard({required this.day});
+
+  final TrainingDayDetailResponse day;
+
+  @override
+  Widget build(BuildContext context) {
+    final provenance = day.weekProvenance!;
+    final weekLabel = 'Week ${day.weekNumber}';
+    final sourceValue = day.sourceValue;
+    final semanticsLabel = [
+      weekLabel,
+      provenance.provenanceLabel,
+      if (sourceValue != TrainingDaySourceValue.unknown)
+        'Source: ${sourceValue.label}',
+      if (day.hasAdaptedOrigin) 'Adapted from an earlier workout',
+    ].join(', ');
+
+    return Semantics(
+      label: semanticsLabel,
+      child: AppCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(weekLabel,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted)),
+              const SizedBox(height: 4),
+              Text(provenance.weekTypeLabel,
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
+              if (provenance.runwayBlockLabel != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(provenance.runwayBlockLabel!,
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                ),
+              if (sourceValue != TrainingDaySourceValue.unknown) ...[
+                const SizedBox(height: 8),
+                Text('Source: ${sourceValue.label}',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textMuted)),
+              ],
+              if (day.hasAdaptedOrigin)
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Text('Adapted from an earlier workout',
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _MetricCell extends StatelessWidget {
   const _MetricCell({
@@ -754,12 +901,12 @@ class _MetricCell extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: resolvedColor),
         const SizedBox(height: 4),
-        Text(label,
-            style: AppTextStyles.label.copyWith(fontSize: 10)),
+        Text(label, style: AppTextStyles.label.copyWith(fontSize: 10)),
         const SizedBox(height: 2),
         Text(
           value,
-          style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary, fontSize: 14),
+          style: AppTextStyles.h3
+              .copyWith(color: AppColors.textPrimary, fontSize: 14),
         ),
       ],
     );
@@ -794,8 +941,8 @@ class _ComparisonRow extends StatelessWidget {
             ),
             Text(
               'Actual: $actual',
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.completed, fontWeight: FontWeight.w600),
+              style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.completed, fontWeight: FontWeight.w600),
             ),
           ],
         ),

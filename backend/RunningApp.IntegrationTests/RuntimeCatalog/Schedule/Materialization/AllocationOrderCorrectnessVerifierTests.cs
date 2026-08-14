@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RunningApp.Application.RuntimeCatalog;
@@ -9,106 +8,133 @@ using Xunit;
 
 namespace RunningApp.IntegrationTests.RuntimeCatalog.Schedule.Materialization;
 
-/// <summary>
-/// Backend Integration Phase 4G.3B.3 (allocation-order-correctness verifier
-/// only -- see AllocationOrderCorrectnessVerifier.cs for the explicit scope
-/// note). Proves the required behavior: for every target week count other
-/// than 8 (compression headroom fully exhausted), 12 (preferred,
-/// unaffected), or 14 (extension headroom fully exhausted -- the symmetric
-/// mirror of the 8-week case), the verifier reports DecisionRequired,
-/// citing TD-ALLOCATION-PRIORITY-001 by ID, rather than Pass. Never
-/// re-derives or corrects the priority ordering itself.
-/// </summary>
 public sealed class AllocationOrderCorrectnessVerifierTests
 {
+    private const string GovernanceSource = "TD-ALLOCATION-PRIORITY-001 closure (Phase 4G.3B.8.1)";
     private readonly CatalogPhaseAllocationResolver _resolver = new();
 
     private static async Task<PlanCatalogCandidateSummary> RealCandidateAsync()
     {
         var loader = new PlanCatalogBundleLoader(
-            Options.Create(new PlanCatalogOptions { CatalogRootPath = System.IO.Path.Combine(TestPlanServicesFactory.RepoRoot(), "plan-catalog", "catalog") }),
+            Options.Create(new PlanCatalogOptions { CatalogRootPath = Path.Combine(TestPlanServicesFactory.RepoRoot(), "plan-catalog", "catalog") }),
             NullLogger<PlanCatalogBundleLoader>.Instance);
         return await loader.LoadCandidateAsync(V1LiveCatalogPilotRoutingPolicy.CandidateKey, V1LiveCatalogPilotRoutingPolicy.CandidateVersion);
+    }
+
+    [Theory]
+    [InlineData(12, true, false, 3, 4, 4, 1)]
+    [InlineData(13, false, true, 4, 4, 4, 1)]
+    [InlineData(14, true, false, 4, 5, 4, 1)]
+    public async Task Verify_ApprovedRealPriority_ProducesExpectedExecutableAllocation(
+        int weeks, bool orderIndependent, bool usesPriority,
+        int foundation, int build, int raceSpecific, int taper)
+    {
+        var candidate = await RealCandidateAsync();
+        var allocation = _resolver.Resolve(candidate, weeks);
+        var policy = ApprovedAllocationPriorityPolicy.FromCandidate(candidate, GovernanceSource);
+
+        var result = AllocationOrderCorrectnessVerifier.Verify(allocation, policy);
+
+        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
+        Assert.Equal(orderIndependent, result.IsOrderIndependent);
+        Assert.Equal(usesPriority, result.UsesApprovedPriority);
+        Assert.True(result.IsExecutable);
+        Assert.Equal(new[] { foundation, build, raceSpecific, taper }, allocation.Phases.Select(p => p.AllocatedWeeks));
+        Assert.Contains(orderIndependent ? "ORDER_INDEPENDENT" : "ORDER_DEPENDENT_BUT_APPROVED_PRIORITY", result.ReasonCode);
     }
 
     [Theory]
     [InlineData(9)]
     [InlineData(10)]
     [InlineData(11)]
-    [InlineData(13)]
-    public async Task Verify_EveryNonBoundaryFeasibleTarget_ReportsDecisionRequired_CitingTDAllocationPriority001(int targetWeeks)
+    public async Task Verify_ApprovedCompressionPriority_PassesWithoutChangingAllocation(int weeks)
     {
         var candidate = await RealCandidateAsync();
-        var allocation = _resolver.Resolve(candidate, targetWeeks);
+        var allocation = _resolver.Resolve(candidate, weeks);
+
+        var result = AllocationOrderCorrectnessVerifier.Verify(
+            allocation,
+            ApprovedAllocationPriorityPolicy.FromCandidate(candidate, GovernanceSource));
+
+        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
+        Assert.False(result.IsOrderIndependent);
+        Assert.True(result.UsesApprovedPriority);
+        Assert.True(result.IsExecutable);
+    }
+
+    [Fact]
+    public async Task Verify_OrderDependentAllocationWithoutApproval_RemainsDecisionRequired()
+    {
+        var candidate = await RealCandidateAsync();
+        var allocation = _resolver.Resolve(candidate, 13);
 
         var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
 
-        Assert.Equal(targetWeeks, result.TargetWeeks);
         Assert.Equal(AllocationOrderVerificationOutcome.DecisionRequired, result.Outcome);
-        Assert.Contains("TD-ALLOCATION-PRIORITY-001", result.ReasonCode);
-    }
-
-    [Fact]
-    public async Task Verify_TargetEight_ReportsPass_NotDecisionRequired()
-    {
-        var candidate = await RealCandidateAsync();
-        var allocation = _resolver.Resolve(candidate, 8);
-
-        var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
-
-        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
-        Assert.Contains("PASS_COMPRESSION_HEADROOM_FULLY_EXHAUSTED", result.ReasonCode);
-        Assert.DoesNotContain("TD-ALLOCATION-PRIORITY-001", result.ReasonCode);
-    }
-
-    [Fact]
-    public async Task Verify_TargetTwelve_ReportsPass_NotDecisionRequired()
-    {
-        var candidate = await RealCandidateAsync();
-        var allocation = _resolver.Resolve(candidate, 12);
-
-        var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
-
-        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
-        Assert.DoesNotContain("TD-ALLOCATION-PRIORITY-001", result.ReasonCode);
-    }
-
-    [Fact]
-    public async Task Verify_TargetFourteen_ReportsPass_ExtensionHeadroomFullyExhausted_MirrorsEightWeekCase()
-    {
-        var candidate = await RealCandidateAsync();
-        var allocation = _resolver.Resolve(candidate, 14);
-
-        var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
-
-        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
-        Assert.Contains("PASS_EXTENSION_HEADROOM_FULLY_EXHAUSTED", result.ReasonCode);
-        Assert.DoesNotContain("TD-ALLOCATION-PRIORITY-001", result.ReasonCode);
+        Assert.False(result.IsOrderIndependent);
+        Assert.False(result.UsesApprovedPriority);
+        Assert.False(result.IsExecutable);
+        Assert.Contains("PRIORITY_REQUIRED", result.ReasonCode);
     }
 
     [Theory]
-    [InlineData(7)]
-    [InlineData(15)]
-    [InlineData(20)]
-    public async Task Verify_InfeasibleTarget_ReportsPass_NotApplicable_NeverDecisionRequired(int targetWeeks)
+    [InlineData("duplicate")]
+    [InlineData("missing")]
+    [InlineData("unknown")]
+    public async Task Verify_InvalidPriority_FailsClosed(string kind)
     {
         var candidate = await RealCandidateAsync();
-        var allocation = _resolver.Resolve(candidate, targetWeeks);
+        var allocation = _resolver.Resolve(candidate, 13);
+        var rules = ApprovedAllocationPriorityPolicy.FromCandidate(candidate, GovernanceSource).Phases.ToArray();
+        rules = kind switch
+        {
+            "duplicate" => rules.Select((p, i) => i == 1 ? p with { ExtensionPriority = rules[0].ExtensionPriority } : p).ToArray(),
+            "missing" => rules.Select((p, i) => i == 0 ? p with { ExtensionPriority = null } : p).ToArray(),
+            "unknown" => rules.Select((p, i) => i == 0 ? p with { PhaseKey = "UNKNOWN" } : p).ToArray(),
+            _ => throw new InvalidOperationException(),
+        };
 
-        var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
+        var result = AllocationOrderCorrectnessVerifier.Verify(
+            allocation,
+            new ApprovedAllocationPriorityPolicy(true, GovernanceSource, rules));
 
-        Assert.False(allocation.IsMathematicallyFeasible);
-        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
-        Assert.Contains("NOT_APPLICABLE", result.ReasonCode);
+        Assert.Equal(AllocationOrderVerificationOutcome.Invalid, result.Outcome);
+        Assert.False(result.IsExecutable);
+        Assert.Contains("INVALID_PRIORITY", result.ReasonCode);
     }
 
     [Fact]
-    public void Verify_IsPureFunction_NoIOOrConstructorDependencies()
+    public void Verify_GenericOrderDependentSyntheticAllocation_PassesWithoutTargetSpecificBranch()
     {
-        var method = typeof(AllocationOrderCorrectnessVerifier).GetMethod(nameof(AllocationOrderCorrectnessVerifier.Verify))!;
+        var allocation = new PhaseAllocationResult(
+            6, 5, 1, AllocationMode.Extension,
+            new[] { new AllocatedPhase("ALPHA", 3, 1, 3), new AllocatedPhase("BETA", 3, 2, 4) },
+            true, "SYNTHETIC");
+        var policy = new ApprovedAllocationPriorityPolicy(true, "SYNTHETIC_APPROVAL", new[]
+        {
+            new ApprovedPhaseAllocationRule("ALPHA", 1, 2, 3, 1, 1),
+            new ApprovedPhaseAllocationRule("BETA", 2, 3, 4, 2, 2),
+        });
 
-        Assert.True(method.IsStatic);
-        Assert.Single(method.GetParameters());
-        Assert.Equal(typeof(PhaseAllocationResult), method.GetParameters()[0].ParameterType);
+        var result = AllocationOrderCorrectnessVerifier.Verify(allocation, policy);
+
+        Assert.Equal(AllocationOrderVerificationOutcome.Pass, result.Outcome);
+        Assert.False(result.IsOrderIndependent);
+        Assert.True(result.UsesApprovedPriority);
+        Assert.True(result.IsExecutable);
+    }
+
+    [Fact]
+    public void Verify_BoundsViolation_FailsClosed()
+    {
+        var allocation = new PhaseAllocationResult(
+            13, 12, 1, AllocationMode.Extension,
+            new[] { new AllocatedPhase("FOUNDATION", 5, 2, 4), new AllocatedPhase("BUILD", 8, 3, 5) },
+            true, "SYNTHETIC");
+
+        var result = AllocationOrderCorrectnessVerifier.Verify(allocation);
+
+        Assert.Equal(AllocationOrderVerificationOutcome.Invalid, result.Outcome);
+        Assert.Contains("BOUNDS_VIOLATION", result.ReasonCode);
     }
 }

@@ -21,4 +21,14 @@ public class TrainingDayDetailResponse
     public bool CanMarkComplete { get; set; }
     public bool CanMarkNotToday { get; set; }
     public DateTime? CompletedAt { get; set; }
+
+    // ── Backend Integration Phase 4G.6D — additive, mapped from the day's
+    // owning TrainingWeek and the day's own persisted Source/AdaptedFromId.
+    // Never fabricated: RunwayBlock is null for every Core day; Source is
+    // the real persisted enum value, never assumed to always be Template. ──
+    public int? WeekNumber { get; set; }
+    public string? WeekType { get; set; }
+    public string? RunwayBlock { get; set; }
+    public string? Source { get; set; }
+    public Guid? AdaptedFromId { get; set; }
 }

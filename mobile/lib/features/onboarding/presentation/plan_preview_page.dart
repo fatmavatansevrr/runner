@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../home/data/home_provider.dart';
 import '../../calendar/data/calendar_provider.dart';
 import '../../profile/data/profile_provider.dart';
+import 'widgets/plan_preview_schedule.dart';
 
 class PlanPreviewPage extends ConsumerStatefulWidget {
   const PlanPreviewPage({super.key});
@@ -21,7 +22,29 @@ class PlanPreviewPage extends ConsumerStatefulWidget {
 class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   bool _isConfirming = false;
 
+  // Phase 4H.2 (PART 13): interaction pattern B -- the first week starts
+  // expanded (immediate real content, not an empty-looking list), every
+  // other week starts collapsed. Deterministic (always week 1, regardless
+  // of response), and keyed by week NUMBER (not list index) so toggling
+  // survives whatever order the backend returns weeks in.
+  final Set<int> _expandedWeekNumbers = {1};
+
+  void _toggleWeek(int weekNumber) {
+    setState(() {
+      if (!_expandedWeekNumbers.remove(weekNumber)) {
+        _expandedWeekNumbers.add(weekNumber);
+      }
+    });
+  }
+
   void _onConfirm(String previewId) async {
+    // Phase 4H.1 (PART 12): confirm is only ever invoked from the CTA's
+    // onPressed, which is itself null (disabled) whenever
+    // `!state.isPreviewConfirmable` -- this guard is defense-in-depth, not
+    // the only enforcement point, so a non-confirmable lifecycle can never
+    // reach the repository even if a caller is added later that forgets to
+    // check the button's enabled state first.
+    if (_isConfirming) return; // PART 12: block duplicate taps while in flight.
     setState(() => _isConfirming = true);
     try {
       final repo = ref.read(planRepositoryProvider);
@@ -56,11 +79,11 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   /// Format goalDistance enum value into a human-readable label
   String _goalLabel(String goalType, String goalDistance) {
     final distLabel = switch (goalDistance) {
-      'five_k'       => '5 km',
-      'ten_k'        => '10 km',
+      'five_k' => '5 km',
+      'ten_k' => '10 km',
       'half_marathon' => 'Half Marathon',
-      'marathon'     => 'Marathon',
-      _              => goalDistance,
+      'marathon' => 'Marathon',
+      _ => goalDistance,
     };
     final verb = goalType == 'race' ? 'Race' : 'Run';
     return '$verb $distLabel';
@@ -73,11 +96,11 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
   // longer accepts them either — so this display-only mapping only ever
   // needs to cover the canonical contract.
   String _levelLabel(String level) => switch (level) {
-        'beginner'      => 'Beginner',
-        'intermediate'  => 'Intermediate',
-        'advanced'      => 'Advanced',
-        'experienced'   => 'Experienced',
-        _               => level,
+        'beginner' => 'Beginner',
+        'intermediate' => 'Intermediate',
+        'advanced' => 'Advanced',
+        'experienced' => 'Experienced',
+        _ => level,
       };
 
   @override
@@ -99,12 +122,14 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline_rounded, size: 40, color: AppColors.textMuted),
+                  const Icon(Icons.error_outline_rounded,
+                      size: 40, color: AppColors.textMuted),
                   const SizedBox(height: 16),
                   const Text(
                     "We couldn't find a plan preview.\nPlease go back and try again.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                    style:
+                        TextStyle(fontSize: 15, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 20),
                   AppPrimaryButton(
@@ -125,6 +150,17 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
       );
     }
 
+    // Phase 4H.1 (PART 9): response-driven duration text -- never a
+    // hardcoded "12-week plan". For a Preparation Runway preview, the
+    // runway/Core split is shown as a secondary line using the real
+    // response-derived counts (never a recalculated or assumed 12).
+    final durationValue = state.isPreparationRunwayPreview
+        ? '${state.totalPreviewWeekCount}-week plan'
+        : '${preview.weeks.length} weeks';
+    final durationSubtitle = state.isPreparationRunwayPreview
+        ? '${state.runwayWeekCount} weeks preparation • ${state.coreWeekCount} weeks race-specific core'
+        : null;
+
     final rows = [
       _PreviewRow(
         icon: Icons.flag_rounded,
@@ -138,7 +174,8 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
         iconColor: const Color(0xFF00A97F),
         iconBg: const Color(0xFFD0F5EA),
         label: 'DURATION',
-        value: '${preview.weeks.length} weeks',
+        value: durationValue,
+        subtitle: durationSubtitle,
       ),
       _PreviewRow(
         icon: Icons.bolt_rounded,
@@ -170,7 +207,8 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary),
                 onPressed: () => context.go(AppRoutes.startDate),
               ),
             ),
@@ -240,7 +278,8 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
                     // Plan name chip
                     Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(100),
@@ -255,10 +294,37 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 32),
+
+                    // ── Plan Schedule (Phase 4H.2) ───────────────────────────
+                    // Same SingleChildScrollView as the summary above -- not
+                    // a second/nested scrollable (PART 4).
+                    PlanScheduleSection(
+                      response: preview,
+                      expandedWeekNumbers: _expandedWeekNumbers,
+                      onToggleWeek: _toggleWeek,
+                    ),
                   ],
                 ),
               ),
             ),
+
+            // ── Non-confirmable lifecycle notice (PART 11) ─────────────────────
+            // The preview itself remains fully visible above; only the
+            // confirm action is affected. No raw backend error code/feature-
+            // gate terminology is ever shown here.
+            if (!state.isPreviewConfirmable)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: Text(
+                  'This plan is available for preview, but activation is not '
+                  'currently available.',
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+              ),
 
             // ── Bottom CTA ───────────────────────────────────────────────────
             Padding(
@@ -267,7 +333,12 @@ class _PlanPreviewPageState extends ConsumerState<PlanPreviewPage> {
                 label: 'Looks good, continue',
                 isLoading: _isConfirming,
                 icon: Icons.arrow_forward_rounded,
-                onPressed: () => _onConfirm(preview.previewId),
+                // Phase 4H.1 (PART 11): gated exclusively on lifecycle --
+                // never on week count. `unknown` fails closed (disabled),
+                // matching PreviewLifecycle.isConfirmable's own semantics.
+                onPressed: state.isPreviewConfirmable
+                    ? () => _onConfirm(preview.previewId)
+                    : null,
               ),
             ),
           ],
@@ -309,6 +380,7 @@ class _PreviewRow extends StatelessWidget {
     required this.iconBg,
     required this.label,
     required this.value,
+    this.subtitle,
   });
 
   final IconData icon;
@@ -316,6 +388,10 @@ class _PreviewRow extends StatelessWidget {
   final Color iconBg;
   final String label;
   final String value;
+
+  /// Optional second line (PART 9: runway/Core week split for a
+  /// Preparation Runway preview). Null for every other row.
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -357,10 +433,21 @@ class _PreviewRow extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+          const Icon(Icons.chevron_right_rounded,
+              color: AppColors.textMuted, size: 20),
         ],
       ),
     );

@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "PlanCatalog.Core/1.0.0": {
+        "dependencies": {
+          "PlanCatalog.Contracts": "1.0.0"
+        },
+        "runtime": {
+          "PlanCatalog.Core.dll": {}
+        }
+      },
+      "PlanCatalog.Contracts/1.0.0": {
+        "runtime": {
+          "PlanCatalog.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PlanCatalog.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "PlanCatalog.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

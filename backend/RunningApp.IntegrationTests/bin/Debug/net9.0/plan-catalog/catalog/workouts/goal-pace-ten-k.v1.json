@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION",
+    "schemaVersion": 1,
+    "key": "GOAL_PACE_TEN_K",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "family": "QUALITY",
+  "complexityTier": 2,
+  "eligiblePhases": ["RACE_SPECIFIC"],
+  "allowedPrescriptionModes": ["PACE_BASED"],
+  "components": [
+    { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+    { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "GOAL_PACE" },
+    { "sequenceOrder": 3, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+  ]
+}

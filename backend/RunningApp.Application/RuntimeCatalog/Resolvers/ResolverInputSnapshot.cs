@@ -34,6 +34,7 @@ public sealed class ResolverInputSnapshot
     // ── Schedule identity ─────────────────────────────────────────────────
     public DateOnly? StartDate { get; init; }
     public DateOnly? RaceDate { get; init; }
+    public string? RaceName { get; init; }
     public int? TargetFinishTimeSeconds { get; init; }
 
     /// <summary>
@@ -47,6 +48,10 @@ public sealed class ResolverInputSnapshot
     public TargetFinishTimeSource? TargetFinishTimeSource { get; init; }
 
     public int? DaysPerWeek { get; init; }
+    public IReadOnlyList<Weekday>? PreferredDays { get; init; }
+    public Weekday? LongRunDay { get; init; }
+    public int? WeeklyAvailability { get; init; }
+    public double? PreferredPace { get; init; }
     /// <summary>
     /// Running Background V2.1 — deliberately uses the historical-compat
     /// <see cref="RunningBackgroundJsonConverter"/> (NOT

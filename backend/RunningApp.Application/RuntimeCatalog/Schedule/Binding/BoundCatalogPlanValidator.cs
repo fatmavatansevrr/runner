@@ -33,14 +33,21 @@ internal sealed class BoundCatalogPlanValidator : IBoundCatalogPlanValidator
         foreach (var week in plan.Weeks)
         {
             var roleCounts = week.Sessions.GroupBy(s => s.StructuralRole).ToDictionary(g => g.Key, g => g.Count());
+            var sourceWeek = datedSkeleton.Weeks.SingleOrDefault(w => w.WeekNumber == week.WeekNumber);
+            var expectedRoleCounts = sourceWeek?.SessionSlots
+                .GroupBy(s => s.StructuralRole)
+                .ToDictionary(g => g.Key, g => g.Count());
             var keySessionCount = roleCounts.GetValueOrDefault("KEY_SESSION");
             var easySupportCount = roleCounts.GetValueOrDefault("EASY_SUPPORT");
             var longRunCount = roleCounts.GetValueOrDefault("LONG_RUN");
 
-            if (keySessionCount != 1 || easySupportCount != 2 || longRunCount != 1)
+            if (expectedRoleCounts is null ||
+                keySessionCount != expectedRoleCounts.GetValueOrDefault("KEY_SESSION") ||
+                easySupportCount != expectedRoleCounts.GetValueOrDefault("EASY_SUPPORT") ||
+                longRunCount != expectedRoleCounts.GetValueOrDefault("LONG_RUN"))
             {
                 errors.Add(
-                    $"Week {week.WeekNumber} does not have the expected 1 KEY_SESSION / 2 EASY_SUPPORT / 1 LONG_RUN shape " +
+                    $"Week {week.WeekNumber} does not match the dated skeleton's resolved role cardinality " +
                     $"(found KEY_SESSION={keySessionCount}, EASY_SUPPORT={easySupportCount}, LONG_RUN={longRunCount}).");
             }
 

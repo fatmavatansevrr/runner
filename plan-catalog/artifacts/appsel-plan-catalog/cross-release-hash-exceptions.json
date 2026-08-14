@@ -177,9 +177,16 @@
       "documentType": "PUBLISHED_TEMPLATE_BUNDLE",
       "key": "TEN_K__4D__INTERMEDIATE",
       "version": 1,
-      "canonicalContentHash": "b6420adb860c491bb64bd104dfb80631b8b619a1ecd6935f156974d3a549f243",
+      "canonicalContentHash": "2042b89e04b4881aa3487c3ba04eda9e09243763041c50d91e3835fa82b94ec2",
       "reasonForCanonicalDirection": "PublishedTemplateBundle is a DERIVED artifact, not an independently-versioned source catalog identity (its BundleVersion is always inherited from its root TemplateCombinationDefinition's version). Its content depends on FindWorkout's key-only, highest-non-retired-version resolution, so its hash necessarily changes whenever ANY dependency's resolvable content changes, even though the bundle's own 'identity' (bundleKey+bundleVersion=1) never changed. Do not treat this as an independent source-artifact-level immutability violation — it is fully explained by the WORKOUT_DEFINITION and PEAK_VOLUME_BAND_POLICY entries above. All five historical releases pinned a different bundle-v1 hash from each other AND from today's freshly-rebuilt canonical value, because each release boundary saw a different combination of underlying dependency states (see dependency-version-cascade-audit.md for the full derivation chain).",
       "anomalies": [
+        {
+          "releaseVersion": "0.5.0-pilot",
+          "observedContentHash": "b6420adb860c491bb64bd104dfb80631b8b619a1ecd6935f156974d3a549f243",
+          "reason": "Predates activation of the validated v4 workout dependency closure used by the 3D Core release; bundle hashes are derived from highest validated workout resolution.",
+          "supersedingRelease": "0.7.3-pilot",
+          "auditReference": "PHASE_10K_GEN_3B_INTERMEDIATE_3D_CORE_PUBLIC_ACTIVATION.md"
+        },
         {
           "releaseVersion": "1.0.0",
           "observedContentHash": "3c673588c5d21ad052a2cd38b6ec53f78ec23f40ecbdb239345a325ac3e16ccf",
@@ -221,15 +228,38 @@
       "documentType": "PUBLISHED_TEMPLATE_BUNDLE",
       "key": "TEN_K__4D__INTERMEDIATE",
       "version": 2,
-      "canonicalContentHash": "d0f23f4f9ebbd972b8ae97be97a509076050f28e25ca8fe7891808c4fcd3fc75",
+      "canonicalContentHash": "35fa5487a48e12c2c0567de3b9a3daff516734ddf488e223a584cb468ffe66de",
       "reasonForCanonicalDirection": "Same derived-artifact reasoning as bundle v1 above — see that entry's reasonForCanonicalDirection.",
       "anomalies": [
+        {
+          "releaseVersion": "0.5.0-pilot",
+          "observedContentHash": "d0f23f4f9ebbd972b8ae97be97a509076050f28e25ca8fe7891808c4fcd3fc75",
+          "reason": "Predates activation of the validated v4 workout dependency closure used by the 3D Core release.",
+          "supersedingRelease": "0.7.3-pilot",
+          "auditReference": "PHASE_10K_GEN_3B_INTERMEDIATE_3D_CORE_PUBLIC_ACTIVATION.md"
+        },
         {
           "releaseVersion": "0.4.0-pilot",
           "observedContentHash": "1858d88fb272f17d9815df7c40a5133dac8f765ad2d01964d863439e58c9c467",
           "reason": "0.4.0-pilot is the only release that ever published combination v2's bundle; it was built with the mutated (pre-restoration) workout v1 and peak-volume-policy v1 content.",
           "supersedingRelease": "0.5.0-pilot",
           "auditReference": "artifacts/audits/dependency-version-cascade-audit.md (CASCADE-001)"
+        }
+      ]
+    },
+    {
+      "documentType": "PUBLISHED_TEMPLATE_BUNDLE",
+      "key": "TEN_K__4D__INTERMEDIATE",
+      "version": 3,
+      "canonicalContentHash": "7b1cc40d20d8164670004ecdf33f7f15093ad1593f9d78c803524137429ae4d5",
+      "reasonForCanonicalDirection": "Derived bundle hash follows the now-validated v4 workout dependency closure activated with 3D Core.",
+      "anomalies": [
+        {
+          "releaseVersion": "0.5.0-pilot",
+          "observedContentHash": "5cf81183a3603011cbdf00083c0f75c81915261267f76effb794d25380601207",
+          "reason": "Predates activation of the validated v4 workout dependency closure used by the 3D Core release.",
+          "supersedingRelease": "0.7.3-pilot",
+          "auditReference": "PHASE_10K_GEN_3B_INTERMEDIATE_3D_CORE_PUBLIC_ACTIVATION.md"
         }
       ]
     }

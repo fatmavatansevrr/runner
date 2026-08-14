@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "documentType": "PREPARATION_RUNWAY_BLOCK_PROGRESSION",
+    "schemaVersion": 1,
+    "key": "TEN_K_GENERAL_ENDURANCE_PROGRESSION",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "distanceFamily": "TEN_K",
+  "blockType": "GENERAL_ENDURANCE",
+  "steps": [
+    {
+      "stepOrder": 1,
+      "stepKey": "GENERAL_ENDURANCE_STEP_1",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    },
+    {
+      "stepOrder": 2,
+      "stepKey": "GENERAL_ENDURANCE_STEP_2",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    },
+    {
+      "stepOrder": 3,
+      "stepKey": "GENERAL_ENDURANCE_STEP_3",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    },
+    {
+      "stepOrder": 4,
+      "stepKey": "GENERAL_ENDURANCE_STEP_4",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    },
+    {
+      "stepOrder": 5,
+      "stepKey": "GENERAL_ENDURANCE_STEP_5",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 5 }
+      ]
+    }
+  ]
+}

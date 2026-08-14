@@ -20,6 +20,25 @@ public class ActivePlanSummaryDto
     public string GoalDistance { get; set; } = string.Empty;
     public string Level { get; set; } = string.Empty;
     public string ProgressText { get; set; } = string.Empty;
+
+    // ── Backend Integration Phase 4G.6D — additive Preparation Runway/Core
+    // provenance fields, mapped directly from the plan's current persisted
+    // TrainingWeek (never parsed from ProgressText, never inferred from
+    // TotalWeeks). CurrentRunwayBlock is null for every Core week and for
+    // every plan with no TrainingWeek rows (legacy/seeded plans) — see
+    // PHASE4G_6D_...md §6 for the exact entity mapping. ──
+
+    /// <summary>The current TrainingWeek's global WeekNumber. Null only when the plan has no persisted TrainingWeek rows.</summary>
+    public int? CurrentWeekNumber { get; set; }
+
+    /// <summary>Total persisted TrainingWeek count for this plan. Null only when the plan has no persisted TrainingWeek rows.</summary>
+    public int? TotalWeeks { get; set; }
+
+    /// <summary>The current week's persisted TrainingWeekType, snake_case (e.g. "base", "preparation_runway"). Null only when the plan has no persisted TrainingWeek rows.</summary>
+    public string? CurrentWeekType { get; set; }
+
+    /// <summary>The current week's exact persisted CatalogPhaseKey, but ONLY when CurrentWeekType is "preparation_runway" — always null for a Core week, never CatalogPhaseKey's Core-phase value (FOUNDATION/BUILD/etc).</summary>
+    public string? CurrentRunwayBlock { get; set; }
 }
 
 public class TrainingDayResponse
@@ -40,6 +59,13 @@ public class TrainingDayResponse
     public bool IsLongRun { get; set; }
     public bool CanMarkComplete { get; set; }
     public bool CanMarkNotToday { get; set; }
+
+    // ── Backend Integration Phase 4G.6D — additive, mapped from the day's
+    // owning TrainingWeek. Null for a synthetic (non-persisted) rest day,
+    // since there is no owning TrainingWeek to map from. ──
+    public int? WeekNumber { get; set; }
+    public string? WeekType { get; set; }
+    public string? RunwayBlock { get; set; }
 }
 
 public class DailyTipResponse

@@ -1,5 +1,7 @@
 // Core DTOs matching backend snake_case request/response structures.
 
+import '../models/preparation_runway.dart';
+
 class BootstrapResponse {
   BootstrapResponse({
     required this.isAuthenticated,
@@ -144,8 +146,10 @@ class GenerateRacePlanPreviewRequestDto {
       if (raceName != null) 'race_name': raceName,
       'target_finish_time_seconds': targetFinishTimeSeconds,
       'target_finish_time_source': targetFinishTimeSource,
-      if (recentWeeklyVolumeKm != null) 'recent_weekly_volume_km': recentWeeklyVolumeKm,
-      if (recentLongestRunKm != null) 'recent_longest_run_km': recentLongestRunKm,
+      if (recentWeeklyVolumeKm != null)
+        'recent_weekly_volume_km': recentWeeklyVolumeKm,
+      if (recentLongestRunKm != null)
+        'recent_longest_run_km': recentLongestRunKm,
       if (recentRunsPerWeek != null) 'recent_runs_per_week': recentRunsPerWeek,
       'recent_race': recentRace?.toJson(),
     };
@@ -199,6 +203,11 @@ class GeneratePreviewResponse {
     required this.daysPerWeek,
     required this.unit,
     required this.weeks,
+    // Phase 4H.1: optional, defaults to the approved backward-compatible
+    // fallback (see PreviewLifecycle.fromWire) so every pre-existing
+    // direct-constructor call site (tests included) keeps compiling and
+    // behaving as "core confirmable" without being touched.
+    this.lifecycle = 'core_confirmable',
   });
 
   final String previewId;
@@ -209,6 +218,28 @@ class GeneratePreviewResponse {
   final int daysPerWeek;
   final String unit;
   final List<PreviewWeekDto> weeks;
+
+  /// Raw backend wire value (e.g. "core_confirmable"). Kept alongside the
+  /// typed [lifecycleValue] accessor so no information is lost in transit —
+  /// widgets should read [lifecycleValue], not this field, directly.
+  final String lifecycle;
+
+  /// The authoritative, safe-by-default typed lifecycle. Never derived from
+  /// [weeks].length or any other field — see [PreviewLifecycle.fromWire].
+  PreviewLifecycle get lifecycleValue => PreviewLifecycle.fromWire(lifecycle);
+
+  /// True when at least one week is a Preparation Runway week (per its typed
+  /// week type, not inferred from week count).
+  bool get isPreparationRunwayPlan =>
+      weeks.any((w) => w.weekTypeValue == PreviewWeekType.preparationRunway);
+
+  int get runwayWeekCount => weeks
+      .where((w) => w.weekTypeValue == PreviewWeekType.preparationRunway)
+      .length;
+
+  int get coreWeekCount => weeks.length - runwayWeekCount;
+
+  int get totalWeekCount => weeks.length;
 
   factory GeneratePreviewResponse.fromJson(Map<String, dynamic> json) {
     return GeneratePreviewResponse(
@@ -222,6 +253,9 @@ class GeneratePreviewResponse {
       weeks: (json['weeks'] as List? ?? [])
           .map((e) => PreviewWeekDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      // Missing key (legacy fixture) -> null -> PreviewLifecycle.fromWire
+      // maps null to coreConfirmable, the approved fallback (PART 1).
+      lifecycle: json['lifecycle'] as String? ?? 'core_confirmable',
     );
   }
 }
@@ -231,11 +265,28 @@ class PreviewWeekDto {
     required this.weekNumber,
     required this.weekType,
     required this.days,
+    this.runwayBlock,
   });
 
   final int weekNumber;
   final String weekType;
   final List<PreviewDayDto> days;
+
+  /// Raw backend wire value (e.g. "CONSISTENCY"). Always null for a Core
+  /// week — never omitted vs. explicit-null distinction needed here since
+  /// the backend itself always serializes it as a JSON `null` for Core
+  /// weeks (System.Text.Json default nullable-property behavior).
+  final String? runwayBlock;
+
+  PreviewWeekType get weekTypeValue => PreviewWeekType.fromWire(weekType);
+
+  /// `null` for a Core week (matches [runwayBlock] being null). For a
+  /// runway week, [PreparationRunwayBlock.unknown] if the raw value doesn't
+  /// match one of the four known blocks (future backend addition) rather
+  /// than treating it as "no block" — a runway week always has *some*
+  /// block, so `null` here would misrepresent it as a Core week.
+  PreparationRunwayBlock? get runwayBlockValue =>
+      runwayBlock == null ? null : PreparationRunwayBlock.fromWire(runwayBlock);
 
   factory PreviewWeekDto.fromJson(Map<String, dynamic> json) {
     return PreviewWeekDto(
@@ -244,6 +295,7 @@ class PreviewWeekDto {
       days: (json['days'] as List? ?? [])
           .map((e) => PreviewDayDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      runwayBlock: json['runway_block'] as String?,
     );
   }
 }
@@ -264,6 +316,23 @@ class PreviewDayDto {
   final int durationMin;
   final String intensity;
   final DateTime date;
+
+  WorkoutIntensity get intensityValue => WorkoutIntensity.fromWire(intensity);
+
+  /// Phase 4H.2 — the richer typed+raw wrapper (see [WorkoutIntensityValue])
+  /// used by the new schedule UI; preserves the original backend token for
+  /// display even when [WorkoutIntensityCategory] doesn't yet have a
+  /// dedicated member for it.
+  WorkoutIntensityValue get intensityDetail =>
+      WorkoutIntensityValue.fromWire(intensity);
+
+  PreviewDayType get dayTypeValue => PreviewDayType.fromWire(dayType);
+
+  /// Authoritative long-run identity, per PART 9: `PreviewDayDto` carries no
+  /// separate `is_long_run` flag, so this reads the formal `day_type`
+  /// member (`TrainingDayType.LongRun` -> `"long_run"`) rather than
+  /// inferring it from slot position.
+  bool get isLongRun => dayTypeValue == PreviewDayType.longRun;
 
   factory PreviewDayDto.fromJson(Map<String, dynamic> json) {
     return PreviewDayDto(
@@ -335,10 +404,12 @@ class HomeResponse {
   factory HomeResponse.fromJson(Map<String, dynamic> json) {
     return HomeResponse(
       activePlan: json['active_plan'] != null
-          ? ActivePlanSummaryDto.fromJson(json['active_plan'] as Map<String, dynamic>)
+          ? ActivePlanSummaryDto.fromJson(
+              json['active_plan'] as Map<String, dynamic>)
           : null,
       todayWorkout: json['today_workout'] != null
-          ? TrainingDayResponse.fromJson(json['today_workout'] as Map<String, dynamic>)
+          ? TrainingDayResponse.fromJson(
+              json['today_workout'] as Map<String, dynamic>)
           : null,
       dailyTip: json['daily_tip'] != null
           ? DailyTipResponse.fromJson(json['daily_tip'] as Map<String, dynamic>)
@@ -358,6 +429,15 @@ class ActivePlanSummaryDto {
     required this.goalDistance,
     required this.level,
     required this.progressText,
+    // Phase 4H.4: additive, optional, default null -- every pre-existing
+    // direct-constructor call site (tests included) keeps compiling
+    // unchanged. See PART 6/24: a null currentWeekNumber/currentWeekType is
+    // the documented legacy-fallback signal -- callers fall back to parsing
+    // progressText only in that case, never when typed fields are present.
+    this.currentWeekNumber,
+    this.totalWeeks,
+    this.currentWeekType,
+    this.currentRunwayBlock,
   });
 
   final String planId;
@@ -366,6 +446,26 @@ class ActivePlanSummaryDto {
   final String level;
   final String progressText;
 
+  /// Backend Phase 4G.6D — authoritative, entity-derived. Null only for a
+  /// legacy response (predating 4G.6D) or a plan with no persisted
+  /// TrainingWeek rows.
+  final int? currentWeekNumber;
+  final int? totalWeeks;
+  final String? currentWeekType;
+  final String? currentRunwayBlock;
+
+  PreviewWeekType? get currentWeekTypeValue => currentWeekType == null
+      ? null
+      : PreviewWeekType.fromWire(currentWeekType);
+
+  /// See [WeekProvenance] — null for a legacy response; for a real 4G.6D
+  /// response, never trusts [currentRunwayBlock] unless [currentWeekTypeValue]
+  /// itself says this is a runway week.
+  WeekProvenance? get currentWeekProvenance => currentWeekTypeValue == null
+      ? null
+      : WeekProvenance(
+          weekType: currentWeekTypeValue!, runwayBlockRaw: currentRunwayBlock);
+
   factory ActivePlanSummaryDto.fromJson(Map<String, dynamic> json) {
     return ActivePlanSummaryDto(
       planId: json['plan_id'] ?? '',
@@ -373,6 +473,10 @@ class ActivePlanSummaryDto {
       goalDistance: json['goal_distance'] ?? '',
       level: json['level'] ?? '',
       progressText: json['progress_text'] ?? '',
+      currentWeekNumber: json['current_week_number'] as int?,
+      totalWeeks: json['total_weeks'] as int?,
+      currentWeekType: json['current_week_type'] as String?,
+      currentRunwayBlock: json['current_runway_block'] as String?,
     );
   }
 }
@@ -394,6 +498,10 @@ class TrainingDayResponse {
     required this.isLongRun,
     required this.canMarkComplete,
     required this.canMarkNotToday,
+    // Phase 4H.4: additive, optional, default null.
+    this.weekNumber,
+    this.weekType,
+    this.runwayBlock,
   });
 
   /// Null for a synthetic rest/no-session day not backed by a persisted
@@ -414,6 +522,26 @@ class TrainingDayResponse {
   final bool canMarkComplete;
   final bool canMarkNotToday;
 
+  /// Backend Phase 4G.6D — null for a synthetic (non-persisted) rest day or
+  /// a legacy response predating this field.
+  final int? weekNumber;
+  final String? weekType;
+  final String? runwayBlock;
+
+  /// Phase 4H.3 — reuses the shared typed vocabulary from
+  /// `preparation_runway.dart` rather than a second parallel label system.
+  WorkoutIntensityValue get intensityDetail =>
+      WorkoutIntensityValue.fromWire(intensity);
+
+  /// Phase 4H.4 — see [ActivePlanSummaryDto.currentWeekProvenance]; null
+  /// only when [weekType] itself is absent (legacy response or synthetic day).
+  WeekProvenance? get weekProvenance => weekType == null
+      ? null
+      : WeekProvenance(
+          weekType: PreviewWeekType.fromWire(weekType),
+          runwayBlockRaw: runwayBlock);
+  PreviewDayType get dayTypeValue => PreviewDayType.fromWire(dayType);
+
   factory TrainingDayResponse.fromJson(Map<String, dynamic> json) {
     return TrainingDayResponse(
       dayId: json['day_id'] as String?,
@@ -422,7 +550,8 @@ class TrainingDayResponse {
       status: json['status'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      plannedDistanceKm: (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
+      plannedDistanceKm:
+          (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
       plannedDurationMin: json['planned_duration_min'] ?? 0,
       plannedPaceMinKm: (json['planned_pace_min_km'] as num?)?.toDouble(),
       intensity: json['intensity'],
@@ -431,6 +560,9 @@ class TrainingDayResponse {
       isLongRun: json['is_long_run'] ?? false,
       canMarkComplete: json['can_mark_complete'] ?? false,
       canMarkNotToday: json['can_mark_not_today'] ?? false,
+      weekNumber: json['week_number'] as int?,
+      weekType: json['week_type'] as String?,
+      runwayBlock: json['runway_block'] as String?,
     );
   }
 }
@@ -476,6 +608,12 @@ class TrainingDayDetailResponse {
     required this.canMarkComplete,
     required this.canMarkNotToday,
     this.completedAt,
+    // Phase 4H.4: additive, optional, default null.
+    this.weekNumber,
+    this.weekType,
+    this.runwayBlock,
+    this.source,
+    this.adaptedFromId,
   });
 
   final String dayId;
@@ -495,6 +633,35 @@ class TrainingDayDetailResponse {
   final bool canMarkNotToday;
   final DateTime? completedAt;
 
+  /// Backend Phase 4G.6D — additive provenance/origin fields.
+  final int? weekNumber;
+  final String? weekType;
+  final String? runwayBlock;
+  final String? source;
+
+  /// Kept as a raw String (matching this DTO's existing style — every other
+  /// ID field in this file is a `String`, not a `Guid`/`Uuid` wrapper type),
+  /// never rendered prominently in the UI (see PART 11 — represented only as
+  /// "Adapted from an earlier workout" when non-null, not the raw ID).
+  final String? adaptedFromId;
+
+  /// Phase 4H.3 — see `TrainingDayResponse.intensityDetail`/`dayTypeValue`.
+  WorkoutIntensityValue get intensityDetail =>
+      WorkoutIntensityValue.fromWire(intensity);
+  PreviewDayType get dayTypeValue => PreviewDayType.fromWire(dayType);
+
+  /// Phase 4H.4 — see [ActivePlanSummaryDto.currentWeekProvenance].
+  WeekProvenance? get weekProvenance => weekType == null
+      ? null
+      : WeekProvenance(
+          weekType: PreviewWeekType.fromWire(weekType),
+          runwayBlockRaw: runwayBlock);
+
+  TrainingDaySourceValue get sourceValue =>
+      TrainingDaySourceValue.fromWire(source);
+
+  bool get hasAdaptedOrigin => adaptedFromId != null;
+
   factory TrainingDayDetailResponse.fromJson(Map<String, dynamic> json) {
     return TrainingDayDetailResponse(
       dayId: json['day_id'] ?? '',
@@ -503,7 +670,8 @@ class TrainingDayDetailResponse {
       status: json['status'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      plannedDistanceKm: (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
+      plannedDistanceKm:
+          (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
       plannedDurationMin: json['planned_duration_min'] ?? 0,
       plannedPaceMinKm: (json['planned_pace_min_km'] as num?)?.toDouble(),
       intensity: json['intensity'],
@@ -512,7 +680,14 @@ class TrainingDayDetailResponse {
       isLongRun: json['is_long_run'] ?? false,
       canMarkComplete: json['can_mark_complete'] ?? false,
       canMarkNotToday: json['can_mark_not_today'] ?? false,
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'])
+          : null,
+      weekNumber: json['week_number'] as int?,
+      weekType: json['week_type'] as String?,
+      runwayBlock: json['runway_block'] as String?,
+      source: json['source'] as String?,
+      adaptedFromId: json['adapted_from_id'] as String?,
     );
   }
 }
@@ -558,7 +733,8 @@ class CreateNotTodayDecisionRequest {
 }
 
 class CreateNotTodayDecisionResponse {
-  CreateNotTodayDecisionResponse({required this.decisionId, required this.status});
+  CreateNotTodayDecisionResponse(
+      {required this.decisionId, required this.status});
   final String decisionId;
   final String status;
 
@@ -620,7 +796,8 @@ class PendingConfirmationResponse {
       date: DateTime.parse(json['date']),
       dayType: json['day_type'] ?? '',
       title: json['title'] ?? '',
-      plannedDistanceKm: (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
+      plannedDistanceKm:
+          (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
       plannedDurationMin: json['planned_duration_min'] ?? 0,
     );
   }
@@ -653,11 +830,13 @@ class ResolvePendingConfirmationRequest {
 }
 
 class ResolvePendingConfirmationResponse {
-  ResolvePendingConfirmationResponse({required this.pendingConfirmationId, required this.status});
+  ResolvePendingConfirmationResponse(
+      {required this.pendingConfirmationId, required this.status});
   final String pendingConfirmationId;
   final String status;
 
-  factory ResolvePendingConfirmationResponse.fromJson(Map<String, dynamic> json) {
+  factory ResolvePendingConfirmationResponse.fromJson(
+      Map<String, dynamic> json) {
     return ResolvePendingConfirmationResponse(
       pendingConfirmationId: json['pending_confirmation_id'] ?? '',
       status: json['status'] ?? '',
@@ -687,7 +866,8 @@ class ProfileOverviewResponse {
       unit: json['unit'] ?? 'km',
       runningBackground: json['running_background'] ?? 'none',
       activePlanStats: json['active_plan_stats'] != null
-          ? ProfilePlanStatsDto.fromJson(json['active_plan_stats'] as Map<String, dynamic>)
+          ? ProfilePlanStatsDto.fromJson(
+              json['active_plan_stats'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -719,8 +899,10 @@ class ProfilePlanStatsDto {
       goalDistance: json['goal_distance'] ?? '',
       completedRunsCount: json['completed_runs_count'] ?? 0,
       totalPlannedRunsCount: json['total_planned_runs_count'] ?? 0,
-      totalCompletedDistance: (json['total_completed_distance'] as num? ?? 0.0).toDouble(),
-      adherenceRatePercent: (json['adherence_rate_percent'] as num? ?? 0.0).toDouble(),
+      totalCompletedDistance:
+          (json['total_completed_distance'] as num? ?? 0.0).toDouble(),
+      adherenceRatePercent:
+          (json['adherence_rate_percent'] as num? ?? 0.0).toDouble(),
     );
   }
 }
@@ -780,14 +962,17 @@ class PlanDetailsResponse {
       daysPerWeek: json['days_per_week'] ?? 0,
       unit: json['unit'] ?? 'km',
       raceName: json['race_name'],
-      raceDate: json['race_date'] != null ? DateTime.parse(json['race_date']) : null,
+      raceDate:
+          json['race_date'] != null ? DateTime.parse(json['race_date']) : null,
       targetFinishTimeSeconds: json['target_finish_time_seconds'] as int?,
       startedAt: DateTime.parse(json['started_at']),
       estimatedEndDate: DateTime.parse(json['estimated_end_date']),
       totalWeeks: json['total_weeks'] ?? 0,
       completedWeeksCount: json['completed_weeks_count'] ?? 0,
-      totalPlannedDistance: (json['total_planned_distance'] as num? ?? 0.0).toDouble(),
-      totalCompletedDistance: (json['total_completed_distance'] as num? ?? 0.0).toDouble(),
+      totalPlannedDistance:
+          (json['total_planned_distance'] as num? ?? 0.0).toDouble(),
+      totalCompletedDistance:
+          (json['total_completed_distance'] as num? ?? 0.0).toDouble(),
       weeks: (json['weeks'] as List? ?? [])
           .map((e) => PlanWeekDetailDto.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -815,6 +1000,11 @@ class PlanWeekDetailDto {
   final bool isRecoveryWeek;
   final DateTime startDate;
   final List<PlanDayDetailDto> days;
+
+  /// Phase 4H.3 — reuses the shared typed vocabulary from Phase 4H.1/4H.2
+  /// (`preparation_runway.dart`) rather than a second parallel label
+  /// system; safe for any current or future `TrainingWeekType` value.
+  PreviewWeekType get weekTypeValue => PreviewWeekType.fromWire(weekType);
 
   factory PlanWeekDetailDto.fromJson(Map<String, dynamic> json) {
     return PlanWeekDetailDto(
@@ -867,6 +1057,11 @@ class PlanDayDetailDto {
   final bool canMarkComplete;
   final bool canMarkNotToday;
 
+  /// Phase 4H.3 — see `TrainingDayResponse.intensityDetail`/`dayTypeValue`.
+  WorkoutIntensityValue get intensityDetail =>
+      WorkoutIntensityValue.fromWire(intensity);
+  PreviewDayType get dayTypeValue => PreviewDayType.fromWire(dayType);
+
   factory PlanDayDetailDto.fromJson(Map<String, dynamic> json) {
     return PlanDayDetailDto(
       dayId: json['day_id'] ?? '',
@@ -875,7 +1070,8 @@ class PlanDayDetailDto {
       status: json['status'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      plannedDistanceKm: (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
+      plannedDistanceKm:
+          (json['planned_distance_km'] as num? ?? 0.0).toDouble(),
       plannedDurationMin: json['planned_duration_min'] ?? 0,
       plannedPaceMinKm: (json['planned_pace_min_km'] as num?)?.toDouble(),
       intensity: json['intensity'],

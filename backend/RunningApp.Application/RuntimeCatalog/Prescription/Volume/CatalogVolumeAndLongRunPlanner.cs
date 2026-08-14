@@ -23,6 +23,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
 
     public CatalogVolumeAndLongRunPlan Build(CatalogVolumePlanningRequest request)
     {
+        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.BeginnerFourDay).Build(request);
+        }
+        if (request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayIntermediate).Build(request);
+        }
         var weekCount = request.BoundPlan.Weeks.Count;
         if (weekCount < request.Candidate.CoreCycle.MinimumWeeks || weekCount > request.Candidate.CoreCycle.MaximumWeeks)
         {
@@ -45,6 +53,22 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         var taper = ResolveTaperDecision();
         var share = ResolveLongRunWeeklyShareDecision();
         var weekly = BuildWeeklyPlan(request, bounds, starting, peak, taper);
+        if (request.Candidate.DaysPerWeek == 3)
+        {
+            var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
+            if (projectedTaper < 12d)
+            {
+                throw new ThreeDayCoreProductIneligibleException(projectedTaper);
+            }
+        }
+        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4)
+        {
+            var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
+            if (projectedTaper < V1BeginnerFourDayVolumeEligibilityPolicy.MinimumFullLayoutWeeklyVolumeKm)
+            {
+                throw new BeginnerFourDayCoreProductIneligibleException(projectedTaper);
+            }
+        }
         var longRun = BuildLongRunPlan(request, weekly, bounds, share);
 
         var weeklyValidation = CatalogVolumePlanValidator.ValidateWeeklyPlan(request.BoundPlan, weekly);
@@ -93,14 +117,40 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md; Doc13 §3 / Golden Fixture v3 weeklyVolumeAnchorKm semantics");
         }
 
-        return V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
+        return ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)
+            ? V1ThreeDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
+            : ReferenceEquals(_policy, VolumeSafetyPolicy.BeginnerFourDay)
+                ? V1BeginnerFourDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
+                : V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
     }
 
     private ReachablePeakDecision ResolvePeak(double startingVolumeKm, CatalogVolumeBounds bounds, BoundCatalogPlan boundPlan)
     {
         var nonTaperWeeks = boundPlan.Weeks.Count(w => w.PhaseKey != "TAPER");
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+        {
+            var threeDayReachable = startingVolumeKm;
+            for (var i = 1; i < nonTaperWeeks; i++)
+            {
+                var increase = Math.Min(threeDayReachable * _policy.PreferredMaxWeeklyIncreaseRatio, _policy.AbsoluteWeeklyIncrementCapKm);
+                var candidate = Round(threeDayReachable + increase);
+                while ((candidate - threeDayReachable) / threeDayReachable > _policy.HardMaxWeeklyIncreaseRatio)
+                {
+                    candidate = Round(candidate - _policy.RoundingIncrementKm);
+                }
+                threeDayReachable = Math.Min(candidate, bounds.MaximumKm);
+            }
+            var threeDayClassification = threeDayReachable < bounds.MinimumKm ? PeakBandClassification.BelowTypicalPeakButValid :
+                threeDayReachable >= bounds.MaximumKm ? PeakBandClassification.UpperBoundConstrained : PeakBandClassification.WithinTypicalPeakBand;
+            return new ReachablePeakDecision(startingVolumeKm, threeDayReachable, threeDayReachable, threeDayClassification,
+                _policy.PreferredMaxWeeklyIncreaseRatio, _policy.HardMaxWeeklyIncreaseRatio, _policy.AbsoluteWeeklyIncrementCapKm,
+                CatalogEvidenceBasis.EvidenceInformed, CatalogDecisionStatus.ExplicitProductDefault,
+                "TEN_K/INTERMEDIATE/3D GEN.2B.2 sequential preferred growth; peak band is not mandatory.");
+        }
         var transitions = Math.Max(0, nonTaperWeeks - 1);
-        var canonicalDefaultMultiplier = _policy.GoldenFixtureResolvedPeakKm / _policy.GoldenFixtureStartingVolumeKm;
+        // Provenance is audit metadata only. Numeric planning deliberately consumes Value
+        // and never branches on ResolvedPeakReference.Provenance.
+        var canonicalDefaultMultiplier = _policy.ResolvedPeakReference.Value / _policy.GoldenFixtureStartingVolumeKm;
         var transitionAdjustedMultiplier = 1d + ((canonicalDefaultMultiplier - 1d) * transitions / _policy.GoldenFixtureNonTaperTransitions);
         var reachable = startingVolumeKm * transitionAdjustedMultiplier;
 
@@ -197,9 +247,17 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             }
             else
             {
-                var index = nonTaperWeeks.FindIndex(w => w.WeekNumber == week.WeekNumber);
-                var denominator = Math.Max(1, nonTaperWeeks.Count - 1);
-                unclamped = starting.SelectedStartingVolumeKm + ((peak.SelectedPeakKm - starting.SelectedStartingVolumeKm) * index / denominator);
+                if (ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+                {
+                    var reference = previous ?? starting.SelectedStartingVolumeKm;
+                    unclamped = Math.Min(reference + Math.Min(reference * _policy.PreferredMaxWeeklyIncreaseRatio, _policy.AbsoluteWeeklyIncrementCapKm), peak.SelectedPeakKm);
+                }
+                else
+                {
+                    var index = nonTaperWeeks.FindIndex(w => w.WeekNumber == week.WeekNumber);
+                    var denominator = Math.Max(1, nonTaperWeeks.Count - 1);
+                    unclamped = starting.SelectedStartingVolumeKm + ((peak.SelectedPeakKm - starting.SelectedStartingVolumeKm) * index / denominator);
+                }
                 clamp = CatalogVolumeClamp.None;
                 changeRule = "technical_linear_interpolation_from_start_to_selected_reachable_peak_across_non_taper_weeks";
                 recoveryRule = "no_catalog_recurring_recovery_or_deload_rule_present";
@@ -209,6 +267,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             var selected = isTaper
                 ? Math.Min(Round(unclamped), peak.SelectedPeakKm)
                 : Round(Clamp(unclamped, Math.Min(starting.SelectedStartingVolumeKm, peak.SelectedPeakKm), peak.SelectedPeakKm));
+            if (!isTaper && previous is > 0 && ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+            {
+                while ((selected - previous.Value) / previous.Value > _policy.HardMaxWeeklyIncreaseRatio ||
+                       selected - previous.Value > _policy.AbsoluteWeeklyIncrementCapKm)
+                {
+                    selected = Round(selected - _policy.RoundingIncrementKm);
+                }
+            }
             if (!isTaper && selected != Round(unclamped))
             {
                 clamp = selected > Round(unclamped) ? CatalogVolumeClamp.LowerBound : CatalogVolumeClamp.UpperBound;

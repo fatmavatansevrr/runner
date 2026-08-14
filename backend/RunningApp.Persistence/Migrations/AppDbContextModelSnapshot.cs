@@ -163,6 +163,608 @@ namespace RunningApp.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonActivationWindowRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ActivatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CheckpointDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContextVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ContractVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CoreContextId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("EndGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FailureReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RunwayPrescriptionId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("StartGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TargetLockId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonActivationWindowRecords_IdempotencyKey");
+
+                    b.HasIndex("PlanStateId", "StartGlobalWeek", "EndGlobalWeek")
+                        .HasDatabaseName("IX_LongHorizonActivationWindowRecords_PlanStateId_Range");
+
+                    b.ToTable("LongHorizonActivationWindowRecords");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonAdaptationDecisionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ContractVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecisionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ReplacementSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("SafetyReviewRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SourceWindowEndWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SourceWindowStartWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SupersededSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TriggerSessionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId");
+
+                    b.HasIndex("ReplacementSessionId");
+
+                    b.HasIndex("SupersededSessionId");
+
+                    b.HasIndex("TriggerSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonAdaptationDecisionRecords_TriggerSessionId");
+
+                    b.ToTable("LongHorizonAdaptationDecisionRecords");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonBlockRetryRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BlockedGlobalWeekEnd")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BlockedGlobalWeekStart")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("CheckpointDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EvidenceFingerprint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("InternalReasonCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PublicReasonCategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("RelatedDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RetryEligible")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId", "CreatedAtUtc")
+                        .HasDatabaseName("IX_LongHorizonBlockRetryRecords_PlanStateId_CreatedAtUtc");
+
+                    b.ToTable("LongHorizonBlockRetryRecords");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonCheckpointRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("AsOfDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("AuthoritativeReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AuthorityClassification")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CompletedFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EvidenceFingerprint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PersistenceVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SourceWindowEndWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SourceWindowStartWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("ValidatedLongRunKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("ValidatedWeeklyVolumeKm")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId", "AsOfDate", "SourceWindowStartWeek")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonCheckpointRecords_PlanStateId_AsOfDate_Window");
+
+                    b.ToTable("LongHorizonCheckpointRecords");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonCoreContextRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("AsOfDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ConditionResultSummaryJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("ContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CreatedDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("EffectiveFromGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EffectiveToGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidenceFingerprint")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GeneratedCoreResultIdentity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SelectedCoreWeeksPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("SupersededByContextId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ValidatedLoadAuthoritySummary")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId", "ContextVersionSequence")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonCoreContextRecords_PlanStateId_ContextVersionSequence");
+
+                    b.ToTable("LongHorizonCoreContextRecords");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingPlanState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActiveContextVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActiveContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("BlockedAt")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CandidateKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CandidateVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CatalogRootPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentBlockedInternalReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CurrentBlockedPublicReasonCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CurrentLifecycleStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentWindowEndWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentWindowStartWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DaysPerWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GoalDistance")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GoalType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("LastActivatedGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("LatestCheckpointDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LongRunDay")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PersistenceContractVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PreferredDaysCsv")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("RaceDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReadinessProfile")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RetryEligible")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TotalWeeks")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LongHorizonRollingPlanStates");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingSessionState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActivationContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("ActualDistanceKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("ActualDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("AdaptedFromSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("AssignedDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("DistanceKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("NotTodayReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("NotTodayRecordedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OutcomeStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Planned")
+                        .HasColumnName("CompletionStatus");
+
+                    b.Property<int>("OutcomeVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PlanningStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Active");
+
+                    b.Property<string>("Provenance")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SessionOrdinal")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SessionRole")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("WeekStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkoutKey")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("WorkoutVersion")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdaptedFromSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonRollingSessionStates_AdaptedFromSessionId")
+                        .HasFilter("\"AdaptedFromSessionId\" IS NOT NULL");
+
+                    b.HasIndex("AssignedDate")
+                        .HasDatabaseName("IX_LongHorizonRollingSessionStates_AssignedDate");
+
+                    b.HasIndex("WeekStateId", "SessionOrdinal")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonRollingSessionStates_WeekStateId_SessionOrdinal");
+
+                    b.ToTable("LongHorizonRollingSessionStates");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingWeekState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActivatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ActivationContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("BlockedDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BlockedReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LifecycleState")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double?>("LongRunKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SegmentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("StructuralEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("StructuralStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<double?>("WeeklyVolumeKm")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId", "GlobalWeek")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonRollingWeekStates_PlanStateId_GlobalWeek");
+
+                    b.ToTable("LongHorizonRollingWeekStates");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRunwayState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CalendarCompositionIdentity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CalendarProjectionPayloadJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<double>("CoreWeekOneLongRunTargetKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("CoreWeekOneWeeklyTargetKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FullPrescriptionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FullPrescriptionVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LockedRunwayEndGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LockedRunwayStartGlobalWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PrescriptionPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("TargetContextVersionSequence")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TargetLockId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetLockPayloadJson")
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanStateId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LongHorizonRunwayStates_PlanStateId");
+
+                    b.ToTable("LongHorizonRunwayStates");
+                });
+
             modelBuilder.Entity("RunningApp.Domain.Entities.NotTodayDecision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -332,11 +934,17 @@ namespace RunningApp.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("ConfirmationContractVersion")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("ConfirmedPlanId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExecutableWindowFingerprint")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
@@ -347,13 +955,34 @@ namespace RunningApp.Persistence.Migrations
                     b.Property<bool?>("IsInvalidated")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LongHorizonInitializationSnapshotJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("LongHorizonPlanStateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NormalizedInputFingerprint")
+                        .HasColumnType("text");
+
                     b.Property<string>("PreviewPayloadJson")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<int?>("PublicContractVersion")
+                        .HasColumnType("integer");
+
                     b.Property<string>("RequestPayloadJson")
                         .IsRequired()
                         .HasColumnType("jsonb");
+
+                    b.Property<int?>("RollingPersistenceContractVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ScheduleStrategy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("StructuralRoadmapFingerprint")
+                        .HasColumnType("text");
 
                     b.Property<string>("TemplateId")
                         .HasColumnType("text");
@@ -731,6 +1360,9 @@ namespace RunningApp.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("LongHorizonRollingPlanStateId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("LongRunDay")
                         .HasColumnType("text");
 
@@ -748,6 +1380,12 @@ namespace RunningApp.Persistence.Migrations
 
                     b.Property<double?>("RequestedTargetDistanceKm")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("ScheduleStrategy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("StaticComplete");
 
                     b.Property<Guid?>("SourcePreviewId")
                         .HasColumnType("uuid");
@@ -781,6 +1419,11 @@ namespace RunningApp.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_TrainingPlans_InternalUserId_ActiveOnly")
                         .HasFilter("\"Status\" = 'active'");
+
+                    b.HasIndex("LongHorizonRollingPlanStateId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrainingPlans_LongHorizonRollingPlanStateId")
+                        .HasFilter("\"LongHorizonRollingPlanStateId\" IS NOT NULL");
 
                     b.HasIndex("SourcePreviewId")
                         .IsUnique()
@@ -964,6 +1607,105 @@ namespace RunningApp.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonActivationWindowRecord", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonAdaptationDecisionRecord", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingSessionState", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingSessionState", null)
+                        .WithMany()
+                        .HasForeignKey("SupersededSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_LongHorizonAdaptationDecisionRecords_LongHorizonRollingSes~1");
+
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingSessionState", null)
+                        .WithMany()
+                        .HasForeignKey("TriggerSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_LongHorizonAdaptationDecisionRecords_LongHorizonRollingSes~2");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonBlockRetryRecord", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonCheckpointRecord", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonCoreContextRecord", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingSessionState", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingSessionState", null)
+                        .WithMany()
+                        .HasForeignKey("AdaptedFromSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingWeekState", "Week")
+                        .WithMany("Sessions")
+                        .HasForeignKey("WeekStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Week");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingWeekState", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", "Plan")
+                        .WithMany("Weeks")
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRunwayState", b =>
+                {
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("PlanStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RunningApp.Domain.Entities.NotTodayDecision", b =>
                 {
                     b.HasOne("RunningApp.Domain.Entities.User", null)
@@ -1071,6 +1813,11 @@ namespace RunningApp.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("InternalUserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RunningApp.Domain.Entities.LongHorizonRollingPlanState", null)
+                        .WithMany()
+                        .HasForeignKey("LongHorizonRollingPlanStateId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingWeek", b =>
@@ -1111,6 +1858,16 @@ namespace RunningApp.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TrainingDayId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingPlanState", b =>
+                {
+                    b.Navigation("Weeks");
+                });
+
+            modelBuilder.Entity("RunningApp.Domain.Entities.LongHorizonRollingWeekState", b =>
+                {
+                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("RunningApp.Domain.Entities.TrainingPlan", b =>

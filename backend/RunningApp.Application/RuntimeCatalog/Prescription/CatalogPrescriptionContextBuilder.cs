@@ -45,7 +45,10 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
             StartDate = request.ResolverInput.StartDate ?? request.AsOfDate,
             RaceDate = request.PreviewRequest.RaceDate,
             WeeksUntilRace = request.PreviewRequest.RaceDate is { } raceDate
-                ? Math.Max(0, (raceDate.DayNumber - (request.ResolverInput.StartDate ?? request.AsOfDate).DayNumber) / 7)
+                ? RaceHorizonPolicy.Decide(
+                    request.ResolverInput.StartDate ?? request.AsOfDate, raceDate,
+                    request.Candidate.CoreCycle.MinimumWeeks, request.Candidate.CoreCycle.DefaultWeeks,
+                    request.Candidate.CoreCycle.MaximumWeeks ?? int.MaxValue / 7).AvailableFullWeeks
                 : null,
             TargetFinishTimeSeconds = request.PreviewRequest.TargetFinishTimeSeconds,
             Unit = request.PreviewRequest.Unit,

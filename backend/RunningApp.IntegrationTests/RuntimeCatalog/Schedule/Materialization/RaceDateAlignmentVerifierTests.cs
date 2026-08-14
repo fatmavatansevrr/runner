@@ -160,7 +160,15 @@ public sealed class RaceDateAlignmentVerifierTests
     [Fact]
     public void RaceDateAlignmentVerifier_HasNoCallSiteInApplicationOrApiProductionCode()
     {
-        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(nameof(RaceDateAlignmentVerifier));
+        // Reconciled (Phase 4G.5H): DynamicCoreCalendarMaterializationOrchestrator.cs
+        // is now a legitimate second dark caller of RaceDateAlignmentVerifier.Verify
+        // -- it is itself proven dark by its own DarkReachability_NoProductionCallSite
+        // test, so this verifier remains structurally unreachable from any
+        // LIVE request path, which is this test's actual invariant. See
+        // DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator's
+        // own doc comment for why this parameter exists.
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(
+            nameof(RaceDateAlignmentVerifier), new[] { "DynamicCoreCalendarMaterializationOrchestrator.cs" });
     }
 
     [Fact]

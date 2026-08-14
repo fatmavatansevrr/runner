@@ -34,8 +34,14 @@ public sealed class DarkReachabilityAssertionsTests
     [Fact]
     public void RealOrchestratorIsDarkAndContainsTheAllowedCalls()
     {
-        foreach (var verifier in new[] { "PhaseConstraintVerifier", "RaceSpecificCapacityVerifier", "StageReachabilityVerifier", "WorkoutExposureVerifier", "GoalPaceReachabilityVerifier", "ReadinessEligibilityVerifier", "VolumeProgressionVerifier", "LongRunProgressionVerifier", "RaceDateAlignmentVerifier" })
+        foreach (var verifier in new[] { "PhaseConstraintVerifier", "RaceSpecificCapacityVerifier", "StageReachabilityVerifier", "WorkoutExposureVerifier", "GoalPaceReachabilityVerifier", "ReadinessEligibilityVerifier", "VolumeProgressionVerifier", "LongRunProgressionVerifier" })
             DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(verifier);
+        // RaceDateAlignmentVerifier (Phase 4G.5H): one additional approved
+        // dark caller beyond SafetyVerificationOrchestrator.cs -- see
+        // DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator's
+        // own doc comment.
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(
+            "RaceDateAlignmentVerifier", new[] { "DynamicCoreCalendarMaterializationOrchestrator.cs" });
         DarkReachabilityAssertions.AssertOrchestratorHasNoLiveActivation();
     }
 
@@ -136,8 +142,10 @@ public sealed class DarkReachabilityAssertionsTests
         // -- proves it still reports exactly one real orchestrator
         // reference per verifier and zero disallowed callers against the
         // real, unchanged codebase (no new false positives introduced).
-        foreach (var verifier in new[] { "PhaseConstraintVerifier", "RaceSpecificCapacityVerifier", "StageReachabilityVerifier", "WorkoutExposureVerifier", "GoalPaceReachabilityVerifier", "ReadinessEligibilityVerifier", "VolumeProgressionVerifier", "LongRunProgressionVerifier", "RaceDateAlignmentVerifier" })
+        foreach (var verifier in new[] { "PhaseConstraintVerifier", "RaceSpecificCapacityVerifier", "StageReachabilityVerifier", "WorkoutExposureVerifier", "GoalPaceReachabilityVerifier", "ReadinessEligibilityVerifier", "VolumeProgressionVerifier", "LongRunProgressionVerifier" })
             DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(verifier);
+        DarkReachabilityAssertions.AssertVerifierIsReachableOnlyFromDarkOrchestrator(
+            "RaceDateAlignmentVerifier", new[] { "DynamicCoreCalendarMaterializationOrchestrator.cs" });
         DarkReachabilityAssertions.AssertOrchestratorHasNoLiveActivation();
     }
 }

@@ -163,6 +163,22 @@ public sealed class PlanPreviewGenerationFailedException : Exception
     public PlanPreviewGenerationFailedException(string message, Exception innerException) : base(message, innerException) { }
 }
 
+/// <summary>
+/// The requested plan is structurally supported, but the supplied readiness
+/// input cannot produce the minimum safe product layout. This is a stable
+/// client-facing eligibility outcome, not an internal generation failure.
+/// </summary>
+public sealed class PlanProductIneligibleException : Exception
+{
+    public string Reason { get; }
+
+    public PlanProductIneligibleException(string reason, string message, Exception? innerException = null)
+        : base(message, innerException)
+    {
+        Reason = reason;
+    }
+}
+
 // ── Backend Integration Phase 4E.2: catalog confirm boundary errors ──────────
 // All of the following are thrown only by CatalogPlanConfirmationService.
 // None is ever caught and silently rerouted to SQL or to a new generation run.
@@ -511,3 +527,89 @@ public sealed class CatalogRaceDateAlignmentInvalidException : Exception
 {
     public CatalogRaceDateAlignmentInvalidException(string message) : base(message) { }
 }
+
+// ── Backend Integration Phase 4G.6B: scoped 15-20 week Preparation Runway public preview ──
+
+/// <summary>
+/// Thrown when a 15-20 week TEN_K Preparation Runway request falls outside
+/// the exact activated pilot scope (candidate identity, distance, level,
+/// days-per-week). The public generate-preview/race pipeline never widens
+/// runway activation beyond <c>TEN_K__4D__INTERMEDIATE v10</c> based on this
+/// exception alone — it falls back to the existing, unchanged
+/// <see cref="PlanHorizonCompositionRequiredException"/> for anything
+/// outside scope.
+/// Mapped to HTTP 422, error code PREPARATION_RUNWAY_PREVIEW_NOT_ENABLED.
+/// </summary>
+public sealed class PreparationRunwayPreviewNotEnabledException : Exception
+{
+    public PreparationRunwayPreviewNotEnabledException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Thrown when the dark <c>TenKPreparationRunwayDarkOrchestrator</c> returns
+/// a typed failure for an in-scope 15-20 week request. Carries only a safe,
+/// public-facing summary — the orchestrator's own stage/failure-code detail
+/// is logged, never included in the exception message a client can see.
+/// No partial preview, no fallback to a Core-only plan, no persistence.
+/// Mapped to HTTP 422, error code PREPARATION_RUNWAY_PREVIEW_GENERATION_FAILED.
+/// </summary>
+public sealed class PreparationRunwayPreviewGenerationFailedException : Exception
+{
+    public PreparationRunwayPreviewGenerationFailedException(string message) : base(message) { }
+}
+
+// Phase 4L.3: dedicated Long-Horizon public preview/confirmation boundary.
+public sealed class LongHorizonPreviewNotFoundException(string message) : Exception(message);
+public sealed class LongHorizonPreviewExpiredException(string message) : Exception(message);
+public sealed class LongHorizonPreviewStaleException(string message) : Exception(message);
+public sealed class LongHorizonPreviewCorruptException : Exception
+{
+    public LongHorizonPreviewCorruptException(string message) : base(message) { }
+    public LongHorizonPreviewCorruptException(string message, Exception innerException) : base(message, innerException) { }
+}
+public sealed class LongHorizonActivePlanConflictException(string message) : Exception(message);
+public sealed class LongHorizonPilotUnsupportedException(string message) : Exception(message);
+public sealed class LongHorizonPlanHorizonExceededException(string message) : Exception(message);
+public sealed class LongHorizonInitializationInfeasibleException(string message) : Exception(message);
+/// <summary>Phase 4L.6C: thrown when LongHorizonGenerationOptions.Enabled is false. Generation-only — never thrown by any read, activation, retry, completion, NotToday, or cancellation path.</summary>
+public sealed class LongHorizonGenerationTemporarilyDisabledException(string message) : Exception(message);
+public sealed class LongHorizonRollingReadSurfaceNotAvailableException(string message) : Exception(message);
+
+// Phase 4L.4: rolling active read and outcome mutation boundary.
+public sealed class LongHorizonReadStateNotFoundException(string message) : Exception(message);
+public sealed class LongHorizonReadStateCorruptException(string message) : Exception(message);
+public sealed class LongHorizonRollingSessionNotFoundException(string message) : Exception(message);
+public sealed class LongHorizonRollingSessionNotExecutableException(string message) : Exception(message);
+public sealed class LongHorizonRollingSessionCompletionConflictException(string message) : Exception(message);
+public sealed class LongHorizonRollingSessionOutcomeConflictException(string message) : Exception(message);
+public sealed class LongHorizonRollingMutationConcurrencyConflictException(string message) : Exception(message);
+public sealed class LongHorizonRollingMutationVersionUnsupportedException(string message) : Exception(message);
+
+// Phase 4L.4A: explicit next-window activation and public continuation.
+public sealed class LongHorizonContinuationVersionUnsupportedException(string message) : Exception(message);
+public sealed class LongHorizonContinuationInProgressException(string message) : Exception(message);
+public sealed class LongHorizonContinuationReassessmentRequiredException(string message) : Exception(message);
+public sealed class LongHorizonContinuationBlockedException(string message) : Exception(message);
+public sealed class LongHorizonContinuationRetryRequiredException(string message) : Exception(message);
+public sealed class LongHorizonContinuationConcurrencyConflictException(string message) : Exception(message);
+
+// Phase 4L.4B: public Blocked -> Pending retry restoration.
+public sealed class LongHorizonNoBlockedBoundaryException(string message) : Exception(message);
+public sealed class LongHorizonRetryNotEligibleException(string message) : Exception(message);
+
+// Phase 4L.4C: meaningful blocked-recovery classification -- retry no longer
+// implies recoverability for a block whose evidence is durable and immutable.
+public sealed class LongHorizonRegeneratePreviewRequiredException(string message) : Exception(message);
+public sealed class LongHorizonOperationalSupportRequiredException(string message) : Exception(message);
+
+// Phase 4M.3: live NotToday -> schedule-repair adaptation orchestration.
+// These translate the frozen 4M.2 AdaptationPersistenceOutcome values (and one
+// live-execution guard) into the repo's existing typed-exception/GlobalExceptionHandler
+// convention -- no new response envelope, no raw provider detail exposed.
+public sealed class LongHorizonAdaptationStaleTargetException(string message) : Exception(message);
+public sealed class LongHorizonAdaptationStaleTriggerException(string message) : Exception(message);
+public sealed class LongHorizonAdaptationConcurrencyConflictException(string message) : Exception(message);
+public sealed class LongHorizonAdaptationIntegrityViolationException(string message) : Exception(message);
+/// <summary>Rev3.1: a Superseded rolling session is not actionable -- Complete
+/// and NotToday must both reject it.</summary>
+public sealed class LongHorizonRollingSessionSupersededException(string message) : Exception(message);

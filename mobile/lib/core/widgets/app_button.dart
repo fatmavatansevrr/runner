@@ -23,27 +23,44 @@ class AppPrimaryButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: AppSpacing.buttonHeight,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.textOnDark,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(label, style: AppTextStyles.buttonPrimary),
-                  if (icon != null) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    Icon(icon, size: 18, color: AppColors.textOnDark),
+      // The loading spinner alone has no text for a screen reader to
+      // announce -- Semantics keeps the original action label plus a
+      // "loading" hint so the button's purpose and busy state are both
+      // announced (Phase 4L.5A accessibility audit finding).
+      child: Semantics(
+        label: isLoading ? '$label, loading' : null,
+        button: true,
+        enabled: !isLoading && onPressed != null,
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.textOnDark,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: AppTextStyles.buttonPrimary,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    if (icon != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Icon(icon, size: 18, color: AppColors.textOnDark),
+                    ],
                   ],
-                ],
-              ),
+                ),
+        ),
       ),
     );
   }

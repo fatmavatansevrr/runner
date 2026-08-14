@@ -13,10 +13,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RunningApp.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c22682da9513dff9448e2429eca89846ca6b2f24")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e90e0ddba915ae7e423a3b095854d585b8d2997b")]
 [assembly: System.Reflection.AssemblyProductAttribute("RunningApp.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RunningApp.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("RunningApp.IntegrationTests")]
 
 // MSBuild WriteCodeFragment sınıfı tarafından oluşturuldu.
 

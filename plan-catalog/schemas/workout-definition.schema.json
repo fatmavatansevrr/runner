@@ -17,7 +17,7 @@
     },
     "family": { "type": "string", "enum": ["EASY", "LONG_RUN", "QUALITY", "RACE"] },
     "complexityTier": { "type": "integer", "minimum": 1 },
-    "eligiblePhases": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"] } },
+    "eligiblePhases": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER", "PREPARATION_RUNWAY", "LONG_HORIZON_GENERAL_ENDURANCE"] } },
     "allowedPrescriptionModes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["DISTANCE", "MIXED", "PACE_BASED", "EFFORT_BASED", "HEART_RATE_BASED"] } },
     "allowedDistanceAccountingModes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["EXACT_SESSION_TOTAL", "ESTIMATED_SESSION_TOTAL", "EMBEDDED_COMPONENTS"] } },
     "components": {

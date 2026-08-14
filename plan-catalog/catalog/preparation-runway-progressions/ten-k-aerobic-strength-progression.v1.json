@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "documentType": "PREPARATION_RUNWAY_BLOCK_PROGRESSION",
+    "schemaVersion": 1,
+    "key": "TEN_K_AEROBIC_STRENGTH_PROGRESSION",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "distanceFamily": "TEN_K",
+  "blockType": "AEROBIC_STRENGTH",
+  "steps": [
+    {
+      "stepOrder": 1,
+      "stepKey": "AEROBIC_STRENGTH_STEP_1_INTRO",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 1 }
+      ]
+    },
+    {
+      "stepOrder": 2,
+      "stepKey": "AEROBIC_STRENGTH_STEP_2_PROGRESSED",
+      "workoutCandidates": [
+        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_PROGRESSED", "version": 1 }
+      ]
+    }
+  ]
+}

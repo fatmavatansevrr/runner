@@ -11,6 +11,7 @@ import '../../calendar/data/calendar_provider.dart';
 import '../../profile/data/profile_provider.dart';
 import '../../../core/network/dtos.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/models/preparation_runway.dart';
 
 enum DayStatus { planned, completed, notToday }
 
@@ -167,24 +168,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                 duration: const Duration(milliseconds: 280),
                 curve: Curves.easeInOut,
                 alignment: Alignment.topCenter,
-                child: selectedOption == 'shorter' || selectedOption == 'exceeded'
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: _OptionalDistanceField(
-                          label: selectedOption == 'shorter'
-                              ? 'How many km did you complete?'
-                              : 'How many km did you run?',
-                          helperText: selectedOption == 'shorter'
-                              ? 'This is only used to keep your activity history accurate.'
-                              : "This won't change your future plan. It only keeps your statistics accurate.",
-                          controller: distanceController,
-                          errorText: distanceError,
-                          onChanged: (value) => setModal(() {
-                            distanceError = _validateDistanceInput(value);
-                          }),
-                        ),
-                      )
-                    : const SizedBox(width: double.infinity),
+                child:
+                    selectedOption == 'shorter' || selectedOption == 'exceeded'
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: _OptionalDistanceField(
+                              label: selectedOption == 'shorter'
+                                  ? 'How many km did you complete?'
+                                  : 'How many km did you run?',
+                              helperText: selectedOption == 'shorter'
+                                  ? 'This is only used to keep your activity history accurate.'
+                                  : "This won't change your future plan. It only keeps your statistics accurate.",
+                              controller: distanceController,
+                              errorText: distanceError,
+                              onChanged: (value) => setModal(() {
+                                distanceError = _validateDistanceInput(value);
+                              }),
+                            ),
+                          )
+                        : const SizedBox(width: double.infinity),
               ),
               const SizedBox(height: 20),
 
@@ -203,9 +205,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   onPressed: isSaving
                       ? null
                       : () async {
-                          final isDistanceOption = selectedOption == 'shorter' || selectedOption == 'exceeded';
+                          final isDistanceOption =
+                              selectedOption == 'shorter' ||
+                                  selectedOption == 'exceeded';
                           if (isDistanceOption) {
-                            final error = _validateDistanceInput(distanceController.text);
+                            final error =
+                                _validateDistanceInput(distanceController.text);
                             if (error != null) {
                               setModal(() => distanceError = error);
                               return;
@@ -219,8 +224,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                           // convention used elsewhere (e.g. calendar logging).
                           final trimmed = distanceController.text.trim();
                           final actualDistance =
-                              isDistanceOption && trimmed.isNotEmpty ? double.tryParse(trimmed) : null;
-                          final distanceToSave = actualDistance ?? workout.plannedDistanceKm;
+                              isDistanceOption && trimmed.isNotEmpty
+                                  ? double.tryParse(trimmed)
+                                  : null;
+                          final distanceToSave =
+                              actualDistance ?? workout.plannedDistanceKm;
 
                           setModal(() => isSaving = true);
                           try {
@@ -264,7 +272,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5),
                         )
                       : const Text(
                           'Save Activity',
@@ -368,12 +377,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     onTap: () => setModal(() => selectedReason = reason),
                     behavior: HitTestBehavior.opaque,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? AppColors.ctaDark : AppColors.border,
+                          color:
+                              isSelected ? AppColors.ctaDark : AppColors.border,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
@@ -455,7 +466,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -471,8 +483,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 setModal(() => isSaving = true);
                                 try {
                                   final repo = ref.read(homeRepositoryProvider);
-                                  final decision = await repo.createNotTodayDecision(dayId, selectedReason);
-                                  await repo.confirmNotTodayDecision(decision.decisionId);
+                                  final decision =
+                                      await repo.createNotTodayDecision(
+                                          dayId, selectedReason);
+                                  await repo.confirmNotTodayDecision(
+                                      decision.decisionId);
 
                                   ref.invalidate(homeDataProvider);
                                   ref.invalidate(calendarDataProvider);
@@ -504,11 +519,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2.5),
                               )
                             : const Text(
                                 'Save',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w600),
                               ),
                       ),
                     ),
@@ -545,7 +562,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
             child: const Text(
               'Undo',
-              style: TextStyle(color: AppColors.missed, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: AppColors.missed, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -569,164 +587,203 @@ class _HomePageState extends ConsumerState<HomePage> {
             RefreshIndicator(
               onRefresh: () => ref.refresh(homeDataProvider.future),
               color: AppColors.primary,
-          child: homeState.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-            error: (err, _) => _ErrorState(onRetry: () => ref.invalidate(homeDataProvider), message: err.toString()),
-            data: (homeData) {
-              final activePlan = homeData.activePlan;
+              child: homeState.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+                error: (err, _) => _ErrorState(
+                    onRetry: () => ref.invalidate(homeDataProvider),
+                    message: err.toString()),
+                data: (homeData) {
+                  final activePlan = homeData.activePlan;
 
-              // ── No active plan ────────────────────────────────────────────
-              if (activePlan == null) {
-                return _NoActivePlanState(
-                  userName: userName,
-                  onCreatePlan: () => context.go(AppRoutes.goalSelection),
-                );
-              }
+                  // ── No active plan ────────────────────────────────────────────
+                  if (activePlan == null) {
+                    return _NoActivePlanState(
+                      userName: userName,
+                      onCreatePlan: () => context.go(AppRoutes.goalSelection),
+                    );
+                  }
 
-              // ── Plan completed detection ──────────────────────────────────
-              final planDetailsAsync = ref.watch(activePlanDetailsProvider);
-              final planDetails = planDetailsAsync.valueOrNull;
-              final isPlanCompleted = planDetails != null &&
-                  planDetails.totalWeeks > 0 &&
-                  planDetails.completedWeeksCount >= planDetails.totalWeeks;
+                  // ── Plan completed detection ──────────────────────────────────
+                  final planDetailsAsync = ref.watch(activePlanDetailsProvider);
+                  final planDetails = planDetailsAsync.valueOrNull;
+                  final isPlanCompleted = planDetails != null &&
+                      planDetails.totalWeeks > 0 &&
+                      planDetails.completedWeeksCount >= planDetails.totalWeeks;
 
-              if (isPlanCompleted) {
-                return _PlanCompletedState(
-                  userName: userName,
-                  goalDistance: activePlan.goalDistance,
-                  totalDistance: planDetails.totalCompletedDistance,
-                  onStartNew: () => context.go(AppRoutes.goalSelection),
-                );
-              }
+                  if (isPlanCompleted) {
+                    return _PlanCompletedState(
+                      userName: userName,
+                      goalDistance: activePlan.goalDistance,
+                      totalDistance: planDetails.totalCompletedDistance,
+                      onStartNew: () => context.go(AppRoutes.goalSelection),
+                    );
+                  }
 
-              final todayWorkout = homeData.todayWorkout;
-              final dailyTip = homeData.dailyTip;
-              final weekSummary = homeData.weekSummary;
+                  final todayWorkout = homeData.todayWorkout;
+                  final dailyTip = homeData.dailyTip;
+                  final weekSummary = homeData.weekSummary;
 
-              // Determine current selected workout
-              final now = DateTime.now();
-              final effectiveSelectedDate = _selectedDate ?? now;
-              final selectedWorkout = weekSummary.firstWhere(
-                (d) => d.date.day == effectiveSelectedDate.day &&
-                       d.date.month == effectiveSelectedDate.month &&
-                       d.date.year == effectiveSelectedDate.year,
-                orElse: () => todayWorkout ?? weekSummary[0],
-              );
+                  // Determine current selected workout
+                  final now = DateTime.now();
+                  final effectiveSelectedDate = _selectedDate ?? now;
+                  final selectedWorkout = weekSummary.firstWhere(
+                    (d) =>
+                        d.date.day == effectiveSelectedDate.day &&
+                        d.date.month == effectiveSelectedDate.month &&
+                        d.date.year == effectiveSelectedDate.year,
+                    orElse: () => todayWorkout ?? weekSummary[0],
+                  );
 
-              final weeklyCompleted = weekSummary.fold(
-                  0.0, (sum, d) => sum + (d.actualDistanceKm ?? 0.0));
-              final weeklyPlanned =
-                  weekSummary.fold(0.0, (sum, d) => sum + d.plannedDistanceKm);
-              final runsCompleted = weekSummary.where((d) => d.dayType != 'rest' && (_localDayStates[d.dayId] == DayStatus.completed || (d.status == 'completed' && _localDayStates[d.dayId] != DayStatus.planned && _localDayStates[d.dayId] != DayStatus.notToday))).length;
-              final runsTotal = weekSummary.where((d) => d.dayType != 'rest').length;
+                  final weeklyCompleted = weekSummary.fold(
+                      0.0, (sum, d) => sum + (d.actualDistanceKm ?? 0.0));
+                  final weeklyPlanned = weekSummary.fold(
+                      0.0, (sum, d) => sum + d.plannedDistanceKm);
+                  final runsCompleted = weekSummary
+                      .where((d) =>
+                          d.dayType != 'rest' &&
+                          (_localDayStates[d.dayId] == DayStatus.completed ||
+                              (d.status == 'completed' &&
+                                  _localDayStates[d.dayId] !=
+                                      DayStatus.planned &&
+                                  _localDayStates[d.dayId] !=
+                                      DayStatus.notToday)))
+                      .length;
+                  final runsTotal =
+                      weekSummary.where((d) => d.dayType != 'rest').length;
 
-              // Determine current week number (rough from plan text or default 1)
-              final weekNum = _extractWeekNumber(activePlan.progressText);
+                  // Phase 4H.4 (PART 4): the typed, entity-derived
+                  // current_week_number is authoritative when present. Parsing
+                  // progress_text is the documented LEGACY fallback only --
+                  // used only when the backend response predates Phase 4G.6D
+                  // (currentWeekNumber is null), never when the typed field is
+                  // present.
+                  final weekNum = activePlan.currentWeekNumber ??
+                      _extractWeekNumber(activePlan.progressText);
+                  final currentWeekProvenance =
+                      activePlan.currentWeekProvenance;
 
-              return SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
+                  return SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
 
-                    // ── Header ──────────────────────────────────────────────
-                    _HomeHeader(userName: userName),
-                    const SizedBox(height: 20),
+                        // ── Header ──────────────────────────────────────────────
+                        _HomeHeader(userName: userName),
+                        const SizedBox(height: 20),
 
+                        // ── Segment/phase badge (Phase 4H.4 PART 4) ──────────────
+                        // Only rendered when the backend actually supplied typed
+                        // provenance (a real Phase 4G.6D response) -- a legacy
+                        // response with currentWeekProvenance == null shows
+                        // nothing here rather than a fabricated label.
+                        if (currentWeekProvenance != null)
+                          _PlanSegmentBadge(
+                              provenance: currentWeekProvenance,
+                              weekNumber: weekNum,
+                              totalWeeks: activePlan.totalWeeks),
+                        if (currentWeekProvenance != null)
+                          const SizedBox(height: 16),
 
+                        // ── Pending confirmations banner ─────────────────────────
+                        if (homeData.hasPendingConfirmations)
+                          _PendingBanner(
+                            onResolve: () =>
+                                context.go(AppRoutes.pendingConfirmation),
+                          ),
 
-                    // ── Pending confirmations banner ─────────────────────────
-                    if (homeData.hasPendingConfirmations)
-                      _PendingBanner(
-                        onResolve: () =>
-                            context.go(AppRoutes.pendingConfirmation),
-                      ),
+                        // ── Workout card (state-driven) ──────────────────────────
+                        if (selectedWorkout.dayType == 'rest')
+                          _RestDayCard(tip: dailyTip?.message)
+                        else
+                          Builder(builder: (context) {
+                            final dayStatus =
+                                _localDayStates[selectedWorkout.dayId] ??
+                                    (selectedWorkout.status == 'completed'
+                                        ? DayStatus.completed
+                                        : (selectedWorkout.status == 'missed' ||
+                                                selectedWorkout.status ==
+                                                    'not_today' ||
+                                                selectedWorkout.status ==
+                                                    'skipped')
+                                            ? DayStatus.notToday
+                                            : DayStatus.planned);
+                            return _PlannedCard(
+                              workout: selectedWorkout,
+                              dayStatus: dayStatus,
+                              onTap: () => context.push(
+                                  '/training-day/${selectedWorkout.dayId}'),
+                              onComplete: () =>
+                                  _showCompletionSheet(selectedWorkout),
+                              // Reached only for non-rest workouts, which always have a
+                              // persisted dayId (only synthetic rest days are null).
+                              onNotToday: () => _showNotTodayReasonSheet(
+                                  selectedWorkout.dayId!),
+                              onUndoComplete: () {
+                                setState(() {
+                                  _localDayStates[selectedWorkout.dayId!] =
+                                      DayStatus.planned;
+                                  _showCompletionBanner = false;
+                                });
+                              },
+                              onUndoNotToday: () => _showUndoNotTodayDialog(
+                                  selectedWorkout.dayId!),
+                            );
+                          }),
 
-                    // ── Workout card (state-driven) ──────────────────────────
-                    if (selectedWorkout.dayType == 'rest')
-                      _RestDayCard(tip: dailyTip?.message)
-                    else
-                      Builder(builder: (context) {
-                        final dayStatus = _localDayStates[selectedWorkout.dayId] ??
-                            (selectedWorkout.status == 'completed'
-                                ? DayStatus.completed
-                                : (selectedWorkout.status == 'missed' ||
-                                        selectedWorkout.status == 'not_today' ||
-                                        selectedWorkout.status == 'skipped')
-                                    ? DayStatus.notToday
-                                    : DayStatus.planned);
-                        return _PlannedCard(
-                          workout: selectedWorkout,
-                          dayStatus: dayStatus,
-                          onTap: () => context.push(
-                              '/training-day/${selectedWorkout.dayId}'),
-                          onComplete: () => _showCompletionSheet(selectedWorkout),
-                          // Reached only for non-rest workouts, which always have a
-                          // persisted dayId (only synthetic rest days are null).
-                          onNotToday: () => _showNotTodayReasonSheet(selectedWorkout.dayId!),
-                          onUndoComplete: () {
+                        const SizedBox(height: 24),
+
+                        // ── Week mini calendar ──────────────────────────────────
+                        _WeekCalendar(
+                          days: weekSummary,
+                          weekLabel: 'Week $weekNum',
+                          selectedDate: effectiveSelectedDate,
+                          localDayStates: _localDayStates,
+                          onSelectDate: (date) {
                             setState(() {
-                              _localDayStates[selectedWorkout.dayId!] = DayStatus.planned;
-                              _showCompletionBanner = false;
+                              _selectedDate = date;
                             });
                           },
-                          onUndoNotToday: () => _showUndoNotTodayDialog(selectedWorkout.dayId!),
-                        );
-                      }),
-
-                    const SizedBox(height: 24),
-
-                    // ── Week mini calendar ──────────────────────────────────
-                    _WeekCalendar(
-                      days: weekSummary,
-                      weekLabel: 'Week $weekNum',
-                      selectedDate: effectiveSelectedDate,
-                      localDayStates: _localDayStates,
-                      onSelectDate: (date) {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // ── Insight cards ───────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _WeeklyCard(
-                            completed: weeklyCompleted,
-                            planned: weeklyPlanned,
-                            runsCompleted: runsCompleted,
-                            runsTotal: runsTotal,
-                          ),
                         ),
-                        if (dailyTip != null) ...[
-                          const SizedBox(width: 12),
-                          Expanded(child: _DailyTipCard(tip: dailyTip)),
-                        ],
+                        const SizedBox(height: 24),
+
+                        // ── Insight cards ───────────────────────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _WeeklyCard(
+                                completed: weeklyCompleted,
+                                planned: weeklyPlanned,
+                                runsCompleted: runsCompleted,
+                                runsTotal: runsTotal,
+                              ),
+                            ),
+                            if (dailyTip != null) ...[
+                              const SizedBox(width: 12),
+                              Expanded(child: _DailyTipCard(tip: dailyTip)),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            ),
+            if (_showCompletionBanner)
+              _FloatingNotificationBanner(
+                onClose: () => setState(() => _showCompletionBanner = false),
+              ),
+          ],
         ),
-        if (_showCompletionBanner)
-          _FloatingNotificationBanner(
-            onClose: () => setState(() => _showCompletionBanner = false),
-          ),
-      ],
-    ),
-  ),
-);
-}
+      ),
+    );
+  }
 
   int _extractWeekNumber(String progressText) {
     final match = RegExp(r'Week (\d+)').firstMatch(progressText);
@@ -737,6 +794,84 @@ class _HomePageState extends ConsumerState<HomePage> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Segment/phase badge (Phase 4H.4) — "Week 2 of 17 / Preparation Runway /
+// General Endurance" or "Week 8 of 17 / Build". Authoritative-fields-only:
+// the caller never builds this widget when `currentWeekProvenance` is null.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PlanSegmentBadge extends StatelessWidget {
+  const _PlanSegmentBadge(
+      {required this.provenance,
+      required this.weekNumber,
+      required this.totalWeeks});
+
+  final WeekProvenance provenance;
+  final int weekNumber;
+  final int? totalWeeks;
+
+  @override
+  Widget build(BuildContext context) {
+    final weekLabel = totalWeeks != null
+        ? 'Week $weekNumber of $totalWeeks'
+        : 'Week $weekNumber';
+    final semanticsLabel = [
+      weekLabel,
+      provenance.weekTypeLabel,
+      if (provenance.runwayBlockLabel != null) provenance.runwayBlockLabel!
+    ].join(', ');
+
+    return Semantics(
+      label: semanticsLabel,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: provenance.isPreparationRunwayWeek
+              ? const Color(0xFFFFF0D0)
+              : AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(weekLabel,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary)),
+            const SizedBox(width: 8),
+            Container(width: 1, height: 14, color: AppColors.border),
+            const SizedBox(width: 8),
+            Text(provenance.weekTypeLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: provenance.isPreparationRunwayWeek
+                      ? const Color(0xFFB45309)
+                      : AppColors.primary,
+                )),
+            if (provenance.runwayBlockLabel != null) ...[
+              const SizedBox(width: 6),
+              // Flexible + ellipsis: the longest real block label
+              // ("Pre-Specific Transition") overflowed this row's fixed
+              // horizontal budget on narrower viewports -- a real,
+              // pre-existing layout gap this phase's Home test matrix
+              // (PART 20 "no overflow") surfaced and fixes narrowly.
+              Flexible(
+                child: Text('· ${provenance.runwayBlockLabel}',
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader({required this.userName});
@@ -849,30 +984,30 @@ class _PlannedCard extends StatelessWidget {
   Color _accentColor(String type) {
     return switch (type) {
       'easy' || 'easy_run' => const Color(0xFF0044FF), // Strong blue
-      'interval'           => const Color(0xFFE11D48), // Strong rose/red
-      'long_run'           => const Color(0xFF7C3AED), // Strong purple
-      'tempo'              => const Color(0xFFC2410C),
-      _                    => AppColors.primary,
+      'interval' => const Color(0xFFE11D48), // Strong rose/red
+      'long_run' => const Color(0xFF7C3AED), // Strong purple
+      'tempo' => const Color(0xFFC2410C),
+      _ => AppColors.primary,
     };
   }
 
   Color _pillBgColor(String type) {
     return switch (type) {
       'easy' || 'easy_run' => const Color(0xFFDBEAFE),
-      'interval'           => const Color(0xFFFECDD3),
-      'long_run'           => const Color(0xFFE9D5FF),
-      'tempo'              => const Color(0xFFFFEDD5),
-      _                    => const Color(0xFFDBEAFE),
+      'interval' => const Color(0xFFFECDD3),
+      'long_run' => const Color(0xFFE9D5FF),
+      'tempo' => const Color(0xFFFFEDD5),
+      _ => const Color(0xFFDBEAFE),
     };
   }
 
   Color _cardBgColor(String type) {
     return switch (type) {
       'easy' || 'easy_run' => const Color(0xFFEFF6FF),
-      'interval'           => const Color(0xFFFFF1F2),
-      'long_run'           => const Color(0xFFF5F3FF),
-      'tempo'              => const Color(0xFFFFEDD5),
-      _                    => const Color(0xFFEFF6FF),
+      'interval' => const Color(0xFFFFF1F2),
+      'long_run' => const Color(0xFFF5F3FF),
+      'tempo' => const Color(0xFFFFEDD5),
+      _ => const Color(0xFFEFF6FF),
     };
   }
 
@@ -886,6 +1021,7 @@ class _PlannedCard extends StatelessWidget {
       final sec = ((v - min) * 60).round();
       return '$min:${sec.toString().padLeft(2, '0')}';
     }
+
     return 'Pace: ${fmt(low)}–${fmt(high)}';
   }
 
@@ -950,8 +1086,14 @@ class _PlannedCard extends StatelessWidget {
       notTodayActive = false;
     }
 
-    final isEasyRun = workout.dayType == 'easy' || workout.dayType == 'easy_run';
-    final distLabel = workout.dayType == 'interval' ? '5x200' : workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm == workout.plannedDistanceKm.roundToDouble() ? 0 : 1);
+    final isEasyRun =
+        workout.dayType == 'easy' || workout.dayType == 'easy_run';
+    final distLabel = workout.dayType == 'interval'
+        ? '5x200'
+        : workout.plannedDistanceKm.toStringAsFixed(workout.plannedDistanceKm ==
+                workout.plannedDistanceKm.roundToDouble()
+            ? 0
+            : 1);
     final unitLabel = workout.dayType == 'interval' ? 'm' : 'km';
 
     return GestureDetector(
@@ -978,7 +1120,8 @@ class _PlannedCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: pillBg,
                     borderRadius: BorderRadius.circular(100),
@@ -1039,6 +1182,26 @@ class _PlannedCard extends StatelessWidget {
                 color: accentColor,
               ),
             ),
+            // ── Workout-level provenance (Phase 4H.6 PART 5) ────────────────
+            // Compact, this day's own week context -- never inferred from the
+            // plan-level summary; absent entirely for a legacy day response
+            // (workout.weekProvenance is null when week_type itself is null).
+            if (workout.weekProvenance != null) ...[
+              const SizedBox(height: 4),
+              Semantics(
+                label:
+                    'Plan context: ${workout.weekProvenance!.provenanceLabel}',
+                child: Text(
+                  workout.weekProvenance!.provenanceLabel,
+                  style: TextStyle(
+                    fontFamily: 'GeneralSans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: accentColor.withOpacity(0.75),
+                  ),
+                ),
+              ),
+            ],
             if (workout.plannedPaceMinKm != null) ...[
               const SizedBox(height: 8),
               Row(
@@ -1070,10 +1233,18 @@ class _PlannedCard extends StatelessWidget {
                       label: completedLabel,
                       icon: Icons.check_rounded,
                       onTap: completedTap,
-                      backgroundColor: completedActive ? const Color(0xFF0F172A) : Colors.white,
-                      borderColor: completedActive ? const Color(0xFF0F172A) : AppColors.border,
-                      textColor: completedActive ? Colors.white : const Color(0xFF0F172A),
-                      iconColor: completedActive ? Colors.white : const Color(0xFF0F172A),
+                      backgroundColor: completedActive
+                          ? const Color(0xFF0F172A)
+                          : Colors.white,
+                      borderColor: completedActive
+                          ? const Color(0xFF0F172A)
+                          : AppColors.border,
+                      textColor: completedActive
+                          ? Colors.white
+                          : const Color(0xFF0F172A),
+                      iconColor: completedActive
+                          ? Colors.white
+                          : const Color(0xFF0F172A),
                     ),
                   )
                 else
@@ -1085,8 +1256,10 @@ class _PlannedCard extends StatelessWidget {
                       label: notTodayLabel,
                       icon: Icons.close_rounded,
                       onTap: notTodayTap,
-                      backgroundColor: notTodayActive ? const Color(0xFF0F172A) : pillBg,
-                      borderColor: notTodayActive ? const Color(0xFF0F172A) : pillBg,
+                      backgroundColor:
+                          notTodayActive ? const Color(0xFF0F172A) : pillBg,
+                      borderColor:
+                          notTodayActive ? const Color(0xFF0F172A) : pillBg,
                       textColor: notTodayActive ? Colors.white : accentColor,
                       iconColor: notTodayActive ? Colors.white : accentColor,
                     ),
@@ -1147,7 +1320,8 @@ class _CompletedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actualDistance = workout.actualDistanceKm ?? workout.plannedDistanceKm;
+    final actualDistance =
+        workout.actualDistanceKm ?? workout.plannedDistanceKm;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1197,8 +1371,10 @@ class _CompletedCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildCompletedMetric('DISTANCE', '${actualDistance.toStringAsFixed(1)} km'),
-                _buildCompletedMetric('DURATION', '${workout.actualDurationMin ?? workout.plannedDurationMin} min'),
+                _buildCompletedMetric(
+                    'DISTANCE', '${actualDistance.toStringAsFixed(1)} km'),
+                _buildCompletedMetric('DURATION',
+                    '${workout.actualDurationMin ?? workout.plannedDurationMin} min'),
                 _buildCompletedMetric('PACE', _fmtAvgPace(workout)),
               ],
             ),
@@ -1276,9 +1452,7 @@ class _MissedCard extends StatelessWidget {
             const Text(
               'No worries — feel and recover today.',
               style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.4),
+                  fontSize: 14, color: AppColors.textSecondary, height: 1.4),
             ),
             const SizedBox(height: 14),
             Container(
@@ -1348,7 +1522,8 @@ class _RestDayCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: pillBg,
                   borderRadius: BorderRadius.circular(100),
@@ -1416,7 +1591,8 @@ class _RestDayCard extends StatelessWidget {
                 final descSize = isVeryNarrow ? 10.0 : (isNarrow ? 11.0 : 12.0);
 
                 return Container(
-                  padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: 10),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: paddingH, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(12),
@@ -1538,7 +1714,8 @@ class _WeekDayChip extends StatelessWidget {
     final bg = isSelected ? const Color(0xFF0F172A) : Colors.white;
     final weekdayColor = isSelected ? Colors.white70 : AppColors.textSecondary;
     final dateColor = isSelected ? Colors.white : AppColors.textPrimary;
-    final border = isSelected ? null : Border.all(color: AppColors.border, width: 1);
+    final border =
+        isSelected ? null : Border.all(color: AppColors.border, width: 1);
 
     final status = localDayStates[day.dayId] ??
         (day.status == 'completed'
@@ -1645,8 +1822,7 @@ class _WeeklyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        planned > 0 ? (completed / planned).clamp(0.0, 1.0) : 0.0;
+    final progress = planned > 0 ? (completed / planned).clamp(0.0, 1.0) : 0.0;
     return Container(
       height: 180,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1687,7 +1863,8 @@ class _WeeklyCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            completed.toStringAsFixed(completed == completed.roundToDouble() ? 0 : 1),
+            completed.toStringAsFixed(
+                completed == completed.roundToDouble() ? 0 : 1),
             style: const TextStyle(
               fontFamily: 'GeneralSans',
               fontSize: 32,
@@ -1876,9 +2053,7 @@ class _ActionButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon,
-                    size: 16,
-                    color: iconColor ?? AppColors.textPrimary),
+                Icon(icon, size: 16, color: iconColor ?? AppColors.textPrimary),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -1923,7 +2098,9 @@ class _OptionalDistanceField extends StatelessWidget {
     final borderRadius = BorderRadius.circular(14);
 
     OutlineInputBorder borderWith(Color color, [double width = 1]) {
-      return OutlineInputBorder(borderRadius: borderRadius, borderSide: BorderSide(color: color, width: width));
+      return OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: color, width: width));
     }
 
     return Column(
@@ -1965,7 +2142,8 @@ class _OptionalDistanceField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             hintText: 'e.g. 3.2',
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w400),
+            hintStyle: const TextStyle(
+                color: AppColors.textMuted, fontWeight: FontWeight.w400),
             suffixText: 'km',
             suffixStyle: const TextStyle(
               fontSize: 14,
@@ -1974,9 +2152,11 @@ class _OptionalDistanceField extends StatelessWidget {
             ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             helperText: errorText == null ? helperText : null,
-            helperStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.3),
+            helperStyle: const TextStyle(
+                fontSize: 12, color: AppColors.textMuted, height: 1.3),
             helperMaxLines: 2,
             errorText: errorText,
             errorStyle: const TextStyle(fontSize: 12, color: AppColors.missed),
@@ -2128,10 +2308,12 @@ class _FloatingNotificationBanner extends StatefulWidget {
   final VoidCallback onClose;
 
   @override
-  State<_FloatingNotificationBanner> createState() => _FloatingNotificationBannerState();
+  State<_FloatingNotificationBanner> createState() =>
+      _FloatingNotificationBannerState();
 }
 
-class _FloatingNotificationBannerState extends State<_FloatingNotificationBanner> {
+class _FloatingNotificationBannerState
+    extends State<_FloatingNotificationBanner> {
   bool _visible = false;
   double _offsetY = -20.0;
 
@@ -2261,7 +2443,8 @@ class _FloatingNotificationBannerState extends State<_FloatingNotificationBanner
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NoActivePlanState extends StatelessWidget {
-  const _NoActivePlanState({required this.userName, required this.onCreatePlan});
+  const _NoActivePlanState(
+      {required this.userName, required this.onCreatePlan});
   final String userName;
   final VoidCallback onCreatePlan;
 
@@ -2327,11 +2510,11 @@ class _PlanCompletedState extends StatelessWidget {
   final VoidCallback onStartNew;
 
   String _fmtGoal(String val) => switch (val) {
-        'five_k'        => '5K',
-        'ten_k'         => '10K',
+        'five_k' => '5K',
+        'ten_k' => '10K',
         'half_marathon' => 'Half Marathon',
-        'marathon'      => 'Marathon',
-        _               => val,
+        'marathon' => 'Marathon',
+        _ => val,
       };
 
   @override
@@ -2362,8 +2545,7 @@ class _PlanCompletedState extends StatelessWidget {
                         color: Colors.white)),
                 const SizedBox(height: 6),
                 Text('You finished your ${_fmtGoal(goalDistance)} plan.',
-                    style: const TextStyle(
-                        fontSize: 15, color: Colors.white70),
+                    style: const TextStyle(fontSize: 15, color: Colors.white70),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 Text('${totalDistance.toStringAsFixed(1)} km',
@@ -2372,8 +2554,7 @@ class _PlanCompletedState extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         color: AppColors.completed)),
                 const Text('total distance logged',
-                    style:
-                        TextStyle(fontSize: 13, color: Colors.white60)),
+                    style: TextStyle(fontSize: 13, color: Colors.white60)),
               ],
             ),
           ),

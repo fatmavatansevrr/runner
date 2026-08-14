@@ -111,6 +111,65 @@
           }
         }
       },
+      "Humanizer.Core/2.14.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Humanizer.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Humanizer.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Json.More.Net/2.0.1.2": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Json.More.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Json.More.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "JsonPointer.Net/5.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Humanizer.Core": "2.14.1",
+          "Json.More.Net": "2.0.1.2"
+        },
+        "compile": {
+          "lib/net8.0/JsonPointer.Net.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/JsonPointer.Net.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "JsonSchema.Net/7.2.3": {
+        "type": "package",
+        "dependencies": {
+          "JsonPointer.Net": "5.0.0"
+        },
+        "compile": {
+          "lib/net8.0/JsonSchema.Net.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/JsonSchema.Net.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Mvc.Testing/9.0.9": {
         "type": "package",
         "dependencies": {
@@ -214,6 +273,24 @@
       },
       "Microsoft.EntityFrameworkCore.Analyzers/9.0.1": {
         "type": "package"
+      },
+      "Microsoft.EntityFrameworkCore.InMemory/9.0.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.1",
+          "Microsoft.Extensions.Caching.Memory": "9.0.1",
+          "Microsoft.Extensions.Logging": "9.0.1"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "related": ".xml"
+          }
+        }
       },
       "Microsoft.EntityFrameworkCore.Relational/9.0.1": {
         "type": "package",
@@ -1464,6 +1541,43 @@
           "build/net6.0/xunit.runner.visualstudio.props": {}
         }
       },
+      "PlanCatalog.Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        }
+      },
+      "PlanCatalog.Core/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "PlanCatalog.Contracts": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/PlanCatalog.Core.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PlanCatalog.Core.dll": {}
+        }
+      },
+      "PlanCatalog.Infrastructure/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "JsonSchema.Net": "7.2.3",
+          "PlanCatalog.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/PlanCatalog.Infrastructure.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PlanCatalog.Infrastructure.dll": {}
+        }
+      },
       "RunningApp.Api/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -1489,6 +1603,7 @@
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "9.0.1",
+          "Microsoft.Extensions.Hosting.Abstractions": "9.0.1",
           "RunningApp.Domain": "1.0.0",
           "RunningApp.Persistence": "1.0.0"
         },
@@ -1733,6 +1848,77 @@
         "lib/netstandard2.0/Google.Apis.Core.xml"
       ]
     },
+    "Humanizer.Core/2.14.1": {
+      "sha512": "lQKvtaTDOXnoVJ20ibTuSIOf2i0uO0MPbDhd1jm238I+U/2ZnRENj0cktKZhtchBMtCUSRQ5v4xBCUbKNmyVMw==",
+      "type": "package",
+      "path": "humanizer.core/2.14.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "humanizer.core.2.14.1.nupkg.sha512",
+        "humanizer.core.nuspec",
+        "lib/net6.0/Humanizer.dll",
+        "lib/net6.0/Humanizer.xml",
+        "lib/netstandard1.0/Humanizer.dll",
+        "lib/netstandard1.0/Humanizer.xml",
+        "lib/netstandard2.0/Humanizer.dll",
+        "lib/netstandard2.0/Humanizer.xml",
+        "logo.png"
+      ]
+    },
+    "Json.More.Net/2.0.1.2": {
+      "sha512": "uF3QeiaXEfH92emz0/BWUiNtMSfxIIvgynuB0Bf1vF4s8eWTcZitBx9l+g/FDaJk5XxqBv9buQXizXKQcXFG1w==",
+      "type": "package",
+      "path": "json.more.net/2.0.1.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "json-logo-256.png",
+        "json.more.net.2.0.1.2.nupkg.sha512",
+        "json.more.net.nuspec",
+        "lib/net8.0/Json.More.dll",
+        "lib/net8.0/Json.More.xml",
+        "lib/netstandard2.0/Json.More.dll",
+        "lib/netstandard2.0/Json.More.xml"
+      ]
+    },
+    "JsonPointer.Net/5.0.0": {
+      "sha512": "fm4T5w20AY6C+p5/pJr0vrXRNGgtSfHl34I1LxC9zdPwS9S3j0GiR1Mz/CVPWKDXXGDpCt1APHpCq7kn5adCfA==",
+      "type": "package",
+      "path": "jsonpointer.net/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "json-logo-256.png",
+        "jsonpointer.net.5.0.0.nupkg.sha512",
+        "jsonpointer.net.nuspec",
+        "lib/net8.0/JsonPointer.Net.dll",
+        "lib/net8.0/JsonPointer.Net.xml",
+        "lib/netstandard2.0/JsonPointer.Net.dll",
+        "lib/netstandard2.0/JsonPointer.Net.xml"
+      ]
+    },
+    "JsonSchema.Net/7.2.3": {
+      "sha512": "O3KclMcPVFYTZsTeZBpwtKd/lYrNc3AFR+xi9j3Q4CfhDufOUx25TMMWJOcFRrqVklvKQ4Kl+0UhlNX1iDGoRw==",
+      "type": "package",
+      "path": "jsonschema.net/7.2.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "json-logo-256.png",
+        "jsonschema.net.7.2.3.nupkg.sha512",
+        "jsonschema.net.nuspec",
+        "lib/net8.0/JsonSchema.Net.dll",
+        "lib/net8.0/JsonSchema.Net.xml",
+        "lib/netstandard2.0/JsonSchema.Net.dll",
+        "lib/netstandard2.0/JsonSchema.Net.xml"
+      ]
+    },
     "Microsoft.AspNetCore.Mvc.Testing/9.0.9": {
       "sha512": "09linyPEwfaEtNtTScvjzYZ5sUAZLbMTkc1yGnMDvBp/hkJNoaxlYPZI1zvCZaOgMcuD5jdN08im54Z5eI7ALg==",
       "type": "package",
@@ -1896,6 +2082,21 @@
         "docs/PACKAGE.md",
         "microsoft.entityframeworkcore.analyzers.9.0.1.nupkg.sha512",
         "microsoft.entityframeworkcore.analyzers.nuspec"
+      ]
+    },
+    "Microsoft.EntityFrameworkCore.InMemory/9.0.1": {
+      "sha512": "XTuTax42m89JET3rgjWphx11pGXD77dc9kAO8B4l9Ze9NAJnw7qDL/cqmaGiHEAxL/8f0PJ+zY4FII0v/nXlmg==",
+      "type": "package",
+      "path": "microsoft.entityframeworkcore.inmemory/9.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll",
+        "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.xml",
+        "microsoft.entityframeworkcore.inmemory.9.0.1.nupkg.sha512",
+        "microsoft.entityframeworkcore.inmemory.nuspec"
       ]
     },
     "Microsoft.EntityFrameworkCore.Relational/9.0.1": {
@@ -3703,6 +3904,21 @@
         "xunit.runner.visualstudio.nuspec"
       ]
     },
+    "PlanCatalog.Contracts/1.0.0": {
+      "type": "project",
+      "path": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj",
+      "msbuildProject": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj"
+    },
+    "PlanCatalog.Core/1.0.0": {
+      "type": "project",
+      "path": "../../plan-catalog/src/PlanCatalog.Core/PlanCatalog.Core.csproj",
+      "msbuildProject": "../../plan-catalog/src/PlanCatalog.Core/PlanCatalog.Core.csproj"
+    },
+    "PlanCatalog.Infrastructure/1.0.0": {
+      "type": "project",
+      "path": "../../plan-catalog/src/PlanCatalog.Infrastructure/PlanCatalog.Infrastructure.csproj",
+      "msbuildProject": "../../plan-catalog/src/PlanCatalog.Infrastructure/PlanCatalog.Infrastructure.csproj"
+    },
     "RunningApp.Api/1.0.0": {
       "type": "project",
       "path": "../RunningApp.Api/RunningApp.Api.csproj",
@@ -3732,8 +3948,13 @@
   "projectFileDependencyGroups": {
     "net9.0": [
       "Microsoft.AspNetCore.Mvc.Testing >= 9.0.9",
+      "Microsoft.EntityFrameworkCore.InMemory >= 9.0.1",
       "Microsoft.NET.Test.Sdk >= 17.12.0",
+      "PlanCatalog.Contracts >= 1.0.0",
+      "PlanCatalog.Core >= 1.0.0",
+      "PlanCatalog.Infrastructure >= 1.0.0",
       "RunningApp.Api >= 1.0.0",
+      "RunningApp.Application >= 1.0.0",
       "RunningApp.Domain >= 1.0.0",
       "RunningApp.Persistence >= 1.0.0",
       "coverlet.collector >= 6.0.2",
@@ -3776,11 +3997,23 @@
             "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Api\\RunningApp.Api.csproj": {
               "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Api\\RunningApp.Api.csproj"
             },
+            "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Application\\RunningApp.Application.csproj": {
+              "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Application\\RunningApp.Application.csproj"
+            },
             "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Domain\\RunningApp.Domain.csproj": {
               "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Domain\\RunningApp.Domain.csproj"
             },
             "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Persistence\\RunningApp.Persistence.csproj": {
               "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Persistence\\RunningApp.Persistence.csproj"
+            },
+            "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Contracts\\PlanCatalog.Contracts.csproj": {
+              "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Contracts\\PlanCatalog.Contracts.csproj"
+            },
+            "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Core\\PlanCatalog.Core.csproj": {
+              "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Core\\PlanCatalog.Core.csproj"
+            },
+            "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Infrastructure\\PlanCatalog.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Infrastructure\\PlanCatalog.Infrastructure.csproj"
             }
           }
         }
@@ -3804,6 +4037,10 @@
           "Microsoft.AspNetCore.Mvc.Testing": {
             "target": "Package",
             "version": "[9.0.9, )"
+          },
+          "Microsoft.EntityFrameworkCore.InMemory": {
+            "target": "Package",
+            "version": "[9.0.1, )"
           },
           "Microsoft.NET.Test.Sdk": {
             "target": "Package",

@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY",
+    "schemaVersion": 1,
+    "key": "RUNTIME_CONDITION_VALUES_V1",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "conditionValueSets": [
+    {
+      "conditionType": "GOAL_FEASIBILITY_IN",
+      "allowedValues": ["REALISTIC", "CHALLENGING", "UNSUPPORTED", "NOT_REQUESTED"]
+    },
+    {
+      "conditionType": "PLAN_MODE_IN",
+      "allowedValues": ["STANDARD", "FOCUSED_CORE", "COMPRESSED", "READINESS_ONLY", "COMPLETION_FOCUSED"]
+    },
+    {
+      "conditionType": "PACE_SOURCE_IN",
+      "allowedValues": ["RACE_RESULT", "TIME_TRIAL", "ESTIMATED", "NOT_PROVIDED"]
+    },
+    {
+      "conditionType": "TIME_ADEQUACY_IN",
+      "allowedValues": ["ADEQUATE", "TIGHT", "INSUFFICIENT"]
+    },
+    {
+      "conditionType": "CORE_ENTRY_READINESS_IN",
+      "allowedValues": ["READY", "NOT_READY", "UNKNOWN"]
+    }
+  ]
+}

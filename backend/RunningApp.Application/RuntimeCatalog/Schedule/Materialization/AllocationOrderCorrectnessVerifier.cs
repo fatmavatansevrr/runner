@@ -1,88 +1,216 @@
-using System.Linq;
-
 namespace RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 
-/// <summary>
-/// Backend Integration Phase 4G.3B.3 — deliberately narrow slice only: the
-/// allocation-order-correctness question for a mechanical
-/// <see cref="PhaseAllocationResult"/> (Phase 4G.3B.2). This is NOT the full
-/// nine-verifier Safety Verification Pipeline referenced as deferred scope
-/// in PHASE4G_3B_2_GENERIC_PHASE_ALLOCATOR.md -- <see cref="ICatalogPhaseAllocationResolver"/>-adjacent
-/// concerns such as readiness eligibility (ReadinessEligibilityVerifier) and
-/// the other eight verifiers remain unimplemented and out of scope for this
-/// pass. Never called from any live request path -- same status as the
-/// target-week-count overload on <see cref="ICatalogPhaseAllocationResolver"/>
-/// itself.
-/// </summary>
 public enum AllocationOrderVerificationOutcome
 {
-    /// <summary>Priority order was never consulted, or the target's allocation is order-independent by construction -- no product/coaching decision is needed to trust this specific allocation's per-phase distribution.</summary>
     Pass,
-
-    /// <summary>The target's specific per-phase distribution depends on <c>CompressionPriority</c>/<c>ExtensionPriority</c> values that are an unconfirmed catalog-authoring placeholder (AUD-008 / TD-ALLOCATION-PRIORITY-001) -- a product/coaching decision is required before this allocation can be trusted, not re-derived by this pipeline.</summary>
     DecisionRequired,
+    Invalid,
 }
 
-/// <summary>One target week count's allocation-order-correctness verification outcome.</summary>
 public sealed record AllocationOrderVerificationResult(
     int TargetWeeks,
     AllocationOrderVerificationOutcome Outcome,
-    string ReasonCode);
+    string ReasonCode,
+    bool IsOrderIndependent = false,
+    bool UsesApprovedPriority = false,
+    bool IsExecutable = false);
+
+/// <summary>One phase's approved, catalog-scoped allocation rule.</summary>
+internal sealed record ApprovedPhaseAllocationRule(
+    string PhaseKey,
+    int MinimumWeeks,
+    int PreferredWeeks,
+    int MaximumWeeks,
+    int? CompressionPriority,
+    int? ExtensionPriority);
 
 /// <summary>
-/// Verifies only whether a <see cref="PhaseAllocationResult"/>'s specific
-/// per-phase distribution can be trusted as correct, given that
-/// <see cref="PlanCatalogPhaseAllocation.CompressionPriority"/>/<see cref="PlanCatalogPhaseAllocation.ExtensionPriority"/>
-/// are an unconfirmed placeholder (see
-/// plan-catalog/artifacts/audits/ten-k-pilot-domain-decision-audit.md AUD-008
-/// and plan-catalog/artifacts/audits/activation-readiness-risks.json
-/// TD-ALLOCATION-PRIORITY-001). Deliberately does not re-derive, correct, or
-/// second-guess the priority values themselves -- per TD-ALLOCATION-PRIORITY-001's
-/// own requiredResolution, that is a product/coaching decision outside this
-/// pipeline's scope. Pure function of its input; no I/O.
+/// Explicit governance input. Catalog priority numbers alone do not prove
+/// approval; callers must name the governance source that approved them.
+/// </summary>
+internal sealed record ApprovedAllocationPriorityPolicy(
+    bool IsApproved,
+    string GovernanceSource,
+    IReadOnlyList<ApprovedPhaseAllocationRule> Phases)
+{
+    internal static ApprovedAllocationPriorityPolicy FromCandidate(
+        PlanCatalogCandidateSummary candidate,
+        string governanceSource) =>
+        new(
+            IsApproved: true,
+            GovernanceSource: governanceSource,
+            Phases: candidate.PhaseAllocations.Select(p => new ApprovedPhaseAllocationRule(
+                p.PhaseKey,
+                p.MinimumWeeks,
+                p.PreferredWeeks,
+                p.MaximumWeeks,
+                p.CompressionPriority,
+                p.ExtensionPriority)).ToArray());
+}
+
+/// <summary>
+/// Dark verifier that separates theoretical order-independence from
+/// deterministic execution under an explicitly approved priority. It neither
+/// selects nor approves priorities and has no live runtime consumer.
 /// </summary>
 internal static class AllocationOrderCorrectnessVerifier
 {
-    public static AllocationOrderVerificationResult Verify(PhaseAllocationResult allocation)
+    public static AllocationOrderVerificationResult Verify(PhaseAllocationResult allocation) =>
+        Verify(allocation, priorityPolicy: null);
+
+    public static AllocationOrderVerificationResult Verify(
+        PhaseAllocationResult allocation,
+        ApprovedAllocationPriorityPolicy? priorityPolicy)
     {
         if (!allocation.IsMathematicallyFeasible)
         {
-            return new AllocationOrderVerificationResult(
-                allocation.TargetWeeks,
-                AllocationOrderVerificationOutcome.Pass,
-                "NOT_APPLICABLE_TARGET_MATHEMATICALLY_INFEASIBLE: no allocation exists for this target, so there is no per-phase distribution to verify the order of.");
+            return Result(allocation, AllocationOrderVerificationOutcome.Pass,
+                "NOT_APPLICABLE_TARGET_MATHEMATICALLY_INFEASIBLE", true, false, false);
+        }
+
+        var structuralError = ValidateAllocation(allocation);
+        if (structuralError is not null)
+        {
+            return Result(allocation, AllocationOrderVerificationOutcome.Invalid,
+                structuralError, false, false, false);
         }
 
         if (allocation.Mode == AllocationMode.Preferred)
         {
-            return new AllocationOrderVerificationResult(
-                allocation.TargetWeeks,
-                AllocationOrderVerificationOutcome.Pass,
-                "PASS_PREFERRED_ALLOCATION_UNAFFECTED_BY_PRIORITY_ORDER: targetWeeks equals the sum of every phase's PreferredWeeks, so no compression or extension adjustment occurs and CompressionPriority/ExtensionPriority are never consulted.");
+            return Result(allocation, AllocationOrderVerificationOutcome.Pass,
+                "ORDER_INDEPENDENT_PREFERRED_ALLOCATION", true, false, true);
         }
 
         var sumMinimum = allocation.Phases.Sum(p => p.MinimumWeeks);
         var sumMaximum = allocation.Phases.Sum(p => p.MaximumWeeks);
-
         if (allocation.TargetWeeks == sumMinimum)
         {
-            return new AllocationOrderVerificationResult(
-                allocation.TargetWeeks,
-                AllocationOrderVerificationOutcome.Pass,
-                $"PASS_COMPRESSION_HEADROOM_FULLY_EXHAUSTED: targetWeeks={allocation.TargetWeeks} equals the sum of every phase's MinimumWeeks, so the requested compression exactly consumes the candidate's total compressible headroom and every adjustable phase is forced to its own MinimumWeeks regardless of CompressionPriority order -- see PHASE4G_3B_2_GENERIC_PHASE_ALLOCATOR.md section 9.");
+            return Result(allocation, AllocationOrderVerificationOutcome.Pass,
+                "ORDER_INDEPENDENT_COMPRESSION_HEADROOM_FULLY_EXHAUSTED", true, false, true);
         }
 
         if (allocation.TargetWeeks == sumMaximum)
         {
-            return new AllocationOrderVerificationResult(
-                allocation.TargetWeeks,
-                AllocationOrderVerificationOutcome.Pass,
-                $"PASS_EXTENSION_HEADROOM_FULLY_EXHAUSTED: targetWeeks={allocation.TargetWeeks} equals the sum of every phase's MaximumWeeks, so the requested extension exactly consumes the candidate's total extendable headroom and every adjustable phase is forced to its own MaximumWeeks regardless of ExtensionPriority order -- mirrors the compression-headroom-exhausted case at the opposite boundary.");
+            return Result(allocation, AllocationOrderVerificationOutcome.Pass,
+                "ORDER_INDEPENDENT_EXTENSION_HEADROOM_FULLY_EXHAUSTED", true, false, true);
         }
 
-        return new AllocationOrderVerificationResult(
-            allocation.TargetWeeks,
-            AllocationOrderVerificationOutcome.DecisionRequired,
-            $"DECISION_REQUIRED_UNCONFIRMED_ALLOCATION_ORDER (TD-ALLOCATION-PRIORITY-001): targetWeeks={allocation.TargetWeeks}'s specific per-phase distribution depends on CompressionPriority/ExtensionPriority values that AUD-008 classifies as an invented, unconfirmed placeholder with no canonical or coaching source. See plan-catalog/artifacts/audits/activation-readiness-risks.json entry TD-ALLOCATION-PRIORITY-001. Resolving the priority ordering is a product/coaching decision outside this pipeline's scope -- not something to re-derive here.");
+        if (priorityPolicy is null || !priorityPolicy.IsApproved)
+        {
+            return Result(allocation, AllocationOrderVerificationOutcome.DecisionRequired,
+                "PRIORITY_REQUIRED: order-dependent allocation has no explicitly approved priority policy.",
+                false, false, false);
+        }
+
+        var policyError = ValidatePolicy(allocation, priorityPolicy);
+        if (policyError is not null)
+        {
+            return Result(allocation, AllocationOrderVerificationOutcome.Invalid,
+                policyError, false, false, false);
+        }
+
+        var expected = AllocateByApprovedPriority(allocation, priorityPolicy);
+        if (expected is null || expected.Values.Sum() != allocation.TargetWeeks)
+        {
+            return Result(allocation, AllocationOrderVerificationOutcome.Invalid,
+                "INVALID_PRIORITY_CANNOT_PRODUCE_TARGET_TOTAL", false, true, false);
+        }
+
+        if (allocation.Phases.Any(p => expected[p.PhaseKey] != p.AllocatedWeeks))
+        {
+            return Result(allocation, AllocationOrderVerificationOutcome.Invalid,
+                "INVALID_PRIORITY_ALLOCATION_MISMATCH", false, true, false);
+        }
+
+        return Result(allocation, AllocationOrderVerificationOutcome.Pass,
+            $"ORDER_DEPENDENT_BUT_APPROVED_PRIORITY: {priorityPolicy.GovernanceSource}",
+            false, true, true);
     }
+
+    private static string? ValidateAllocation(PhaseAllocationResult allocation)
+    {
+        if (allocation.Phases.Count == 0 ||
+            allocation.Phases.Select(p => p.PhaseKey).Distinct(StringComparer.Ordinal).Count() != allocation.Phases.Count)
+        {
+            return "BOUNDS_VIOLATION_DUPLICATE_OR_MISSING_PHASE";
+        }
+
+        if (allocation.Phases.Any(p => p.AllocatedWeeks < p.MinimumWeeks || p.AllocatedWeeks > p.MaximumWeeks) ||
+            allocation.Phases.Sum(p => p.AllocatedWeeks) != allocation.TargetWeeks)
+        {
+            return "BOUNDS_VIOLATION";
+        }
+
+        return null;
+    }
+
+    private static string? ValidatePolicy(
+        PhaseAllocationResult allocation,
+        ApprovedAllocationPriorityPolicy policy)
+    {
+        var allocationKeys = allocation.Phases.Select(p => p.PhaseKey).ToHashSet(StringComparer.Ordinal);
+        var policyKeys = policy.Phases.Select(p => p.PhaseKey).ToArray();
+        if (policyKeys.Length != allocationKeys.Count ||
+            policyKeys.Distinct(StringComparer.Ordinal).Count() != policyKeys.Length ||
+            policyKeys.Any(key => !allocationKeys.Contains(key)))
+        {
+            return "INVALID_PRIORITY_UNKNOWN_DUPLICATE_OR_MISSING_PHASE";
+        }
+
+        var priorities = policy.Phases.Select(p => allocation.Mode == AllocationMode.Compression
+            ? p.CompressionPriority
+            : p.ExtensionPriority).ToArray();
+        if (priorities.Any(p => p is null or <= 0) || priorities.Distinct().Count() != priorities.Length)
+        {
+            return "INVALID_PRIORITY_MISSING_NON_POSITIVE_OR_DUPLICATE_VALUE";
+        }
+
+        if (policy.Phases.Any(p => p.MinimumWeeks <= 0 || p.MinimumWeeks > p.PreferredWeeks ||
+            p.PreferredWeeks > p.MaximumWeeks))
+        {
+            return "BOUNDS_VIOLATION_INVALID_POLICY_BOUNDS";
+        }
+
+        return null;
+    }
+
+    private static Dictionary<string, int>? AllocateByApprovedPriority(
+        PhaseAllocationResult allocation,
+        ApprovedAllocationPriorityPolicy policy)
+    {
+        var result = policy.Phases.ToDictionary(p => p.PhaseKey, p => p.PreferredWeeks, StringComparer.Ordinal);
+        var remaining = Math.Abs(allocation.TargetWeeks - policy.Phases.Sum(p => p.PreferredWeeks));
+        var ordered = allocation.Mode == AllocationMode.Compression
+            ? policy.Phases.OrderBy(p => p.CompressionPriority).ToArray()
+            : policy.Phases.OrderBy(p => p.ExtensionPriority).ToArray();
+
+        while (remaining > 0)
+        {
+            var progressed = false;
+            foreach (var phase in ordered)
+            {
+                if (remaining == 0) break;
+                var canMove = allocation.Mode == AllocationMode.Compression
+                    ? result[phase.PhaseKey] > phase.MinimumWeeks
+                    : result[phase.PhaseKey] < phase.MaximumWeeks;
+                if (!canMove) continue;
+                result[phase.PhaseKey] += allocation.Mode == AllocationMode.Compression ? -1 : 1;
+                remaining--;
+                progressed = true;
+            }
+
+            if (!progressed) return null;
+        }
+
+        return result;
+    }
+
+    private static AllocationOrderVerificationResult Result(
+        PhaseAllocationResult allocation,
+        AllocationOrderVerificationOutcome outcome,
+        string reason,
+        bool orderIndependent,
+        bool usesApprovedPriority,
+        bool executable) =>
+        new(allocation.TargetWeeks, outcome, reason, orderIndependent, usesApprovedPriority, executable);
 }

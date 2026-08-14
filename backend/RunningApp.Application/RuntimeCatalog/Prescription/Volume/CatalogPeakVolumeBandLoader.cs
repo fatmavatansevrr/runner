@@ -20,14 +20,13 @@ public sealed class CatalogPeakVolumeBandLoader : ICatalogPeakVolumeBandLoader
 
     public async Task<CatalogPeakVolumeBand> LoadAsync(PlanCatalogReference reference, string distanceFamily, string experience, int runsPerWeek, CancellationToken ct = default)
     {
-        var path = Path.Combine(_options.CatalogRootPath, "policies", $"peak-volume-bands.v{reference.Version}.json");
-        if (!File.Exists(path))
-        {
-            throw new PlanCatalogLoadException($"Peak-volume band policy '{reference.Key}' v{reference.Version} was not found at '{path}'.");
-        }
-
-        await using var stream = File.OpenRead(path);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        using var document = await CatalogArtifactFileResolver.LoadAsync(
+            _options.CatalogRootPath,
+            "policies",
+            "PEAK_VOLUME_BAND_POLICY",
+            reference.Key,
+            reference.Version,
+            ct);
         var metadata = document.RootElement.GetProperty("metadata");
         var key = metadata.GetProperty("key").GetString();
         var version = metadata.GetProperty("version").GetInt32();

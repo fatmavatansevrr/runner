@@ -88,7 +88,16 @@ class _PlanGenerationPageState extends ConsumerState<PlanGenerationPage>
     //     if (mounted) {
     //       setState(() => _completedSteps = 4);
     //       await Future.delayed(const Duration(milliseconds: 300));
-    //       if (mounted) context.pushReplacement(AppRoutes.planPreview);
+    //       if (mounted) {
+    //         // Backend-decided routing: generatePreview() populates exactly
+    //         // one of previewResponse / longHorizonPreviewResponse — the
+    //         // client only reads which one to decide which preview screen
+    //         // to show, it never decides the schedule itself.
+    //         final isLongHorizon =
+    //             ref.read(onboardingProvider).isLongHorizonPreview;
+    //         context.pushReplacement(
+    //             isLongHorizon ? AppRoutes.longHorizonPlanPreview : AppRoutes.planPreview);
+    //       }
     //     }
     //   } catch (e) {
     //     // planGenerationUserSafeMessage never retries, never mutates

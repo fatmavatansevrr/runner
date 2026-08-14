@@ -1,4 +1,7 @@
 {
+  "PlanCatalog.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Contracts",
+  "PlanCatalog.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Core",
+  "PlanCatalog.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Infrastructure",
   "RunningApp.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Api",
   "RunningApp.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Application",
   "RunningApp.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Domain",

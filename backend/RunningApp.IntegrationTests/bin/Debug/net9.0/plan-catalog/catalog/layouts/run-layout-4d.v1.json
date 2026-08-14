@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "documentType": "RUN_LAYOUT",
+    "schemaVersion": 1,
+    "key": "RUN_LAYOUT_4D",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "runsPerWeek": 4,
+  "slots": [
+    { "sequenceOrder": 1, "role": "KEY_SESSION" },
+    { "sequenceOrder": 2, "role": "EASY_SUPPORT" },
+    { "sequenceOrder": 3, "role": "EASY_SUPPORT" },
+    { "sequenceOrder": 4, "role": "LONG_RUN" }
+  ]
+}

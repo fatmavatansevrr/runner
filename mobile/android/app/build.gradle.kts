@@ -8,6 +8,25 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Phase 4L.6A release authorities. The checked-in Firebase client is still
+// registered for the legacy example ID, so a production ID must be supplied
+// only after the matching Firebase Android client has been provisioned.
+val firebaseRegisteredApplicationId = "com.example.antigravity_app"
+val releaseApplicationId = providers.gradleProperty("APPSEL_ANDROID_APPLICATION_ID")
+    .orElse(providers.environmentVariable("APPSEL_ANDROID_APPLICATION_ID"))
+    .getOrElse(firebaseRegisteredApplicationId)
+val releaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+fun releaseSecret(name: String): String? = providers.gradleProperty(name)
+    .orElse(providers.environmentVariable(name))
+    .orNull
+
+val releaseStoreFile = releaseSecret("APPSEL_RELEASE_STORE_FILE")
+val releaseStorePassword = releaseSecret("APPSEL_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = releaseSecret("APPSEL_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = releaseSecret("APPSEL_RELEASE_KEY_PASSWORD")
+
 android {
     namespace = "com.example.antigravity_app"
     compileSdk = flutter.compileSdkVersion
@@ -23,21 +42,44 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.antigravity_app"
+        applicationId = releaseApplicationId
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Firebase Auth 6.5.4 declares Android API 23 as its minimum. API
+        // 21-22 devices are therefore intentionally outside the supported
+        // platform set; never bypass this with manifest-merger overrides.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseTaskRequested) {
+                require(!releaseStoreFile.isNullOrBlank()) {
+                    "Release signing requires APPSEL_RELEASE_STORE_FILE."
+                }
+                require(!releaseStorePassword.isNullOrBlank()) {
+                    "Release signing requires APPSEL_RELEASE_STORE_PASSWORD."
+                }
+                require(!releaseKeyAlias.isNullOrBlank()) {
+                    "Release signing requires APPSEL_RELEASE_KEY_ALIAS."
+                }
+                require(!releaseKeyPassword.isNullOrBlank()) {
+                    "Release signing requires APPSEL_RELEASE_KEY_PASSWORD."
+                }
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

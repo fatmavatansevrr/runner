@@ -48,7 +48,8 @@ public static class TestPlanServicesFactory
     public static PlanServices Create(
         AppDbContext context,
         IPlanGenerationEngine? engine = null,
-        IGenerationRouteDecider? routeDecider = null)
+        IGenerationRouteDecider? routeDecider = null,
+        bool preparationRunwayPilotActivationEnabled = true)
     {
         var bundleLoader = new PlanCatalogBundleLoader(
             Options.Create(new PlanCatalogOptions { CatalogRootPath = RealCatalogRoot() }),
@@ -84,7 +85,9 @@ public static class TestPlanServicesFactory
                 bundleLoader,
                 NullLogger<LivePlanPreviewRoutingService>.Instance),
             catalogPreviewGenerator,
-            catalogConfirmationService);
+            catalogConfirmationService,
+            Options.Create(new PlanCatalogOptions { CatalogRootPath = RealCatalogRoot() }),
+            Options.Create(new PreparationRunwayPilotActivationOptions { Enabled = preparationRunwayPilotActivationEnabled }));
     }
 
     /// <summary>Minimal fake for LivePlanPreviewRoutingService's IHostEnvironment dependency (Phase 4F.9.3 local-acceptance override).</summary>

@@ -93,13 +93,13 @@ public sealed class CatalogWeekSkeletonCalendarMaterializerTests
     }
 
     [Fact]
-    public void Materialize_SkeletonDaysPerWeekMismatch_ThrowsRoleStructureInvalid()
+    public void Materialize_ThreeDaySkeletonWithFourPreferredDays_ThrowsPreferredDayCountInvalid()
     {
         var skeleton = CatalogCalendarAssignmentFixtures.BuildSkeleton(
             WednesdayStart, slotRoleOrder: new[] { "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN" });
         var context = CatalogCalendarAssignmentFixtures.BuildContext(skeleton, PreferredDays, LongRunDay);
 
-        Assert.Throws<CatalogCalendarRoleStructureInvalidException>(() => Materializer.Materialize(context));
+        Assert.Throws<CatalogPreferredDayCountInvalidException>(() => Materializer.Materialize(context));
     }
 
     [Theory]

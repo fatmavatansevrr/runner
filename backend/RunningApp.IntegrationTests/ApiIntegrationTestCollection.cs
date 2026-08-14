@@ -3,15 +3,15 @@ using Xunit;
 namespace RunningApp.IntegrationTests;
 
 /// <summary>
-/// All HTTP-based tests that call POST /api/v1/testing/reset operate on a
-/// single hardcoded mock user (mock-user-001) against a real, shared Postgres
-/// database. xUnit runs different test classes in parallel by default, and
-/// two classes racing a reset + generate-preview + confirm sequence against
-/// the same user's rows produces intermittent 500s that are a test-isolation
-/// artifact, not a product defect. Grouping every such class into this one
-/// collection forces them to run sequentially relative to each other (xUnit's
-/// default behavior for classes sharing a collection), while still running in
-/// parallel with any unrelated (e.g. EF InMemory) test classes outside it.
+/// Any integration-test class that directly resets, shares, inserts into, or
+/// counts rows in the common PostgreSQL database must use this collection.
+/// The real host uses one hardcoded mock user (mock-user-001), and xUnit runs
+/// classes in parallel by default; an uncollected relational test can race a
+/// reset/generate/confirm/count sequence and create false HTTP 500 or row-count
+/// failures. Collection membership serializes all such classes while leaving
+/// unrelated EF InMemory tests parallel. The shared factory also removes
+/// machine-dependent Windows Event Log providers and supplies test-only EF
+/// connection-open instrumentation.
 /// </summary>
 [CollectionDefinition(Name)]
 public class ApiIntegrationTestCollection : ICollectionFixture<CustomWebApplicationFactory>

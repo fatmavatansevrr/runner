@@ -24,13 +24,16 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         {
             var weekly = weeklyByNumber[boundWeek.WeekNumber];
             var longRun = longRunByNumber[boundWeek.WeekNumber];
-            var allocation = V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
+            var isThreeDay = request.Candidate.DaysPerWeek == 3;
+            var allocation = isThreeDay
+                ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions)
+                : V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
             var easyOrdinal = 0;
             var weekSessions = new List<CatalogPrescribedSession>();
             foreach (var session in boundWeek.Sessions.OrderBy(s => s.Date).ThenBy(s => s.StructuralRole))
             {
                 var currentEasyOrdinal = session.StructuralRole == "EASY_SUPPORT" ? easyOrdinal++ : -1;
-                weekSessions.Add(BuildSession(request, weekly, longRun, allocation, session, currentEasyOrdinal));
+                weekSessions.Add(BuildSession(request, weekly, longRun, allocation, session, currentEasyOrdinal, isThreeDay));
             }
 
             var accounted = Round(weekSessions.Sum(s => s.PlannedDistanceKm));
@@ -70,7 +73,8 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         Volume.CatalogLongRunWeek longRun,
         V1FourDayWeekAllocation allocation,
         BoundCatalogSession session,
-        int easySupportOrdinal)
+        int easySupportOrdinal,
+        bool isThreeDay)
     {
         var distance = DistanceFor(session, allocation, easySupportOrdinal);
         var definition = request.WorkoutDefinitions[session.WorkoutDefinitionKey];
@@ -95,14 +99,14 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             longRun.PlannedLongRunDistanceKm,
             allocation.ResidualVolumeKm,
             distance,
-            $"{V1FourDaySessionVolumeAllocationPolicy.PolicyKey} v{V1FourDaySessionVolumeAllocationPolicy.PolicyVersion}",
+            isThreeDay ? $"{V1ThreeDaySessionVolumeAllocationPolicy.PolicyKey} v{V1ThreeDaySessionVolumeAllocationPolicy.PolicyVersion}" : $"{V1FourDaySessionVolumeAllocationPolicy.PolicyKey} v{V1FourDaySessionVolumeAllocationPolicy.PolicyVersion}",
             mode.ToString(),
             ComponentSelectionPolicy,
             rawPace,
             request.PrescriptionContext.PaceSource.GoalFeasibilityValue,
             pace.Source,
             RejectedPaceSources(session, request.PrescriptionContext, definition),
-            "round_nearest_0.5km_then_adjust_second_easy_support",
+            isThreeDay ? "round_nearest_0.5km_minimum_deviation_then_structural_slot_order" : "round_nearest_0.5km_then_adjust_second_easy_support",
             accountingMode.ToString(),
             duration.Kind.ToString(),
             session.FallbackOrigin,

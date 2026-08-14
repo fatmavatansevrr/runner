@@ -1,9 +1,12 @@
+using System.Net;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using RunningApp.Api.Auth;
 using RunningApp.Api.ErrorHandling;
 using RunningApp.Api.Logging;
+using RunningApp.Api.Startup;
 using RunningApp.Api.Swagger;
 using RunningApp.Application.Adaptation;
 using RunningApp.Application.Identity;
@@ -13,6 +16,15 @@ using RunningApp.Application.Services;
 using RunningApp.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Phase 4L.6A: resolve the catalog against the stable application content
+// root, validate the complete packaged authoring tree before the API begins
+// accepting traffic, and never fall back through the process working directory.
+var catalogRoot = PlanCatalogRootResolver.Resolve(
+    builder.Configuration[$"{PlanCatalogOptions.SectionName}:CatalogRootPath"],
+    builder.Environment.ContentRootPath,
+    builder.Environment.IsDevelopment());
+var catalogInventory = PlanCatalogPackageValidator.Validate(catalogRoot.CatalogRootPath);
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
@@ -31,7 +43,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ─── Database ───────────────────────────────────────────────────────────────
-// TODO (Step 2): Ensure PostgreSQL connection string is in appsettings.Development.json
+// Phase 4L.6B: appsettings.json (the Production-reachable base layer) no
+// longer carries a usable connection string. Development's local Postgres
+// default lives only in appsettings.Development.json; Production must supply
+// ConnectionStrings:DefaultConnection through external configuration (an
+// environment variable, secret manager, or deployment-platform secret).
+// ProductionConfigurationValidator below fails startup if it is missing or
+// still resolves to a known local/development authority.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -110,13 +128,25 @@ builder.Services.AddScoped<IPlanGenerationEngine, PlaceholderPlanGenerationEngin
 // the architectural boundary (Process A = catalog authoring, Process B =
 // runtime plan assignment/generation, which this phase begins to integrate
 // with read-only).
-builder.Services.Configure<PlanCatalogOptions>(builder.Configuration.GetSection(PlanCatalogOptions.SectionName));
+builder.Services.Configure<PlanCatalogOptions>(options => options.CatalogRootPath = catalogRoot.CatalogRootPath);
 builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions>(
     builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions.SectionName));
 // Backend Integration Phase 4F.9.3: Development-only local-acceptance seam.
 // Disabled by default; see LocalCatalogAcceptanceOptions's own doc comment.
 builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.LocalCatalogAcceptanceOptions>(
     builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.LocalCatalogAcceptanceOptions.SectionName));
+// Backend Integration Phase 4G.6B.1: candidate-scoped activation gate for the
+// 15-20 week TEN_K Preparation Runway public preview path (Phase 4G.6B).
+// Defaults enabled; see PreparationRunwayPilotActivationOptions's own doc
+// comment for exact scope and disabled-rollback behavior.
+builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.PreparationRunwayPilotActivationOptions>(
+    builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.PreparationRunwayPilotActivationOptions.SectionName));
+// Phase 4L.6C: server-authoritative, generation-only kill switch for the
+// dedicated Long-Horizon public preview endpoint. Defaults enabled (current
+// behavior unchanged); no client request can read or set this value. See
+// LongHorizonGenerationOptions's own doc comment for exact scope.
+builder.Services.Configure<RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PublicPreview.LongHorizonGenerationOptions>(
+    builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PublicPreview.LongHorizonGenerationOptions.SectionName));
 builder.Services.AddScoped<IPlanCatalogBundleLoader, PlanCatalogBundleLoader>();
 builder.Services.AddScoped<ICanonicalDistanceFamilyResolver, CanonicalDistanceFamilyResolver>();
 
@@ -231,24 +261,119 @@ builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.PreviewRouting.
 builder.Services.AddScoped<IBootstrapService, BootstrapService>();
 builder.Services.AddScoped<IPlanPreviewService, PlanServices>();
 builder.Services.AddScoped<IPlanConfirmationService, PlanServices>();
+builder.Services.AddScoped<ILongHorizonPublicPlanService,
+    RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PublicPreview.LongHorizonPublicPlanService>();
 builder.Services.AddScoped<IPlanManagementService, PlanServices>();
 builder.Services.AddScoped<IHomeQueryService, QueryAndMutationServices>();
 builder.Services.AddScoped<ICalendarQueryService, QueryAndMutationServices>();
 builder.Services.AddScoped<ITrainingDayService, QueryAndMutationServices>();
 builder.Services.AddScoped<IWorkoutCompletionService, QueryAndMutationServices>();
 builder.Services.AddScoped<INotTodayService, QueryAndMutationServices>();
+builder.Services.AddScoped<ILongHorizonActiveReadModelProvider, LongHorizonActiveReadModelProvider>();
+builder.Services.AddScoped<ILongHorizonRollingSessionMutationService, LongHorizonRollingSessionMutationService>();
+builder.Services.AddScoped<ILongHorizonRollingWindowActivationService, LongHorizonRollingWindowActivationService>();
+builder.Services.AddScoped<ILongHorizonRollingRetryContinuationService, LongHorizonRollingRetryContinuationService>();
 builder.Services.AddScoped<IPendingConfirmationService, QueryAndMutationServices>();
 builder.Services.AddScoped<IProfileService, QueryAndMutationServices>();
 builder.Services.AddScoped<IUserSynchronizationService, UserSynchronizationService>();
 
-// ─── CORS (dev-friendly) ────────────────────────────────────────────────────
+// ─── CORS ───────────────────────────────────────────────────────────────────
+// The mobile app is a native Flutter client; browser CORS enforcement never
+// applies to it, so no Production browser origin needs to be invented here.
+// Development keeps the permissive dev-only policy (Swagger, local tooling).
+// Production has no configured origin by default, which is a fully
+// restrictive policy (WithOrigins is never called, so the CORS middleware
+// rejects every cross-origin browser request) — see Cors:AllowedOrigins if a
+// future web client needs one added explicitly.
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddDefaultPolicy(policy =>
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    }
+    else
+    {
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? Array.Empty<string>();
+        options.AddDefaultPolicy(policy =>
+        {
+            if (allowedOrigins.Length > 0)
+                policy.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
+            // else: policy allows nothing (no WithOrigins call) — restrictive
+            // default until an explicit browser client is approved.
+        });
+    }
 });
 
 var app = builder.Build();
+
+// ─── Production configuration fail-fast ────────────────────────────────────
+// Runs after DI/options are built but before the host accepts any traffic.
+// ProductionConfigurationValidation:Enabled defaults to true; it exists only
+// so tests that boot the real host under the "Production" environment name
+// to exercise catalog-tier Production-only behavior (not full production
+// security posture — see ProductionConfigurationValidatorTests for that) can
+// opt out explicitly instead of silently bypassing a real gate.
+var productionValidationEnabled = builder.Configuration
+    .GetSection(ProductionConfigurationValidationOptions.SectionName)
+    .Get<ProductionConfigurationValidationOptions>()?.Enabled ?? true;
+if (app.Environment.IsProduction() && productionValidationEnabled)
+{
+    ProductionConfigurationValidator.Validate(builder.Configuration);
+}
+
+app.Logger.LogInformation(
+    "Runtime plan catalog validated. Source={CatalogRootSource} Root={CatalogRoot} JsonFiles={CatalogFileCount}",
+    catalogRoot.Source,
+    catalogRoot.CatalogRootPath,
+    catalogInventory.JsonFileCount);
+
+// ─── Reverse proxy / HTTPS authority ────────────────────────────────────────
+// Two supported deployment models, chosen by configuration — never assumed:
+//   A. This process terminates/enforces HTTPS directly: set
+//      Deployment:EnforceHttpsRedirection=true. No forwarded-header trust is
+//      needed or enabled.
+//   B. A trusted reverse proxy/load balancer terminates TLS and forwards
+//      X-Forwarded-For/X-Forwarded-Proto: set Deployment:TrustedProxies
+//      and/or Deployment:TrustedNetworks to the exact proxy IPs/CIDRs. Only
+//      forwarded headers from those addresses are trusted — arbitrary public
+//      clients can never spoof scheme/IP this way. EnforceHttpsRedirection
+//      stays false; the proxy is the HTTPS authority.
+// Outside Development, if neither is configured, the app trusts no forwarded
+// headers and enforces no redirection — HTTP exposure is not silently
+// accepted as "probably behind a proxy somewhere."
+if (!app.Environment.IsDevelopment())
+{
+    var trustedProxies = builder.Configuration.GetSection("Deployment:TrustedProxies").Get<string[]>()
+        ?? Array.Empty<string>();
+    var trustedNetworks = builder.Configuration.GetSection("Deployment:TrustedNetworks").Get<string[]>()
+        ?? Array.Empty<string>();
+
+    if (trustedProxies.Length > 0 || trustedNetworks.Length > 0)
+    {
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        };
+        forwardedHeadersOptions.KnownProxies.Clear();
+        forwardedHeadersOptions.KnownNetworks.Clear();
+        foreach (var proxy in trustedProxies)
+            forwardedHeadersOptions.KnownProxies.Add(IPAddress.Parse(proxy));
+        foreach (var network in trustedNetworks)
+        {
+            var parts = network.Split('/');
+            forwardedHeadersOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
+        }
+        app.UseForwardedHeaders(forwardedHeadersOptions);
+    }
+
+    if (builder.Configuration.GetValue<bool>("Deployment:EnforceHttpsRedirection"))
+    {
+        app.UseHsts();
+        app.UseHttpsRedirection();
+    }
+}
 
 // ─── Middleware ──────────────────────────────────────────────────────────────
 // Order matters:

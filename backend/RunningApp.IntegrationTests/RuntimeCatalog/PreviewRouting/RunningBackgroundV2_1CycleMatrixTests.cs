@@ -89,7 +89,7 @@ public sealed class RunningBackgroundV2_1CycleMatrixTests
     [InlineData(11)]
     [InlineData(13)]
     [InlineData(14)]  // maximum supported per coreCycle bounds, but not the implemented length
-    public async Task InRangeButNotExactTwelve_RoutesCoreLengthNotImplemented(int weeks)
+    public async Task InRangeStandaloneCore_RoutesCatalogLive(int weeks)
     {
         var (minimum, maximum) = await LoadRealCoreCycleBoundsAsync();
         var request = PilotRequest(weeks);
@@ -105,8 +105,7 @@ public sealed class RunningBackgroundV2_1CycleMatrixTests
 
         var decision = V1LiveCatalogPilotRoutingPolicy.Evaluate(request, AsOfDate, minimum, maximum, "PUBLISHED", activationEnabled: true);
 
-        Assert.Equal(LivePlanPreviewRoute.CatalogCoreLengthNotImplemented, decision.Route);
-        Assert.Equal(LivePlanPreviewRouteReason.CoreLengthRecognizedButNotImplemented, decision.Reason);
+        Assert.Equal(LivePlanPreviewRoute.CatalogLive, decision.Route);
         Assert.Equal(weeks, decision.CycleLengthWeeks);
         Assert.False(decision.FallbackPermitted);
     }
@@ -145,7 +144,7 @@ public sealed class RunningBackgroundV2_1CycleMatrixTests
     }
 
     [Fact]
-    public async Task EightWeekExplicitZero_IsNowCoreLengthNotImplemented_NotInfeasible()
+    public async Task EightWeekExplicitZero_UsesTheExistingKnownInfeasibleGuard()
     {
         // Phase 4G.2 superseded this: the known-infeasible-explicit-zero-at-
         // 8-weeks branch is now unreachable — CoreLengthRecognizedButNotImplemented
@@ -160,8 +159,8 @@ public sealed class RunningBackgroundV2_1CycleMatrixTests
 
         var decision = V1LiveCatalogPilotRoutingPolicy.Evaluate(request, AsOfDate, minimum, maximum, "PUBLISHED", activationEnabled: true);
 
-        Assert.Equal(LivePlanPreviewRoute.CatalogCoreLengthNotImplemented, decision.Route);
-        Assert.Equal(LivePlanPreviewRouteReason.CoreLengthRecognizedButNotImplemented, decision.Reason);
+        Assert.Equal(LivePlanPreviewRoute.CatalogGenerationInfeasible, decision.Route);
+        Assert.Equal(LivePlanPreviewRouteReason.KnownInfeasibleEightWeekExplicitZero, decision.Reason);
         Assert.False(decision.FallbackPermitted);
     }
 

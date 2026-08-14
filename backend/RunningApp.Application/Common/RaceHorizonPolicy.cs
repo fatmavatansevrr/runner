@@ -1,4 +1,5 @@
 using System;
+using RunningApp.Application.RuntimeCatalog.Schedule.Horizon;
 
 namespace RunningApp.Application.Common;
 
@@ -14,19 +15,17 @@ public enum RaceHorizonClassification
 
     /// <summary>
     /// Horizon is exactly <see cref="RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks"/>
-    /// weeks — the only core length currently proven to produce a
-    /// race-date-aligned standalone plan. Generation may proceed.
+    /// weeks — the preferred canonical core path. Generation may proceed.
     /// </summary>
     ExactStandaloneCoreSupported,
 
+    /// <summary>Horizon is within the activated 8-14-week standalone-core range.</summary>
+    StandaloneCoreSupported,
+
     /// <summary>
-    /// Horizon falls within the nominal standalone core range
-    /// (<see cref="RaceHorizonPolicy.MinimumSupportedStandaloneWeeks"/>..<see cref="RaceHorizonPolicy.MaximumSupportedStandaloneWeeks"/>)
-    /// but is not the exact proven-safe length — the current catalog phase
-    /// allocator is not horizon-aware and always emits its fixed default
-    /// (12-week) allocation regardless of this horizon, so generating here
-    /// would silently misalign with RaceDate. Temporary safety constraint —
-    /// see PHASE4G_2_EXACT_TWELVE_WEEK_ONLY_SAFETY_CONSTRAINT.md.
+    /// Legacy compatibility value retained for old callers and tests. The
+    /// canonical decision mapping no longer emits it: compressed and extended
+    /// 8-14-week cores map to <see cref="StandaloneCoreSupported"/>.
     /// </summary>
     CoreLengthRecognizedButNotImplemented,
 
@@ -48,19 +47,11 @@ public enum RaceHorizonClassification
 /// days-from-StartDate, or a re-derived min/max range check) — so they can
 /// never disagree.
 ///
-/// TEMPORARY SAFETY CONSTRAINT: horizon-aware 8-14-week core allocation is
-/// not yet implemented. The catalog phase allocator
-/// (<c>CatalogPhaseAllocationResolver.Resolve</c>) always emits its fixed
-/// default ~12-week allocation regardless of the accepted cycle length —
-/// verified live for both an 8-week horizon (plan overshoots the race by
-/// ~4 weeks) and a 20-week horizon (plan falls ~8 weeks short). Until true
-/// horizon-aware composition exists, only the exact 12-week horizon — the
-/// one length proven to align with RaceDate — is generated; every other
-/// horizon in the nominal 8-14 range fails closed, and horizons above 14
-/// continue to fail closed as "composition required". This is not the final
-/// product behavior — see
-/// PHASE4G_1_LONG_HORIZON_FAIL_CLOSED_SAFETY_CONSTRAINT.md and
-/// PHASE4G_2_EXACT_TWELVE_WEEK_ONLY_SAFETY_CONSTRAINT.md.
+/// Phase 4G.5L ownership: <see cref="CoreHorizonClassifier"/> performs the
+/// only elapsed-day/full-week/remainder calculation. This policy consumes
+/// that typed decision and maps modes to public behavior. Complete 8-14-week
+/// standalone cores are supported; 12w0d retains its preferred canonical
+/// path. Longer horizons remain preparation-runway composition required.
 /// </summary>
 public static class RaceHorizonPolicy
 {
@@ -81,23 +72,42 @@ public static class RaceHorizonPolicy
     public const int MaximumSupportedStandaloneWeeks = 14;
 
     /// <summary>
-    /// The only standalone core length currently proven (live-verified) to
-    /// produce a race-date-aligned plan. Every other horizon within
-    /// [<see cref="MinimumSupportedStandaloneWeeks"/>, <see cref="MaximumSupportedStandaloneWeeks"/>]
-    /// is nominally "in range" per the candidate's coreCycle bounds but is
-    /// NOT yet safely generatable — see this class's own remarks.
+    /// Preferred standalone core length. Exact 12w0d remains on the canonical
+    /// preferred path rather than the compressed/extended dynamic path.
     /// </summary>
     public const int ExactStandaloneCoreSupportedWeeks = 12;
 
     /// <summary>
-    /// Whole weeks available between <paramref name="startDate"/> and
-    /// <paramref name="raceDate"/>, rounded up — a partial trailing week
-    /// still counts as a full week of available preparation time. Mirrors
-    /// the day-count/7 ceiling convention already used elsewhere in this
-    /// codebase for week-count math.
+    /// Complete weeks available between <paramref name="startDate"/> and
+    /// <paramref name="raceDate"/>. The canonical decision retains any
+    /// partial days separately and never rounds this value upward.
     /// </summary>
     public static int CalculateAvailableWeeks(DateOnly startDate, DateOnly raceDate) =>
-        (int)Math.Ceiling((raceDate.DayNumber - startDate.DayNumber) / 7d);
+        Decide(startDate, raceDate).AvailableFullWeeks;
+
+    internal static CoreHorizonDecision Decide(DateOnly startDate, DateOnly raceDate) =>
+        Decide(startDate, raceDate, MinimumSupportedStandaloneWeeks,
+            ExactStandaloneCoreSupportedWeeks, MaximumSupportedStandaloneWeeks);
+
+    internal static CoreHorizonDecision Decide(
+        DateOnly startDate,
+        DateOnly raceDate,
+        int minimumCoreWeeks,
+        int preferredCoreWeeks,
+        int maximumCoreWeeks) =>
+        CoreHorizonClassifier.Classify(new CoreHorizonContext(
+            startDate, raceDate, minimumCoreWeeks, preferredCoreWeeks, maximumCoreWeeks));
+
+    internal static RaceHorizonClassification Classify(CoreHorizonDecision decision) =>
+        decision.Mode switch
+        {
+            CoreHorizonMode.Unsupported or CoreHorizonMode.ReadinessOnly => RaceHorizonClassification.BelowMinimum,
+            CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore => RaceHorizonClassification.StandaloneCoreSupported,
+            CoreHorizonMode.PreferredCore => RaceHorizonClassification.ExactStandaloneCoreSupported,
+            CoreHorizonMode.PreparationRunwayPlusCore => RaceHorizonClassification.CompositionRequired,
+            CoreHorizonMode.InvalidInput => RaceHorizonClassification.BelowMinimum,
+            _ => throw new ArgumentOutOfRangeException(nameof(decision)),
+        };
 
     /// <summary>
     /// Classifies <paramref name="availableWeeks"/> against the currently
@@ -108,11 +118,8 @@ public static class RaceHorizonPolicy
     /// </summary>
     public static RaceHorizonClassification Classify(int availableWeeks)
     {
-        if (availableWeeks < MinimumSupportedStandaloneWeeks) return RaceHorizonClassification.BelowMinimum;
-        if (availableWeeks > MaximumSupportedStandaloneWeeks) return RaceHorizonClassification.CompositionRequired;
-        return availableWeeks == ExactStandaloneCoreSupportedWeeks
-            ? RaceHorizonClassification.ExactStandaloneCoreSupported
-            : RaceHorizonClassification.CoreLengthRecognizedButNotImplemented;
+        var anchor = new DateOnly(2000, 1, 1);
+        return Classify(Decide(anchor, anchor.AddDays(checked(availableWeeks * 7))));
     }
 
     /// <summary>

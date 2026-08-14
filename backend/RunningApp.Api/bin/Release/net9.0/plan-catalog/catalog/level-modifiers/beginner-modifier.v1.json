@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "documentType": "LEVEL_MODIFIER",
+    "schemaVersion": 2,
+    "key": "BEGINNER_MODIFIER",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "experience": "NEW",
+  "eligibleWorkouts": [
+    { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2 }
+  ],
+  "progressionModifier": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "key": "BEGINNER_PROGRESSION_MODIFIER_V1",
+    "version": 1
+  }
+}

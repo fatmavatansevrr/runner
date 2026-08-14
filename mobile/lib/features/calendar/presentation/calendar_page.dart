@@ -13,7 +13,6 @@ import '../../home/data/home_repository.dart';
 import '../../home/data/home_provider.dart';
 import '../../../core/widgets/app_button.dart';
 
-
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
 
@@ -28,7 +27,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   @override
   void initState() {
     super.initState();
-    print('CALENDAR_PAGE_LOG: CalendarPage Initialized at ${DateTime.now().toIso8601String()}');
+    print(
+        'CALENDAR_PAGE_LOG: CalendarPage Initialized at ${DateTime.now().toIso8601String()}');
   }
 
   int _getWeekNumber(DateTime date) {
@@ -40,8 +40,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   int _getDaysInMonth(int year, int month) {
     if (month == 2) {
-      final isLeap =
-          (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      final isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
       return isLeap ? 29 : 28;
     }
     const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -81,7 +80,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final buildStart = DateTime.now();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final renderEnd = DateTime.now();
-      print('CALENDAR_PAGE_LOG: Render completed at ${renderEnd.toIso8601String()}. Render duration from build start: ${renderEnd.difference(buildStart).inMilliseconds}ms');
+      print(
+          'CALENDAR_PAGE_LOG: Render completed at ${renderEnd.toIso8601String()}. Render duration from build start: ${renderEnd.difference(buildStart).inMilliseconds}ms');
     });
 
     final monthStr = ref.watch(calendarMonthProvider);
@@ -121,7 +121,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(100),
@@ -132,7 +133,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       children: [
                         GestureDetector(
                           onTap: () => _prevMonth(monthStr),
-                          child: const Icon(Icons.chevron_left_rounded, size: 20, color: AppColors.textPrimary),
+                          child: const Icon(Icons.chevron_left_rounded,
+                              size: 20, color: AppColors.textPrimary),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -146,7 +148,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         const SizedBox(width: 8),
                         GestureDetector(
                           onTap: () => _nextMonth(monthStr),
-                          child: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textPrimary),
+                          child: const Icon(Icons.chevron_right_rounded,
+                              size: 20, color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -167,27 +170,43 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ),
                 data: (workouts) {
                   // Filter workouts that fall in the current week (from Monday to Sunday of the current week).
-                  final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+                  final startOfWeek =
+                      now.subtract(Duration(days: now.weekday - 1));
                   final endOfWeek = startOfWeek.add(const Duration(days: 6));
-                  final thisWeekWorkouts = workouts.where((w) =>
-                      w.date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-                      w.date.isBefore(endOfWeek.add(const Duration(days: 1)))).toList();
-                  final completedThisWeek = thisWeekWorkouts.where((w) => w.status == 'completed').toList();
-                  final totalThisWeek = thisWeekWorkouts.where((w) => w.dayType != 'rest').toList();
-                  
-                  final runsCompleted = totalThisWeek.isNotEmpty ? completedThisWeek.length : 3;
-                  final runsTotal = totalThisWeek.isNotEmpty ? totalThisWeek.length : 4;
-                  
-                  final completed = workouts.where((w) => w.status == 'completed').toList();
-                  final distanceCompleted = completedThisWeek.fold(0.0, (sum, w) => sum + (w.actualDistanceKm ?? 0.0));
-                  final distLogged = distanceCompleted > 0 ? distanceCompleted : 15.5;
+                  final thisWeekWorkouts = workouts
+                      .where((w) =>
+                          w.date.isAfter(
+                              startOfWeek.subtract(const Duration(days: 1))) &&
+                          w.date
+                              .isBefore(endOfWeek.add(const Duration(days: 1))))
+                      .toList();
+                  final completedThisWeek = thisWeekWorkouts
+                      .where((w) => w.status == 'completed')
+                      .toList();
+                  final totalThisWeek = thisWeekWorkouts
+                      .where((w) => w.dayType != 'rest')
+                      .toList();
+
+                  final runsCompleted =
+                      totalThisWeek.isNotEmpty ? completedThisWeek.length : 3;
+                  final runsTotal =
+                      totalThisWeek.isNotEmpty ? totalThisWeek.length : 4;
+
+                  final completed =
+                      workouts.where((w) => w.status == 'completed').toList();
+                  final distanceCompleted = completedThisWeek.fold(
+                      0.0, (sum, w) => sum + (w.actualDistanceKm ?? 0.0));
+                  final distLogged =
+                      distanceCompleted > 0 ? distanceCompleted : 15.5;
 
                   // 1. Generate gridWeeks (Monday-first, 5 or 6 weeks)
                   final firstDayOfMonth = DateTime(year, month, 1);
-                  final firstDayWeekday = firstDayOfMonth.weekday; // 1 = Mon ... 7 = Sun
+                  final firstDayWeekday =
+                      firstDayOfMonth.weekday; // 1 = Mon ... 7 = Sun
                   final paddingOffset = firstDayWeekday - 1;
-                  final gridStartDate = firstDayOfMonth.subtract(Duration(days: paddingOffset));
-                  
+                  final gridStartDate =
+                      firstDayOfMonth.subtract(Duration(days: paddingOffset));
+
                   final List<List<DateTime>> gridWeeks = [];
                   var currentDay = gridStartDate;
                   for (int w = 0; w < 6; w++) {
@@ -202,7 +221,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   // Let's filter out the 6th week if it contains only days from the next month
                   if (gridWeeks.length == 6) {
                     final sixthWeek = gridWeeks[5];
-                    final allNextMonth = sixthWeek.every((d) => d.month != month);
+                    final allNextMonth =
+                        sixthWeek.every((d) => d.month != month);
                     if (allNextMonth) {
                       gridWeeks.removeAt(5);
                     }
@@ -224,7 +244,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
                         child: Column(
                           children: [
                             // Table showing weeks and days (M T W T F S S)
@@ -239,38 +260,46 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 6: FlexColumnWidth(),
                                 7: FlexColumnWidth(),
                               },
-                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                              defaultVerticalAlignment:
+                                  TableCellVerticalAlignment.middle,
                               children: [
                                 // Weekday headers: empty, M, T, W, T, F, S, S
                                 TableRow(
                                   children: [
                                     const Center(child: Text('')),
-                                    ...['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: Center(
-                                        child: Text(
-                                          d,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ),
-                                    )).toList(),
+                                    ...['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                                        .map((d) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 12),
+                                              child: Center(
+                                                child: Text(
+                                                  d,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ))
+                                        .toList(),
                                   ],
                                 ),
                                 // Week rows
                                 ...gridWeeks.map((weekDays) {
                                   final firstDayOfWeek = weekDays.first;
-                                  final weekNum = _getWeekNumber(firstDayOfWeek);
-                                  final wkLabel = 'Wk ${weekNum.toString().padLeft(2, '0')}';
-                                  
+                                  final weekNum =
+                                      _getWeekNumber(firstDayOfWeek);
+                                  final wkLabel =
+                                      'Wk ${weekNum.toString().padLeft(2, '0')}';
+
                                   return TableRow(
                                     children: [
                                       // Week Label Cell
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 4),
                                         child: Center(
                                           child: Text(
                                             wkLabel,
@@ -288,117 +317,193 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                         final isToday = day.day == now.day &&
                                             day.month == now.month &&
                                             day.year == now.year;
-                                        
+
                                         // Selected day check
-                                        final isSelected = _selectedDate != null &&
+                                        final isSelected = _selectedDate !=
+                                                null &&
                                             day.day == _selectedDate!.day &&
                                             day.month == _selectedDate!.month &&
                                             day.year == _selectedDate!.year;
-                                        
+
                                         // Find workout
                                         final matches = workouts.where((w) =>
                                             w.date.day == day.day &&
                                             w.date.month == day.month &&
                                             w.date.year == day.year);
-                                        final workout = matches.isEmpty ? null : matches.first;
-                                        
+                                        final workout = matches.isEmpty
+                                            ? null
+                                            : matches.first;
+
                                         // Rest days (and days with no scheduled workout) render as
                                         // ordinary calendar cells — no fill, no badge, no markers.
                                         // Only actual running workouts (easy/interval/long run/tempo)
                                         // get a colored highlight.
                                         final isRestDay = isOverflow
                                             ? false
-                                            : (workout == null || workout.dayType == 'rest');
+                                            : (workout == null ||
+                                                workout.dayType == 'rest');
 
                                         // Resolve background color based on training type (dayType)
                                         Color bg = Colors.transparent;
-                                        if (!isOverflow && !isRestDay && workout != null) {
+                                        if (!isOverflow &&
+                                            !isRestDay &&
+                                            workout != null) {
                                           bg = switch (workout.dayType) {
-                                            'easy' || 'easy_run' => AppColors.easyRunTint,
-                                            'interval'           => AppColors.intervalTint,
-                                            'long_run'           => AppColors.longRunTint,
-                                            'tempo'              => const Color(0xFFFFEDD5),
-                                            _                    => Colors.transparent,
+                                            'easy' ||
+                                            'easy_run' =>
+                                              AppColors.easyRunTint,
+                                            'interval' =>
+                                              AppColors.intervalTint,
+                                            'long_run' => AppColors.longRunTint,
+                                            'tempo' => const Color(0xFFFFEDD5),
+                                            _ => Colors.transparent,
                                           };
                                         }
+
+                                        // Phase 4H.4 (PART 8/28): full
+                                        // date/type/status/provenance/long-run
+                                        // exposed via semantics even though
+                                        // the compact 52px cell only shows the
+                                        // date number and a status marker --
+                                        // the full block label lives in the
+                                        // selected-day panel (below).
+                                        final cellSemanticsLabel = workout ==
+                                                    null ||
+                                                isRestDay
+                                            ? '${DateFormat('EEEE, MMMM d').format(day)}, rest day'
+                                            : [
+                                                DateFormat('EEEE, MMMM d')
+                                                    .format(day),
+                                                workout.title,
+                                                workout.status,
+                                                if (workout.isLongRun)
+                                                  'long run',
+                                                if (workout.weekProvenance !=
+                                                    null)
+                                                  workout.weekProvenance!
+                                                      .provenanceLabel,
+                                              ].join(', ');
 
                                         return GestureDetector(
                                           onTap: () {
                                             setState(() {
                                               _selectedDate = day;
                                             });
-                                            _showDayDetailModal(context, workout, day, isToday);
+                                            _showDayDetailModal(
+                                                context, workout, day, isToday);
                                           },
-                                          child: Container(
-                                            height: 52,
-                                            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? AppColors.ctaDark
-                                                  : (isOverflow
-                                                      ? Colors.transparent
-                                                      : (isRestDay ? Colors.white : bg)),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(
+                                          child: Semantics(
+                                            label: isOverflow
+                                                ? null
+                                                : cellSemanticsLabel,
+                                            child: Container(
+                                              height: 52,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 2,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
                                                 color: isSelected
                                                     ? AppColors.ctaDark
-                                                    : (isToday
-                                                        ? AppColors.ctaDark.withOpacity(0.3)
-                                                        : (isRestDay ? AppColors.border : Colors.transparent)),
-                                                width: 1.5,
+                                                    : (isOverflow
+                                                        ? Colors.transparent
+                                                        : (isRestDay
+                                                            ? Colors.white
+                                                            : bg)),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: isSelected
+                                                      ? AppColors.ctaDark
+                                                      : (isToday
+                                                          ? AppColors.ctaDark
+                                                              .withOpacity(0.3)
+                                                          : (isRestDay
+                                                              ? AppColors.border
+                                                              : Colors
+                                                                  .transparent)),
+                                                  width: 1.5,
+                                                ),
                                               ),
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                // Small weekday label
-                                                Text(
-                                                  DateFormat('E').format(day).substring(0, 1).toUpperCase(),
-                                                  style: TextStyle(
-                                                    fontSize: 8,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: isSelected
-                                                        ? Colors.white70
-                                                        : (isOverflow
-                                                            ? AppColors.textMuted.withOpacity(0.4)
-                                                            : AppColors.textMuted),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  // Small weekday label
+                                                  Text(
+                                                    DateFormat('E')
+                                                        .format(day)
+                                                        .substring(0, 1)
+                                                        .toUpperCase(),
+                                                    style: TextStyle(
+                                                      fontSize: 8,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: isSelected
+                                                          ? Colors.white70
+                                                          : (isOverflow
+                                                              ? AppColors
+                                                                  .textMuted
+                                                                  .withOpacity(
+                                                                      0.4)
+                                                              : AppColors
+                                                                  .textMuted),
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                // Date number
-                                                Text(
-                                                  day.day.toString(),
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: isSelected
-                                                        ? Colors.white
-                                                        : (isOverflow
-                                                            ? AppColors.textSecondary.withOpacity(0.3)
-                                                            : AppColors.textPrimary),
+                                                  const SizedBox(height: 2),
+                                                  // Date number
+                                                  Text(
+                                                    day.day.toString(),
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: isSelected
+                                                          ? Colors.white
+                                                          : (isOverflow
+                                                              ? AppColors
+                                                                  .textSecondary
+                                                                  .withOpacity(
+                                                                      0.3)
+                                                              : AppColors
+                                                                  .textPrimary),
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                // Missed or completed marker (rest days never show one)
-                                                SizedBox(
-                                                  height: 10,
-                                                  child: isOverflow || isRestDay
-                                                      ? null
-                                                      : (workout?.status == 'missed'
-                                                          ? Icon(
-                                                              Icons.close_rounded,
-                                                              size: 10,
-                                                              color: isSelected ? Colors.white70 : AppColors.ctaDark,
-                                                            )
-                                                          : (workout?.status == 'completed'
-                                                              ? Icon(
-                                                                  Icons.check_rounded,
-                                                                  size: 10,
-                                                                  color: isSelected ? Colors.greenAccent : AppColors.completed,
-                                                                )
-                                                              : null)),
-                                                ),
-                                              ],
+                                                  const SizedBox(height: 2),
+                                                  // Missed or completed marker (rest days never show one)
+                                                  SizedBox(
+                                                    height: 10,
+                                                    child: isOverflow ||
+                                                            isRestDay
+                                                        ? null
+                                                        : (workout?.status ==
+                                                                'missed'
+                                                            ? Icon(
+                                                                Icons
+                                                                    .close_rounded,
+                                                                size: 10,
+                                                                color: isSelected
+                                                                    ? Colors
+                                                                        .white70
+                                                                    : AppColors
+                                                                        .ctaDark,
+                                                              )
+                                                            : (workout?.status ==
+                                                                    'completed'
+                                                                ? Icon(
+                                                                    Icons
+                                                                        .check_rounded,
+                                                                    size: 10,
+                                                                    color: isSelected
+                                                                        ? Colors
+                                                                            .greenAccent
+                                                                        : AppColors
+                                                                            .completed,
+                                                                  )
+                                                                : null)),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         );
@@ -408,7 +513,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 }).toList(),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 16),
                             const Divider(color: AppColors.divider),
                             const SizedBox(height: 12),
@@ -417,9 +522,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _LegendItem(color: AppColors.easyRunTint, label: 'Easy Run'),
-                                _LegendItem(color: AppColors.intervalTint, label: 'Interval'),
-                                _LegendItem(color: AppColors.longRunTint, label: 'Long Run'),
+                                _LegendItem(
+                                    color: AppColors.easyRunTint,
+                                    label: 'Easy Run'),
+                                _LegendItem(
+                                    color: AppColors.intervalTint,
+                                    label: 'Interval'),
+                                _LegendItem(
+                                    color: AppColors.longRunTint,
+                                    label: 'Long Run'),
                                 _LegendItem(
                                   isIcon: true,
                                   icon: Icons.close_rounded,
@@ -430,15 +541,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Progress cards below the calendar card
                       _ProgressCard(
                         title: 'THIS WEEK',
                         valueText: '$runsCompleted / $runsTotal Runs',
-                        subValueText: '${distLogged.toStringAsFixed(1)} km logged',
-                        progress: runsTotal > 0 ? (runsCompleted / runsTotal) : 0.75,
+                        subValueText:
+                            '${distLogged.toStringAsFixed(1)} km logged',
+                        progress:
+                            runsTotal > 0 ? (runsCompleted / runsTotal) : 0.75,
                         icon: const Icon(
                           Icons.directions_run_rounded,
                           color: AppColors.primary,
@@ -448,13 +561,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       const SizedBox(height: 12),
                       _ProgressCard(
                         title: 'OVERALL PROGRESS',
-                        valueText: planDetails != null 
+                        valueText: planDetails != null
                             ? '${planDetails.completedWeeksCount} of ${planDetails.totalWeeks} Weeks'
                             : '8 of 12 Weeks',
-                        subValueText: '${planDetails != null ? (planDetails.totalWeeks > 0 ? (planDetails.completedWeeksCount / planDetails.totalWeeks * 100).round() : 65) : 65}% Complete',
-                        progress: planDetails != null && planDetails.totalWeeks > 0
-                            ? (planDetails.completedWeeksCount / planDetails.totalWeeks)
-                            : 0.65,
+                        subValueText:
+                            '${planDetails != null ? (planDetails.totalWeeks > 0 ? (planDetails.completedWeeksCount / planDetails.totalWeeks * 100).round() : 65) : 65}% Complete',
+                        progress:
+                            planDetails != null && planDetails.totalWeeks > 0
+                                ? (planDetails.completedWeeksCount /
+                                    planDetails.totalWeeks)
+                                : 0.65,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -474,9 +590,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     if (isToday) {
       final dotColor = switch (workout?.status) {
         'completed' => AppColors.completed,
-        'missed'    => AppColors.missed,
-        'planned'   => AppColors.primary,
-        _           => null,
+        'missed' => AppColors.missed,
+        'planned' => AppColors.primary,
+        _ => null,
       };
       return (AppColors.ctaDark, Colors.white, dotColor);
     }
@@ -487,17 +603,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     final bg = switch (workout.dayType) {
       'easy' || 'easy_run' => AppColors.easyRunTint,
-      'interval'           => AppColors.intervalTint,
-      'long_run'           => AppColors.longRunTint,
-      'tempo'              => const Color(0xFFFFEDD5),
-      _                    => Colors.transparent,
+      'interval' => AppColors.intervalTint,
+      'long_run' => AppColors.longRunTint,
+      'tempo' => const Color(0xFFFFEDD5),
+      _ => Colors.transparent,
     };
 
     final dotColor = switch (workout.status) {
       'completed' => AppColors.completed,
-      'missed'    => AppColors.missed,
-      'planned'   => AppColors.primary,
-      _           => null,
+      'missed' => AppColors.missed,
+      'planned' => AppColors.primary,
+      _ => null,
     };
 
     // Text color is textPrimary since background is a soft tint
@@ -507,7 +623,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   // Helper methods for Calendar Selection Modal Flows
   // ================================================
 
-  void _showDayDetailModal(BuildContext context, TrainingDayResponse? workout, DateTime date, bool isToday) {
+  void _showDayDetailModal(BuildContext context, TrainingDayResponse? workout,
+      DateTime date, bool isToday) {
     final now = DateTime.now();
     final todayDate = DateTime(now.year, now.month, now.day);
     final cellDate = DateTime(date.year, date.month, date.day);
@@ -523,7 +640,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+              24, 16, 24, 24 + MediaQuery.of(ctx).viewInsets.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,7 +661,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    (isToday ? "TODAY" : DateFormat('EEEE, MMMM d').format(date)).toUpperCase(),
+                    (isToday
+                            ? "TODAY"
+                            : DateFormat('EEEE, MMMM d').format(date))
+                        .toUpperCase(),
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -576,7 +697,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   children: [
                     const Text(
                       'Rest Day',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary),
                     ),
                     const Text('🏖️', style: TextStyle(fontSize: 28)),
                   ],
@@ -584,7 +708,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 const SizedBox(height: 16),
                 const Text(
                   'Recovery is part of training. Rest, hydrate, and come back stronger.',
-                  style: TextStyle(fontSize: 15, color: AppColors.textSecondary, height: 1.4),
+                  style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                      height: 1.4),
                 ),
               ] else ...[
                 Row(
@@ -593,16 +720,39 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     Expanded(
                       child: Text(
                         workout.title,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                        style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary),
                       ),
                     ),
                     _resolveBadge(workout.status, isFuture, isToday),
                   ],
                 ),
+                // Phase 4H.4 (PART 8): full provenance in the selected-day
+                // panel -- the compact grid cell above only shows a small
+                // segment indicator; the block/segment label lives here.
+                if (workout.weekProvenance != null) ...[
+                  const SizedBox(height: 6),
+                  Semantics(
+                    label: workout.weekProvenance!.provenanceLabel,
+                    child: Text(
+                      workout.weekProvenance!.provenanceLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: workout.weekProvenance!.isPreparationRunwayWeek
+                            ? const Color(0xFFB45309)
+                            : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   workout.description,
-                  style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                      fontSize: 14, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -644,12 +794,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.lock_clock_outlined, color: AppColors.textSecondary, size: 20),
+                        const Icon(Icons.lock_clock_outlined,
+                            color: AppColors.textSecondary, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             "You can't log future runs. Focus on today's goal!",
-                            style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                height: 1.4),
                           ),
                         ),
                       ],
@@ -692,12 +846,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD700), size: 18),
+                        Icon(Icons.emoji_events_rounded,
+                            color: Color(0xFFFFD700), size: 18),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             "Nice work! Every run brings you closer to your best.",
-                            style: TextStyle(fontSize: 13, color: AppColors.completed, height: 1.4, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.completed,
+                                height: 1.4,
+                                fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -714,12 +873,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: AppColors.missed, size: 18),
+                        const Icon(Icons.info_outline_rounded,
+                            color: AppColors.missed, size: 18),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             "One missed run doesn't define your progress. Your plan can continue from here.",
-                            style: TextStyle(fontSize: 13, color: AppColors.missed, height: 1.4, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.missed,
+                                height: 1.4,
+                                fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -742,6 +906,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       final sec = ((v - min) * 60).round();
       return '$min:${sec.toString().padLeft(2, '0')}';
     }
+
     return '${fmt(low)}–${fmt(high)}';
   }
 
@@ -755,7 +920,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ),
         child: const Text(
           'Planned',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary),
         ),
       );
     }
@@ -768,7 +936,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ),
         child: const Text(
           'Today',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary),
         ),
       );
     }
@@ -781,7 +952,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ),
         child: const Text(
           'Completed',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.completed),
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.completed),
         ),
       );
     }
@@ -794,7 +968,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ),
         child: const Text(
           'Not Completed',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.missed),
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.missed),
         ),
       );
     }
@@ -806,7 +983,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       ),
       child: Text(
         status.toUpperCase(),
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+        style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary),
       ),
     );
   }
@@ -818,12 +998,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+          style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted),
         ),
         const SizedBox(height: 2),
         Text(
           value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary),
         ),
       ],
     );
@@ -833,7 +1019,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final actDist = workout.actualDistanceKm ?? workout.plannedDistanceKm;
     final actDur = workout.actualDurationMin ?? workout.plannedDurationMin;
     final avgPace = actDist > 0 ? actDur / actDist : 0.0;
-    
+
     String fmtPace(double v) {
       final min = v.floor();
       final sec = ((v - min) * 60).round();
@@ -852,24 +1038,42 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Logged Distance', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              Text('${actDist.toStringAsFixed(1)} km', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.completed)),
+              const Text('Logged Distance',
+                  style:
+                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('${actDist.toStringAsFixed(1)} km',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.completed)),
             ],
           ),
           const Divider(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Logged Duration', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              Text('$actDur min', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.completed)),
+              const Text('Logged Duration',
+                  style:
+                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('$actDur min',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.completed)),
             ],
           ),
           const Divider(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Average Pace', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              Text('${fmtPace(avgPace)} /km', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.completed)),
+              const Text('Average Pace',
+                  style:
+                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('${fmtPace(avgPace)} /km',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.completed)),
             ],
           ),
         ],
@@ -882,8 +1086,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     // Synthetic rest/no-session days have canMarkComplete == false, so the
     // "complete" action that opens this sheet is never reachable for them.
     if (dayId == null) return;
-    final distanceController = TextEditingController(text: workout.plannedDistanceKm.toStringAsFixed(1));
-    final durationController = TextEditingController(text: workout.plannedDurationMin.toString());
+    final distanceController = TextEditingController(
+        text: workout.plannedDistanceKm.toStringAsFixed(1));
+    final durationController =
+        TextEditingController(text: workout.plannedDurationMin.toString());
     String selectedResult = 'as_planned';
 
     showModalBottomSheet(
@@ -920,7 +1126,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Log Workout',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary)),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
                     child: Container(
@@ -941,9 +1150,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ),
               const SizedBox(height: 4),
               const Text('How did it go?',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                  style:
+                      TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               const SizedBox(height: 20),
-
               Row(
                 children: [
                   _ResultChip(
@@ -966,14 +1175,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ],
               ),
               const SizedBox(height: 20),
-
               Row(
                 children: [
                   Expanded(
                     child: _CompactTextField(
                       controller: distanceController,
                       label: 'Distance (km)',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -987,39 +1196,44 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ],
               ),
               const SizedBox(height: 24),
-
               if (_isSubmitting)
-                const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary))
               else
-              AppPrimaryButton(
-                label: 'Log it',
-                isLoading: _isSubmitting,
-                onPressed: () async {
-                  final dist = double.tryParse(distanceController.text.trim()) ?? workout.plannedDistanceKm;
-                  final dur = int.tryParse(durationController.text.trim()) ?? workout.plannedDurationMin;
-                  
-                  setModal(() => _isSubmitting = true);
-                  setState(() => _isSubmitting = true);
-                  try {
-                    final repo = ref.read(homeRepositoryProvider);
-                    await repo.completeWorkout(dayId, dist, dur, 'Completed from calendar selection!');
-                    
-                    ref.invalidate(calendarDataProvider);
-                    ref.invalidate(homeDataProvider);
-                    ref.invalidate(profileOverviewProvider);
-                    ref.invalidate(activePlanDetailsProvider);
-                    
-                    if (context.mounted) Navigator.pop(context);
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                AppPrimaryButton(
+                  label: 'Log it',
+                  isLoading: _isSubmitting,
+                  onPressed: () async {
+                    final dist =
+                        double.tryParse(distanceController.text.trim()) ??
+                            workout.plannedDistanceKm;
+                    final dur = int.tryParse(durationController.text.trim()) ??
+                        workout.plannedDurationMin;
+
+                    setModal(() => _isSubmitting = true);
+                    setState(() => _isSubmitting = true);
+                    try {
+                      final repo = ref.read(homeRepositoryProvider);
+                      await repo.completeWorkout(dayId, dist, dur,
+                          'Completed from calendar selection!');
+
+                      ref.invalidate(calendarDataProvider);
+                      ref.invalidate(homeDataProvider);
+                      ref.invalidate(profileOverviewProvider);
+                      ref.invalidate(activePlanDetailsProvider);
+
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())));
+                      }
+                    } finally {
+                      setModal(() => _isSubmitting = false);
+                      setState(() => _isSubmitting = false);
                     }
-                  } finally {
-                    setModal(() => _isSubmitting = false);
-                    setState(() => _isSubmitting = false);
-                  }
-                },
-              ),
+                  },
+                ),
             ],
           ),
         ),
@@ -1073,12 +1287,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Skip today\'s workout?',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary)),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
                     child: Container(
@@ -1100,12 +1316,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               const SizedBox(height: 8),
               const Text(
                 "Rest days are part of progress.\nWe'll adjust your plan to keep you on track.",
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                style: TextStyle(
+                    fontSize: 14, color: AppColors.textSecondary, height: 1.4),
               ),
               const SizedBox(height: 20),
-
               const Text('Reason (Optional)',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary, letterSpacing: 0.4)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.4)),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -1113,20 +1333,28 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 children: reasons.map((r) {
                   final isSelected = selectedReason == r.$1;
                   return GestureDetector(
-                    onTap: () => setModal(() => selectedReason = isSelected ? null : r.$1),
+                    onTap: () => setModal(
+                        () => selectedReason = isSelected ? null : r.$1),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.ctaDark : const Color(0xFFF5F6FA),
+                        color: isSelected
+                            ? AppColors.ctaDark
+                            : const Color(0xFFF5F6FA),
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: isSelected ? AppColors.ctaDark : AppColors.border),
+                        border: Border.all(
+                            color: isSelected
+                                ? AppColors.ctaDark
+                                : AppColors.border),
                       ),
                       child: Text(
                         r.$2,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          color:
+                              isSelected ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1134,7 +1362,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 }).toList(),
               ),
               const SizedBox(height: 20),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -1145,19 +1372,22 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF8B5CF6), size: 18),
+                    const Icon(Icons.lightbulb_outline_rounded,
+                        color: Color(0xFF8B5CF6), size: 18),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
                         'Consistency is key — Taking a rest today won\'t affect your progress. Your schedule will update automatically.',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            height: 1.4),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-
               AppPrimaryButton(
                 label: 'Got it!',
                 isLoading: _isSubmitting,
@@ -1166,18 +1396,20 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(homeRepositoryProvider);
-                    final decision = await repo.createNotTodayDecision(dayId, selectedReason ?? 'other');
+                    final decision = await repo.createNotTodayDecision(
+                        dayId, selectedReason ?? 'other');
                     await repo.confirmNotTodayDecision(decision.decisionId);
-                    
+
                     ref.invalidate(calendarDataProvider);
                     ref.invalidate(homeDataProvider);
                     ref.invalidate(profileOverviewProvider);
                     ref.invalidate(activePlanDetailsProvider);
-                    
+
                     if (context.mounted) Navigator.pop(context);
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                   } finally {
                     setModal(() => _isSubmitting = false);
@@ -1192,7 +1424,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
@@ -1510,5 +1741,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-
-

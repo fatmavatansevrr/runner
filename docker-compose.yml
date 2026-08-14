@@ -1,0 +1,34 @@
+# Development-only PostgreSQL bootstrap for the Appsel backend.
+#
+# Phase 4F.9.2: no repository Docker Compose, bootstrap script, or
+# Testcontainers workflow existed prior to this file — this is the smallest
+# compose service that satisfies backend/RunningApp.Api/appsettings.json's
+# configured DefaultConnection (Host=localhost;Port=5432;Database=antigravity_dev;
+# Username=postgres;Password=postgres).
+#
+# NOT a production configuration. These credentials are local development
+# defaults only, matching the plaintext connection string already committed
+# in appsettings.json. Do not reuse this password or expose port 5432 beyond
+# localhost in any non-development environment.
+services:
+  postgres:
+    image: postgres:17
+    container_name: appsel-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: antigravity_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - appsel-dev-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d antigravity_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  appsel-dev-postgres-data:
+    name: appsel-dev-postgres-data

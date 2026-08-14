@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION",
+    "schemaVersion": 3,
+    "key": "LONG_RUN_STANDARD",
+    "version": 6,
+    "status": "DRAFT"
+  },
+  "family": "LONG_RUN",
+  "eligiblePhases": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER", "PREPARATION_RUNWAY", "LONG_HORIZON_GENERAL_ENDURANCE"],
+  "allowedPrescriptionModes": ["DISTANCE"],
+  "allowedDistanceAccountingModes": ["EXACT_SESSION_TOTAL"]
+}

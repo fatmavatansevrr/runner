@@ -7,6 +7,8 @@ import 'package:antigravity_app/core/network/dtos.dart';
 import 'package:antigravity_app/features/onboarding/data/onboarding_provider.dart';
 import 'package:antigravity_app/features/onboarding/data/plan_generation_error_mapper.dart';
 import 'package:antigravity_app/features/plan/data/plan_repository.dart';
+import 'package:antigravity_app/features/plan/data/long_horizon_repository.dart';
+import 'support/noop_long_horizon_repository.dart';
 
 /// A [PlanRepository] double whose race-preview call always fails with a
 /// given typed backend error — simulating exactly what the real API returns
@@ -55,7 +57,10 @@ void main() {
       test('${entry.key}: never retries or resubmits, and preserves onboarding state (StartDate/RaceDate) unchanged', () async {
         final fakeRepo = _HorizonRejectingPlanRepository(scenario.errorCode, scenario.message);
         final container = ProviderContainer(
-          overrides: [planRepositoryProvider.overrideWithValue(fakeRepo)],
+          overrides: [
+            planRepositoryProvider.overrideWithValue(fakeRepo),
+            longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+          ],
         );
         addTearDown(container.dispose);
         final notifier = container.read(onboardingProvider.notifier);

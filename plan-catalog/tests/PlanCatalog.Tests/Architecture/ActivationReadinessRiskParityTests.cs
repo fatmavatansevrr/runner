@@ -63,21 +63,21 @@ public sealed class ActivationReadinessRiskParityTests
     }
 
     /// <summary>
-    /// The JSON file has no structured aggregate-count object -- the only
-    /// declared total/open/closed count anywhere in either file lives in the
-    /// prose of the JSON root's <c>currentAppendOnlyStatus</c> field, in a
+    /// The current aggregate is declared in the root <c>currentAggregate</c>
+    /// field. Older files fall back to the append-only historical status, in a
     /// stable, recurring template this repository's governance history has
     /// used for every prior closure: "&lt;N&gt; risks are now recorded in
     /// total: &lt;X&gt; OPEN and &lt;Y&gt; CLOSED." Per this pass's own
-    /// instruction not to invent fields, this parses that existing prose
-    /// rather than fabricating a machine-readable field that does not exist.
+    /// stable prose shape rather than duplicating three numeric fields.
     /// Returns null if the pattern is not found -- callers must handle that
     /// as "no declared aggregate available" rather than fail with a raw
     /// null-reference.
     /// </summary>
     private static DeclaredAggregate? TryParseJsonDeclaredAggregate(JsonDocument doc)
     {
-        var status = doc.RootElement.GetProperty("currentAppendOnlyStatus").GetString() ?? string.Empty;
+        var status = doc.RootElement.TryGetProperty("currentAggregate", out var current)
+            ? current.GetString() ?? string.Empty
+            : doc.RootElement.GetProperty("currentAppendOnlyStatus").GetString() ?? string.Empty;
         var match = Regex.Match(status, @"(\d+)\s+risks are now recorded in total:\s*(\d+)\s+OPEN and\s*(\d+)\s+CLOSED");
         if (!match.Success)
         {
@@ -239,7 +239,7 @@ public sealed class ActivationReadinessRiskParityTests
         var declared = TryParseJsonDeclaredAggregate(doc);
 
         Assert.True(declared is not null,
-            "Could not find a declared total/open/closed aggregate in JSON's currentAppendOnlyStatus prose " +
+            "Could not find a declared total/open/closed aggregate in JSON governance prose " +
             "(expected the pattern '<N> risks are now recorded in total: <X> OPEN and <Y> CLOSED').");
 
         var actualTotal = risks.Count;
@@ -262,20 +262,13 @@ public sealed class ActivationReadinessRiskParityTests
     // ── prove its actual counts are at least internally consistent ──────────
 
     [Fact]
-    public void ActivationReadinessRiskMarkdown_HasNoDeclaredAggregate_ActualCountsAreInternallyConsistent()
+    public void ActivationReadinessRiskMarkdown_AggregatesMatchActualRecords()
     {
-        // Unlike JSON, the Markdown file's "## Risks" section and its trailing
-        // sentence contain no total/open/closed summary anywhere -- confirmed
-        // by direct inspection, not assumed. Per this pass's own instruction
-        // not to invent fields, this test does not fabricate one; it documents
-        // the limitation as an executable fact and proves the actual computed
-        // counts are at least self-consistent (total == open + closed). The
-        // meaningful cross-file aggregate check is
-        // ActivationReadinessRiskJsonAndMarkdown_AggregatesMatchEachOther below,
-        // which compares JSON's declared aggregate against Markdown's ACTUAL
-        // computed counts (since Markdown declares none of its own).
         var mdText = File.ReadAllText(MarkdownPath());
-        Assert.DoesNotMatch(@"\d+\s+risks?\s+(are\s+now\s+)?recorded\s+in\s+total", mdText);
+        var declaredMatch = Regex.Match(
+            mdText,
+            @"Current aggregate:\s*(\d+)\s+risks,\s*(\d+)\s+`OPEN`,\s*(\d+)\s+`CLOSED`");
+        Assert.True(declaredMatch.Success, "Markdown current aggregate sentence was not found.");
 
         var mdRisks = ParseMarkdownRisks(File.ReadAllLines(MarkdownPath()));
         var actualOpen = mdRisks.Count(r => r.Status == "OPEN");
@@ -287,6 +280,27 @@ public sealed class ActivationReadinessRiskParityTests
             string.Join(", ", mdRisks.Where(r => r.Status != "OPEN" && r.Status != "CLOSED").Select(r => $"{r.Id}='{r.Status}'")));
 
         Assert.Equal(mdRisks.Count, actualOpen + actualClosed);
+        Assert.Equal(mdRisks.Count, int.Parse(declaredMatch.Groups[1].Value));
+        Assert.Equal(actualOpen, int.Parse(declaredMatch.Groups[2].Value));
+        Assert.Equal(actualClosed, int.Parse(declaredMatch.Groups[3].Value));
+    }
+
+    [Fact]
+    public void ActivationReadinessRiskLedgers_HaveNoBomOrHtmlEscapedSemanticText()
+    {
+        foreach (var path in new[] { JsonPath(), MarkdownPath() })
+        {
+            var bytes = File.ReadAllBytes(path);
+            Assert.False(
+                bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF,
+                $"{Path.GetFileName(path)} must be UTF-8 without BOM.");
+
+            var text = File.ReadAllText(path);
+            Assert.DoesNotContain("&amp;", text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("&lt;", text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("&gt;", text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("&quot;", text, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     // ── 8. JSON declared aggregate matches Markdown's actual computed counts ─

@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "documentType": "RUN_LAYOUT",
+    "schemaVersion": 2,
+    "key": "RUN_LAYOUT_3D",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "runsPerWeek": 3,
+  "slots": [
+    { "role": "KEY_SESSION" },
+    { "role": "EASY_SUPPORT" },
+    { "role": "LONG_RUN" }
+  ]
+}
