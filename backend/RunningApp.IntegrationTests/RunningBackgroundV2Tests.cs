@@ -22,6 +22,7 @@ namespace RunningApp.IntegrationTests;
 /// exercised in <see cref="ResetEndpointRelationalScenarioTests"/>-style
 /// tests elsewhere; this file focuses on the converter contracts themselves.
 /// </summary>
+[Collection(ApiIntegrationTestCollection.Name)]
 public sealed class RunningBackgroundV2Tests
 {
     // Matches the production DTO-serialization setup (RunningApp.Api/Program.cs):
@@ -147,14 +148,17 @@ public sealed class RunningBackgroundV2Tests
     }
 
     [Theory]
-    [InlineData(RunningBackground.Beginner)]
     [InlineData(RunningBackground.Advanced)]
     [InlineData(RunningBackground.Experienced)]
-    public void NonIntermediateLevels_AreNotSilentlyCoercedToIntermediate(RunningBackground level)
+    public void UnwidenedNonIntermediateLevels_AreNotSilentlyCoercedToIntermediate(RunningBackground level)
     {
-        // The pilot identity policy's exact-match check is the single source
+        // The pilot identity policy's exact-allow-list is the single source
         // of truth for "does this level reach the catalog pilot" — assert
-        // directly that only Intermediate satisfies it.
+        // directly that these still-untested levels do not. Beginner is
+        // covered separately below: GEN.4E deliberately widened Beginner at
+        // 4D (not silently coerced to Intermediate -- routed to its own
+        // TEN_K__4D__BEGINNER candidate), so it is no longer a member of
+        // this "remains unsupported" set.
         var isSupported = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, level, 4);
 
@@ -169,6 +173,19 @@ public sealed class RunningBackgroundV2Tests
 
         Assert.True(isSupported);
         Assert.Equal("INTERMEDIATE", RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.CatalogLevel);
+    }
+
+    [Fact]
+    public void BeginnerLevel_ReachesItsOwnPilotMapping_AtFourDaysOnly()
+    {
+        // GEN.4E: Beginner is now a genuinely-widened, distinct pilot
+        // identity at 4D -- resolves to its own candidate, never Intermediate's.
+        Assert.True(RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+            GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 4));
+        Assert.False(RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+            GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
+        var resolved = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Beginner, 4);
+        Assert.Equal("TEN_K__4D__BEGINNER", resolved.CandidateKey);
     }
 
     private static AppDbContext NewPostgresContext() =>

@@ -9,6 +9,8 @@ using RunningApp.Application.RuntimeCatalog.Schedule;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using RunningApp.Application.RuntimeCatalog.Schedule.Progression;
+using RunningApp.Application.RuntimeCatalog.Schedule.Horizon;
+using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 
@@ -24,19 +26,9 @@ namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 /// Never falls back to SQL — every failure path throws a typed exception
 /// that propagates out unchanged. Never persists anything itself (the
 /// caller, <c>PlanServices</c>, owns the <c>PlanPreview</c> persistence
-/// boundary) and never generates TrainingWeeks/TrainingDays (stage-to-week
-/// scheduling remains unimplemented — <see cref="CatalogPreviewSnapshot.SelectedStageKeys"/>/
-/// <see cref="CatalogPreviewSnapshot.FallbackStagesUsed"/>/
-/// <see cref="CatalogPreviewSnapshot.GeneratedPreviewPlanPayload"/> are always
-/// empty/null).
-///
-/// As of Phase 4E.1, this class's success path is UNREACHABLE for real public
-/// requests: TEN_K__4D__INTERMEDIATE v10 (and every one of its directly-loaded
-/// dependencies) has status DRAFT in the current catalog source tree — the
-/// eligibility gate always throws <see cref="CatalogCandidateNotPublishedException"/>
-/// first. The success path is still fully implemented and tested (via the
-/// gate's internal-dry-run entry point) so Phase 4E.2 has a working
-/// foundation the moment a candidate is actually published.
+/// boundary). It produces the complete typed payload used by the public
+/// preview and later confirmation; confirmation, not this generator, owns
+/// TrainingPlan/TrainingWeek/TrainingDay persistence.
 ///
 /// Backend Integration Phase 4F.4 introduced a DARK internal invocation of
 /// <see cref="ICatalogPlanSkeletonOrchestrator"/> (Phase 4F.3) purely for its
@@ -48,15 +40,50 @@ namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
 /// <see cref="CatalogPreviewSnapshotBuilder.Build"/>), and IS returned to the
 /// public preview DTO via <see cref="ICatalogPublicPreviewMaterializer"/>.
 /// Confirmation/persistence of this payload into a real
-/// TrainingPlan/TrainingWeek/TrainingDay schedule is implemented
-/// (<see cref="CatalogPlanConfirmationService"/>, Phase 4F.9), but has not
-/// yet been relationally verified against a real PostgreSQL database. See
+/// TrainingPlan/TrainingWeek/TrainingDay schedule is implemented and covered
+/// by real PostgreSQL reconciliation tests
+/// (<see cref="CatalogPlanConfirmationService"/>, Phase 4F.9+). See
 /// PHASE4F_4_DARK_INTERNAL_SKELETON_WIRING_INTO_CATALOG_PREVIEW.md for the
 /// original (now superseded) dark-wiring history.
 /// </summary>
 public interface ICatalogPreviewGenerator
 {
     Task<CatalogPreviewSnapshot> GenerateAsync(GeneratePreviewRequest request, DateOnly asOfDate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Backend Integration Phase 4G.6B — the scoped 15-20 week TEN_K
+    /// Preparation Runway public preview path. Reuses the exact same
+    /// candidate-loading, resolver-input-building, and condition-resolution
+    /// steps as <see cref="GenerateAsync"/> (never duplicated), then invokes
+    /// the existing, unmodified dark <c>TenKPreparationRunwayDarkOrchestrator</c>
+    /// exactly once. The returned <see cref="CatalogPreviewSnapshot"/>
+    /// always has <c>GeneratedPreviewPlanPayload = null</c> by design — this
+    /// is what makes the resulting preview automatically non-persistable at
+    /// confirm time via the existing, unmodified <c>CatalogPreviewNotPersistableException</c>
+    /// guard, with zero new confirm-path code. The returned weeks list is
+    /// built directly from the orchestrator's own final output and is never
+    /// recalculated.
+    ///
+    /// Backend Integration Phase 4G.6B.1: <paramref name="horizonDecision"/>
+    /// is the single authoritative <c>CoreHorizonDecision</c> computed once
+    /// by <c>PlanServices.GeneratePreviewAsync</c>'s own routing gate. This
+    /// method no longer calls <c>RaceHorizonPolicy.Decide</c> itself — it
+    /// only validates the carried decision (mode, week range, and
+    /// consistency with this candidate's own CoreCycle bounds) and carries
+    /// it, unmodified, into <c>TenKPreparationRunwayDarkOrchestrationRequest</c>.
+    /// </summary>
+    /// <summary>
+    /// Backend Integration Phase 4G.6C: <paramref name="confirmationEnabled"/>
+    /// additionally builds a real, persistable
+    /// <see cref="GeneratedCatalogPlanPayload"/> (via
+    /// <c>PreparationRunwayPersistablePlanMapper</c>) and embeds it in the
+    /// returned snapshot. Defaults false — behavior is then byte-for-byte
+    /// identical to the pre-4G.6C shape (payload stays null, preview stays
+    /// non-confirmable).
+    /// </summary>
+    Task<(CatalogPreviewSnapshot Snapshot, IReadOnlyList<PreviewWeekDto> Weeks)> GeneratePreparationRunwayPreviewAsync(
+        GeneratePreviewRequest request, CoreHorizonDecision horizonDecision, DateOnly asOfDate, PlanCatalogOptions catalogOptions,
+        bool confirmationEnabled = false, CancellationToken ct = default);
 }
 
 /// <inheritdoc cref="ICatalogPreviewGenerator"/>
@@ -296,8 +323,8 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
 
     public async Task<CatalogPreviewSnapshot> GenerateAsync(GeneratePreviewRequest request, DateOnly asOfDate, CancellationToken ct = default)
     {
-        var candidate = await _gate.LoadForPublicPreviewAsync(
-            V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion, ct);
+        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.Level, request.DaysPerWeek);
+        var candidate = await _gate.LoadForPublicPreviewAsync(identity.CandidateKey, identity.CandidateVersion, ct);
 
         var input = BuildInputSnapshot(request, asOfDate, candidate);
         var context = new RuntimeResolverContext
@@ -352,8 +379,134 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         var createdAtUtc = DateTime.UtcNow;
 
         return CatalogPreviewSnapshotBuilder.Build(
-            input, asOfDate, candidate, "PILOT_TEN_K_INTERMEDIATE_4D_MATCH",
+            input, asOfDate, candidate, $"PILOT_TEN_K_INTERMEDIATE_{request.DaysPerWeek}D_MATCH",
             results, trace, createdAtUtc, createdAtUtc.Add(PreviewLifetime), generatedPreviewPlanPayload);
+    }
+
+    /// <summary>
+    /// Feature-gate identifier — a narrow, candidate-scoped routing policy
+    /// name (not a runtime toggle infrastructure; this repository has none),
+    /// used only in logs/trace. Disabling the 15-20 week route requires
+    /// removing/bypassing the single call site in <c>PlanServices</c> that
+    /// checks <see cref="Schedule.Horizon.CoreHorizonMode.PreparationRunwayPlusCore"/>
+    /// scope eligibility — no other component needs to change.
+    /// </summary>
+    public const string PreparationRunwayPreviewGateName = "TEN_K_4D_INTERMEDIATE_PREPARATION_RUNWAY_PREVIEW";
+
+    public async Task<(CatalogPreviewSnapshot Snapshot, IReadOnlyList<PreviewWeekDto> Weeks)> GeneratePreparationRunwayPreviewAsync(
+        GeneratePreviewRequest request, CoreHorizonDecision horizonDecision, DateOnly asOfDate, PlanCatalogOptions catalogOptions,
+        bool confirmationEnabled = false, CancellationToken ct = default)
+    {
+        var candidate = await _gate.LoadForPublicPreviewAsync(
+            V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion, ct);
+
+        var input = BuildInputSnapshot(request, asOfDate, candidate);
+        var context = new RuntimeResolverContext
+        {
+            InputSnapshot = input,
+            CoreCycle = candidate.CoreCycle,
+            AsOfDate = asOfDate,
+        };
+
+        IReadOnlyList<RuntimeConditionResolutionResult> results;
+        try
+        {
+            results = _orchestration.ResolveAllResults(context);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new PlanPreviewGenerationFailedException(
+                $"Runtime condition resolution failed due to a configuration error: {ex.Message}", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new PlanPreviewGenerationFailedException(
+                $"Runtime condition resolution failed due to invalid input reaching a resolver: {ex.Message}", ex);
+        }
+
+        ApplyNotEvaluatedGovernancePolicy(results);
+
+        if (request.RaceDate is not { } raceDate)
+        {
+            throw new PreparationRunwayPreviewNotEnabledException(
+                "Preparation Runway preview requires a RaceDate.");
+        }
+
+        // Phase 4G.6B.1: no RaceHorizonPolicy.Decide call here -- horizonDecision
+        // is the single authoritative decision PlanServices already computed
+        // once for this request. Only value-consistency validation happens
+        // here, never a second, independent classification.
+        var horizon = horizonDecision;
+
+        if (candidate.CoreCycle.MaximumWeeks is null)
+        {
+            throw new PlanPreviewGenerationFailedException(
+                "Catalog core maximum is required for Preparation Runway composition.");
+        }
+
+        if (horizon.MinimumCoreWeeks != candidate.CoreCycle.MinimumWeeks ||
+            horizon.PreferredCoreWeeks != candidate.CoreCycle.DefaultWeeks ||
+            horizon.MaximumCoreWeeks != candidate.CoreCycle.MaximumWeeks)
+        {
+            // The carried decision was computed against a different core-cycle
+            // bounds set than this resolved candidate declares -- reject
+            // rather than silently trusting a possibly-stale decision.
+            throw new PreparationRunwayPreviewNotEnabledException(
+                "Carried horizon decision's core-cycle bounds do not match the resolved candidate's own CoreCycle.");
+        }
+
+        if (horizon.Mode != Schedule.Horizon.CoreHorizonMode.PreparationRunwayPlusCore || horizon.AvailableFullWeeks is < 15 or > 20)
+        {
+            // Defensive: PlanServices' own routing gate is the authoritative
+            // scope check and must never let a request reach here otherwise.
+            throw new PreparationRunwayPreviewNotEnabledException(
+                $"Preparation Runway preview requires a 15-20 week direct-runway horizon; resolved horizon was " +
+                $"{horizon.Mode} at {horizon.AvailableFullWeeks} available weeks.");
+        }
+
+        var coreEntryReadinessResult = results.Single(r => r.ConditionType == CoreEntryReadinessResolver.ConditionTypeValue);
+        var preferredDays = CatalogPreferredDayAdapter.ParsePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays));
+        var longRunDay = CatalogPreferredDayAdapter.ParseLongRunDay(WeekdayCsv.ToCsv(request.LongRunDay));
+
+        var orchestrationRequest = new Schedule.PreparationRunwayOrchestration.TenKPreparationRunwayDarkOrchestrationRequest(
+            candidate, request.StartDate, raceDate, asOfDate, preferredDays, longRunDay,
+            coreEntryReadinessResult, results, request, input,
+            Schedule.PreparationRunwayNumericMaterialization.PreparationRunwayQuantityUnit.Kilometers,
+            HorizonDecision: horizon);
+
+        var orchestrator = Schedule.PreparationRunwayOrchestration.TenKPreparationRunwayDarkOrchestratorFactory.Create(catalogOptions);
+        var orchestrationResult = await orchestrator.OrchestrateAsync(orchestrationRequest, ct);
+
+        if (!orchestrationResult.IsSuccess)
+        {
+            var failure = orchestrationResult.Failure!;
+            // Internal stage/failure detail is preserved only in the trace
+            // (never returned to a public caller) -- see
+            // TenKPreparationRunwayDarkOrchestrationResult.Trace for the full
+            // deterministic step-by-step record up to this failure.
+            throw new PreparationRunwayPreviewGenerationFailedException(
+                $"Preparation Runway preview generation failed at stage {failure.Stage} ({failure.Code}).");
+        }
+
+        var weeks = PreparationRunwayPublicPreviewMapper.MapCombinedWeeks(orchestrationResult);
+
+        // Phase 4G.6C: when the scoped confirmation gate is enabled, build the
+        // real persistable payload from the SAME completed orchestration
+        // result the public weeks were just mapped from -- never a second,
+        // independently-regenerated schedule. When disabled, behavior is
+        // byte-for-byte identical to Phase 4G.6B/4G.6B.1/4G.6B.2 (payload
+        // stays null, preview stays non-persistable).
+        var persistablePayload = confirmationEnabled
+            ? PreparationRunwayPersistablePlanMapper.Map(orchestrationResult, candidate, request.StartDate, asOfDate)
+            : null;
+
+        var trace = BuildDecisionTrace(results);
+        var createdAtUtc = DateTime.UtcNow;
+        var snapshot = CatalogPreviewSnapshotBuilder.Build(
+            input, asOfDate, candidate, "PILOT_TEN_K_INTERMEDIATE_4D_PREPARATION_RUNWAY_MATCH",
+            results, trace, createdAtUtc, createdAtUtc.Add(PreviewLifetime), generatedPreviewPlanPayload: persistablePayload);
+
+        return (snapshot, weeks);
     }
 
     /// <summary>
@@ -429,10 +582,10 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
     /// produce a dated skeleton, then <see cref="_datedSkeletonValidator"/>
     /// to validate it (Phase 4F.5.1: an independent-audit-identified gap fix
     /// — this validation step previously existed only as test-exercised code,
-    /// never invoked from this reachable dark path). StartDate mirrors
-    /// AsOfDate, exactly matching <see cref="BuildInputSnapshot"/>'s own
-    /// documented Phase 4E.1 simplification — no new date policy is
-    /// introduced. All results are deliberately discarded: this call's only
+    /// never invoked from this path). StartDate is the request's explicit
+    /// plan start and remains distinct from AsOfDate. The exact-12 preferred
+    /// path uses this fixed pipeline; compressed/extended modes use the
+    /// dynamic orchestration branch below. This call's contract is
     /// contract is "throw a typed failure if the candidate's live catalog
     /// data, the request's own scheduling preferences, or the resulting dated
     /// skeleton fail validation," never "return usable content." <paramref name="request"/>'s
@@ -453,6 +606,50 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         PlanCatalogCandidateSummary candidate, DateOnly asOfDate, GeneratePreviewRequest request, ResolverInputSnapshot input,
         IReadOnlyList<RuntimeConditionResolutionResult> conditionResults)
     {
+        if (request.RaceDate is { } activatedRaceDate)
+        {
+            var horizon = RaceHorizonPolicy.Decide(
+                request.StartDate, activatedRaceDate,
+                candidate.CoreCycle.MinimumWeeks, candidate.CoreCycle.DefaultWeeks,
+                candidate.CoreCycle.MaximumWeeks ?? throw new PlanPreviewGenerationFailedException("Catalog core maximum is required for dynamic standalone-core generation."));
+            if (horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
+            {
+                var preferredDays = CatalogPreferredDayAdapter.ParsePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays));
+                var longRunDay = CatalogPreferredDayAdapter.ParseLongRunDay(WeekdayCsv.ToCsv(request.LongRunDay));
+                var dynamicOrchestrator = new DynamicCoreCalendarMaterializationOrchestrator(
+                    new DynamicCoreSessionPrescriptionOrchestrator(
+                        new DynamicCoreVolumeAndLongRunOrchestrator(
+                            new DynamicCoreWorkoutBindingOrchestrator(
+                                new DynamicCoreWeekSkeletonOrchestrator(
+                                    new CatalogPhaseAllocationResolver(), new CatalogRunLayoutResolver(),
+                                    new CatalogStageToWeekMaterializer(), new GeneratedCatalogPlanSkeletonValidator()),
+                                _progressionLoader, _stageAllocator, _stageScheduleValidator,
+                                _calendarMaterializer, _datedSkeletonValidator, _workoutBinder, _boundPlanValidator),
+                            _prescriptionContextBuilder, _volumeAndLongRunPlanner),
+                        _sessionPrescriptionPlanner, _finalPrescribedPlanFinalizer));
+                DynamicCoreCalendarMaterializationResult dynamicResult;
+                try
+                {
+                    dynamicResult = dynamicOrchestrator.MaterializeAsync(new DynamicCoreCalendarMaterializationContext
+                    {
+                        Candidate = candidate, TargetWeekCount = horizon.AvailableFullWeeks,
+                        StartDate = request.StartDate, RaceDate = activatedRaceDate, AsOfDate = asOfDate,
+                        PreferredDays = preferredDays, LongRunDayPreference = longRunDay,
+                        ConditionResults = conditionResults, PreviewRequest = request, ResolverInput = input,
+                        WorkoutDefinitionLoader = _workoutDefinitionLoader, PeakVolumeBandLoader = _peakVolumeBandLoader,
+                    }).GetAwaiter().GetResult();
+                }
+                catch (DynamicCoreVolumeAndLongRunFailedException ex) when (ex.InnerException is CatalogProductIneligibleException ineligible)
+                {
+                    throw new PlanProductIneligibleException(ineligible.Code, ineligible.Message, ineligible);
+                }
+                var volumeResult = dynamicResult.PrescriptionResult.VolumeResult;
+                return _publicPreviewMaterializer.Materialize(new CatalogPublicPreviewMaterializationRequest(
+                    request, candidate, request.StartDate, asOfDate, volumeResult.VolumeAndLongRunPlan,
+                    dynamicResult.PrescriptionResult.FinalPrescribedPlan)).Payload;
+            }
+        }
+
         var skeletonContext = new CatalogPlanSkeletonOrchestrationContext
         {
             Candidate = candidate,
@@ -712,6 +909,15 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             _ = prescribedPlan;
             return publicPayload.Payload;
         }
+        catch (DynamicCoreVolumeAndLongRunFailedException ex) when (ex.InnerException is CatalogProductIneligibleException)
+        {
+            var ineligible = (CatalogProductIneligibleException)ex.InnerException!;
+            throw new PlanProductIneligibleException(ineligible.Code, ineligible.Message, ineligible);
+        }
+        catch (CatalogProductIneligibleException ex)
+        {
+            throw new PlanProductIneligibleException(ex.Code, ex.Message, ex);
+        }
         catch (Exception ex) when (ex is PlanCatalogLoadException or CatalogWorkoutBindingException or CatalogPrescriptionContractException or CatalogVolumePlanningException or CatalogSessionPrescriptionException or CatalogPublicMaterializationException)
         {
             throw new PlanPreviewGenerationFailedException(
@@ -765,6 +971,11 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         Level = request.Level,
         StartDate = request.StartDate,
         RaceDate = request.RaceDate,
+        RaceName = request.RaceName,
+        PreferredDays = request.PreferredDays,
+        LongRunDay = request.LongRunDay,
+        WeeklyAvailability = request.WeeklyAvailability,
+        PreferredPace = request.PreferredPace,
         RecentLongestRunKm = request.RecentLongestRunKm,
         RecentWeeklyVolumeKm = request.RecentWeeklyVolumeKm,
         RecentRunsPerWeek = request.RecentRunsPerWeek,

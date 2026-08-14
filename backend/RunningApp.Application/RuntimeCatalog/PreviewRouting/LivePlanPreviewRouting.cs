@@ -111,9 +111,10 @@ internal static class V1LiveCatalogPilotRoutingPolicy
         // PlanServices.GeneratePreviewAsync or any other horizon decision.
         // asOfDate remains reserved for recency/time-adequacy evaluation
         // elsewhere in the catalog pipeline — unrelated to this calculation.
-        int? cycleLength = request.RaceDate is { } raceDate
-            ? RunningApp.Application.Common.RaceHorizonPolicy.CalculateAvailableWeeks(request.StartDate, raceDate)
+        var canonicalHorizon = request.RaceDate is { } raceDate
+            ? RunningApp.Application.Common.RaceHorizonPolicy.Decide(request.StartDate, raceDate)
             : null;
+        int? cycleLength = canonicalHorizon?.AvailableFullWeeks;
         var pilotMatch = V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             request.GoalType,
             request.GoalDistance,
@@ -139,26 +140,29 @@ internal static class V1LiveCatalogPilotRoutingPolicy
         // Decide's short-circuit path for non-pilot/invalid requests), the
         // request is conservatively treated as unsupported rather than
         // guessed.
-        var withinSupportedCycle =
-            cycleLength is { } weeks &&
-            candidateMinimumWeeks is { } min &&
-            weeks >= min &&
-            (candidateMaximumWeeks is not { } max || weeks <= max);
+        var candidateHorizon = candidateMinimumWeeks is { } min &&
+            candidateMaximumWeeks is { } max && request.RaceDate is { } candidateRaceDate
+            ? RunningApp.Application.Common.RaceHorizonPolicy.Decide(
+                request.StartDate, candidateRaceDate, min,
+                RunningApp.Application.Common.RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks, max)
+            : null;
+        if (candidateHorizon is not null)
+        {
+            cycleLength = candidateHorizon.AvailableFullWeeks;
+        }
+        var withinSupportedCycle = candidateHorizon?.Mode is
+            RunningApp.Application.RuntimeCatalog.Schedule.Horizon.CoreHorizonMode.CompressedCore or
+            RunningApp.Application.RuntimeCatalog.Schedule.Horizon.CoreHorizonMode.PreferredCore or
+            RunningApp.Application.RuntimeCatalog.Schedule.Horizon.CoreHorizonMode.ExtendedCore;
         if (!withinSupportedCycle)
         {
             return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.CatalogRequestUnsupported, LivePlanPreviewRouteReason.UnsupportedCycleLength, false);
         }
 
-        // Temporary safety constraint (Phase 4G.2): the candidate's coreCycle
-        // bounds nominally advertise 8-14 weeks as "in range", but
-        // CatalogPhaseAllocationResolver is not yet horizon-aware — it always
-        // emits its fixed default ~12-week allocation regardless of the
-        // accepted cycle length. Only the one exact length proven (live) to
-        // align with RaceDate is routed to catalog generation; every other
-        // in-range horizon fails closed here, one canonical decision shared
-        // with PlanServices.GeneratePreviewAsync via RaceHorizonPolicy.Classify
-        // so the two layers can never disagree. See
-        // PHASE4G_2_EXACT_TWELVE_WEEK_ONLY_SAFETY_CONSTRAINT.md.
+        // Legacy compatibility branch retained for the old route/result enum.
+        // The canonical 4G.5L mapping no longer emits this classification:
+        // complete 8-14-week compressed/preferred/extended cores are routed
+        // from the same CoreHorizonDecision consumed above.
         if (cycleLength is { } classifiedWeeks &&
             RunningApp.Application.Common.RaceHorizonPolicy.Classify(classifiedWeeks) ==
                 RunningApp.Application.Common.RaceHorizonClassification.CoreLengthRecognizedButNotImplemented)
@@ -166,12 +170,17 @@ internal static class V1LiveCatalogPilotRoutingPolicy
             return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.CatalogCoreLengthNotImplemented, LivePlanPreviewRouteReason.CoreLengthRecognizedButNotImplemented, false);
         }
 
-        // Unreachable now that CoreLengthRecognizedButNotImplemented is
-        // rejected above (an 8-week horizon never reaches this check) —
-        // retained so the explicit-zero-at-8-weeks infeasibility case is
-        // still documented/typed for whenever 8-week generation is
-        // reactivated by a future horizon-aware composition phase.
-        if (cycleLength == 8 && request.RecentWeeklyVolumeKm == 0)
+        // Existing readiness-specific fail-closed rule for the activated
+        // eight-week boundary; independent of horizon arithmetic. Deliberately
+        // scoped to Intermediate only (GEN.4E) -- this short-circuit was
+        // validated against Intermediate's own known-infeasible case only,
+        // and short-circuiting here would otherwise return the wrong
+        // (Intermediate-shared) typed reason for Beginner's real, distinct
+        // BEGINNER_FOUR_DAY_CORE_TAPER_VOLUME_BELOW_MINIMUM_FULL_LAYOUT
+        // ineligibility. Beginner's own week-8 explicit-zero case instead
+        // falls through to the real planner/typed-exception path below,
+        // identically to weeks 9-12.
+        if (cycleLength == 8 && request.Level == RunningBackground.Intermediate && request.DaysPerWeek == V1CatalogPilotIdentityPolicy.DaysPerWeek && request.RecentWeeklyVolumeKm == 0)
         {
             return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.CatalogGenerationInfeasible, LivePlanPreviewRouteReason.KnownInfeasibleEightWeekExplicitZero, false);
         }
@@ -198,7 +207,10 @@ internal static class V1LiveCatalogPilotRoutingPolicy
         bool activationEnabled,
         LivePlanPreviewRoute route,
         LivePlanPreviewRouteReason reason,
-        bool fallbackPermitted) => new(
+        bool fallbackPermitted)
+    {
+        var resolvedIdentity = V1CatalogPilotIdentityPolicy.TryResolveCandidate(request.Level, request.DaysPerWeek);
+        return new(
         PolicyKey,
         PolicyVersion,
         request.GoalType,
@@ -206,14 +218,15 @@ internal static class V1LiveCatalogPilotRoutingPolicy
         request.Level,
         request.DaysPerWeek,
         cycleLength,
-        CandidateKey,
-        CandidateVersion,
+        resolvedIdentity?.CandidateKey ?? CandidateKey,
+        resolvedIdentity?.CandidateVersion ?? CandidateVersion,
         candidateLifecycleStatus,
         activationEnabled,
         route,
         reason,
         fallbackPermitted,
         "typed request identity; explicit lifecycle status; CatalogLivePilot.Enabled");
+    }
 }
 
 internal static class LivePlanPreviewRouteDecisionValidator
@@ -232,10 +245,13 @@ internal static class LivePlanPreviewRouteDecisionValidator
                       (decision.Route == LivePlanPreviewRoute.CatalogLive &&
                        (!decision.ActivationEnabled ||
                         decision.CandidateLifecycleStatus != "PUBLISHED" ||
-                        decision.GoalType != GoalType.Race ||
-                        decision.GoalDistance != GoalDistance.TenK ||
-                        decision.Level != RunningBackground.Intermediate ||
-                        decision.DaysPerWeek != 4 ||
+                        // GEN.4E: delegates to the single canonical allow-list
+                        // (V1CatalogPilotIdentityPolicy) instead of a
+                        // duplicated enum comparison, so this invariant can
+                        // never silently drift out of sync with the real
+                        // supported-identity list as new cells are added.
+                        !V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+                            decision.GoalType, decision.GoalDistance, decision.Level, decision.DaysPerWeek) ||
                         // Cycle-length bounds are enforced by Evaluate against
                         // the real candidate's core-cycle (Running Background
                         // V2.1) — this invariant only re-asserts that a value
@@ -308,18 +324,19 @@ public sealed class LivePlanPreviewRoutingService : IGenerationRouteDecider
         // replaced, an out-of-range cycle length no longer short-circuits
         // before this I/O, because "out of range" can only be determined
         // once the real bounds are known.
+        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.Level, request.DaysPerWeek);
         PlanCatalogCandidateSummary candidate;
         try
         {
             candidate = _bundleLoader
-                .LoadCandidateAsync(V1LiveCatalogPilotRoutingPolicy.CandidateKey, V1LiveCatalogPilotRoutingPolicy.CandidateVersion)
+                .LoadCandidateAsync(identity.CandidateKey, identity.CandidateVersion)
                 .GetAwaiter()
                 .GetResult();
         }
         catch (PlanCatalogLoadException ex)
         {
             throw new CatalogLivePilotRequestUnsupportedException(
-                $"Catalog pilot candidate {V1LiveCatalogPilotRoutingPolicy.CandidateKey} v{V1LiveCatalogPilotRoutingPolicy.CandidateVersion} could not be loaded for live routing.",
+                $"Catalog pilot candidate {identity.CandidateKey} v{identity.CandidateVersion} could not be loaded for live routing.",
                 ex);
         }
 

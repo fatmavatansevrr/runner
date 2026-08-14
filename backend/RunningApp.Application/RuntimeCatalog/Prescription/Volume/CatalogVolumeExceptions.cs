@@ -55,3 +55,31 @@ internal sealed class CatalogVolumeInvalidGovernanceConfigurationException : Cat
 {
     public CatalogVolumeInvalidGovernanceConfigurationException(string message) : base("CATALOG_VOLUME_INVALID_GOVERNANCE_CONFIGURATION", message) { }
 }
+
+/// <summary>
+/// Common base for every Level/Frequency-specific "projected taper volume
+/// below the candidate's minimum full-layout volume" product-ineligibility
+/// exception. <see cref="RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogPreviewGenerator"/>
+/// catches this base type (not each concrete subtype) to translate to the
+/// public <c>PlanProductIneligibleException</c> (HTTP 422) — every future
+/// candidate cell's ineligibility exception is picked up automatically by
+/// deriving from this type, with no corresponding catch-arm edit required.
+/// </summary>
+internal abstract class CatalogProductIneligibleException : CatalogVolumePlanningException
+{
+    protected CatalogProductIneligibleException(string code, string message) : base(code, message) { }
+}
+
+internal sealed class ThreeDayCoreProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "THREE_DAY_CORE_TAPER_VOLUME_BELOW_MINIMUM_FULL_LAYOUT";
+    public ThreeDayCoreProductIneligibleException(double projectedTaperKm)
+        : base(Reason, $"PRODUCT_INELIGIBLE: projected 3D taper volume {projectedTaperKm:0.##}km is below the 12km minimum full-layout volume.") { }
+}
+
+internal sealed class BeginnerFourDayCoreProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "BEGINNER_FOUR_DAY_CORE_TAPER_VOLUME_BELOW_MINIMUM_FULL_LAYOUT";
+    public BeginnerFourDayCoreProductIneligibleException(double projectedTaperKm)
+        : base(Reason, $"PRODUCT_INELIGIBLE: projected Beginner 4D taper volume {projectedTaperKm:0.##}km is below the 9km minimum full-layout volume.") { }
+}

@@ -68,7 +68,11 @@ public sealed class Phase4F8_2LivePilotRoutingTests
         switch (fieldToChange)
         {
             case nameof(GeneratePreviewRequest.GoalDistance): request.GoalDistance = GoalDistance.FiveK; break;
-            case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Beginner; break;
+            // GEN.4E deliberately widened (Beginner, 4) to a real, distinct
+            // pilot identity, so it's no longer a valid "make this non-pilot"
+            // mutation; Advanced remains genuinely unwidened at every
+            // frequency and still exercises the same negative-identity path.
+            case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Advanced; break;
             case nameof(GeneratePreviewRequest.DaysPerWeek): request.DaysPerWeek = 5; break;
             case nameof(GeneratePreviewRequest.GoalType): request.GoalType = GoalType.Habit; break;
         }
@@ -130,8 +134,8 @@ public sealed class Phase4F8_2LivePilotRoutingTests
 
         var decision = V1LiveCatalogPilotRoutingPolicy.Evaluate(request, AsOfDate, 8, 14, "DRAFT", activationEnabled: false);
 
-        Assert.Equal(LivePlanPreviewRoute.CatalogCoreLengthNotImplemented, decision.Route);
-        Assert.Equal(LivePlanPreviewRouteReason.CoreLengthRecognizedButNotImplemented, decision.Reason);
+        Assert.Equal(LivePlanPreviewRoute.CatalogGenerationInfeasible, decision.Route);
+        Assert.Equal(LivePlanPreviewRouteReason.KnownInfeasibleEightWeekExplicitZero, decision.Reason);
         Assert.False(decision.FallbackPermitted);
     }
 
@@ -351,7 +355,7 @@ public sealed class Phase4F8_2LivePilotRoutingTests
         var request = PilotRequest(DateOnly.FromDateTime(DateTime.UtcNow), weeks: 8);
         request.RecentWeeklyVolumeKm = 0;
 
-        await Assert.ThrowsAsync<RunningApp.Application.Exceptions.PlanCoreHorizonUnsupportedException>(() =>
+        await Assert.ThrowsAsync<CatalogLivePilotGenerationInfeasibleException>(() =>
             service.GeneratePreviewAsync(Guid.NewGuid(), request));
 
         Assert.False(legacy.WasCalled);
@@ -403,7 +407,9 @@ public sealed class Phase4F8_2LivePilotRoutingTests
             new CatalogPlanConfirmationService(
                 context,
                 NullLogger<CatalogPlanConfirmationService>.Instance,
-                new GeneratedCatalogPlanPayloadValidator()));
+                new GeneratedCatalogPlanPayloadValidator()),
+            Options.Create(new PlanCatalogOptions { CatalogRootPath = TestPlanServicesFactory.RepoRoot() + "/plan-catalog/catalog" }),
+            Options.Create(new PreparationRunwayPilotActivationOptions()));
     }
 
     private sealed class CountingPlanGenerationEngine : IPlanGenerationEngine
@@ -422,6 +428,14 @@ public sealed class Phase4F8_2LivePilotRoutingTests
         public int Calls { get; private set; }
 
         public Task<CatalogPreviewSnapshot> GenerateAsync(GeneratePreviewRequest request, DateOnly asOfDate, CancellationToken ct = default)
+        {
+            Calls++;
+            throw new MarkerCatalogInvokedException();
+        }
+
+        public Task<(CatalogPreviewSnapshot Snapshot, IReadOnlyList<PreviewWeekDto> Weeks)> GeneratePreparationRunwayPreviewAsync(
+            GeneratePreviewRequest request, RunningApp.Application.RuntimeCatalog.Schedule.Horizon.CoreHorizonDecision horizonDecision,
+            DateOnly asOfDate, PlanCatalogOptions catalogOptions, bool confirmationEnabled = false, CancellationToken ct = default)
         {
             Calls++;
             throw new MarkerCatalogInvokedException();

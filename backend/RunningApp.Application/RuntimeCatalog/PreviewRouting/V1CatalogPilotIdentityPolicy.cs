@@ -50,6 +50,32 @@ public static class V1CatalogPilotIdentityPolicy
 
     public const string CandidateKey = "TEN_K__4D__INTERMEDIATE";
     public const int CandidateVersion = 10;
+    public const string ThreeDayCandidateKey = "TEN_K__3D__INTERMEDIATE";
+    public const int ThreeDayCandidateVersion = 1;
+
+    /// <summary>
+    /// GEN.4E — Beginner 4D Core public activation. Per GEN.4A's frozen
+    /// vocabulary decision, backend <see cref="RunningBackground.Beginner"/>
+    /// is the exact canonical counterpart of the catalog's "NEW" experience
+    /// label (see <c>BEGINNER_MODIFIER</c>); that translation is applied at
+    /// candidate-load time, not here — this policy only ever deals in the
+    /// backend enum.
+    /// </summary>
+    public const string BeginnerCandidateKey = "TEN_K__4D__BEGINNER";
+    public const int BeginnerCandidateVersion = 1;
+
+    /// <summary>
+    /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
+    /// pilot recognizes. Deliberately enumerated rather than derived, so a
+    /// future cell can never be admitted by accident — the two places above
+    /// that resolve identity (<see cref="IsSupportedIdentity"/> and
+    /// <see cref="ResolveCandidate"/>) both consult only this list.
+    /// </summary>
+    private static bool IsSupportedLevelFrequency(RunningBackground level, int daysPerWeek) =>
+        (level, daysPerWeek) is
+            (RunningBackground.Intermediate, 3) or
+            (RunningBackground.Intermediate, 4) or
+            (RunningBackground.Beginner, 4);
 
     /// <summary>
     /// Returns whether the given request identity matches the pilot
@@ -63,6 +89,22 @@ public static class V1CatalogPilotIdentityPolicy
         int daysPerWeek) =>
         goalType == GoalType &&
         goalDistance == GoalDistance &&
-        level == Level &&
-        daysPerWeek == DaysPerWeek;
+        IsSupportedLevelFrequency(level, daysPerWeek);
+
+    public static (string CandidateKey, int CandidateVersion) ResolveCandidate(RunningBackground level, int daysPerWeek) => (level, daysPerWeek) switch
+    {
+        (RunningBackground.Intermediate, 3) => (ThreeDayCandidateKey, ThreeDayCandidateVersion),
+        (RunningBackground.Intermediate, 4) => (CandidateKey, CandidateVersion),
+        (RunningBackground.Beginner, 4) => (BeginnerCandidateKey, BeginnerCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D and Beginner 4D Core pilot identities are resolvable.")
+    };
+
+    /// <summary>
+    /// Non-throwing counterpart of <see cref="ResolveCandidate"/> for call
+    /// sites (e.g. route-decision logging) that must handle an unsupported
+    /// combination without an exception, since they run for every request,
+    /// not just already-confirmed pilot matches.
+    /// </summary>
+    public static (string CandidateKey, int CandidateVersion)? TryResolveCandidate(RunningBackground level, int daysPerWeek) =>
+        IsSupportedLevelFrequency(level, daysPerWeek) ? ResolveCandidate(level, daysPerWeek) : null;
 }
