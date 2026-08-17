@@ -3,6 +3,7 @@ using PlanCatalog.Core.Metadata;
 using PlanCatalog.Contracts.References;
 using PlanCatalog.Core.Catalog;
 using PlanCatalog.Core.Ports;
+using PlanCatalog.Infrastructure.Projection;
 
 namespace PlanCatalog.Infrastructure.Publishing;
 
@@ -13,6 +14,23 @@ namespace PlanCatalog.Infrastructure.Publishing;
 public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, IContentHasher hasher) : ICatalogBundleAssembler
 {
     public PublishedTemplateBundle Assemble(CatalogSourceSnapshot snapshot, string combinationKey, int combinationVersion, IRetirementLedger? retirementLedger = null)
+        => AssembleInternal(snapshot, combinationKey, combinationVersion, executionDependencies: null, retirementLedger);
+
+    /// <summary>Projection-capability seam. Callers must supply exact, already-selected profile identities.</summary>
+    public PublishedTemplateBundle Assemble(
+        CatalogSourceSnapshot snapshot,
+        string combinationKey,
+        int combinationVersion,
+        IReadOnlyList<ExactPrescriptionProjectionDependency> executionDependencies,
+        IRetirementLedger? retirementLedger = null)
+        => AssembleInternal(snapshot, combinationKey, combinationVersion, executionDependencies, retirementLedger);
+
+    private PublishedTemplateBundle AssembleInternal(
+        CatalogSourceSnapshot snapshot,
+        string combinationKey,
+        int combinationVersion,
+        IReadOnlyList<ExactPrescriptionProjectionDependency>? executionDependencies,
+        IRetirementLedger? retirementLedger)
     {
         var retirement = retirementLedger ?? NullRetirementLedger.Instance;
 
@@ -99,6 +117,7 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
                 .ToList();
         }
 
+        var executionPrescriptions = ProjectExecutionPrescriptions(snapshot, executionDependencies);
         var bundle = new PublishedTemplateBundle
         {
             BundleKey = combination.Metadata.Key,
@@ -113,6 +132,7 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
             RuntimeConditionValueRegistry = ToRef(registry.Metadata),
             PeakVolumeBandPolicy = ToRef(peakPolicy.Metadata),
             Workouts = effectiveWorkouts.Select(ToRef).ToList(),
+            ExecutionPrescriptions = executionPrescriptions,
             BundleContentHash = string.Empty
         };
 
@@ -121,4 +141,30 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
     }
 
     private static CatalogArtifactReference ToRef(CatalogDocumentMetadata metadata) => CatalogArtifactReferences.ToRef(metadata);
+
+    private static IReadOnlyList<Contracts.Prescriptions.ExecutableWorkoutPrescription>? ProjectExecutionPrescriptions(
+        CatalogSourceSnapshot snapshot,
+        IReadOnlyList<ExactPrescriptionProjectionDependency>? dependencies)
+    {
+        if (dependencies is null || dependencies.Count == 0) return null;
+
+        var duplicate = dependencies.GroupBy(x => (x.Profile.DocumentType, x.Profile.Key, x.Profile.Version)).FirstOrDefault(x => x.Count() > 1);
+        if (duplicate is not null) throw new InvalidOperationException("EXECUTION_PROJECTION_DUPLICATE_PROFILE_DEPENDENCY");
+
+        var projector = new WorkoutPrescriptionExecutionProjector();
+        return dependencies.Select(dependency =>
+            {
+                if (dependency.Profile.DocumentType != Contracts.DocumentTypes.WorkoutPrescriptionProfile)
+                    throw new InvalidOperationException("EXECUTION_PROJECTION_PROFILE_REFERENCE_INVALID");
+                var profile = snapshot.FindPrescriptionProfile(dependency.Profile.Key, dependency.Profile.Version)
+                    ?? throw new InvalidOperationException("EXECUTION_PROJECTION_PROFILE_NOT_FOUND");
+                var workout = snapshot.FindWorkout(profile.WorkoutDefinitionRef.Key, profile.WorkoutDefinitionRef.Version)
+                    ?? throw new InvalidOperationException("EXECUTION_PROJECTION_WORKOUT_NOT_FOUND");
+                return projector.Project(profile, workout);
+            })
+            .OrderBy(x => x.SourceProfile.DocumentType, StringComparer.Ordinal)
+            .ThenBy(x => x.SourceProfile.Key, StringComparer.Ordinal)
+            .ThenBy(x => x.SourceProfile.Version)
+            .ToList();
+    }
 }
