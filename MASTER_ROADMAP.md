@@ -28,22 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `IN_PROGRESS` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), schema+partial implementation landed through FREQ.6D.3C; **not publicly active**, not yet fully wired | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `IN_PROGRESS` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), schema+projector+RunningApp consumer implemented through FREQ.6D.3D; **not publicly active**, dual-KEY runtime/lane wiring (FREQ.6D.4) not yet started | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.3C` — Execution Status `DONE`, Final Classification `FREQ6D3C_PROJECTION_IMPLEMENTED_PROFILE_WIRING_DEFERRED` (deterministic Core→Contracts projection and bundle integration implemented; production lane/profile wiring intentionally deferred to FREQ.6D.4).
+**Latest verified completed phase**: `FREQ.6D.3D` — Execution Status `DONE`, Final Classification `FREQ6D3D_RUNNINGAPP_EXECUTION_CONSUMER_IMPLEMENTED` (RunningApp.Application consumes profile-backed `ExecutableWorkoutPrescription` losslessly via `PlanCatalog.Contracts` only, exact-reference lookup seam proven; production profile wiring and dual-KEY lane selection remain FREQ.6D.4's scope).
 
-**FREQ.6D.3C resolution (explicit, per governance-phase instruction)**:
-```
-DONE
-```
-It is not `IN_PROGRESS`, `NOT_STARTED`, or `BLOCKED` — its own report carries a real final classification and an attributable implementation commit (`573b7ac`) plus a separate documentation commit (`6734b00`), both reachable from HEAD. What remains open is downstream of it (production profile wiring in FREQ.6D.4), not FREQ.6D.3C itself.
-
-**Next phase per repository-backed sequencing** (stated explicitly in FREQ.6D.3A's own roadmap and FREQ.6D.3C's own "6D.3D input contract" section): `FREQ.6D.3D` — RunningApp-side internal consumer/materialization of the executable prescription contract, legacy coexistence, focused regressions. This is a `PARENT_PHASE_NOT_REPOSITORY_VERIFIED`-safe next step: its parent (`FREQ.6D.3C`) is `VERIFIED` in the ledger.
+**Next phase per repository-backed sequencing** (stated explicitly in FREQ.6D.3A's own roadmap and FREQ.6D.3D's own "6D.4 exact input contract" section): `FREQ.6D.4` — dual-KEY progression/runtime integration: Week × LaneOrdinal → exact progression stage → exact profile reference, wired into FREQ.6D.3D's `ExecutionPrescriptionIndex.ResolveExact` seam, plus the 5D severity-table widening confirmed required by FREQ.6D.1B and the two additive `TrainingDay` persistence columns. Its parent (`FREQ.6D.3D`) is `VERIFIED` in the ledger.
 
 ---
 
@@ -189,10 +183,9 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` row 56 and this file §2/§5) confirms `FREQ.6D.3C` is real and `DONE`, with the deferred piece being production profile wiring, not the projection capability itself. The real near-term sequence, per FREQ.6D.3A's own roadmap and FREQ.6D.3C's own downstream-contract section, is:
+Repository evidence (see `PHASE_LEDGER.md` row 58 and this file §2/§5) confirms `FREQ.6D.3D` is real and `DONE`. The real near-term sequence, per FREQ.6D.3A's own roadmap and FREQ.6D.3D's own downstream-contract section, is:
 
 ```
-FREQ.6D.3D  → RunningApp execution consumer (internal materialization, legacy coexistence, focused regressions)
 FREQ.6D.4   → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
 FREQ.6D.5   → integrated regression closure
 FREQ.7      → first real Intermediate×5D candidate
