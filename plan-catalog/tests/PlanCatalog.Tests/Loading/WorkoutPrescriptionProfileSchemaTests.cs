@@ -42,7 +42,29 @@ public sealed class WorkoutPrescriptionProfileSchemaTests
         Assert.False(Validator().Validate(DocumentTypes.WorkoutPrescriptionProfile, json).IsValid);
     }
 
+    [Fact]
+    public void RepeatedWithoutPlacement_FailsSchema() =>
+        Assert.False(Validator().Validate(DocumentTypes.WorkoutPrescriptionProfile, ValidRepeatedJson().Replace(",\"recoveryPlacement\":\"BETWEEN_REPETITIONS\"", "")).IsValid);
+
+    [Fact]
+    public void ContinuousWithPlacement_FailsSchema()
+    {
+        var json = ValidRepeatedJson()
+            .Replace("\"structureMode\":\"REPEATED\"", "\"structureMode\":\"CONTINUOUS\"")
+            .Replace("\"repetitionCount\":6,", "")
+            .Replace(",\"recoveryQuantity\":{\"durationSeconds\":60,\"mode\":\"JOG\"}", "");
+        Assert.False(Validator().Validate(DocumentTypes.WorkoutPrescriptionProfile, json).IsValid);
+    }
+
+    [Fact]
+    public void UnknownPlacement_FailsSchema() =>
+        Assert.False(Validator().Validate(DocumentTypes.WorkoutPrescriptionProfile, ValidRepeatedJson().Replace("BETWEEN_REPETITIONS", "UNKNOWN")).IsValid);
+
+    [Fact]
+    public void RawRecoveryCount_FailsSchema() =>
+        Assert.False(Validator().Validate(DocumentTypes.WorkoutPrescriptionProfile, ValidRepeatedJson().Replace("\"recoveryPlacement\"", "\"recoveryCount\":3,\"recoveryPlacement\"")).IsValid);
+
     private static string ValidRepeatedJson() => """
-    {"metadata":{"documentType":"WORKOUT_PRESCRIPTION_PROFILE","schemaVersion":1,"key":"FARTLEK_CONTROLLED","version":1,"status":"DRAFT"},"workoutDefinitionRef":{"documentType":"WORKOUT_DEFINITION","key":"FARTLEK","version":4},"doseCategory":"PRIMARY","distanceAccountingMode":"ESTIMATED_SESSION_TOTAL","components":[{"sequenceOrder":1,"componentType":"MAIN_SET","structureMode":"REPEATED","workQuantity":{"repetitionCount":6,"durationSeconds":60},"recoveryQuantity":{"durationSeconds":60,"mode":"JOG"},"intensityTarget":{"mode":"EFFORT_BASED","effortDescriptorKey":"CONTROLLED_SURGE"}}]}
+    {"metadata":{"documentType":"WORKOUT_PRESCRIPTION_PROFILE","schemaVersion":1,"key":"FARTLEK_CONTROLLED","version":1,"status":"DRAFT"},"workoutDefinitionRef":{"documentType":"WORKOUT_DEFINITION","key":"FARTLEK","version":4},"doseCategory":"PRIMARY","distanceAccountingMode":"ESTIMATED_SESSION_TOTAL","components":[{"sequenceOrder":1,"componentType":"MAIN_SET","structureMode":"REPEATED","workQuantity":{"repetitionCount":6,"durationSeconds":60},"recoveryQuantity":{"durationSeconds":60,"mode":"JOG"},"recoveryPlacement":"BETWEEN_REPETITIONS","intensityTarget":{"mode":"EFFORT_BASED","effortDescriptorKey":"CONTROLLED_SURGE"}}]}
     """;
 }

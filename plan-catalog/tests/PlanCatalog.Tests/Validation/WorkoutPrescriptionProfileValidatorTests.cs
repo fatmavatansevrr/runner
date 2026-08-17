@@ -55,7 +55,8 @@ public sealed class WorkoutPrescriptionProfileValidatorTests
         var main = Profile().Components[1] with
         {
             StructureMode = PrescriptionStructureMode.Repeated,
-            RecoveryQuantity = new PrescriptionRecoveryQuantity { DurationSeconds = 60, Mode = PrescriptionRecoveryMode.Jog }
+            RecoveryQuantity = new PrescriptionRecoveryQuantity { DurationSeconds = 60, Mode = PrescriptionRecoveryMode.Jog },
+            RecoveryPlacement = PrescriptionRecoveryPlacement.BetweenRepetitions
         };
         AssertCode(Profile() with { Components = Replace(Profile().Components, 1, main) }, "PROFILE_REPEATED_COUNT_INVALID");
     }
@@ -87,6 +88,63 @@ public sealed class WorkoutPrescriptionProfileValidatorTests
         var repeated = ReplaceMainWithRepeated(Profile().Components, 3, 1000, 200);
         var main = repeated[1] with { RecoveryQuantity = new PrescriptionRecoveryQuantity { DurationSeconds = 60, DistanceMeters = 200, Mode = PrescriptionRecoveryMode.Jog } };
         AssertCode(Profile() with { Components = Replace(repeated, 1, main) }, "PROFILE_RECOVERY_UNIT_AMBIGUOUS");
+    }
+
+    [Fact]
+    public void RepeatedWithoutPlacement_FailsExactCode()
+    {
+        var repeated = ReplaceMainWithRepeated(Profile().Components, 4, 1000, 400);
+        var main = repeated[1] with { RecoveryPlacement = null };
+        AssertCode(Profile() with { Components = Replace(repeated, 1, main) }, "PROFILE_REPEATED_RECOVERY_PLACEMENT_REQUIRED");
+    }
+
+    [Fact]
+    public void ContinuousWithPlacement_FailsExactCode()
+    {
+        var main = Profile().Components[1] with { RecoveryPlacement = PrescriptionRecoveryPlacement.BetweenRepetitions };
+        AssertCode(Profile() with { Components = Replace(Profile().Components, 1, main) }, "PROFILE_CONTINUOUS_RECOVERY_PLACEMENT_FORBIDDEN");
+    }
+
+    [Fact]
+    public void PlacementWithoutRecovery_FailsExactCode()
+    {
+        var main = Profile().Components[1] with { RecoveryPlacement = PrescriptionRecoveryPlacement.BetweenRepetitions };
+        AssertCode(Profile() with { Components = Replace(Profile().Components, 1, main) }, "PROFILE_RECOVERY_PLACEMENT_WITHOUT_RECOVERY");
+    }
+
+    [Fact]
+    public void InvalidTypedPlacement_FailsExactCode()
+    {
+        var repeated = ReplaceMainWithRepeated(Profile().Components, 4, 1000, 400);
+        var main = repeated[1] with { RecoveryPlacement = (PrescriptionRecoveryPlacement)999 };
+        AssertCode(Profile() with { Components = Replace(repeated, 1, main) }, "PROFILE_RECOVERY_PLACEMENT_INVALID");
+    }
+
+    [Theory]
+    [InlineData(4, PrescriptionRecoveryPlacement.BetweenRepetitions, 3)]
+    [InlineData(4, PrescriptionRecoveryPlacement.AfterEachRepetition, 4)]
+    [InlineData(6, PrescriptionRecoveryPlacement.BetweenRepetitions, 5)]
+    [InlineData(6, PrescriptionRecoveryPlacement.AfterEachRepetition, 6)]
+    public void RecoveryCount_IsDerivedByCanonicalAuthority(int repetitions, PrescriptionRecoveryPlacement placement, int expected) =>
+        Assert.Equal(expected, PrescriptionRecoveryCardinality.Derive(repetitions, placement));
+
+    [Fact]
+    public void TaperRepetitionReduction_RetainsBetweenSemantics()
+    {
+        Assert.Equal(5, PrescriptionRecoveryCardinality.Derive(6, PrescriptionRecoveryPlacement.BetweenRepetitions));
+        Assert.Equal(3, PrescriptionRecoveryCardinality.Derive(4, PrescriptionRecoveryPlacement.BetweenRepetitions));
+    }
+
+    [Theory]
+    [InlineData(PrescriptionRecoveryPlacement.BetweenRepetitions, "BETWEEN_REPETITIONS")]
+    [InlineData(PrescriptionRecoveryPlacement.AfterEachRepetition, "AFTER_EACH_REPETITION")]
+    public void RecoveryPlacement_RoundTripsExactly(PrescriptionRecoveryPlacement placement, string token)
+    {
+        var profile = Profile() with { Components = ReplaceMainWithRepeated(Profile().Components, 4, 1000, 400, placement: placement) };
+        var json = JsonSerializer.Serialize(profile, CanonicalJsonOptions.Canonical);
+        Assert.Contains($"\"recoveryPlacement\":\"{token}\"", json);
+        var roundTrip = JsonSerializer.Deserialize<WorkoutPrescriptionProfile>(json, CanonicalJsonOptions.Canonical)!;
+        Assert.Equal(placement, roundTrip.Components[1].RecoveryPlacement);
     }
 
     [Fact]
@@ -197,14 +255,15 @@ public sealed class WorkoutPrescriptionProfileValidatorTests
 
     private static WorkoutComponentDefinition Component(int order, WorkoutComponentType type) => new() { SequenceOrder = order, ComponentType = type, IntensityDescriptor = type.ToString().ToUpperInvariant() };
 
-    private static IReadOnlyList<PrescriptionProfileComponent> ReplaceMainWithRepeated(IReadOnlyList<PrescriptionProfileComponent> source, int reps, int? distanceMeters = null, int? recoveryMeters = null, int? durationSeconds = null, int? recoverySeconds = null)
+    private static IReadOnlyList<PrescriptionProfileComponent> ReplaceMainWithRepeated(IReadOnlyList<PrescriptionProfileComponent> source, int reps, int? distanceMeters = null, int? recoveryMeters = null, int? durationSeconds = null, int? recoverySeconds = null, PrescriptionRecoveryPlacement placement = PrescriptionRecoveryPlacement.BetweenRepetitions)
     {
         var mainIndex = source.ToList().FindIndex(x => x.ComponentType == WorkoutComponentType.MainSet);
         var main = source[mainIndex] with
         {
             StructureMode = PrescriptionStructureMode.Repeated,
             WorkQuantity = new PrescriptionWorkQuantity { RepetitionCount = reps, DistanceMeters = distanceMeters, DurationSeconds = durationSeconds },
-            RecoveryQuantity = new PrescriptionRecoveryQuantity { DistanceMeters = recoveryMeters, DurationSeconds = recoverySeconds, Mode = PrescriptionRecoveryMode.Jog }
+            RecoveryQuantity = new PrescriptionRecoveryQuantity { DistanceMeters = recoveryMeters, DurationSeconds = recoverySeconds, Mode = PrescriptionRecoveryMode.Jog },
+            RecoveryPlacement = placement
         };
         return Replace(source, mainIndex, main);
     }

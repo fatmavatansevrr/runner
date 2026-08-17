@@ -26,6 +26,7 @@ public sealed record PrescriptionProfileComponent
     public required PrescriptionStructureMode StructureMode { get; init; }
     public PrescriptionWorkQuantity? WorkQuantity { get; init; }
     public PrescriptionRecoveryQuantity? RecoveryQuantity { get; init; }
+    public PrescriptionRecoveryPlacement? RecoveryPlacement { get; init; }
     public required PrescriptionIntensityTarget IntensityTarget { get; init; }
 }
 

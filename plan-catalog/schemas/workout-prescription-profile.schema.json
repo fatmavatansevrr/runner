@@ -97,6 +97,7 @@
         "structureMode": { "type": "string", "enum": ["CONTINUOUS", "REPEATED"] },
         "workQuantity": { "$ref": "#/$defs/positiveQuantity" },
         "recoveryQuantity": { "$ref": "#/$defs/recoveryQuantity" },
+        "recoveryPlacement": { "type": "string", "enum": ["BETWEEN_REPETITIONS", "AFTER_EACH_REPETITION"] },
         "intensityTarget": { "$ref": "#/$defs/intensityTarget" }
       },
       "required": ["sequenceOrder", "componentType", "structureMode", "workQuantity", "intensityTarget"],
@@ -105,14 +106,14 @@
         {
           "if": { "properties": { "structureMode": { "const": "CONTINUOUS" } } },
           "then": {
-            "not": { "required": ["recoveryQuantity"] },
+            "not": { "anyOf": [{ "required": ["recoveryQuantity"] }, { "required": ["recoveryPlacement"] }] },
             "properties": { "workQuantity": { "not": { "required": ["repetitionCount"] } } }
           }
         },
         {
           "if": { "properties": { "structureMode": { "const": "REPEATED" } } },
           "then": {
-            "required": ["recoveryQuantity"],
+            "required": ["recoveryQuantity", "recoveryPlacement"],
             "properties": { "workQuantity": { "required": ["repetitionCount"] } }
           }
         }

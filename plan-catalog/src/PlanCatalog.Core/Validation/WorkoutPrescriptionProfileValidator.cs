@@ -86,8 +86,16 @@ public static class WorkoutPrescriptionProfileValidator
 
         if (component.StructureMode == PrescriptionStructureMode.Continuous && component.RecoveryQuantity is not null)
             Add(issues, "PROFILE_CONTINUOUS_RECOVERY_FORBIDDEN", "CONTINUOUS components cannot declare recoveryQuantity.", "$.components[].recoveryQuantity");
+        if (component.StructureMode == PrescriptionStructureMode.Continuous && component.RecoveryPlacement is not null)
+            Add(issues, "PROFILE_CONTINUOUS_RECOVERY_PLACEMENT_FORBIDDEN", "CONTINUOUS components cannot declare recoveryPlacement.", "$.components[].recoveryPlacement");
         if (component.StructureMode == PrescriptionStructureMode.Repeated && component.RecoveryQuantity is null)
             Add(issues, "PROFILE_REPEATED_RECOVERY_REQUIRED", "REPEATED components require recoveryQuantity.", "$.components[].recoveryQuantity");
+        if (component.StructureMode == PrescriptionStructureMode.Repeated && component.RecoveryPlacement is null)
+            Add(issues, "PROFILE_REPEATED_RECOVERY_PLACEMENT_REQUIRED", "REPEATED components require explicit recoveryPlacement.", "$.components[].recoveryPlacement");
+        if (component.RecoveryPlacement is not null && !Enum.IsDefined(component.RecoveryPlacement.Value))
+            Add(issues, "PROFILE_RECOVERY_PLACEMENT_INVALID", "Recovery placement is not supported.", "$.components[].recoveryPlacement");
+        if (component.RecoveryPlacement is not null && component.RecoveryQuantity is null)
+            Add(issues, "PROFILE_RECOVERY_PLACEMENT_WITHOUT_RECOVERY", "recoveryPlacement cannot be declared without recoveryQuantity.", "$.components[].recoveryPlacement");
         if (component.RecoveryQuantity is not null)
             ValidateRecovery(component.RecoveryQuantity, issues);
 
