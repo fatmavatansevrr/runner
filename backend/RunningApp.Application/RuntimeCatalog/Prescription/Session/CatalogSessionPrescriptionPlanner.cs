@@ -29,11 +29,13 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions)
                 : V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
             var easyOrdinal = 0;
+            var keyOrdinal = 0;
             var weekSessions = new List<CatalogPrescribedSession>();
             foreach (var session in boundWeek.Sessions.OrderBy(s => s.Date).ThenBy(s => s.StructuralRole))
             {
                 var currentEasyOrdinal = session.StructuralRole == "EASY_SUPPORT" ? easyOrdinal++ : -1;
-                weekSessions.Add(BuildSession(request, weekly, longRun, allocation, session, currentEasyOrdinal, isThreeDay));
+                var currentKeyOrdinal = session.StructuralRole == "KEY_SESSION" ? keyOrdinal++ : -1;
+                weekSessions.Add(BuildSession(request, weekly, longRun, allocation, session, currentEasyOrdinal, currentKeyOrdinal, isThreeDay));
             }
 
             var accounted = Round(weekSessions.Sum(s => s.PlannedDistanceKm));
@@ -74,9 +76,10 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         V1FourDayWeekAllocation allocation,
         BoundCatalogSession session,
         int easySupportOrdinal,
+        int keySessionOrdinal,
         bool isThreeDay)
     {
-        var distance = DistanceFor(session, allocation, easySupportOrdinal);
+        var distance = DistanceFor(session, allocation, easySupportOrdinal, keySessionOrdinal);
         var definition = request.WorkoutDefinitions[session.WorkoutDefinitionKey];
         var mode = ModeFor(definition);
         var accountingMode = AccountingModeFor(definition);
@@ -144,11 +147,11 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         };
     }
 
-    private static double DistanceFor(BoundCatalogSession session, V1FourDayWeekAllocation allocation, int easySupportOrdinal) =>
+    private static double DistanceFor(BoundCatalogSession session, V1FourDayWeekAllocation allocation, int easySupportOrdinal, int keySessionOrdinal) =>
         session.StructuralRole switch
         {
             "LONG_RUN" => allocation.LongRunDistanceKm,
-            "KEY_SESSION" => allocation.KeySessionDistanceKm,
+            "KEY_SESSION" => allocation.KeySessionDistancesKm[keySessionOrdinal],
             "EASY_SUPPORT" => easySupportOrdinal == 0 ? allocation.FirstEasySupportDistanceKm : allocation.SecondEasySupportDistanceKm,
             _ => throw new CatalogSessionPrescriptionInfeasibleException($"Unsupported structural role '{session.StructuralRole}'.")
         };

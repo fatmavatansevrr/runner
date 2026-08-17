@@ -555,8 +555,8 @@ public sealed class PlanAdaptationV1DecisionTests
         new(
             ExpectedSessionCount: 4,
             EffectiveCompletedCount: effectiveCompleted,
-            KeySessionExpected: true,
-            KeySessionCompleted: keyCompleted,
+            KeySessionExpectedCount: 1,
+            KeySessionCompletedCount: keyCompleted ? 1 : 0,
             LongRunExpected: true,
             LongRunCompleted: longCompleted,
             EasyExpectedCount: 2,

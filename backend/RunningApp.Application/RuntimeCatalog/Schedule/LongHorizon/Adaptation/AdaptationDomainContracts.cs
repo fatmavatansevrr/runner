@@ -159,18 +159,43 @@ internal sealed record LogicalSessionEvidence(
     Guid? AdaptedFromId = null,
     NotTodayReasonCode? NotTodayReason = null);
 
+/// <summary>
+/// Phase 10K-FREQ.4: <c>KeySessionExpectedCount</c>/<c>KeySessionCompletedCount</c>
+/// generalize the pre-FREQ.4 <c>KeySessionExpected</c>/<c>KeySessionCompleted</c>
+/// booleans to a count pair, mirroring the pattern already used for
+/// EASY_SUPPORT (<see cref="EasyExpectedCount"/>/<see cref="EasyCompletedCount"/>)
+/// -- this closes FREQ.3 §H.1's finding that a multi-KEY week (e.g. a
+/// hypothetical Intermediate 5D layout) collapsed into a single lossy
+/// boolean, indistinguishable from "zero of N completed" when in fact
+/// some-but-not-all KEY sessions completed. The boolean properties remain,
+/// computed below, for every existing single-KEY consumer -- unchanged
+/// value for <c>KeySessionExpectedCount &lt;= 1</c>, verified by regression.
+/// </summary>
 internal sealed record WindowExecutionSummary(
     int ExpectedSessionCount,
     int EffectiveCompletedCount,
-    bool KeySessionExpected,
-    bool KeySessionCompleted,
+    int KeySessionExpectedCount,
+    int KeySessionCompletedCount,
     bool LongRunExpected,
     bool LongRunCompleted,
     int EasyExpectedCount,
     int EasyCompletedCount,
     int UnrecoveredNotTodayCount,
     int SupersededByAdaptationCount,
-    bool HasSafetyFlag);
+    bool HasSafetyFlag)
+{
+    /// <summary>Back-compat for pre-FREQ.4 consumers -- true iff at least one KEY_SESSION was expected this window.</summary>
+    public bool KeySessionExpected => KeySessionExpectedCount > 0;
+
+    /// <summary>
+    /// Back-compat for pre-FREQ.4 consumers -- true iff EVERY expected
+    /// KEY_SESSION completed (matches the pre-FREQ.4 AND-accumulation
+    /// semantics exactly for any KeySessionExpectedCount, not just 1: a
+    /// 2-of-2 week is true, a 1-of-2 or 0-of-2 week is false, same as
+    /// today's 1-of-1/0-of-1 semantics).
+    /// </summary>
+    public bool KeySessionCompleted => KeySessionExpectedCount > 0 && KeySessionCompletedCount == KeySessionExpectedCount;
+}
 
 /// <summary>
 /// Rev3.1 §7: LoadDecision and SafetyReviewRequired are independent

@@ -123,6 +123,24 @@ public sealed class Gen4EBeginnerFourDayPublicActivationTests : IClassFixture<Pu
     }
 
     [Theory]
+    [InlineData(15)] [InlineData(20)]
+    public async Task RunwayHorizonBeginner_TypedRejection_NoSilentIntermediateCoercion(int weeks)
+    {
+        // FREQ.2's finding: PreparationRunway's numeric pipeline is
+        // architecturally hardcoded to Intermediate x4D specifically (its
+        // scope gate checks Level == Intermediate, not just DaysPerWeek).
+        // FREQ.2A: confirm Beginner x4D (publicly active) gets a typed 422
+        // rejection at Runway horizons, never a 200 with silently-
+        // substituted Intermediate content.
+        await ResetAsync();
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Request(weeks));
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("PLAN_HORIZON_COMPOSITION_REQUIRED", body);
+        Assert.DoesNotContain("TEN_K__4D__INTERMEDIATE", body);
+    }
+
+    [Theory]
     [InlineData("beginner", 3)]
     [InlineData("advanced", 4)]
     [InlineData("beginner", 5)]

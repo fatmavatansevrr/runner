@@ -25,7 +25,27 @@ internal static class NextWindowLoadDecisionPolicy
     /// ordering let a worse-adherence window (0/4) outrank a
     /// better-adherence window (2/4). SupersededByAdaptationCount is
     /// deliberately not read here: it is informational only and must never
-    /// influence this decision (Rev3.1 §6).</summary>
+    /// influence this decision (Rev3.1 §6).
+    ///
+    /// Phase 10K-FREQ.4, deliberately NOT changed here (flagged, not
+    /// silently resolved): these raw EffectiveCompletedCount thresholds are
+    /// still hardcoded to a 4-total-session week (this class's own §7 doc
+    /// comment above says so explicitly). For a hypothetical 5-session week
+    /// (e.g. Intermediate 5D, 2 KEY + 2 EASY + 1 LONG), completing 4 of 5
+    /// falls into the "&gt;= 4" branch and is misclassified identically to a
+    /// fully-complete 4-session week. This is a GENUINELY NEW sub-case, not
+    /// something Rev5's multi-week aggregation (WeeklyWindowPartitioner +
+    /// WeeklyLoadDecisionAggregator, Phase 4M.5C) already solved --
+    /// confirmed by direct read of WeeklyLoadDecisionAggregation.cs's own
+    /// doc comment: "WindowExecutionSummaryBuilder and
+    /// NextWindowLoadDecisionPolicy remain completely unchanged... they are
+    /// simply invoked once per resulting bucket [week]." Rev5 operates
+    /// strictly ABOVE this single-week function, across a variable number
+    /// of WEEKS; it never addresses variability in session COUNT WITHIN one
+    /// week. Making these thresholds ratio/role-aware for non-4-session
+    /// weeks is a real product-decision question (what does "Reduce" mean
+    /// at 5 sessions?), not a mechanism fix -- left for a future decision
+    /// phase, per this phase's explicit instruction not to touch it.</summary>
     private static NextWindowLoadDecision DetermineLoadDecision(WindowExecutionSummary summary)
     {
         return summary.EffectiveCompletedCount switch
@@ -40,7 +60,14 @@ internal static class NextWindowLoadDecisionPolicy
 
     private static bool OnlyEasyMissing(WindowExecutionSummary summary)
     {
-        var keySatisfied = !summary.KeySessionExpected || summary.KeySessionCompleted;
+        // Phase 10K-FREQ.4: reads the count pair directly (rather than the
+        // back-compat KeySessionExpected/KeySessionCompleted booleans) so a
+        // 5-session week (e.g. a hypothetical Intermediate 5D layout)
+        // missing exactly one of two KEY sessions is correctly NOT
+        // classified as "only Easy missing" -- behaviorally identical to
+        // the pre-FREQ.4 boolean check for KeySessionExpectedCount <= 1
+        // (verified by regression), but now correct for N > 1.
+        var keySatisfied = summary.KeySessionCompletedCount == summary.KeySessionExpectedCount;
         var longSatisfied = !summary.LongRunExpected || summary.LongRunCompleted;
         var easyMissing = summary.EasyCompletedCount < summary.EasyExpectedCount;
         return keySatisfied && longSatisfied && easyMissing;

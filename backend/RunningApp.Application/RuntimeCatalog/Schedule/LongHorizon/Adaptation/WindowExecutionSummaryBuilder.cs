@@ -77,8 +77,13 @@ internal static class WindowExecutionSummaryBuilder
         var effectiveCompleted = 0;
         var supersededCount = 0;
         var unrecoveredNotToday = 0;
-        var keyExpected = false;
-        var keyCompleted = true; // vacuously true if no KEY root; AND-reduced below.
+        // Phase 10K-FREQ.4: count-based, mirroring EasyExpectedCount/
+        // EasyCompletedCount below (already the correct N-role pattern) --
+        // replaces the pre-FREQ.4 bool keyExpected/AND-accumulated
+        // keyCompleted, which collapsed a multi-KEY week into a single
+        // lossy flag (FREQ.3 §H.1).
+        var keyExpectedCount = 0;
+        var keyCompletedCount = 0;
         var longExpected = false;
         var longCompleted = true;
         var easyExpected = 0;
@@ -96,7 +101,7 @@ internal static class WindowExecutionSummaryBuilder
                 if (root.Role == PreparationRunwaySlotRole.EasySupport)
                     easyExpected++;
                 else if (root.Role == PreparationRunwaySlotRole.KeySession)
-                    keyExpected = true;
+                    keyExpectedCount++;
                 else if (root.Role == PreparationRunwaySlotRole.LongRun)
                     longExpected = true;
                 // Superseded roots contribute to their role's expected
@@ -117,8 +122,9 @@ internal static class WindowExecutionSummaryBuilder
             switch (root.Role)
             {
                 case PreparationRunwaySlotRole.KeySession:
-                    keyExpected = true;
-                    keyCompleted &= isEffectivelyCompleted;
+                    keyExpectedCount++;
+                    if (isEffectivelyCompleted)
+                        keyCompletedCount++;
                     break;
                 case PreparationRunwaySlotRole.LongRun:
                     longExpected = true;
@@ -135,8 +141,8 @@ internal static class WindowExecutionSummaryBuilder
         return new WindowExecutionSummary(
             ExpectedSessionCount: expectedCount,
             EffectiveCompletedCount: effectiveCompleted,
-            KeySessionExpected: keyExpected,
-            KeySessionCompleted: keyExpected && keyCompleted,
+            KeySessionExpectedCount: keyExpectedCount,
+            KeySessionCompletedCount: keyCompletedCount,
             LongRunExpected: longExpected,
             LongRunCompleted: longExpected && longCompleted,
             EasyExpectedCount: easyExpected,
