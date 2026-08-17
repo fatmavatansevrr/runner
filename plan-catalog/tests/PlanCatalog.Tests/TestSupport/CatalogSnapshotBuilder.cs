@@ -11,6 +11,7 @@ public sealed class CatalogSnapshotBuilder
     private readonly List<WorkoutProgressionDefinition> _workoutProgressions = new();
     private readonly List<ProgressionModifierDefinition> _progressionModifiers = new();
     private readonly List<WorkoutDefinition> _workouts = new();
+    private readonly List<WorkoutPrescriptionProfile> _prescriptionProfiles = new();
     private readonly List<RuntimeConditionValueRegistryDefinition> _registries = new();
     private readonly List<PeakVolumeBandPolicy> _peakVolumeBandPolicies = new();
     private readonly List<RulePackDefinition> _rulePacks = new();
@@ -22,6 +23,7 @@ public sealed class CatalogSnapshotBuilder
     public CatalogSnapshotBuilder With(WorkoutProgressionDefinition x) { _workoutProgressions.Add(x); return this; }
     public CatalogSnapshotBuilder With(ProgressionModifierDefinition x) { _progressionModifiers.Add(x); return this; }
     public CatalogSnapshotBuilder With(WorkoutDefinition x) { _workouts.Add(x); return this; }
+    public CatalogSnapshotBuilder With(WorkoutPrescriptionProfile x) { _prescriptionProfiles.Add(x); return this; }
     public CatalogSnapshotBuilder With(RuntimeConditionValueRegistryDefinition x) { _registries.Add(x); return this; }
     public CatalogSnapshotBuilder With(PeakVolumeBandPolicy x) { _peakVolumeBandPolicies.Add(x); return this; }
     public CatalogSnapshotBuilder With(RulePackDefinition x) { _rulePacks.Add(x); return this; }
@@ -35,6 +37,7 @@ public sealed class CatalogSnapshotBuilder
         WorkoutProgressions = _workoutProgressions,
         ProgressionModifiers = _progressionModifiers,
         Workouts = _workouts,
+        PrescriptionProfiles = _prescriptionProfiles,
         RuntimeConditionValueRegistries = _registries,
         PeakVolumeBandPolicies = _peakVolumeBandPolicies,
         RulePacks = _rulePacks,

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkoutPrescriptionProfile",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "WORKOUT_PRESCRIPTION_PROFILE" },
+        "schemaVersion": { "const": 1 },
+        "key": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 },
+        "status": { "type": "string", "enum": ["DRAFT", "VALIDATED", "PUBLISHED", "RETIRED"] },
+        "contentHash": { "type": "string" }
+      },
+      "required": ["documentType", "schemaVersion", "key", "version", "status"],
+      "additionalProperties": false
+    },
+    "workoutDefinitionRef": {
+      "type": "object",
+      "properties": {
+        "documentType": { "const": "WORKOUT_DEFINITION" },
+        "key": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["documentType", "key", "version"],
+      "additionalProperties": false
+    },
+    "doseCategory": { "type": "string", "enum": ["PRIMARY", "SECONDARY_CONTROLLED"] },
+    "distanceAccountingMode": { "type": "string", "enum": ["EXACT_SESSION_TOTAL", "ESTIMATED_SESSION_TOTAL", "EMBEDDED_COMPONENTS"] },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/component" }
+    }
+  },
+  "required": ["metadata", "workoutDefinitionRef", "doseCategory", "distanceAccountingMode", "components"],
+  "additionalProperties": false,
+  "$defs": {
+    "positiveQuantity": {
+      "type": "object",
+      "properties": {
+        "durationSeconds": { "type": "integer", "minimum": 1 },
+        "distanceMeters": { "type": "integer", "minimum": 1 },
+        "repetitionCount": { "type": "integer", "minimum": 2 }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["durationSeconds"], "not": { "required": ["distanceMeters"] } },
+        { "required": ["distanceMeters"], "not": { "required": ["durationSeconds"] } }
+      ]
+    },
+    "recoveryQuantity": {
+      "type": "object",
+      "properties": {
+        "durationSeconds": { "type": "integer", "minimum": 1 },
+        "distanceMeters": { "type": "integer", "minimum": 1 },
+        "mode": { "type": "string", "enum": ["JOG", "WALK", "STATIONARY"] }
+      },
+      "required": ["mode"],
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["durationSeconds"], "not": { "required": ["distanceMeters"] } },
+        { "required": ["distanceMeters"], "not": { "required": ["durationSeconds"] } }
+      ]
+    },
+    "intensityTarget": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["PACE_BASED", "EFFORT_BASED", "HEART_RATE_BASED"] },
+        "paceDescriptorKey": { "type": "string", "minLength": 1 },
+        "effortDescriptorKey": { "type": "string", "minLength": 1 },
+        "heartRateZoneKey": { "type": "string", "minLength": 1 }
+      },
+      "required": ["mode"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "PACE_BASED" } } },
+          "then": { "required": ["paceDescriptorKey"], "not": { "anyOf": [{ "required": ["effortDescriptorKey"] }, { "required": ["heartRateZoneKey"] }] } }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "EFFORT_BASED" } } },
+          "then": { "required": ["effortDescriptorKey"], "not": { "anyOf": [{ "required": ["paceDescriptorKey"] }, { "required": ["heartRateZoneKey"] }] } }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "HEART_RATE_BASED" } } },
+          "then": { "required": ["heartRateZoneKey"], "not": { "anyOf": [{ "required": ["paceDescriptorKey"] }, { "required": ["effortDescriptorKey"] }] } }
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "properties": {
+        "sequenceOrder": { "type": "integer", "minimum": 1 },
+        "componentType": { "type": "string", "enum": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"] },
+        "structureMode": { "type": "string", "enum": ["CONTINUOUS", "REPEATED"] },
+        "workQuantity": { "$ref": "#/$defs/positiveQuantity" },
+        "recoveryQuantity": { "$ref": "#/$defs/recoveryQuantity" },
+        "intensityTarget": { "$ref": "#/$defs/intensityTarget" }
+      },
+      "required": ["sequenceOrder", "componentType", "structureMode", "workQuantity", "intensityTarget"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "structureMode": { "const": "CONTINUOUS" } } },
+          "then": {
+            "not": { "required": ["recoveryQuantity"] },
+            "properties": { "workQuantity": { "not": { "required": ["repetitionCount"] } } }
+          }
+        },
+        {
+          "if": { "properties": { "structureMode": { "const": "REPEATED" } } },
+          "then": {
+            "required": ["recoveryQuantity"],
+            "properties": { "workQuantity": { "required": ["repetitionCount"] } }
+          }
+        }
+      ]
+    }
+  }
+}

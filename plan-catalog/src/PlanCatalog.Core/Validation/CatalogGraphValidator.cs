@@ -27,6 +27,7 @@ public static class CatalogGraphValidator
         CheckDuplicateKeyVersion(DocumentTypes.WorkoutProgression, snapshot.WorkoutProgressions.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.ProgressionModifier, snapshot.ProgressionModifiers.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.WorkoutDefinition, snapshot.Workouts.Select(x => x.Metadata), issues);
+        CheckDuplicateKeyVersion(DocumentTypes.WorkoutPrescriptionProfile, snapshot.PrescriptionProfiles.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.RuntimeConditionValueRegistry, snapshot.RuntimeConditionValueRegistries.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.PeakVolumeBandPolicy, snapshot.PeakVolumeBandPolicies.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.RulePack, snapshot.RulePacks.Select(x => x.Metadata), issues);
@@ -87,6 +88,12 @@ public static class CatalogGraphValidator
         foreach (var workout in snapshot.Workouts)
         {
             issues.AddRange(WorkoutDefinitionValidator.Validate(workout).Issues);
+        }
+
+        foreach (var profile in snapshot.PrescriptionProfiles)
+        {
+            var workout = snapshot.FindWorkout(profile.WorkoutDefinitionRef.Key, profile.WorkoutDefinitionRef.Version);
+            issues.AddRange(WorkoutPrescriptionProfileValidator.Validate(profile, workout).Issues);
         }
 
         foreach (var registry in snapshot.RuntimeConditionValueRegistries)

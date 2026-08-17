@@ -14,6 +14,7 @@ public sealed record CatalogSourceSnapshot
     public required IReadOnlyList<WorkoutProgressionDefinition> WorkoutProgressions { get; init; }
     public required IReadOnlyList<ProgressionModifierDefinition> ProgressionModifiers { get; init; }
     public required IReadOnlyList<WorkoutDefinition> Workouts { get; init; }
+    public IReadOnlyList<WorkoutPrescriptionProfile> PrescriptionProfiles { get; init; } = [];
     public required IReadOnlyList<RuntimeConditionValueRegistryDefinition> RuntimeConditionValueRegistries { get; init; }
     public required IReadOnlyList<PeakVolumeBandPolicy> PeakVolumeBandPolicies { get; init; }
     public required IReadOnlyList<RulePackDefinition> RulePacks { get; init; }
@@ -63,6 +64,10 @@ public sealed record CatalogSourceSnapshot
     public WorkoutDefinition? FindWorkout(string key, int version) =>
         Workouts.FirstOrDefault(x => x.Metadata.Key == key && x.Metadata.Version == version);
 
+    /// <summary>Exact profile lookup only; no latest/highest fallback exists.</summary>
+    public WorkoutPrescriptionProfile? FindPrescriptionProfile(string key, int version) =>
+        PrescriptionProfiles.FirstOrDefault(x => x.Metadata.Key == key && x.Metadata.Version == version);
+
     /// <summary>Exact lookup that throws if the referenced workout does not exist in source.</summary>
     public WorkoutDefinition GetRequiredWorkout(string key, int version) =>
         FindWorkout(key, version) ?? throw new InvalidOperationException($"Workout '{key}' v{version} was not found in the source catalog.");
@@ -85,6 +90,7 @@ public sealed record CatalogSourceSnapshot
         Contracts.DocumentTypes.WorkoutProgression => FindWorkoutProgression(r)?.Metadata.Status,
         Contracts.DocumentTypes.ProgressionModifier => FindProgressionModifier(r)?.Metadata.Status,
         Contracts.DocumentTypes.WorkoutDefinition => Workouts.FirstOrDefault(x => x.Metadata.Key == r.Key && x.Metadata.Version == r.Version)?.Metadata.Status,
+        Contracts.DocumentTypes.WorkoutPrescriptionProfile => FindPrescriptionProfile(r.Key, r.Version)?.Metadata.Status,
         Contracts.DocumentTypes.RuntimeConditionValueRegistry => FindRuntimeConditionValueRegistry(r)?.Metadata.Status,
         Contracts.DocumentTypes.PeakVolumeBandPolicy => FindPeakVolumeBandPolicy(r)?.Metadata.Status,
         Contracts.DocumentTypes.RulePack => FindRulePack(r)?.Metadata.Status,

@@ -12,6 +12,7 @@ public static class SchemaFileMap
         [DocumentTypes.WorkoutProgression] = "workout-progression.schema.json",
         [DocumentTypes.ProgressionModifier] = "progression-modifier.schema.json",
         [DocumentTypes.WorkoutDefinition] = "workout-definition.schema.json",
+        [DocumentTypes.WorkoutPrescriptionProfile] = "workout-prescription-profile.schema.json",
         [DocumentTypes.RuntimeConditionValueRegistry] = "runtime-condition-value-registry.schema.json",
         [DocumentTypes.PeakVolumeBandPolicy] = "peak-volume-band-policy.schema.json",
         [DocumentTypes.RulePack] = "rule-pack.schema.json",
