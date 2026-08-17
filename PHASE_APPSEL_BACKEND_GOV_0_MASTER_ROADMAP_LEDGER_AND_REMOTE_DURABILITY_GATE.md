@@ -128,23 +128,37 @@ Created at repo root with all 15 required sections (Backend V1 Scope, Current Ca
 
 ## 14. Governance commit SHA
 
-Recorded after commit (§16 below).
+`28b1097a05e560bbb9acd10c7d7c776e2a71a6e5` — `docs(governance): bootstrap backend roadmap and phase ledger` (3 files changed, 515 insertions: `MASTER_ROADMAP.md`, `PHASE_LEDGER.md`, this report).
 
 ## 15. Push dry-run result
 
-Recorded in §16/§17 below (performed as part of the same tool sequence as the actual push, both logged).
+```
+git push --dry-run origin main
+To https://github.com/fatmavatansevrr/runner.git
+   fe85044..28b1097  main -> main
+```
+Plain fast-forward, expected refs only (`main -> main`), no force required. Clean.
 
 ## 16. Push result
 
-Recorded below.
+```
+git push origin main
+To https://github.com/fatmavatansevrr/runner.git
+   fe85044..28b1097  main -> main
+```
+Succeeded, no force, no new branch created.
 
 ## 17. Remote HEAD after push
 
-Recorded below.
+Post-push `git fetch --prune` then `git rev-parse @{u}` → `28b1097a05e560bbb9acd10c7d7c776e2a71a6e5`, identical to local HEAD. `git merge-base --is-ancestor 28b1097... @{u}` → confirmed the governance gate commit is reachable from `origin/main`.
 
 ## 18. Final ahead/behind
 
-Recorded below.
+```
+git rev-list --left-right --count @{u}...HEAD
+0   0
+```
+Zero behind, zero ahead — full convergence, the required durability-gate outcome.
 
 ## 19. Remaining unrelated dirty files
 
@@ -156,4 +170,10 @@ Recorded below.
 
 ## 21. Final classification
 
-Recorded below, after push verification (§16-18) completes.
+```
+APPSEL_BACKEND_GOVERNANCE_BASELINE_PUSHED_AND_LEDGER_BOOTSTRAPPED
+```
+
+All conditions met: repository safety audited before any change; remote fetched with no merge/rebase/reset; all 44 pre-existing unpushed commits attributed (`SafeToPush: YES`, zero `UNKNOWN`); `PHASE_LEDGER.md` and `MASTER_ROADMAP.md` created at repo root with real, `git ls-files`-verified report links and no invented classifications; a single atomic governance commit (`28b1097`) carrying only the three governance files; clean dry-run; clean actual push with no force; post-push verification shows local HEAD == remote HEAD == `28b1097a05e560bbb9acd10c7d7c776e2a71a6e5` with `0 behind / 0 ahead`. `baseline_tmp` remains the only unrelated dirty entry, untouched throughout, per instruction.
+
+Per this phase's own Hard Exit Rule: **no production phase (`FREQ.6D.3D`, `FREQ.6D.4`, or any other) was begun by this prompt.** The next phase must be selected from `MASTER_ROADMAP.md` + `PHASE_LEDGER.md`'s repository-backed state (§20 above: `FREQ.6D.3D`, parent `FREQ.6D.3C` `VERIFIED`).
