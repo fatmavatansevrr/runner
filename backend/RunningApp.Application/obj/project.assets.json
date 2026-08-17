@@ -327,6 +327,16 @@
           }
         }
       },
+      "PlanCatalog.Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        }
+      },
       "RunningApp.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -864,6 +874,11 @@
         "postgresql.png"
       ]
     },
+    "PlanCatalog.Contracts/1.0.0": {
+      "type": "project",
+      "path": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj",
+      "msbuildProject": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj"
+    },
     "RunningApp.Domain/1.0.0": {
       "type": "project",
       "path": "../RunningApp.Domain/RunningApp.Domain.csproj",
@@ -884,6 +899,7 @@
     "net9.0": [
       "Microsoft.EntityFrameworkCore >= 9.0.1",
       "Microsoft.Extensions.Hosting.Abstractions >= 9.0.1",
+      "PlanCatalog.Contracts >= 1.0.0",
       "RunningApp.Domain >= 1.0.0",
       "RunningApp.Persistence >= 1.0.0"
     ]
@@ -925,6 +941,9 @@
             },
             "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Persistence\\RunningApp.Persistence.csproj": {
               "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\backend\\RunningApp.Persistence\\RunningApp.Persistence.csproj"
+            },
+            "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Contracts\\PlanCatalog.Contracts.csproj": {
+              "projectPath": "C:\\Users\\vatan\\Desktop\\runner\\plan-catalog\\src\\PlanCatalog.Contracts\\PlanCatalog.Contracts.csproj"
             }
           }
         }

@@ -1205,12 +1205,23 @@
           "buildTransitive/net6.0/_._": {}
         }
       },
+      "PlanCatalog.Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PlanCatalog.Contracts.dll": {}
+        }
+      },
       "RunningApp.Application/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "9.0.1",
           "Microsoft.Extensions.Hosting.Abstractions": "9.0.1",
+          "PlanCatalog.Contracts": "1.0.0",
           "RunningApp.Domain": "1.0.0",
           "RunningApp.Persistence": "1.0.0"
         },
@@ -3724,6 +3735,11 @@
         "system.threading.channels.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "PlanCatalog.Contracts/1.0.0": {
+      "type": "project",
+      "path": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj",
+      "msbuildProject": "../../plan-catalog/src/PlanCatalog.Contracts/PlanCatalog.Contracts.csproj"
     },
     "RunningApp.Application/1.0.0": {
       "type": "project",

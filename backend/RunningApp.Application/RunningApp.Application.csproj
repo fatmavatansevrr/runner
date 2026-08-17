@@ -3,6 +3,10 @@
   <ItemGroup>
     <ProjectReference Include="..\RunningApp.Domain\RunningApp.Domain.csproj" />
     <ProjectReference Include="..\RunningApp.Persistence\RunningApp.Persistence.csproj" />
+    <!-- Phase 10K-FREQ.6D.3D: the immutable Process A->B execution-value boundary only.
+         RunningApp.Application MUST NOT reference PlanCatalog.Core or PlanCatalog.Infrastructure
+         (authoring/projection authorities) - see RunningAppPlanCatalogDependencyTests. -->
+    <ProjectReference Include="..\..\plan-catalog\src\PlanCatalog.Contracts\PlanCatalog.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

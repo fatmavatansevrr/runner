@@ -228,3 +228,5 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catal
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\progression-modifiers\beginner-progression-modifier.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\policies\peak-volume-bands.v4.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\rule-packs\appsel-race-plan.v5.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\PlanCatalog.Contracts.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\PlanCatalog.Contracts.pdb
