@@ -147,7 +147,7 @@ FREQ.6D.4 now owns: Week × LaneOrdinal → exact progression stage → exact pr
 
 ## 26. Documentation/governance SHA
 
-Recorded after this report and ledger/roadmap updates are committed (§27/§28 below — reported once the commit exists, since a commit cannot embed its own SHA).
+`bb4ad2c804b94ec8f8e123025534784abe9f6a2c` — `docs(freq-6d): close RunningApp execution consumer phase`.
 
 ## 27. Ledger update result
 
