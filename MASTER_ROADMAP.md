@@ -28,16 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `IN_PROGRESS` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), schema+projector+RunningApp consumer implemented through FREQ.6D.3D; **not publicly active**, dual-KEY runtime/lane wiring (FREQ.6D.4) not yet started | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; **FREQ.6D.4 confirmed blocked** (`FREQ6D4_BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY`) — zero real WorkoutPrescriptionProfile content exists for any of the 8 required Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots; **not publicly active** | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.3D` — Execution Status `DONE`, Final Classification `FREQ6D3D_RUNNINGAPP_EXECUTION_CONSUMER_IMPLEMENTED` (RunningApp.Application consumes profile-backed `ExecutableWorkoutPrescription` losslessly via `PlanCatalog.Contracts` only, exact-reference lookup seam proven; production profile wiring and dual-KEY lane selection remain FREQ.6D.4's scope).
+**Latest verified completed phase**: `FREQ.6D.4` — Execution Status `DONE` (assessment/gate phase completed), Final Classification `FREQ6D4_BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY`. A fresh, current repository re-check (not reliance on FREQ.6's older text) reconfirms zero real `WorkoutPrescriptionProfile` content exists for any of the 8 required Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots. No engineering code was written this phase — the already-complete FREQ.6D.1-3D machinery is untouched and ready to receive real content.
 
-**Next phase per repository-backed sequencing** (stated explicitly in FREQ.6D.3A's own roadmap and FREQ.6D.3D's own "6D.4 exact input contract" section): `FREQ.6D.4` — dual-KEY progression/runtime integration: Week × LaneOrdinal → exact progression stage → exact profile reference, wired into FREQ.6D.3D's `ExecutionPrescriptionIndex.ResolveExact` seam, plus the 5D severity-table widening confirmed required by FREQ.6D.1B and the two additive `TrainingDay` persistence columns. Its parent (`FREQ.6D.3D`) is `VERIFIED` in the ledger.
+**Next phase per repository-backed sequencing**: **not** `FREQ.6D.5` (its own input contract, per FREQ.6D.4's report §25, is unmet) and **not** a resumed `FREQ.6D.4` implementation attempt (no new engineering work would close this gap). The real next step is a **new content-authoring/governance phase** (not yet named/ledgered — do not invent a Phase ID for it per this roadmap's own §13/§11 rules) that authors and freezes real `WorkoutPrescriptionProfile` artifacts for all 8 required slots per FREQ.6 §11's already-approved purposes and FREQ.6C's already-approved numeric envelope. Only once that content exists and is ledgered does `FREQ.6D.4`'s full implementation scope become executable.
 
 ---
 
@@ -183,13 +183,15 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` row 58 and this file §2/§5) confirms `FREQ.6D.3D` is real and `DONE`. The real near-term sequence, per FREQ.6D.3A's own roadmap and FREQ.6D.3D's own downstream-contract section, is:
+Repository evidence (see `PHASE_LEDGER.md` row 59) confirms `FREQ.6D.4` ran its mandatory pre-authoring capability gate and is `BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY` — real, current repository state (zero `WorkoutPrescriptionProfile` artifacts, zero dosed FARTLEK/THRESHOLD_TEMPO components, zero Foundation/Taper-eligible KEY identities) confirms this is not a stale/inherited finding. The real near-term sequence is now:
 
 ```
-FREQ.6D.4   → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
-FREQ.6D.5   → integrated regression closure
-FREQ.7      → first real Intermediate×5D candidate
-FREQ.8      → 5D activation decision
+[content-authoring/governance phase, not yet ledgered] → author + freeze real WorkoutPrescriptionProfile content
+                                                            for Foundation/Build/RaceSpecific/Taper KEY1/KEY2 (8 slots)
+FREQ.6D.4 (resumed)  → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
+FREQ.6D.5            → integrated regression closure
+FREQ.7               → first real Intermediate×5D candidate
+FREQ.8               → 5D activation decision
 ```
 
 Then (capability milestones, no Phase IDs yet):
