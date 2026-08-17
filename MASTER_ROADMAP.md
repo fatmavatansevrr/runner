@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4` — Execution Status `DONE` (assessment/gate phase completed), Final Classification `FREQ6D4_BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY`. A fresh, current repository re-check (not reliance on FREQ.6's older text) reconfirms zero real `WorkoutPrescriptionProfile` content exists for any of the 8 required Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots. No engineering code was written this phase — the already-complete FREQ.6D.1-3D machinery is untouched and ready to receive real content.
+**Latest verified completed phase**: `FREQ.6D.4A` — Execution Status `DONE`, Final Classification `FREQ6D4A_EVIDENCE_COMPLETE_WITH_CATALOG_CAPABILITY_GAPS`. Real evidence (repository-internal FREQ.5/6/6A/6B/6C plus freshly-fetched external sources: Hal Higdon's Intermediate 10K program's exact interval/tempo prescriptions, McMillan's structured-fartlek convention, and taper interval-reduction coaching literature) was synthesized into an envelope for all 8 Foundation/Build/RaceSpecific/Taper × Primary/SecondaryControlled slots. 7 of 8 slots have a candidate `WorkoutDefinition` identity and at least a directional prescription envelope; `TAP-S` ("economy/strides sharpening") has no clean existing-identity match and remains a genuinely open identity question. No final production value was selected — a full 18-item decision inventory (D1-D18) was produced for the next DECISION phase.
 
-**Next phase per repository-backed sequencing**: **not** `FREQ.6D.5` (its own input contract, per FREQ.6D.4's report §25, is unmet) and **not** a resumed `FREQ.6D.4` implementation attempt (no new engineering work would close this gap). The real next step is a **new content-authoring/governance phase** (not yet named/ledgered — do not invent a Phase ID for it per this roadmap's own §13/§11 rules) that authors and freezes real `WorkoutPrescriptionProfile` artifacts for all 8 required slots per FREQ.6 §11's already-approved purposes and FREQ.6C's already-approved numeric envelope. Only once that content exists and is ledgered does `FREQ.6D.4`'s full implementation scope become executable.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4B` (not yet ledgered) — a DECISION-type phase that resolves the D1-D18 inventory from `FREQ.6D.4A`'s report (exact prescription values, TAP-S identity choice, catalog-eligibility-extension mechanism for FND-P/FND-S/TAP-P) and freezes the production `WorkoutPrescriptionProfile` content. Only once `FREQ.6D.4B` closes does `FREQ.6D.4`'s full engineering implementation scope (§§2-45 of its own prompt) become executable.
 
 ---
 
@@ -183,15 +183,15 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` row 59) confirms `FREQ.6D.4` ran its mandatory pre-authoring capability gate and is `BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY` — real, current repository state (zero `WorkoutPrescriptionProfile` artifacts, zero dosed FARTLEK/THRESHOLD_TEMPO components, zero Foundation/Taper-eligible KEY identities) confirms this is not a stale/inherited finding. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-60) confirms `FREQ.6D.4` was blocked and `FREQ.6D.4A` has now closed the evidence gap (not the content-freeze gap) for all 8 slots. The real near-term sequence is now:
 
 ```
-[content-authoring/governance phase, not yet ledgered] → author + freeze real WorkoutPrescriptionProfile content
-                                                            for Foundation/Build/RaceSpecific/Taper KEY1/KEY2 (8 slots)
-FREQ.6D.4 (resumed)  → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
-FREQ.6D.5            → integrated regression closure
-FREQ.7               → first real Intermediate×5D candidate
-FREQ.8               → 5D activation decision
+FREQ.6D.4B (not yet ledgered) → DECISION phase: resolve the D1-D18 inventory, select exact production
+                                  WorkoutPrescriptionProfile values, resolve TAP-S identity
+FREQ.6D.4 (resumed)           → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
+FREQ.6D.5                     → integrated regression closure
+FREQ.7                        → first real Intermediate×5D candidate
+FREQ.8                        → 5D activation decision
 ```
 
 Then (capability milestones, no Phase IDs yet):

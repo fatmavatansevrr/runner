@@ -83,7 +83,9 @@ A repository-wide inventory found **239** tracked root-level phase/checkpoint/go
 
 | 59 | FREQ.6D.4 | IMPLEMENTATION | DONE (assessment/gate completed; no implementation performed) | `FREQ6D4_BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY` | *(none — no code written)* | adcc60b | [PHASE_10K_FREQ_6D_4_INTERMEDIATE_5D_DUAL_KEY_INTEGRATION_IMPLEMENTATION.md](PHASE_10K_FREQ_6D_4_INTERMEDIATE_5D_DUAL_KEY_INTEGRATION_IMPLEMENTATION.md) | FREQ.6D.3D | Mandatory pre-authoring catalog-capability re-check (fresh repo read, not memory) reconfirms zero production WorkoutPrescriptionProfile content exists for any of the 8 required Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots — phase's own Stop Condition #1 triggered before any engineering work began | VERIFIED |
 
-**Not yet started (repository-confirmed — no report file exists for any of these):** `FREQ.6D.5`, `FREQ.7`, `FREQ.8`. **`FREQ.6D.4` is `DONE` as an assessment/gate phase, blocked as documented — its full implementation scope (§§2-45) remains unexecuted pending a new content-authoring phase.**
+| 60 | FREQ.6D.4A | EVIDENCE | DONE | `FREQ6D4A_EVIDENCE_COMPLETE_WITH_CATALOG_CAPABILITY_GAPS` | *(none — evidence only)* | *(recorded on next commit)* | [PHASE_10K_FREQ_6D_4A_INTERMEDIATE_5D_PRODUCTION_PRESCRIPTION_CONTENT_EVIDENCE.md](PHASE_10K_FREQ_6D_4A_INTERMEDIATE_5D_PRODUCTION_PRESCRIPTION_CONTENT_EVIDENCE.md) | FREQ.6D.4 | Evidence envelope synthesized for all 8 Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots (real Hal Higdon program re-fetched for exact interval/tempo detail, McMillan fartlek convention, taper-reduction literature); 7/8 slots have a candidate identity + envelope, TAP-S identity itself remains open; 18-item decision inventory produced for FREQ.6D.4B | VERIFIED |
+
+**Not yet started (repository-confirmed — no report file exists for any of these):** `FREQ.6D.4B`, `FREQ.6D.5`, `FREQ.7`, `FREQ.8`. **`FREQ.6D.4` remains blocked on production profile content authority; `FREQ.6D.4A` closes the evidence gap but does not select final values — `FREQ.6D.4B` (a DECISION phase, not yet ledgered) is the next real step.**
 
 ---
 
