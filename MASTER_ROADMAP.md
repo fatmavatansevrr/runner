@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4A` — Execution Status `DONE`, Final Classification `FREQ6D4A_EVIDENCE_COMPLETE_WITH_CATALOG_CAPABILITY_GAPS`. Real evidence (repository-internal FREQ.5/6/6A/6B/6C plus freshly-fetched external sources: Hal Higdon's Intermediate 10K program's exact interval/tempo prescriptions, McMillan's structured-fartlek convention, and taper interval-reduction coaching literature) was synthesized into an envelope for all 8 Foundation/Build/RaceSpecific/Taper × Primary/SecondaryControlled slots. 7 of 8 slots have a candidate `WorkoutDefinition` identity and at least a directional prescription envelope; `TAP-S` ("economy/strides sharpening") has no clean existing-identity match and remains a genuinely open identity question. No final production value was selected — a full 18-item decision inventory (D1-D18) was produced for the next DECISION phase.
+**Latest verified completed phase**: `FREQ.6D.4B` — Execution Status `DONE`, Final Classification `FREQ6D4B_PRODUCTION_PRESCRIPTION_POLICY_APPROVED`. All 8 Foundation/Build/RaceSpecific/Taper × Primary/SecondaryControlled slots now have an exact, frozen executable prescription (WorkoutDefinition identity/version, StructureMode, work/repetition/recovery values, intensity mode+descriptor, DoseCategory, DistanceAccountingMode). `TAP-S` resolved to reuse `FARTLEK` (no new WorkoutDefinition identity required anywhere). 4 WorkoutDefinition versioned eligibility extensions and 8 distinct new `WorkoutPrescriptionProfile` documents are specified in a dependency-ordered implementation manifest. KEY2-floor `PROVEN_UNREACHABLE` finding re-confirmed unaffected by the exact selections. No production code, schema, or catalog JSON was authored this phase.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4B` (not yet ledgered) — a DECISION-type phase that resolves the D1-D18 inventory from `FREQ.6D.4A`'s report (exact prescription values, TAP-S identity choice, catalog-eligibility-extension mechanism for FND-P/FND-S/TAP-P) and freezes the production `WorkoutPrescriptionProfile` content. Only once `FREQ.6D.4B` closes does `FREQ.6D.4`'s full engineering implementation scope (§§2-45 of its own prompt) become executable.
+**Next phase per repository-backed sequencing**: a coherent **`IMPLEMENTATION`**-type phase (tentatively `FREQ.6D.4C`, not yet ledgered — per this roadmap's own rule, not a real Phase ID until its prompt/report exists) that authors the 4 WorkoutDefinition version bumps and 8 profile documents exactly per `FREQ.6D.4B`'s manifest, followed by `FREQ.6D.4`'s own resumed dual-lane progression/persistence/adaptation engineering scope (including the D18 KEY2-floor protective test).
 
 ---
 
@@ -183,15 +183,17 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-60) confirms `FREQ.6D.4` was blocked and `FREQ.6D.4A` has now closed the evidence gap (not the content-freeze gap) for all 8 slots. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-61) confirms `FREQ.6D.4` was blocked, `FREQ.6D.4A` closed the evidence gap, and `FREQ.6D.4B` has now frozen exact production prescription decisions for all 8 slots. The real near-term sequence is now:
 
 ```
-FREQ.6D.4B (not yet ledgered) → DECISION phase: resolve the D1-D18 inventory, select exact production
-                                  WorkoutPrescriptionProfile values, resolve TAP-S identity
-FREQ.6D.4 (resumed)           → dual-KEY progression/runtime integration, 5D severity-table widening, persistence lineage
-FREQ.6D.5                     → integrated regression closure
-FREQ.7                        → first real Intermediate×5D candidate
-FREQ.8                        → 5D activation decision
+FREQ.6D.4C (tentative, not yet ledgered) → IMPLEMENTATION: 4 WorkoutDefinition version bumps
+                                             + 8 WorkoutPrescriptionProfile documents, exactly per
+                                             FREQ.6D.4B's manifest
+FREQ.6D.4 (resumed)                      → dual-KEY progression/runtime integration, 5D severity-table
+                                             widening, persistence lineage, D18 KEY2-floor test
+FREQ.6D.5                                → integrated regression closure
+FREQ.7                                   → first real Intermediate×5D candidate
+FREQ.8                                   → 5D activation decision
 ```
 
 Then (capability milestones, no Phase IDs yet):
