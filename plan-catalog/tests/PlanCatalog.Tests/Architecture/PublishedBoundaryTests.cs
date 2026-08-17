@@ -80,6 +80,10 @@ public sealed class PublishedBoundaryTests
             "CatalogArtifactReference",
             "PublishedTemplateBundle",
             "CatalogReleaseManifest",
+            "ExecutableWorkoutPrescription", "ExecutablePrescriptionComponent", "ExecutableWorkQuantity",
+            "ExecutableRecovery", "ExecutableIntensityTarget", "ExecutableWorkoutPrescriptionValidator",
+            "ExecutablePrescriptionStructureMode", "ExecutableQuantityUnit", "ExecutableRecoveryMode",
+            "ExecutableRecoveryPlacement", "ExecutableIntensityMode", "ExecutablePrescriptionDoseCategory",
             "UnconfirmedContentWarning",
             "ReleaseChannel",
             // Stable shared enums referenced by published/authoring shapes alike.
@@ -95,5 +99,13 @@ public sealed class PublishedBoundaryTests
             .ToList();
 
         Assert.Empty(unexpected);
+    }
+
+    [Fact]
+    public void Contracts_ExecutionBoundary_ContainsNoAuthoringOrSelectionTypes()
+    {
+        var forbidden = new[] { "WorkoutPrescriptionProfile", "WorkoutPrescriptionProfileValidator", "ProfileRepository", "ProfileSelector", "Latest", "Nearest", "LaneOrdinal", "Key1", "Key2" };
+        Assert.DoesNotContain(ContractsPublicTypes(), type => forbidden.Any(token => type.Name.Contains(token, StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(ContractsPublicTypes(), type => type.Name.Contains("5D", StringComparison.OrdinalIgnoreCase));
     }
 }

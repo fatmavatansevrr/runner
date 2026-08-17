@@ -15,6 +15,7 @@
     "runtimeConditionValueRegistry": { "$ref": "#/$defs/artifactReference" },
     "peakVolumeBandPolicy": { "$ref": "#/$defs/artifactReference" },
     "workouts": { "type": "array", "items": { "$ref": "#/$defs/artifactReference" } },
+    "executionPrescriptions": { "type": "array", "items": { "$ref": "#/$defs/executablePrescription" } },
     "bundleContentHash": { "type": "string" }
   },
   "required": [
@@ -32,6 +33,73 @@
         "contentHash": { "type": "string" }
       },
       "required": ["documentType", "key", "version", "contentHash"]
+    },
+    "quantity": {
+      "type": "object",
+      "properties": {
+        "unit": { "type": "string", "enum": ["SECONDS", "METERS"] },
+        "value": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["unit", "value"],
+      "additionalProperties": false
+    },
+    "intensity": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["PACE_BASED", "EFFORT_BASED", "HEART_RATE_BASED"] },
+        "descriptorKey": { "type": "string", "minLength": 1 }
+      },
+      "required": ["mode", "descriptorKey"],
+      "additionalProperties": false
+    },
+    "recovery": {
+      "type": "object",
+      "properties": {
+        "unit": { "type": "string", "enum": ["SECONDS", "METERS"] },
+        "value": { "type": "integer", "minimum": 1 },
+        "mode": { "type": "string", "enum": ["JOG", "WALK", "STATIONARY"] },
+        "placement": { "type": "string", "enum": ["BETWEEN_REPETITIONS", "AFTER_EACH_REPETITION"] },
+        "recoveryCount": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["unit", "value", "mode", "placement", "recoveryCount"],
+      "additionalProperties": false
+    },
+    "executableComponent": {
+      "type": "object",
+      "properties": {
+        "sequenceOrder": { "type": "integer", "minimum": 1 },
+        "componentType": { "type": "string", "enum": ["WARM_UP", "MAIN_SET", "RECOVERY", "COOL_DOWN"] },
+        "structureMode": { "type": "string", "enum": ["CONTINUOUS", "REPEATED"] },
+        "work": { "$ref": "#/$defs/quantity" },
+        "repetitionCount": { "type": "integer", "minimum": 2 },
+        "recovery": { "$ref": "#/$defs/recovery" },
+        "intensity": { "$ref": "#/$defs/intensity" }
+      },
+      "required": ["sequenceOrder", "componentType", "structureMode", "work", "intensity"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "structureMode": { "const": "CONTINUOUS" } } },
+          "then": { "not": { "anyOf": [{ "required": ["repetitionCount"] }, { "required": ["recovery"] }] } }
+        },
+        {
+          "if": { "properties": { "structureMode": { "const": "REPEATED" } } },
+          "then": { "required": ["repetitionCount", "recovery"] }
+        }
+      ]
+    },
+    "executablePrescription": {
+      "type": "object",
+      "properties": {
+        "contractSchemaVersion": { "const": 1 },
+        "sourceProfile": { "$ref": "#/$defs/artifactReference" },
+        "sourceWorkout": { "$ref": "#/$defs/artifactReference" },
+        "doseCategory": { "type": "string", "enum": ["PRIMARY", "SECONDARY_CONTROLLED"] },
+        "distanceAccountingMode": { "type": "string", "enum": ["EXACT_SESSION_TOTAL", "ESTIMATED_SESSION_TOTAL", "EMBEDDED_COMPONENTS"] },
+        "components": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/executableComponent" } }
+      },
+      "required": ["contractSchemaVersion", "sourceProfile", "sourceWorkout", "doseCategory", "distanceAccountingMode", "components"],
+      "additionalProperties": false
     }
   }
 }

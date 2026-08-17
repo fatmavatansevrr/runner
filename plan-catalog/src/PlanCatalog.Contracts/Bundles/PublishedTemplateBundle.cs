@@ -1,4 +1,5 @@
 using PlanCatalog.Contracts.References;
+using PlanCatalog.Contracts.Prescriptions;
 
 namespace PlanCatalog.Contracts.Bundles;
 
@@ -18,6 +19,9 @@ public sealed record PublishedTemplateBundle
     public required CatalogArtifactReference PeakVolumeBandPolicy { get; init; }
 
     public required IReadOnlyList<CatalogArtifactReference> Workouts { get; init; }
+
+    /// <summary>Null for legacy bundles; present when resolved profile-backed execution is declared.</summary>
+    public IReadOnlyList<ExecutableWorkoutPrescription>? ExecutionPrescriptions { get; init; }
 
     public required string BundleContentHash { get; init; }
 }
