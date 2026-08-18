@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4B.2` — Execution Status `DONE`, Final Classification `FREQ6D4B2_ARCHITECTURE_APPROVED_WITH_PRODUCT_REF_AMENDMENT_REQUIRED`. R1 is selected: inter-repetition recovery is owned solely by the Repeated MAIN_SET; a WorkoutDefinition must not also expose the same effort as a positive structural RECOVERY component. The current profile schema/projector remain unchanged. Validated FARTLEK v4 stays immutable; DRAFT v5 is the correction target. TAP-S retains v5, while BLD-S requires a narrow v4→v5 product-reference amendment. FC7 is closed, FC8/FC9 are not applicable and FC10's no-double-count invariant is frozen.
+**Latest verified completed phase**: `FREQ.6D.4B.3` — Execution Status `DONE`, Final Classification `FREQ6D4B3_PRODUCT_POLICY_APPROVED_WITH_BLD_S_V5_REFERENCE_AMENDMENT`. All remaining full-component product choices are frozen: every profile uses WARM_UP Continuous 600s EffortBased/`EASY` and COOL_DOWN Continuous 300s EffortBased/`EASY`, invariant across phase and lane. R1 remains binding, FC8/FC9 are not applicable, FC10 retains `EstimatedSessionTotal` with recovery visible once, BLD-S is amended v4→corrected FARTLEK v5, and every other exact reference is preserved. All eight profiles now have complete athlete-facing authority.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4B.3` — select the still-open warm-up/cooldown product defaults FC1–FC6, approve the narrow BLD-S FARTLEK v4→v5 reference amendment and finish the product-facing portion of FC10. A dedicated skeleton/validator implementation must then execute the approved R1 architecture before `FREQ.6D.4C.3` can retry profile authoring. The DRAFT→VALIDATED/legacy-resolver question remains a separate prerequisite before real publication.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4B.4` (`IMPLEMENTATION`) — correct the affected DRAFT skeletons, contain WorkoutDefinition validation without invalidating historical v4, apply the approved BLD-S v5 exact-reference amendment and add no-double-count/all-eight representability regressions. Gate B remote durability must pass before this implementation begins. `FREQ.6D.4C.3` remains blocked until 4B.4 passes; DRAFT→VALIDATED/legacy-resolver safety remains separate before publication.
 
 ---
 
@@ -196,9 +196,12 @@ FREQ.6D.4B.1 (DONE)             → EVIDENCE: all full-component fields inventor
                                     with nested-recovery ownership in the current model.
 FREQ.6D.4B.2 (DONE)             → ARCHITECTURE: R1 selected; nested MAIN_SET recovery is sole owner;
                                     BLD-S v4→v5 product-reference amendment required.
-FREQ.6D.4B.3 (next)             → PRODUCT DECISION: close FC1-FC6, reference amendment and FC10.
-[implementation required]       → correct DRAFT skeletons + WorkoutDefinition validation/tests.
-FREQ.6D.4C.3 (blocked)          → author all 8 profiles only after decision + implementation
+FREQ.6D.4B.3 (DONE)             → PRODUCT DECISION: WU=600s EASY, CD=300s EASY; BLD-S→v5;
+                                    FC1-FC10 complete, no athlete-facing implementation choice.
+Gate B (mandatory)              → commit + remote durability verification before implementation.
+FREQ.6D.4B.4 (next)             → IMPLEMENTATION: correct DRAFT skeletons, validation containment,
+                                    BLD-S reference and no-double-count/all-eight tests.
+FREQ.6D.4C.3 (blocked)          → author all 8 profiles only after 4B.4 passes
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
 FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
