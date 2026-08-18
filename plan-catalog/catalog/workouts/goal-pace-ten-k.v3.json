@@ -10,6 +10,7 @@
   "complexityTier": 2,
   "eligiblePhases": ["RACE_SPECIFIC", "TAPER"],
   "allowedPrescriptionModes": ["PACE_BASED"],
+  "allowedDistanceAccountingModes": ["ESTIMATED_SESSION_TOTAL"],
   "components": [
     { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
     { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "GOAL_PACE" },

@@ -265,6 +265,7 @@ public sealed class CatalogPublisher(
         WorkoutProgressions = snapshot.WorkoutProgressions.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
         ProgressionModifiers = snapshot.ProgressionModifiers.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
         Workouts = snapshot.Workouts.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
+        CapabilityOverlays = snapshot.CapabilityOverlays.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
         RuntimeConditionValueRegistries = snapshot.RuntimeConditionValueRegistries.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
         PeakVolumeBandPolicies = snapshot.PeakVolumeBandPolicies.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),
         RulePacks = snapshot.RulePacks.Where(x => x.Metadata.Status != CatalogStatus.Draft).ToList(),

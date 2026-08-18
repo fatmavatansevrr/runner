@@ -15,6 +15,7 @@ public sealed record CatalogSourceSnapshot
     public required IReadOnlyList<ProgressionModifierDefinition> ProgressionModifiers { get; init; }
     public required IReadOnlyList<WorkoutDefinition> Workouts { get; init; }
     public IReadOnlyList<WorkoutPrescriptionProfile> PrescriptionProfiles { get; init; } = [];
+    public IReadOnlyList<WorkoutDefinitionCapabilityOverlay> CapabilityOverlays { get; init; } = [];
     public required IReadOnlyList<RuntimeConditionValueRegistryDefinition> RuntimeConditionValueRegistries { get; init; }
     public required IReadOnlyList<PeakVolumeBandPolicy> PeakVolumeBandPolicies { get; init; }
     public required IReadOnlyList<RulePackDefinition> RulePacks { get; init; }
@@ -68,6 +69,14 @@ public sealed record CatalogSourceSnapshot
     public WorkoutPrescriptionProfile? FindPrescriptionProfile(string key, int version) =>
         PrescriptionProfiles.FirstOrDefault(x => x.Metadata.Key == key && x.Metadata.Version == version);
 
+    /// <summary>
+    /// Exact capability-overlay lookup, keyed on the overlay's own (WorkoutDefinitionRef.Key,
+    /// WorkoutDefinitionRef.Version) — never by overlay key/version, never key-only, latest, highest,
+    /// family, phase, profile, or DoseCategory. No fallback exists.
+    /// </summary>
+    public WorkoutDefinitionCapabilityOverlay? FindCapabilityOverlay(string workoutKey, int workoutVersion) =>
+        CapabilityOverlays.FirstOrDefault(x => x.WorkoutDefinitionRef.Key == workoutKey && x.WorkoutDefinitionRef.Version == workoutVersion);
+
     /// <summary>Exact lookup that throws if the referenced workout does not exist in source.</summary>
     public WorkoutDefinition GetRequiredWorkout(string key, int version) =>
         FindWorkout(key, version) ?? throw new InvalidOperationException($"Workout '{key}' v{version} was not found in the source catalog.");
@@ -91,6 +100,7 @@ public sealed record CatalogSourceSnapshot
         Contracts.DocumentTypes.ProgressionModifier => FindProgressionModifier(r)?.Metadata.Status,
         Contracts.DocumentTypes.WorkoutDefinition => Workouts.FirstOrDefault(x => x.Metadata.Key == r.Key && x.Metadata.Version == r.Version)?.Metadata.Status,
         Contracts.DocumentTypes.WorkoutPrescriptionProfile => FindPrescriptionProfile(r.Key, r.Version)?.Metadata.Status,
+        Contracts.DocumentTypes.WorkoutDefinitionCapabilityOverlay => CapabilityOverlays.FirstOrDefault(x => x.Metadata.Key == r.Key && x.Metadata.Version == r.Version)?.Metadata.Status,
         Contracts.DocumentTypes.RuntimeConditionValueRegistry => FindRuntimeConditionValueRegistry(r)?.Metadata.Status,
         Contracts.DocumentTypes.PeakVolumeBandPolicy => FindPeakVolumeBandPolicy(r)?.Metadata.Status,
         Contracts.DocumentTypes.RulePack => FindRulePack(r)?.Metadata.Status,

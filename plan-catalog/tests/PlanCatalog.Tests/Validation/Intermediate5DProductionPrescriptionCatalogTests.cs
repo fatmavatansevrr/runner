@@ -13,7 +13,7 @@ namespace PlanCatalog.Tests.Validation;
 
 /// <summary>
 /// Phase 10K-FREQ.6D.4C — catalog tests for the four approved WorkoutDefinition
-/// versioned eligibility extensions (all real, authored, VALIDATED this phase),
+/// versioned eligibility extensions (all real, authored, DRAFT this phase),
 /// and the real, exact catalog-representability contradiction discovered while
 /// attempting to author the eight approved production WorkoutPrescriptionProfile
 /// documents. No profile documents were authored into the real catalog this
@@ -21,6 +21,16 @@ namespace PlanCatalog.Tests.Validation;
 /// runs against the REAL repository catalog (not synthetic fixtures) except
 /// where a test explicitly isolates one field via `with` to prove the
 /// contradiction is precisely scoped to that field and nothing else.
+///
+/// UPDATED IN FREQ.6D.4C.2: both root causes documented below were resolved by
+/// that phase (M4: removed the invalid PROFILE_INTENSITY_MODE_NOT_ALLOWED
+/// cross-check; M3: additive-only WorkoutDefinitionCapabilityOverlay for the
+/// genuine missing-metadata gap, plus direct completion of GOAL_PACE_TEN_K v3
+/// since it was still DRAFT/non-historical). The tests in sections 4-6 below
+/// are updated to assert the fixed, current behavior instead of the
+/// now-resolved blocker. See PrescriptionCapabilityMetadataOverlayTests.cs for
+/// the full new-architecture test matrix (M4/M3 isolation, 8-slot
+/// representability + lossless-projection proof, regression coverage).
 /// </summary>
 public sealed class Intermediate5DProductionPrescriptionCatalogTests
 {
@@ -153,8 +163,15 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
     }
 
     [Fact]
-    public void GoalPaceTenK_V3_OnlyAddsTaperEligibility()
+    public void GoalPaceTenK_V3_AddsTaperEligibilityAndDistanceAccountingCapability()
     {
+        // UPDATED IN FREQ.6D.4C.2: v3 was still DRAFT (non-historical), so root
+        // cause 1's missing-metadata gap was resolved for v3 by direct
+        // completion (adding allowedDistanceAccountingModes) rather than via
+        // the overlay mechanism reserved for immutable historical versions
+        // (that's v2's fix - see GoalPaceTenK_MissingAllowedDistanceAccountingModes below).
+        // v3 therefore legitimately differs from v2 by both eligiblePhases and
+        // allowedDistanceAccountingModes; everything else remains identical.
         var snapshot = LoadRealSnapshot();
         var v2 = snapshot.FindWorkout("GOAL_PACE_TEN_K", 2)!;
         var v3 = snapshot.FindWorkout("GOAL_PACE_TEN_K", 3)!;
@@ -162,10 +179,12 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
         Assert.Equal(v2.Family, v3.Family);
         Assert.Equal(v2.ComplexityTier, v3.ComplexityTier);
         Assert.Equal(v2.AllowedPrescriptionModes, v3.AllowedPrescriptionModes);
-        Assert.Equal(v2.AllowedDistanceAccountingModes, v3.AllowedDistanceAccountingModes);
         AssertSameComponentSkeleton(v2.Components!, v3.Components!);
         Assert.Equal(v2.EligiblePhases.Append(PhaseKey.Taper).OrderBy(x => x), v3.EligiblePhases.OrderBy(x => x));
         Assert.DoesNotContain(PhaseKey.Taper, v2.EligiblePhases);
+
+        Assert.Null(v2.AllowedDistanceAccountingModes);
+        Assert.Equal([DistanceAccountingMode.EstimatedSessionTotal], v3.AllowedDistanceAccountingModes);
     }
 
     private static void AssertSameComponentSkeleton(IReadOnlyList<WorkoutComponentDefinition> parent, IReadOnlyList<WorkoutComponentDefinition> child)
@@ -179,45 +198,70 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 4. THE REAL CONTRADICTION - root cause 1: AllowedDistanceAccountingModes
-    //    was never populated on GOAL_PACE_TEN_K (v1/v2, and v3 inherits it
-    //    unmodified per the eligibility-only diff invariant this phase must
-    //    preserve). WorkoutPrescriptionProfileValidator fails closed on null.
+    // 4. Root cause 1 (AllowedDistanceAccountingModes never populated on
+    //    GOAL_PACE_TEN_K v2, an immutable historical version): RESOLVED in
+    //    FREQ.6D.4C.2 via the additive-only WorkoutDefinitionCapabilityOverlay
+    //    (M3), never by mutating v2 itself. Without the overlay, v2 still
+    //    fails closed exactly as before - the overlay is what makes RS-P
+    //    representable, not a change to v2's own metadata.
     // ══════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GoalPaceTenK_MissingAllowedDistanceAccountingModes_BlocksAnyProfile_RS_P_TAP_P()
+    public void GoalPaceTenK_V2_MissingAllowedDistanceAccountingModes_StillBlocksWithoutOverlay_ButResolvedByCapabilityOverlay()
     {
         var snapshot = LoadRealSnapshot();
         var v2 = snapshot.FindWorkout("GOAL_PACE_TEN_K", 2)!; // RS-P's approved reference
-        var v3 = snapshot.FindWorkout("GOAL_PACE_TEN_K", 3)!; // TAP-P's approved reference
 
         Assert.Null(v2.AllowedDistanceAccountingModes);
-        Assert.Null(v3.AllowedDistanceAccountingModes);
 
-        foreach (var workout in new[] { v2, v3 })
+        // Without the overlay: still fails closed, exactly as FREQ.6D.4C found.
+        foreach (DistanceAccountingMode mode in Enum.GetValues<DistanceAccountingMode>())
         {
-            foreach (DistanceAccountingMode mode in Enum.GetValues<DistanceAccountingMode>())
-            {
-                var candidate = MinimalCandidateProfile(workout, mode, PrescriptionIntensityMode.PaceBased);
-                var result = WorkoutPrescriptionProfileValidator.Validate(candidate, workout);
-                Assert.Contains(result.Issues, i => i.Code == "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED");
-            }
+            var candidate = MinimalCandidateProfile(v2, mode, PrescriptionIntensityMode.PaceBased);
+            var result = WorkoutPrescriptionProfileValidator.Validate(candidate, v2);
+            Assert.Contains(result.Issues, i => i.Code == "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED");
         }
+
+        // With the real, authored FREQ.6D.4C.2 overlay: the approved
+        // EstimatedSessionTotal mode is now representable; other modes remain blocked.
+        var overlay = snapshot.FindCapabilityOverlay("GOAL_PACE_TEN_K", 2);
+        Assert.NotNull(overlay);
+        var supported = MinimalCandidateProfile(v2, DistanceAccountingMode.EstimatedSessionTotal, PrescriptionIntensityMode.PaceBased);
+        var supportedResult = WorkoutPrescriptionProfileValidator.Validate(supported, v2, overlay);
+        Assert.DoesNotContain(supportedResult.Issues, i => i.Code == "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED");
+
+        var unsupported = MinimalCandidateProfile(v2, DistanceAccountingMode.ExactSessionTotal, PrescriptionIntensityMode.PaceBased);
+        var unsupportedResult = WorkoutPrescriptionProfileValidator.Validate(unsupported, v2, overlay);
+        Assert.Contains(unsupportedResult.Issues, i => i.Code == "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED");
+    }
+
+    [Fact]
+    public void GoalPaceTenK_V3_NoLongerNeedsOverlay_DirectlyCompletedSinceStillDraft()
+    {
+        var snapshot = LoadRealSnapshot();
+        var v3 = snapshot.FindWorkout("GOAL_PACE_TEN_K", 3)!; // TAP-P's approved reference
+
+        Assert.Equal([DistanceAccountingMode.EstimatedSessionTotal], v3.AllowedDistanceAccountingModes);
+        Assert.Null(snapshot.FindCapabilityOverlay("GOAL_PACE_TEN_K", 3));
+
+        var candidate = MinimalCandidateProfile(v3, DistanceAccountingMode.EstimatedSessionTotal, PrescriptionIntensityMode.PaceBased);
+        var result = WorkoutPrescriptionProfileValidator.Validate(candidate, v3);
+        Assert.DoesNotContain(result.Issues, i => i.Code == "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED");
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 5. THE REAL CONTRADICTION - root cause 2: AEROBIC_STRENGTH_CONTROLLED_INTRO,
-    //    THRESHOLD_TEMPO and FARTLEK all declare allowedPrescriptionModes=["MIXED"]
-    //    only (the legacy CatalogPrescriptionMode value). PrescriptionIntensityMode
-    //    (PaceBased/EffortBased/HeartRateBased) never maps to Mixed, so
-    //    WorkoutPrescriptionProfileValidator's PROFILE_INTENSITY_MODE_NOT_ALLOWED
-    //    check fails for EVERY possible typed intensity mode, against BOTH the
-    //    historical (v4-and-earlier) versions this phase must not touch, AND the
-    //    new eligibility-extended versions (v3/v5), which inherit the same
-    //    allowedPrescriptionModes unmodified per the eligibility-only diff
-    //    invariant. This blocks all 6 non-GOAL_PACE_TEN_K slots (FND-P, FND-S,
-    //    BLD-P, BLD-S, RS-S, TAP-S) unavoidably.
+    // 5. Root cause 2 (AEROBIC_STRENGTH_CONTROLLED_INTRO, THRESHOLD_TEMPO and
+    //    FARTLEK all declare allowedPrescriptionModes=["MIXED"] only - the
+    //    legacy session-level dosage descriptor - which was being invalidly
+    //    cross-checked against the unrelated, per-component typed
+    //    PrescriptionIntensityMode axis): RESOLVED in FREQ.6D.4C.2 (M4) by
+    //    removing the PROFILE_INTENSITY_MODE_NOT_ALLOWED cross-check entirely,
+    //    since AllowedPrescriptionModes was never meant to gate typed intensity
+    //    targeting (confirmed via Golden Fixture v3 and the legacy backend
+    //    runtime's own first-class handling of MIXED). The internal,
+    //    profile-only checks (PROFILE_INTENSITY_MODE_INVALID,
+    //    PROFILE_INTENSITY_MODE_DESCRIPTOR_MISMATCH) remain the sufficient
+    //    safety invariant and still apply.
     // ══════════════════════════════════════════════════════════════════
 
     public static IEnumerable<object[]> MixedOnlyWorkouts()
@@ -231,7 +275,7 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
 
     [Theory]
     [MemberData(nameof(MixedOnlyWorkouts))]
-    public void MixedOnlyAllowedPrescriptionModes_BlocksEveryTypedIntensityMode(string key, int version)
+    public void MixedOnlyAllowedPrescriptionModes_NoLongerBlocksTypedIntensityModes(string key, int version)
     {
         var snapshot = LoadRealSnapshot();
         var workout = snapshot.FindWorkout(key, version)!;
@@ -242,26 +286,24 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
         {
             var candidate = MinimalCandidateProfile(workout, DistanceAccountingMode.EstimatedSessionTotal, mode);
             var result = WorkoutPrescriptionProfileValidator.Validate(candidate, workout);
-            Assert.Contains(result.Issues, i => i.Code == "PROFILE_INTENSITY_MODE_NOT_ALLOWED");
+            Assert.DoesNotContain(result.Issues, i => i.Code == "PROFILE_INTENSITY_MODE_NOT_ALLOWED");
         }
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 6. Isolation proof: but for root cause 2's single field, the FREQ.6D.4B
-    //    exact prescription content (structure, quantities, recovery, dose
-    //    category) is otherwise fully valid and projects losslessly. Proves
-    //    this is a precisely-scoped catalog-metadata gap, not a broader
-    //    representability failure of the approved policy or the profile
-    //    schema itself.
+    // 6. Proof: the FREQ.6D.4B exact FND-P prescription content (structure,
+    //    quantities, recovery, dose category) validates and projects
+    //    losslessly against the REAL, unmodified v3 workout - no hypothetical
+    //    `with`-isolated field fix is needed anymore, since FREQ.6D.4C.2 (M4)
+    //    resolved root cause 2 for real. This directly confirms full
+    //    representability of the approved policy under the current architecture.
     // ══════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void ButForAllowedPrescriptionModes_TheFrozenFndPPrescriptionWouldValidateAndProjectLosslessly()
+    public void TheFrozenFndPPrescription_ValidatesAndProjectsLosslesslyAgainstTheRealWorkout()
     {
         var snapshot = LoadRealSnapshot();
         var realWorkout = snapshot.FindWorkout("AEROBIC_STRENGTH_CONTROLLED_INTRO", 3)!;
-        // Isolate exactly one field via `with` - everything else is the real, authored v3 content.
-        var hypotheticallyCapableWorkout = realWorkout with { AllowedPrescriptionModes = [PrescriptionMode.EffortBased] };
 
         var fndP = new WorkoutPrescriptionProfile
         {
@@ -306,16 +348,13 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
             ],
         };
 
-        // Against the REAL, unmodified v3: fails, proving the exact blocker.
-        Assert.Contains(WorkoutPrescriptionProfileValidator.Validate(fndP, realWorkout).Issues, i => i.Code == "PROFILE_INTENSITY_MODE_NOT_ALLOWED");
-
-        // Against the hypothetical (isolated single-field fix): the frozen FREQ.6D.4B content validates cleanly...
-        var result = WorkoutPrescriptionProfileValidator.Validate(fndP, hypotheticallyCapableWorkout);
+        // Against the REAL, unmodified v3: the frozen FREQ.6D.4B content validates cleanly.
+        var result = WorkoutPrescriptionProfileValidator.Validate(fndP, realWorkout);
         Assert.True(result.IsValid, string.Join("; ", result.Issues.Select(i => i.Message)));
 
         // ...and projects losslessly, including the exact derived RecoveryCount (6 reps, Between -> 5).
         var stampedProfile = fndP with { Metadata = fndP.Metadata with { ContentHash = "test-hash-profile" } };
-        var stampedWorkout = hypotheticallyCapableWorkout with { Metadata = hypotheticallyCapableWorkout.Metadata with { ContentHash = "test-hash-workout" } };
+        var stampedWorkout = realWorkout with { Metadata = realWorkout.Metadata with { ContentHash = "test-hash-workout" } };
         var executable = new PlanCatalog.Infrastructure.Projection.WorkoutPrescriptionExecutionProjector().Project(stampedProfile, stampedWorkout);
         var mainSet = executable.Components.Single(c => c.ComponentType == WorkoutComponentType.MainSet);
         Assert.Equal(6, mainSet.RepetitionCount);

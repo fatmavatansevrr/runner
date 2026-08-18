@@ -28,6 +28,7 @@ public static class CatalogGraphValidator
         CheckDuplicateKeyVersion(DocumentTypes.ProgressionModifier, snapshot.ProgressionModifiers.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.WorkoutDefinition, snapshot.Workouts.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.WorkoutPrescriptionProfile, snapshot.PrescriptionProfiles.Select(x => x.Metadata), issues);
+        CheckDuplicateKeyVersion(DocumentTypes.WorkoutDefinitionCapabilityOverlay, snapshot.CapabilityOverlays.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.RuntimeConditionValueRegistry, snapshot.RuntimeConditionValueRegistries.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.PeakVolumeBandPolicy, snapshot.PeakVolumeBandPolicies.Select(x => x.Metadata), issues);
         CheckDuplicateKeyVersion(DocumentTypes.RulePack, snapshot.RulePacks.Select(x => x.Metadata), issues);
@@ -93,7 +94,37 @@ public static class CatalogGraphValidator
         foreach (var profile in snapshot.PrescriptionProfiles)
         {
             var workout = snapshot.FindWorkout(profile.WorkoutDefinitionRef.Key, profile.WorkoutDefinitionRef.Version);
-            issues.AddRange(WorkoutPrescriptionProfileValidator.Validate(profile, workout).Issues);
+            var overlay = snapshot.FindCapabilityOverlay(profile.WorkoutDefinitionRef.Key, profile.WorkoutDefinitionRef.Version);
+            issues.AddRange(WorkoutPrescriptionProfileValidator.Validate(profile, workout, overlay).Issues);
+        }
+
+        // Phase 10K-FREQ.6D.4C.2: capability-overlay graph integrity — independent of whether any
+        // profile currently references the target, so authoring mistakes surface immediately.
+        var duplicateOverlayTargets = snapshot.CapabilityOverlays
+            .GroupBy(x => (x.WorkoutDefinitionRef.Key, x.WorkoutDefinitionRef.Version))
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key);
+        foreach (var (key, version) in duplicateOverlayTargets)
+        {
+            issues.Add(new ValidationIssue("GRAPH_CAPABILITY_OVERLAY_DUPLICATE_TARGET", ValidationSeverity.Error,
+                $"More than one capability overlay targets the same exact WorkoutDefinition ({key}, v{version}).", "$.workoutDefinitionRef"));
+        }
+
+        foreach (var overlay in snapshot.CapabilityOverlays)
+        {
+            var targetWorkout = snapshot.FindWorkout(overlay.WorkoutDefinitionRef.Key, overlay.WorkoutDefinitionRef.Version);
+            if (targetWorkout is null)
+            {
+                issues.Add(new ValidationIssue("GRAPH_CAPABILITY_OVERLAY_TARGET_NOT_FOUND", ValidationSeverity.Error,
+                    $"Capability overlay '{overlay.Metadata.Key}' v{overlay.Metadata.Version} references a WorkoutDefinition ({overlay.WorkoutDefinitionRef.Key}, v{overlay.WorkoutDefinitionRef.Version}) that does not exist.", "$.workoutDefinitionRef"));
+                continue;
+            }
+
+            if (WorkoutCapabilityResolver.ResolveDistanceAccountingCapability(targetWorkout, overlay).Source == EffectiveDistanceAccountingCapabilitySource.Conflict)
+            {
+                issues.Add(new ValidationIssue("GRAPH_CAPABILITY_OVERLAY_CONFLICTS_WITH_EXPLICIT_METADATA", ValidationSeverity.Error,
+                    $"Capability overlay '{overlay.Metadata.Key}' v{overlay.Metadata.Version} targets ({overlay.WorkoutDefinitionRef.Key}, v{overlay.WorkoutDefinitionRef.Version}), which already explicitly declares AllowedDistanceAccountingModes — an overlay may only fill a genuine absence.", "$.workoutDefinitionRef"));
+            }
         }
 
         foreach (var registry in snapshot.RuntimeConditionValueRegistries)

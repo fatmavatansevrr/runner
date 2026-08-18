@@ -27,6 +27,7 @@ public static class CatalogStamper
             ProgressionModifiers = snapshot.ProgressionModifiers.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
             Workouts = snapshot.Workouts.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
             PrescriptionProfiles = snapshot.PrescriptionProfiles.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
+            CapabilityOverlays = snapshot.CapabilityOverlays.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
             RuntimeConditionValueRegistries = snapshot.RuntimeConditionValueRegistries.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
             PeakVolumeBandPolicies = snapshot.PeakVolumeBandPolicies.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),
             RulePacks = snapshot.RulePacks.Select(x => x with { Metadata = Stamp(x, d => d.Metadata) }).ToList(),

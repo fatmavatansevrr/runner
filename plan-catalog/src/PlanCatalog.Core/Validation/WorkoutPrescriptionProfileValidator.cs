@@ -7,7 +7,13 @@ namespace PlanCatalog.Core.Validation;
 
 public static class WorkoutPrescriptionProfileValidator
 {
-    public static ValidationResult Validate(WorkoutPrescriptionProfile profile, WorkoutDefinition? workout)
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4C.2: <paramref name="capabilityOverlay"/> is the exact-version overlay (if
+    /// any) matching <paramref name="workout"/>'s own (Key, Version) — resolved by the caller via
+    /// <c>CatalogSourceSnapshot.FindCapabilityOverlay</c>, never auto-selected here. Omitting it (the
+    /// default) preserves prior behavior: an absent WorkoutDefinition capability still fails closed.
+    /// </summary>
+    public static ValidationResult Validate(WorkoutPrescriptionProfile profile, WorkoutDefinition? workout, WorkoutDefinitionCapabilityOverlay? capabilityOverlay = null)
     {
         var issues = new List<ValidationIssue>();
 
@@ -51,21 +57,36 @@ public static class WorkoutPrescriptionProfileValidator
                     Add(issues, "PROFILE_COMPONENT_SKELETON_MISMATCH", "Profile components must match the referenced WorkoutDefinition component order and types exactly.", "$.components");
             }
 
-            if (workout.AllowedDistanceAccountingModes is null || !workout.AllowedDistanceAccountingModes.Contains(profile.DistanceAccountingMode))
-                Add(issues, "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED", "Profile distanceAccountingMode is not allowed by the referenced WorkoutDefinition.", "$.distanceAccountingMode");
-
-            foreach (var component in profile.Components)
+            // Phase 10K-FREQ.6D.4C.2 (M3): distance-accounting capability is resolved through the one
+            // canonical seam (WorkoutCapabilityResolver), never compared to raw WorkoutDefinition state
+            // inline here. An overlay only ever fills a genuine absence; both sources present at once is
+            // a fail-closed conflict, never resolved by precedence.
+            var capability = WorkoutCapabilityResolver.ResolveDistanceAccountingCapability(workout, capabilityOverlay);
+            switch (capability.Source)
             {
-                var requiredMode = component.IntensityTarget.Mode switch
-                {
-                    PrescriptionIntensityMode.PaceBased => (PrescriptionMode?)PrescriptionMode.PaceBased,
-                    PrescriptionIntensityMode.EffortBased => PrescriptionMode.EffortBased,
-                    PrescriptionIntensityMode.HeartRateBased => PrescriptionMode.HeartRateBased,
-                    _ => null
-                };
-                if (requiredMode is not null && !workout.AllowedPrescriptionModes.Contains(requiredMode.Value))
-                    Add(issues, "PROFILE_INTENSITY_MODE_NOT_ALLOWED", $"Intensity mode {component.IntensityTarget.Mode} is not allowed by the referenced WorkoutDefinition.", "$.components[].intensityTarget.mode");
+                case EffectiveDistanceAccountingCapabilitySource.Conflict:
+                    Add(issues, "PROFILE_CAPABILITY_OVERLAY_CONFLICTS_WITH_EXPLICIT_METADATA",
+                        "The referenced WorkoutDefinition explicitly declares AllowedDistanceAccountingModes; a capability overlay for the same exact version must not also supply it.", "$.distanceAccountingMode");
+                    break;
+                case EffectiveDistanceAccountingCapabilitySource.Unresolved:
+                    Add(issues, "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED", "Profile distanceAccountingMode is not allowed by the referenced WorkoutDefinition.", "$.distanceAccountingMode");
+                    break;
+                default:
+                    if (!capability.AllowedModes!.Contains(profile.DistanceAccountingMode))
+                        Add(issues, "PROFILE_DISTANCE_ACCOUNTING_MODE_NOT_ALLOWED", "Profile distanceAccountingMode is not allowed by the referenced WorkoutDefinition.", "$.distanceAccountingMode");
+                    break;
             }
+
+            // Phase 10K-FREQ.6D.4C.2 (M4): the prior cross-check here compared this component's typed
+            // PrescriptionIntensityMode (PaceBased/EffortBased/HeartRateBased - a per-component execution
+            // targeting mechanism) against WorkoutDefinition.AllowedPrescriptionModes (a session-level
+            // legacy dosage descriptor whose only confirmed real value for these workouts is MIXED, never
+            // a wildcard for typed modes - FREQ.6D.4C.1 SEMANTIC_AXIS_MISMATCH finding). That comparison
+            // is deliberately removed, not widened: internal profile consistency (PROFILE_INTENSITY_MODE_INVALID,
+            // PROFILE_INTENSITY_MODE_DESCRIPTOR_MISMATCH, both still enforced in ValidateComponent above)
+            // is the correct, sufficient replacement invariant. AllowedPrescriptionModes remains fully
+            // intact and unmodified for its real, original consumer (legacy backend runtime prescription
+            // mode selection) - this validator simply no longer asks it a question it cannot correctly answer.
         }
 
         return new ValidationResult(issues);

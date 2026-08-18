@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-18T06:58:54.5447788Z",
+  "generatedAtUtc": "2026-08-18T08:57:41.5410933Z",
   "boundaryAudit": {
     "contractsFiles": [
       "Bundles/PublishedTemplateBundle.cs",
@@ -61,6 +61,7 @@
       "Models/TemplateCombinationDefinition.cs",
       "Models/WorkoutComponentDefinition.cs",
       "Models/WorkoutDefinition.cs",
+      "Models/WorkoutDefinitionCapabilityOverlay.cs",
       "Models/WorkoutPrescriptionProfile.cs",
       "Models/WorkoutProgressionDefinition.cs",
       "Models/WorkoutProgressionStageDefinition.cs",
@@ -95,6 +96,7 @@
       "Validation/ValidationIssue.cs",
       "Validation/ValidationResult.cs",
       "Validation/ValidationSeverity.cs",
+      "Validation/WorkoutCapabilityResolver.cs",
       "Validation/WorkoutDefinitionValidator.cs",
       "Validation/WorkoutPrescriptionProfileValidator.cs",
       "Validation/WorkoutProgressionValidator.cs"

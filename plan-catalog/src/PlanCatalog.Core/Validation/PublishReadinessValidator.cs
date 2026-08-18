@@ -122,6 +122,7 @@ public static class PublishReadinessValidator
             .Concat(snapshot.ProgressionModifiers.Select(x => x.Metadata))
             .Concat(snapshot.Workouts.Select(x => x.Metadata))
             .Concat(snapshot.PrescriptionProfiles.Select(x => x.Metadata))
+            .Concat(snapshot.CapabilityOverlays.Select(x => x.Metadata))
             .Concat(snapshot.RuntimeConditionValueRegistries.Select(x => x.Metadata))
             .Concat(snapshot.PeakVolumeBandPolicies.Select(x => x.Metadata))
             .Concat(snapshot.RulePacks.Select(x => x.Metadata))

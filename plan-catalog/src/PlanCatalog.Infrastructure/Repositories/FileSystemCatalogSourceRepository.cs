@@ -17,6 +17,7 @@ public sealed class FileSystemCatalogSourceRepository(string catalogRootDirector
         ProgressionModifiers = LoadAll<ProgressionModifierDefinition>("progression-modifiers"),
         Workouts = LoadAll<WorkoutDefinition>("workouts"),
         PrescriptionProfiles = LoadAll<WorkoutPrescriptionProfile>("prescription-profiles"),
+        CapabilityOverlays = LoadAll<WorkoutDefinitionCapabilityOverlay>("capability-overlays"),
         RuntimeConditionValueRegistries = LoadAll<RuntimeConditionValueRegistryDefinition>("registries"),
         PeakVolumeBandPolicies = LoadAll<PeakVolumeBandPolicy>("policies"),
         RulePacks = LoadAll<RulePackDefinition>("rule-packs"),

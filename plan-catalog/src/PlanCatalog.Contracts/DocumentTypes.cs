@@ -10,6 +10,7 @@ public static class DocumentTypes
     public const string ProgressionModifier = "PROGRESSION_MODIFIER";
     public const string WorkoutDefinition = "WORKOUT_DEFINITION";
     public const string WorkoutPrescriptionProfile = "WORKOUT_PRESCRIPTION_PROFILE";
+    public const string WorkoutDefinitionCapabilityOverlay = "WORKOUT_DEFINITION_CAPABILITY_OVERLAY";
     public const string RuntimeConditionValueRegistry = "RUNTIME_CONDITION_VALUE_REGISTRY";
     public const string PeakVolumeBandPolicy = "PEAK_VOLUME_BAND_POLICY";
     public const string RulePack = "RULE_PACK";
