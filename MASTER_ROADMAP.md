@@ -183,14 +183,15 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-63) confirms the full chain through `FREQ.6D.4C.1`'s architecture approval. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-64) confirms the full chain through `FREQ.6D.4C.2`'s implementation. The real near-term sequence is now:
 
 ```
-FREQ.6D.4C.2 (not yet ledgered) → IMPLEMENTATION: narrow WorkoutPrescriptionProfileValidator's
-                                    intensity-mode check (M4); add the new capability-overlay
-                                    artifact + GOAL_PACE_TEN_K v2 entry (M3); complete
-                                    GOAL_PACE_TEN_K v3's DRAFT content
-FREQ.6D.4C.3                    → retry authoring all 8 WorkoutPrescriptionProfile documents
+FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescriptionProfileValidator's
+                                    intensity-mode check (M4); added the new capability-overlay
+                                    artifact + GOAL_PACE_TEN_K v2 entry (M3); completed
+                                    GOAL_PACE_TEN_K v3's DRAFT content. All 8 approved slots now
+                                    proven representable and lossless-projecting.
+FREQ.6D.4C.3 (not yet ledgered) → retry authoring all 8 WorkoutPrescriptionProfile documents
                                     exactly per FREQ.6D.4B's frozen matrix
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
