@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "APPSEL_RACE_PLAN_V1",
     "version": 4,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "runtimeConditionValueRegistry": {
     "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY",

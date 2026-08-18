@@ -4,7 +4,7 @@
     "schemaVersion": 2,
     "key": "TEN_K_WORKOUT_PROGRESSION_V1",
     "version": 5,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "distanceFamily": "TEN_K",
   "phaseProgressions": [

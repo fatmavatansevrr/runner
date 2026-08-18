@@ -41,6 +41,20 @@ internal sealed class BoundCatalogSession
     /// <summary>Null for FixedDefault (EASY_SUPPORT/LONG_RUN) roles — only StageControlled (KEY_SESSION) sessions carry the fine-grained progression stage that produced them.</summary>
     public string? ProgressionStageKey { get; init; }
 
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split A — the catalog-authored lane identity
+    /// this session was bound from (see Progression.CatalogWorkoutProgressionLane.LaneOrdinal),
+    /// bound to the structural ordinal of this session's own slot among same-role slots in its
+    /// week (see CatalogWorkoutBinder). Null for FixedDefault roles and for any StageControlled
+    /// role with only one structural slot per week is still populated (always 0) — null is
+    /// reserved for roles this binder does not resolve a progression stage for at all, mirroring
+    /// <see cref="ProgressionStageKey"/>'s own null convention exactly. This is the single,
+    /// canonical source of "which KEY lane" identity — CatalogSessionPrescriptionPlanner must
+    /// read this field rather than recompute its own ordinal (Split-A closes exactly that
+    /// pre-existing divergence risk).
+    /// </summary>
+    public int? LaneOrdinal { get; init; }
+
     public required string StructuralRole { get; init; }
     public required string WorkoutDefinitionKey { get; init; }
     public required int WorkoutDefinitionVersion { get; init; }

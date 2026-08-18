@@ -4,7 +4,7 @@
     "schemaVersion": 2,
     "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1",
     "version": 2,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "experience": "INTERMEDIATE",
   "maximumHardSessionsPerWeek": 1,

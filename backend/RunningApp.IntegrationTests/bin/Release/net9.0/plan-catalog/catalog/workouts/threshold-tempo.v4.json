@@ -4,7 +4,7 @@
     "schemaVersion": 3,
     "key": "THRESHOLD_TEMPO",
     "version": 4,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "family": "QUALITY",
   "eligiblePhases": ["BUILD", "RACE_SPECIFIC"],

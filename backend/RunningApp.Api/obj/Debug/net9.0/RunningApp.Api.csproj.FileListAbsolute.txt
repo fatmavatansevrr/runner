@@ -230,3 +230,16 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catal
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\rule-packs\appsel-race-plan.v5.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\PlanCatalog.Contracts.dll
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\PlanCatalog.Contracts.pdb
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\capability-overlays\goal-pace-ten-k-v2-distance-accounting-capability.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-build-primary.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-build-secondary-controlled.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-foundation-primary.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-foundation-secondary-controlled.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-race-specific-primary.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-race-specific-secondary-controlled.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-taper-primary.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\prescription-profiles\intermediate-5d-taper-secondary-controlled.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\workouts\aerobic-strength-controlled-intro.v3.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\workouts\fartlek.v5.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\workouts\goal-pace-ten-k.v3.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\workouts\threshold-tempo.v5.json

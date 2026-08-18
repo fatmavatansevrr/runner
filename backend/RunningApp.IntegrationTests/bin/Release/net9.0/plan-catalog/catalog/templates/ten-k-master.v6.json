@@ -4,7 +4,7 @@
     "schemaVersion": 2,
     "key": "TEN_K_MASTER",
     "version": 6,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "distanceFamily": "TEN_K",
   "coreCycle": {

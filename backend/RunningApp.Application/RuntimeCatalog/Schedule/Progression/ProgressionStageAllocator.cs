@@ -85,10 +85,33 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
         var weeks = new List<ScheduledProgressionWeek>();
         var traceSteps = new List<StageAllocationDecisionTraceStep>();
 
+        // Backend Integration Phase 10K-FREQ.6D.4D Split A: AllocatePhase itself is reused
+        // completely unmodified (its own allocation mathematics — compression, extension,
+        // minimum/maximum exposures, contiguous-block layout — is untouched). What changes
+        // here is orchestration/cardinality only: it is now invoked once PER LANE, each
+        // invocation receiving that lane's own, independent Stages list against the SAME
+        // shared phaseWeeks (coordinated phase timeline, independent lane prescriptive
+        // content — see the architecture report §8/§22). Each lane's own allocation is
+        // computed with zero shared mutable state between lanes — SAME_ALGORITHM does not
+        // imply SAME_LANE_STAGE_BINDING.
         foreach (var phaseProgression in progression.PhaseProgressions.OrderBy(p => p.PhaseKey, StringComparer.Ordinal))
         {
             var phaseWeeks = skeletonPhaseGroups[phaseProgression.PhaseKey];
-            AllocatePhase(phaseProgression, phaseWeeks, context, weeks, traceSteps);
+            var lanes = phaseProgression.EffectiveLanes;
+
+            var duplicateLaneOrdinals = lanes.GroupBy(l => l.LaneOrdinal).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (duplicateLaneOrdinals.Count > 0)
+            {
+                throw new ProgressionStageDuplicateLaneOrdinalException(
+                    $"Phase '{phaseProgression.PhaseKey}' declares LaneOrdinal {duplicateLaneOrdinals[0]} more than once — " +
+                    "every lane within one phase's progression must have a unique LaneOrdinal.");
+            }
+
+            foreach (var lane in lanes.OrderBy(l => l.LaneOrdinal))
+            {
+                var laneView = new CatalogPhaseWorkoutProgression { PhaseKey = phaseProgression.PhaseKey, Stages = lane.Stages };
+                AllocatePhase(laneView, phaseWeeks, context, weeks, traceSteps, lane.LaneOrdinal);
+            }
         }
 
         return new GeneratedCatalogStageSchedule
@@ -98,7 +121,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             ProgressionArtifactKey = progression.Key,
             ProgressionArtifactVersion = progression.Version,
             AllocatorVersion = ProgressionStageAllocatorVersion.V1,
-            Weeks = weeks.OrderBy(w => w.WeekNumber).ToList(),
+            Weeks = weeks.OrderBy(w => w.WeekNumber).ThenBy(w => w.LaneOrdinal).ToList(),
             Trace = new StageAllocationDecisionTrace { Steps = traceSteps },
         };
     }
@@ -108,7 +131,8 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
         IReadOnlyList<GeneratedCatalogWeekSkeleton> phaseWeeks,
         ProgressionStageAllocationContext context,
         List<ScheduledProgressionWeek> weeksOut,
-        List<StageAllocationDecisionTraceStep> traceOut)
+        List<StageAllocationDecisionTraceStep> traceOut,
+        int laneOrdinal = 0)
     {
         var phaseKey = phaseProgression.PhaseKey;
         var stages = phaseProgression.Stages;
@@ -242,6 +266,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                 {
                     WeekNumber = week.WeekNumber,
                     PhaseKey = phaseKey,
+                    LaneOrdinal = laneOrdinal,
                     ProgressionStageKey = active.EffectiveStage.ProgressionStageKey,
                     RequestedProgressionStageKey = isFallback ? active.ContributingRequestedKeys[0] : null,
                     StageRelativeOrder = active.EffectiveStage.RelativeOrder,
@@ -254,6 +279,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                 {
                     PhaseKey = phaseKey,
                     WeekNumber = week.WeekNumber,
+                    LaneOrdinal = laneOrdinal,
                     RequestedStageKey = isFallback ? active.ContributingRequestedKeys[0] : active.EffectiveStage.ProgressionStageKey,
                     EffectiveStageKey = active.EffectiveStage.ProgressionStageKey,
                     RelativeOrder = active.EffectiveStage.RelativeOrder,

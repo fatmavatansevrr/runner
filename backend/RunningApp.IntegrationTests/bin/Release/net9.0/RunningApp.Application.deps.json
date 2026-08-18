@@ -10,6 +10,7 @@
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "9.0.1",
           "Microsoft.Extensions.Hosting.Abstractions": "9.0.1",
+          "PlanCatalog.Contracts": "1.0.0",
           "RunningApp.Domain": "1.0.0",
           "RunningApp.Persistence": "1.0.0"
         },
@@ -216,6 +217,14 @@
           }
         }
       },
+      "PlanCatalog.Contracts/1.0.0": {
+        "runtime": {
+          "PlanCatalog.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "RunningApp.Domain/1.0.0": {
         "runtime": {
           "RunningApp.Domain.dll": {
@@ -382,6 +391,11 @@
       "sha512": "sha512-mw5vcY2IEc7L+IeGrxpp/J5OSnCcjkjAgJYCm/eD52wpZze8zsSifdqV7zXslSMmfJG2iIUGZyo3KuDtEFKwMQ==",
       "path": "npgsql.entityframeworkcore.postgresql/9.0.4",
       "hashPath": "npgsql.entityframeworkcore.postgresql.9.0.4.nupkg.sha512"
+    },
+    "PlanCatalog.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     },
     "RunningApp.Domain/1.0.0": {
       "type": "project",

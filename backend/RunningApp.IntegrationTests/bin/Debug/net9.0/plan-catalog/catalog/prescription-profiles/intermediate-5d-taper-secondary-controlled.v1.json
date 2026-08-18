@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PRESCRIPTION_PROFILE",
+    "schemaVersion": 1,
+    "key": "INTERMEDIATE_5D_TAPER_SECONDARY_CONTROLLED",
+    "version": 1,
+    "status": "DRAFT"
+  },
+  "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 5 },
+  "doseCategory": "SECONDARY_CONTROLLED",
+  "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+  "components": [
+    {
+      "sequenceOrder": 1,
+      "componentType": "WARM_UP",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 600 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    },
+    {
+      "sequenceOrder": 2,
+      "componentType": "MAIN_SET",
+      "structureMode": "REPEATED",
+      "workQuantity": { "durationSeconds": 20, "repetitionCount": 6 },
+      "recoveryQuantity": { "durationSeconds": 100, "mode": "WALK" },
+      "recoveryPlacement": "BETWEEN_REPETITIONS",
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "CONTROLLED_STRIDES_SHARPENING" }
+    },
+    {
+      "sequenceOrder": 3,
+      "componentType": "COOL_DOWN",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 300 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
     "schemaVersion": 3,
     "key": "EASY_STANDARD",
     "version": 4,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "family": "EASY",
   "eligiblePhases": ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"],

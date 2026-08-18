@@ -69,15 +69,47 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
     {
         var phaseKey = RequireString(phaseEl, "phaseKey", reference);
 
+        // Backend Integration Phase 10K-FREQ.6D.4D Split A: an optional "lanes" array is the
+        // new, additive shape for a structural role with more than one slot per week (e.g.
+        // Intermediate×5D's two KEY_SESSION lanes). When absent, the phase keeps today's bare
+        // "stages" shape exactly as before — this loader change is purely additive.
+        List<CatalogWorkoutProgressionLane>? lanes = null;
+        if (phaseEl.TryGetProperty("lanes", out var lanesEl) && lanesEl.ValueKind == JsonValueKind.Array)
+        {
+            lanes = lanesEl.EnumerateArray().Select(l => ReadLane(l, phaseKey, reference)).ToList();
+        }
+
         if (!phaseEl.TryGetProperty("stages", out var stagesEl) || stagesEl.ValueKind != JsonValueKind.Array)
         {
-            throw new PlanCatalogLoadException(
-                $"'stages' is missing on phaseProgressions[{phaseKey}] in workout-progressions/{reference.Key} v{reference.Version}.");
+            if (lanes is null)
+            {
+                throw new PlanCatalogLoadException(
+                    $"'stages' is missing on phaseProgressions[{phaseKey}] in workout-progressions/{reference.Key} v{reference.Version}.");
+            }
+
+            // A lane-authored phase may omit the legacy bare "stages" entirely — it carries
+            // no independent meaning once Lanes is populated (see CatalogPhaseWorkoutProgression.EffectiveLanes).
+            return new CatalogPhaseWorkoutProgression { PhaseKey = phaseKey, Stages = Array.Empty<CatalogWorkoutProgressionStage>(), Lanes = lanes };
         }
 
         var stages = stagesEl.EnumerateArray().Select(s => ReadStage(s, phaseKey, reference)).ToList();
 
-        return new CatalogPhaseWorkoutProgression { PhaseKey = phaseKey, Stages = stages };
+        return new CatalogPhaseWorkoutProgression { PhaseKey = phaseKey, Stages = stages, Lanes = lanes };
+    }
+
+    private static CatalogWorkoutProgressionLane ReadLane(JsonElement laneEl, string phaseKey, PlanCatalogReference reference)
+    {
+        var laneOrdinal = RequireInt(laneEl, "laneOrdinal", reference);
+
+        if (!laneEl.TryGetProperty("stages", out var stagesEl) || stagesEl.ValueKind != JsonValueKind.Array)
+        {
+            throw new PlanCatalogLoadException(
+                $"'stages' is missing on phaseProgressions[{phaseKey}].lanes[{laneOrdinal}] in workout-progressions/{reference.Key} v{reference.Version}.");
+        }
+
+        var stages = stagesEl.EnumerateArray().Select(s => ReadStage(s, phaseKey, reference)).ToList();
+
+        return new CatalogWorkoutProgressionLane { LaneOrdinal = laneOrdinal, Stages = stages };
     }
 
     private static CatalogWorkoutProgressionStage ReadStage(JsonElement stageEl, string phaseKey, PlanCatalogReference reference)

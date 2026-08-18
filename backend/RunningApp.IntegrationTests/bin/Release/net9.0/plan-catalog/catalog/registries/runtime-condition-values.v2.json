@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "RUNTIME_CONDITION_VALUES_V1",
     "version": 2,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "conditionValueSets": [
     {

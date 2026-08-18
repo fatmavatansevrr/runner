@@ -84,6 +84,17 @@ public sealed class ScheduledProgressionWeek
     public const string KeySessionStructuralRole = "KEY_SESSION";
     public string StructuralRole => KeySessionStructuralRole;
 
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split A — the catalog-authored lane this
+    /// week's stage allocation belongs to (see <see cref="Progression.CatalogWorkoutProgressionLane.LaneOrdinal"/>).
+    /// Defaults to 0 so every existing single-lane allocator invocation/test fixture
+    /// continues to compile and behave unchanged. Together with <see cref="WeekNumber"/> this
+    /// is the canonical, unique key for one lane's stage assignment in one week — never
+    /// <see cref="WeekNumber"/> alone (see <see cref="CatalogWorkoutBinder"/>'s own doc
+    /// comment for why a WeekNumber-only key was the pre-Split-A defect).
+    /// </summary>
+    public int LaneOrdinal { get; init; }
+
     public required ProgressionStageEligibilityOutcome ConditionOutcome { get; init; }
 
     /// <summary>Non-null only when this week's effective stage was reached via a fallback chain — same value as <see cref="RequestedProgressionStageKey"/>, kept as a distinct named field to mirror the task's own required-field list literally.</summary>
@@ -108,6 +119,9 @@ public sealed class StageAllocationDecisionTraceStep
 {
     public required string PhaseKey { get; init; }
     public required int WeekNumber { get; init; }
+
+    /// <summary>Backend Integration Phase 10K-FREQ.6D.4D Split A — see <see cref="ScheduledProgressionWeek.LaneOrdinal"/>. Defaults to 0.</summary>
+    public int LaneOrdinal { get; init; }
     public required string RequestedStageKey { get; init; }
     public required string EffectiveStageKey { get; init; }
     public required int RelativeOrder { get; init; }

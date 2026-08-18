@@ -1555,6 +1555,7 @@
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "9.0.1",
           "Microsoft.Extensions.Hosting.Abstractions": "9.0.9",
+          "PlanCatalog.Contracts": "1.0.0",
           "RunningApp.Domain": "1.0.0",
           "RunningApp.Persistence": "1.0.0"
         },

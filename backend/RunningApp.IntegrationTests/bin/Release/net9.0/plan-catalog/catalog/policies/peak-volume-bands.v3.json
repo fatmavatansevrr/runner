@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "PEAK_VOLUME_BANDS_V1",
     "version": 3,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "entries": [
     { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },

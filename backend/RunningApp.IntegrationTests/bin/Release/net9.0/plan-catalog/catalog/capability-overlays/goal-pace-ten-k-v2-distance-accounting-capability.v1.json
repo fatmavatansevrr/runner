@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION_CAPABILITY_OVERLAY",
+    "schemaVersion": 1,
+    "key": "GOAL_PACE_TEN_K_V2_DISTANCE_ACCOUNTING_CAPABILITY",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2 },
+  "allowedDistanceAccountingModes": ["ESTIMATED_SESSION_TOTAL"]
+}

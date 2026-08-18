@@ -68,6 +68,12 @@ public sealed class ProgressionStagePhaseMismatchException : ProgressionStageSch
     public ProgressionStagePhaseMismatchException(string message) : base(message) { }
 }
 
+/// <summary>Backend Integration Phase 10K-FREQ.6D.4D Split A: two lanes within one phase's progression declare the same LaneOrdinal.</summary>
+public sealed class ProgressionStageDuplicateLaneOrdinalException : ProgressionStageSchedulingException
+{
+    public ProgressionStageDuplicateLaneOrdinalException(string message) : base(message) { }
+}
+
 /// <summary>
 /// A phase's effective stages' combined minimum exposures exceed the phase's available
 /// weeks, and the currently-accepted V1 compression behavior/values cannot close the gap

@@ -43,8 +43,13 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
         // here from data already loaded rather than re-deriving it in plan-catalog): the
         // level modifier's eligible-workouts list, union every progression stage's own
         // candidate reference(s).
+        // Backend Integration Phase 10K-FREQ.6D.4D Split A: EffectiveLanes (not .Stages
+        // directly) so a lane-authored phase's per-lane stage candidates are correctly
+        // included in the closure — degenerates to the original .Stages-only closure for
+        // every existing single-lane progression artifact (EffectiveLanes normalizes that
+        // case to one implicit lane wrapping Stages).
         var closure = context.ReferencedWorkouts
-            .Concat(context.Progression.PhaseProgressions.SelectMany(p => p.Stages).SelectMany(s => s.WorkoutCandidateReferences))
+            .Concat(context.Progression.PhaseProgressions.SelectMany(p => p.EffectiveLanes).SelectMany(l => l.Stages).SelectMany(s => s.WorkoutCandidateReferences))
             .Select(r => (r.Key, r.Version))
             .ToHashSet();
 
@@ -102,7 +107,20 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
             }
         }
 
-        var stageWeeksByNumber = context.StageSchedule.Weeks.ToDictionary(w => w.WeekNumber);
+        // Backend Integration Phase 10K-FREQ.6D.4D Split A: keyed by (WeekNumber, LaneOrdinal),
+        // never WeekNumber alone — the pre-Split-A defect this phase closes. Two lane-schedule
+        // rows for the same (week, lane) is a genuine authoring/allocation-output defect, never
+        // silently collapsed.
+        var stageWeeksByWeekAndLane = new Dictionary<(int WeekNumber, int LaneOrdinal), ScheduledProgressionWeek>();
+        foreach (var stageWeek in context.StageSchedule.Weeks)
+        {
+            if (!stageWeeksByWeekAndLane.TryAdd((stageWeek.WeekNumber, stageWeek.LaneOrdinal), stageWeek))
+            {
+                throw new CatalogWorkoutBindingDuplicateLaneStageAssignmentException(
+                    $"Week {stageWeek.WeekNumber} lane {stageWeek.LaneOrdinal} has more than one progression-stage assignment.");
+            }
+        }
+
         var weeksOut = new List<BoundCatalogWeek>();
         var traceOut = new List<WorkoutBindingDecisionTraceStep>();
 
@@ -110,23 +128,37 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
         {
             var sessionsOut = new List<BoundCatalogSession>();
 
+            // Backend Integration Phase 10K-FREQ.6D.4D Split A: the structural ordinal for a
+            // repeated structural role within this week — a zero-based rank over same-role
+            // slots ordered by the canonical SlotOrderInWeek (never calendar date, weekday,
+            // workout/profile identity, or dictionary/enumeration order). For StageControlled
+            // roles (today: only KEY_SESSION), this ordinal IS the LaneOrdinal, by the
+            // architecture's own binding rule (structural ordinal N binds to LaneOrdinal N).
+            var structuralOrdinalByRole = new Dictionary<string, int>();
+
             foreach (var slot in datedWeek.SessionSlots.OrderBy(s => s.SlotOrderInWeek))
             {
                 var mode = V1CatalogWorkoutRoleBindingPolicy.ModeFor(slot.StructuralRole);
+                structuralOrdinalByRole.TryGetValue(slot.StructuralRole, out var structuralOrdinal);
+                structuralOrdinalByRole[slot.StructuralRole] = structuralOrdinal + 1;
 
                 BoundCatalogSession session;
                 WorkoutBindingDecisionTraceStep trace;
 
                 if (mode == CatalogWorkoutBindingMode.StageControlled)
                 {
-                    if (!stageWeeksByNumber.TryGetValue(datedWeek.WeekNumber, out var stageWeek) || string.IsNullOrWhiteSpace(stageWeek.ProgressionStageKey))
+                    var laneOrdinal = structuralOrdinal;
+
+                    if (!stageWeeksByWeekAndLane.TryGetValue((datedWeek.WeekNumber, laneOrdinal), out var stageWeek) || string.IsNullOrWhiteSpace(stageWeek.ProgressionStageKey))
                     {
                         throw new CatalogWorkoutBindingMissingProgressionStageException(
-                            $"Week {datedWeek.WeekNumber} has a KEY_SESSION slot but no matching Phase 4F.6A stage assignment.");
+                            $"Week {datedWeek.WeekNumber} lane {laneOrdinal} has a KEY_SESSION slot but no matching Phase 4F.6A stage assignment.");
                     }
 
                     var stageDefinition = context.Progression.PhaseProgressions
-                        .SelectMany(p => p.Stages)
+                        .SelectMany(p => p.EffectiveLanes)
+                        .Where(l => l.LaneOrdinal == laneOrdinal)
+                        .SelectMany(l => l.Stages)
                         .FirstOrDefault(s => s.ProgressionStageKey == stageWeek.ProgressionStageKey);
 
                     if (stageDefinition is null)
@@ -166,6 +198,7 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                         Date = slot.SessionDate,
                         PhaseKey = datedWeek.PhaseKey,
                         ProgressionStageKey = stageWeek.ProgressionStageKey,
+                        LaneOrdinal = laneOrdinal,
                         StructuralRole = slot.StructuralRole,
                         WorkoutDefinitionKey = definition.Key,
                         WorkoutDefinitionVersion = definition.Version,
@@ -222,6 +255,7 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                         Date = slot.SessionDate,
                         PhaseKey = datedWeek.PhaseKey,
                         ProgressionStageKey = null,
+                        LaneOrdinal = null,
                         StructuralRole = slot.StructuralRole,
                         WorkoutDefinitionKey = definition.Key,
                         WorkoutDefinitionVersion = definition.Version,
@@ -250,6 +284,19 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
 
                 sessionsOut.Add(session);
                 traceOut.Add(trace);
+            }
+
+            // Backend Integration Phase 10K-FREQ.6D.4D Split A: RunLayout — not a catalog lane
+            // declaration — remains the sole structural-cardinality authority. A catalog
+            // progression may not manufacture an extra structural session by declaring more
+            // lanes for a week than that week actually has StageControlled structural slots.
+            var declaredLaneCount = stageWeeksByWeekAndLane.Keys.Count(k => k.WeekNumber == datedWeek.WeekNumber);
+            var structuralKeySlotCount = structuralOrdinalByRole.GetValueOrDefault(ScheduledProgressionWeek.KeySessionStructuralRole);
+            if (declaredLaneCount > structuralKeySlotCount)
+            {
+                throw new CatalogWorkoutBindingLaneCountMismatchException(
+                    $"Week {datedWeek.WeekNumber} has {declaredLaneCount} declared progression lane(s) but only {structuralKeySlotCount} " +
+                    $"'{ScheduledProgressionWeek.KeySessionStructuralRole}' structural slot(s) — a catalog lane cannot manufacture an extra structural session.");
             }
 
             weeksOut.Add(new BoundCatalogWeek { WeekNumber = datedWeek.WeekNumber, PhaseKey = datedWeek.PhaseKey, Sessions = sessionsOut });

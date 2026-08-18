@@ -18,3 +18,5 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Release\net9.0\
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Release\net9.0\RunningApp.Infrastructure.pdb
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\obj\Release\net9.0\RunningApp.Application.sourcelink.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\obj\Release\net9.0\RunningApp.Application.pdb
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Release\net9.0\PlanCatalog.Contracts.dll
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Application\bin\Release\net9.0\PlanCatalog.Contracts.pdb

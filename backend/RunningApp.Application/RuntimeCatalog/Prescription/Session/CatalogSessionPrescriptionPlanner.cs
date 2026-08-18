@@ -29,12 +29,18 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions)
                 : V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
             var easyOrdinal = 0;
-            var keyOrdinal = 0;
             var weekSessions = new List<CatalogPrescribedSession>();
             foreach (var session in boundWeek.Sessions.OrderBy(s => s.Date).ThenBy(s => s.StructuralRole))
             {
                 var currentEasyOrdinal = session.StructuralRole == "EASY_SUPPORT" ? easyOrdinal++ : -1;
-                var currentKeyOrdinal = session.StructuralRole == "KEY_SESSION" ? keyOrdinal++ : -1;
+                // Backend Integration Phase 10K-FREQ.6D.4D Split A: read the binder's own
+                // canonical LaneOrdinal (derived from SlotOrderInWeek, §7) instead of
+                // recomputing a local Date-then-StructuralRole ordinal here — the two sort
+                // keys were not guaranteed to agree (the exact divergence risk the
+                // architecture report's §7 flagged), and the binder is now the single source
+                // of truth for lane/ordinal identity end-to-end. For the single-KEY 3D/4D case
+                // this is always LaneOrdinal 0, byte-identical to the prior computation.
+                var currentKeyOrdinal = session.StructuralRole == "KEY_SESSION" ? session.LaneOrdinal ?? 0 : -1;
                 weekSessions.Add(BuildSession(request, weekly, longRun, allocation, session, currentEasyOrdinal, currentKeyOrdinal, isThreeDay));
             }
 

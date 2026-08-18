@@ -71,3 +71,15 @@ internal sealed class CatalogWorkoutBindingPlanInvalidException : CatalogWorkout
 {
     public CatalogWorkoutBindingPlanInvalidException(string message) : base(message) { }
 }
+
+/// <summary>Backend Integration Phase 10K-FREQ.6D.4D Split A: the resolved progression-stage schedule assigns more than one stage to the same (WeekNumber, LaneOrdinal) pair.</summary>
+internal sealed class CatalogWorkoutBindingDuplicateLaneStageAssignmentException : CatalogWorkoutBindingException
+{
+    public CatalogWorkoutBindingDuplicateLaneStageAssignmentException(string message) : base(message) { }
+}
+
+/// <summary>Backend Integration Phase 10K-FREQ.6D.4D Split A: a catalog progression declares more lanes for a week than that week has StageControlled structural slots — RunLayout, not a catalog lane declaration, is the structural-cardinality authority.</summary>
+internal sealed class CatalogWorkoutBindingLaneCountMismatchException : CatalogWorkoutBindingException
+{
+    public CatalogWorkoutBindingLaneCountMismatchException(string message) : base(message) { }
+}

@@ -25,10 +25,56 @@ public sealed class CatalogWorkoutProgressionDefinition
     public required IReadOnlyList<CatalogPhaseWorkoutProgression> PhaseProgressions { get; init; }
 }
 
+/// <summary>
+/// Backend Integration Phase 10K-FREQ.6D.4D Split A — a single catalog-authored progression
+/// lane within one phase. <see cref="LaneOrdinal"/> is explicit and catalog-authored, never
+/// derived from calendar/date order or dictionary/enumeration order (see
+/// PHASE_10K_FREQ_6D_4D_DUAL_KEY_STAGE_PROFILE_PRODUCTION_INTEGRATION_ARCHITECTURE.md §6).
+/// Reuses <see cref="CatalogWorkoutProgressionStage"/> verbatim, unmodified — a lane is
+/// simply its own independent stage list, allocated via the existing, unmodified
+/// <see cref="ProgressionStageAllocator"/> algorithm (invoked once per lane, never once for
+/// all lanes combined).
+/// </summary>
+public sealed class CatalogWorkoutProgressionLane
+{
+    public required int LaneOrdinal { get; init; }
+    public required IReadOnlyList<CatalogWorkoutProgressionStage> Stages { get; init; }
+}
+
 public sealed class CatalogPhaseWorkoutProgression
 {
     public required string PhaseKey { get; init; }
+
+    /// <summary>
+    /// LEGACY_SINGLE_LANE_SHAPE: the bare, lane-less stage list. For a phase that also
+    /// declares <see cref="Lanes"/>, this field carries no independent meaning and should be
+    /// ignored — use <see cref="EffectiveLanes"/>. Kept required (rather than removed) so
+    /// every existing single-lane catalog artifact and every existing test fixture that
+    /// constructs this type without a lane concept continues to compile and behave
+    /// byte-for-byte unchanged (Phase 10K-FREQ.6D.4D Split A, architecture §28: additive,
+    /// degenerate-default legacy boundary).
+    /// </summary>
     public required IReadOnlyList<CatalogWorkoutProgressionStage> Stages { get; init; }
+
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split A — catalog-authored lanes for a
+    /// structural role with more than one slot per week (e.g. Intermediate×5D's two
+    /// KEY_SESSION slots). Null/empty for every phase that has not been authored with
+    /// multiple lanes — <see cref="EffectiveLanes"/> normalizes that case to a single
+    /// implicit lane wrapping <see cref="Stages"/> at LaneOrdinal 0, so 3D/4D/Beginner×4D
+    /// progression artifacts require zero change and behave identically to before this field
+    /// existed.
+    /// </summary>
+    public IReadOnlyList<CatalogWorkoutProgressionLane>? Lanes { get; init; }
+
+    /// <summary>
+    /// The single canonical view every consumer (allocator, binder, dependency-closure
+    /// computation) must use instead of reading <see cref="Stages"/>/<see cref="Lanes"/>
+    /// directly — normalizes the legacy single-lane shape to one implicit lane at
+    /// LaneOrdinal 0, so callers never need their own "is this lane-aware" branch.
+    /// </summary>
+    public IReadOnlyList<CatalogWorkoutProgressionLane> EffectiveLanes =>
+        Lanes is { Count: > 0 } ? Lanes : new[] { new CatalogWorkoutProgressionLane { LaneOrdinal = 0, Stages = Stages } };
 }
 
 /// <summary>

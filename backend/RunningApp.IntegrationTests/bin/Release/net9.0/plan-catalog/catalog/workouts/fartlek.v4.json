@@ -4,7 +4,7 @@
     "schemaVersion": 3,
     "key": "FARTLEK",
     "version": 4,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "family": "QUALITY",
   "eligiblePhases": ["BUILD"],
