@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION",
+    "schemaVersion": 3,
+    "key": "FARTLEK",
+    "version": 5,
+    "status": "DRAFT"
+  },
+  "family": "QUALITY",
+  "eligiblePhases": ["BUILD", "TAPER"],
+  "allowedPrescriptionModes": ["MIXED"],
+  "allowedDistanceAccountingModes": ["ESTIMATED_SESSION_TOTAL"],
+  "components": [
+    { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+    { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "SURGE_AND_FLOAT" },
+    { "sequenceOrder": 3, "componentType": "RECOVERY", "intensityDescriptor": "EASY_JOG" },
+    { "sequenceOrder": 4, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+  ]
+}

@@ -64,8 +64,11 @@ public sealed class AerobicStrengthPreparationRunwayCatalogTests
         // PREPARATION_RUNWAY-eligible version bumps (easy-standard.v5, long-run-standard.v5) = 22,
         // + 4 Phase 4I.4 LONG_HORIZON_GENERAL_ENDURANCE-eligible version bumps
         // (easy-standard.v6, long-run-standard.v6, aerobic-strength-controlled-intro.v2,
-        // aerobic-strength-controlled-progressed.v2) = 26.
-        Assert.Equal(26, files.Length);
+        // aerobic-strength-controlled-progressed.v2) = 26,
+        // + 4 Phase 10K-FREQ.6D.4C DRAFT versioned eligibility extensions
+        // (aerobic-strength-controlled-intro.v3, threshold-tempo.v5, fartlek.v5,
+        // goal-pace-ten-k.v3) = 30.
+        Assert.Equal(30, files.Length);
 
         foreach (var file in files)
         {
