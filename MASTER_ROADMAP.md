@@ -199,9 +199,11 @@ FREQ.6D.4B.2 (DONE)             → ARCHITECTURE: R1 selected; nested MAIN_SET r
 FREQ.6D.4B.3 (DONE)             → PRODUCT DECISION: WU=600s EASY, CD=300s EASY; BLD-S→v5;
                                     FC1-FC10 complete, no athlete-facing implementation choice.
 Gate B (PASS: 0bc70c5)          → remote SHA matched local gate SHA; ahead/behind 0/0.
-FREQ.6D.4B.4 (next)             → IMPLEMENTATION: correct DRAFT skeletons, validation containment,
-                                    BLD-S reference and no-double-count/all-eight tests.
-FREQ.6D.4C.3 (blocked)          → author all 8 profiles only after 4B.4 passes
+FREQ.6D.4B.4 (DONE)             → IMPLEMENTATION: corrected DRAFT skeletons and lifecycle-aware
+                                    validation; BLD-S now targets v5; all-eight/no-double-count
+                                    tests pass; immutable FARTLEK v4 preserved.
+FREQ.6D.4C.3 (next)             → author all 8 production profiles using the corrected exact
+                                    references and frozen full-component policy
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
 FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
