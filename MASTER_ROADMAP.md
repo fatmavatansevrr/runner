@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4B` — Execution Status `DONE`, Final Classification `FREQ6D4B_PRODUCTION_PRESCRIPTION_POLICY_APPROVED`. All 8 Foundation/Build/RaceSpecific/Taper × Primary/SecondaryControlled slots now have an exact, frozen executable prescription (WorkoutDefinition identity/version, StructureMode, work/repetition/recovery values, intensity mode+descriptor, DoseCategory, DistanceAccountingMode). `TAP-S` resolved to reuse `FARTLEK` (no new WorkoutDefinition identity required anywhere). 4 WorkoutDefinition versioned eligibility extensions and 8 distinct new `WorkoutPrescriptionProfile` documents are specified in a dependency-ordered implementation manifest. KEY2-floor `PROVEN_UNREACHABLE` finding re-confirmed unaffected by the exact selections. No production code, schema, or catalog JSON was authored this phase.
+**Latest verified completed phase**: `FREQ.6D.4C` — Execution Status `DONE`, Final Classification `FREQ6D4C_BLOCKED_ON_PROFILE_REPRESENTABILITY`. The 4 approved `WorkoutDefinition` versioned eligibility extensions were authored successfully (`AEROBIC_STRENGTH_CONTROLLED_INTRO` v3, `THRESHOLD_TEMPO` v5, `FARTLEK` v5, `GOAL_PACE_TEN_K` v3 — all `DRAFT` status; a real regression where `VALIDATED` status would have silently promoted them to "active" for live Intermediate×4D was caught and fixed before commit). Real, first attempts to author the 8 approved `WorkoutPrescriptionProfile` documents discovered a systemic, previously-latent catalog-metadata gap blocking **all 8 slots**: `GOAL_PACE_TEN_K` never declared `allowedDistanceAccountingModes` (blocks RS-P/TAP-P); `AEROBIC_STRENGTH_CONTROLLED_INTRO`/`THRESHOLD_TEMPO`/`FARTLEK` all declare `allowedPrescriptionModes=["MIXED"]` only, which never satisfies the typed-intensity-mode check (blocks the other 6 slots, including on immutable historical versions). Zero profile documents were authored. 1353/1353 PlanCatalog tests pass (0 regressions).
 
-**Next phase per repository-backed sequencing**: a coherent **`IMPLEMENTATION`**-type phase (tentatively `FREQ.6D.4C`, not yet ledgered — per this roadmap's own rule, not a real Phase ID until its prompt/report exists) that authors the 4 WorkoutDefinition version bumps and 8 profile documents exactly per `FREQ.6D.4B`'s manifest, followed by `FREQ.6D.4`'s own resumed dual-lane progression/persistence/adaptation engineering scope (including the D18 KEY2-floor protective test).
+**Next phase per repository-backed sequencing**: **not** `FREQ.6D.4`/`FREQ.6D.4D` (their input contract — all 8 profiles existing — is unmet) and **not** a blind retry of `FREQ.6D.4C`. A narrow, not-yet-named follow-up phase (`DESIGN_VERIFICATION` or narrowly-scoped `ARCHITECTURE_DESIGN`, per FREQ.6D.4C's own report §24) must first resolve whether the 3 affected `WorkoutDefinition` identities may receive a version that widens `allowedPrescriptionModes`/`allowedDistanceAccountingModes` beyond a pure eligibility-only diff (no athlete-facing content is in question, only historical catalog-metadata completeness), or whether a different mechanism is the intended fix. Only after that closes can `FREQ.6D.4C`'s profile-authoring scope actually complete, unblocking `FREQ.6D.4`'s dual-lane engineering.
 
 ---
 
@@ -183,17 +183,18 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-61) confirms `FREQ.6D.4` was blocked, `FREQ.6D.4A` closed the evidence gap, and `FREQ.6D.4B` has now frozen exact production prescription decisions for all 8 slots. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-62) confirms `FREQ.6D.4` was blocked, `FREQ.6D.4A` closed the evidence gap, `FREQ.6D.4B` froze exact production prescription decisions, and `FREQ.6D.4C` authored the 4 approved WorkoutDefinition versions but discovered all 8 profile slots blocked by a real catalog-metadata gap. The real near-term sequence is now:
 
 ```
-FREQ.6D.4C (tentative, not yet ledgered) → IMPLEMENTATION: 4 WorkoutDefinition version bumps
-                                             + 8 WorkoutPrescriptionProfile documents, exactly per
-                                             FREQ.6D.4B's manifest
-FREQ.6D.4 (resumed)                      → dual-KEY progression/runtime integration, 5D severity-table
-                                             widening, persistence lineage, D18 KEY2-floor test
-FREQ.6D.5                                → integrated regression closure
-FREQ.7                                   → first real Intermediate×5D candidate
-FREQ.8                                   → 5D activation decision
+[narrow catalog-metadata design/decision phase, not yet ledgered] → resolve whether
+    AEROBIC_STRENGTH_CONTROLLED_INTRO/THRESHOLD_TEMPO/FARTLEK/GOAL_PACE_TEN_K may widen
+    allowedPrescriptionModes/allowedDistanceAccountingModes on a new version
+FREQ.6D.4C (resumed)  → author the 8 WorkoutPrescriptionProfile documents once unblocked
+FREQ.6D.4 (resumed)   → dual-KEY progression/runtime integration, 5D severity-table widening,
+                         persistence lineage, D18 KEY2-floor test
+FREQ.6D.5             → integrated regression closure
+FREQ.7                → first real Intermediate×5D candidate
+FREQ.8                → 5D activation decision
 ```
 
 Then (capability milestones, no Phase IDs yet):
