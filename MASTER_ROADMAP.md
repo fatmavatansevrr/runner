@@ -37,7 +37,7 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 **Latest verified completed phase**: `FREQ.6D.4B.3` — Execution Status `DONE`, Final Classification `FREQ6D4B3_PRODUCT_POLICY_APPROVED_WITH_BLD_S_V5_REFERENCE_AMENDMENT`. All remaining full-component product choices are frozen: every profile uses WARM_UP Continuous 600s EffortBased/`EASY` and COOL_DOWN Continuous 300s EffortBased/`EASY`, invariant across phase and lane. R1 remains binding, FC8/FC9 are not applicable, FC10 retains `EstimatedSessionTotal` with recovery visible once, BLD-S is amended v4→corrected FARTLEK v5, and every other exact reference is preserved. All eight profiles now have complete athlete-facing authority.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4B.4` (`IMPLEMENTATION`) — correct the affected DRAFT skeletons, contain WorkoutDefinition validation without invalidating historical v4, apply the approved BLD-S v5 exact-reference amendment and add no-double-count/all-eight representability regressions. Gate B remote durability must pass before this implementation begins. `FREQ.6D.4C.3` remains blocked until 4B.4 passes; DRAFT→VALIDATED/legacy-resolver safety remains separate before publication.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4B.4` (`IMPLEMENTATION`) — correct the affected DRAFT skeletons, contain WorkoutDefinition validation without invalidating historical v4, apply the approved BLD-S v5 exact-reference amendment and add no-double-count/all-eight representability regressions. Gate B has PASSED through remote SHA `0bc70c5` with divergence `0/0`. `FREQ.6D.4C.3` remains blocked until 4B.4 passes; DRAFT→VALIDATED/legacy-resolver safety remains separate before publication.
 
 ---
 
@@ -198,7 +198,7 @@ FREQ.6D.4B.2 (DONE)             → ARCHITECTURE: R1 selected; nested MAIN_SET r
                                     BLD-S v4→v5 product-reference amendment required.
 FREQ.6D.4B.3 (DONE)             → PRODUCT DECISION: WU=600s EASY, CD=300s EASY; BLD-S→v5;
                                     FC1-FC10 complete, no athlete-facing implementation choice.
-Gate B (mandatory)              → commit + remote durability verification before implementation.
+Gate B (PASS: 0bc70c5)          → remote SHA matched local gate SHA; ahead/behind 0/0.
 FREQ.6D.4B.4 (next)             → IMPLEMENTATION: correct DRAFT skeletons, validation containment,
                                     BLD-S reference and no-double-count/all-eight tests.
 FREQ.6D.4C.3 (blocked)          → author all 8 profiles only after 4B.4 passes
