@@ -28,16 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); catalog-lifecycle/exact-version-activation architecture approved (FREQ.6D.4C.4) — the real, live TEN_K__4D__INTERMEDIATE combination already resolves via exact refs and is unaffected; **remaining blocker is the narrow lifecycle IMPLEMENTATION phase (legacy-resolver containment flag) before the four DRAFT versions can be promoted VALIDATED**, required before FREQ.6D.4/4D dual-lane wiring; **not publicly active** | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); catalog-lifecycle/exact-version-activation architecture approved (FREQ.6D.4C.4) and **implemented (FREQ.6D.4C.5)** — all four required WorkoutDefinition versions are now VALIDATED, exact-reference-usable, and permanently excluded from legacy bare-key default resolution; live Intermediate×4D and historical replay proven unchanged; **the catalog-lifecycle blocker is now CLOSED — FREQ.6D.4D (dual-lane progression/runtime wiring) is the next concrete phase**; **not publicly active** | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4C.4` — Execution Status `DONE`, Final Classification `FREQ6D4C4_CATALOG_LIFECYCLE_ARCHITECTURE_APPROVED`. Root-caused the exact legacy regression: the real, live `TEN_K__4D__INTERMEDIATE v4` combination already resolves its workouts via exact `(key, version)` references (established since progression v2/level-modifier v2) and is fully unaffected by any of the four `DRAFT` versions' status; only the deliberately byte-frozen historical-replay combinations `v1`-`v3` (bare-key `WorkoutProgression v1`/`LevelModifier v1`) and the golden/cascade regression tests are exposed to the legacy highest-non-retired resolver. Selected architecture: exact-reference/manifest activation authority (already the real, proven model) as primary, plus a narrow, additive, default-preserving legacy-resolver-eligibility flag so the four narrowly-additive new versions can never become any bare-key consumer's silent default once `VALIDATED`. No `CatalogStatus` enum change; no legacy-pin migration needed.
+**Latest verified completed phase**: `FREQ.6D.4C.5` — Execution Status `DONE`, Final Classification `FREQ6D4C5_LIFECYCLE_BLOCKER_CLOSED_6D4D_READY`. Implemented the FREQ.6D.4C.4-approved containment architecture: added a nullable, hash-stable `WorkoutDefinition.EligibleForLegacyDefaultResolution` field consulted only by the legacy bare-key resolver (`CatalogSourceSnapshot.FindWorkout(string, IRetirementLedger?)`), then promoted `AEROBIC_STRENGTH_CONTROLLED_INTRO v3`, `THRESHOLD_TEMPO v5`, `FARTLEK v5` and `GOAL_PACE_TEN_K v3` from `DRAFT` to `VALIDATED` with the flag explicitly `false`, in the same atomic commit. Directly re-verified: the live `TEN_K__4D__INTERMEDIATE v4` combination's exact-pinned resolution is unchanged; historical combinations `v1`-`v3` resolve identically; all 8 real production profiles remain valid/lossless; the exact golden/cascade tests that caught the original FREQ.6D.4C regression now stay green with the four versions genuinely `VALIDATED`. Full regression: 1,485/1,485.
 
-**Next phase per repository-backed sequencing**: the catalog-lifecycle `IMPLEMENTATION` phase (exact Phase ID not yet assigned) — add the narrow legacy-eligibility field to `WorkoutDefinition` metadata/schema, extend `CatalogSourceSnapshot.FindWorkout(string, IRetirementLedger?)`'s filter, add regression coverage proving existing resolution is unchanged, then promote `AEROBIC_STRENGTH_CONTROLLED_INTRO v3`, `THRESHOLD_TEMPO v5`, `FARTLEK v5` and `GOAL_PACE_TEN_K v3` to `VALIDATED` with the flag set `false`. `FREQ.6D.4`/`FREQ.6D.4D` (dual-lane progression/runtime wiring) remain blocked until that implementation lands and passes full regression — architecture approval alone (this phase) does not unblock them.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4D` — the catalog-lifecycle blocker is now CLOSED. `FREQ.6D.4D` designs and implements the previously-blocked real dual-lane engineering (`Week × LaneOrdinal → ProgressionStage → ProfileRef`), 5D severity-table widening, persistence lineage, and the D18 KEY2-floor test. It has not been started, designed, or ledgered by any prior phase.
 
 ---
 
@@ -183,7 +183,7 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-70) confirms the chain through `FREQ.6D.4C.4`'s catalog-lifecycle architecture approval. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-71) confirms the chain through `FREQ.6D.4C.5`'s catalog-lifecycle implementation closure. The real near-term sequence is now:
 
 ```
 FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescriptionProfileValidator's
@@ -214,12 +214,16 @@ FREQ.6D.4C.4 (DONE)             → ARCHITECTURE: root-caused the legacy regress
                                     authority (already realized) + a narrow, additive legacy-
                                     resolver-eligibility flag as the permanent containment
                                     instrument. No CatalogStatus change; no legacy-pin migration.
-[not-yet-scheduled]             → IMPLEMENTATION: add the narrow legacy-eligibility flag, extend
-                                    FindWorkout(key, ledger)'s filter, add regression coverage, then
-                                    promote the four DRAFT versions to VALIDATED with the flag false
-                                    (sole remaining blocker before FREQ.6D.4/4D)
-FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
-                                    widening, persistence lineage, D18 KEY2-floor test
+FREQ.6D.4C.5 (DONE)             → IMPLEMENTATION: added the narrow, nullable, hash-stable
+                                    EligibleForLegacyDefaultResolution flag; extended
+                                    FindWorkout(key, ledger)'s filter; promoted all four DRAFT
+                                    versions to VALIDATED with the flag false in the same atomic
+                                    commit. Live v4 combination, historical v1-v3 replay, and all 8
+                                    profiles proven unchanged; golden/cascade regressions green.
+                                    CATALOG_LIFECYCLE_BLOCKER now CLOSED.
+FREQ.6D.4D (next, not started)  → dual-KEY progression/runtime integration (Week × LaneOrdinal →
+                                    ProgressionStage → ProfileRef), 5D severity-table widening,
+                                    persistence lineage, D18 KEY2-floor test
 FREQ.6D.5                       → integrated regression closure
 FREQ.7                          → first real Intermediate×5D candidate
 FREQ.8                          → 5D activation decision
