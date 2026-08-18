@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4B.1` — Execution Status `DONE`, Final Classification `FREQ6D4B1_FULL_PROFILE_MODEL_NON_REPRESENTABLE`. The evidence closure preserves every FREQ.6D.4B main-set decision, inventories all 26 structural components and 36 missing non-main athlete-facing fields, and supplies evidence-supported shared warm-up/cooldown envelopes. It also finds a narrower canonical conflict missed by the prior capability proof: FARTLEK v4/v5's separate `RECOVERY` skeleton row canonically means between-effort recovery, while the newer repeated MAIN_SET already owns and projects that exact recovery. The current exact skeleton/model combination would therefore require an unsupported additional executable component. FC1–FC10 enumerate the complete amendment scope.
+**Latest verified completed phase**: `FREQ.6D.4B.2` — Execution Status `DONE`, Final Classification `FREQ6D4B2_ARCHITECTURE_APPROVED_WITH_PRODUCT_REF_AMENDMENT_REQUIRED`. R1 is selected: inter-repetition recovery is owned solely by the Repeated MAIN_SET; a WorkoutDefinition must not also expose the same effort as a positive structural RECOVERY component. The current profile schema/projector remain unchanged. Validated FARTLEK v4 stays immutable; DRAFT v5 is the correction target. TAP-S retains v5, while BLD-S requires a narrow v4→v5 product-reference amendment. FC7 is closed, FC8/FC9 are not applicable and FC10's no-double-count invariant is frozen.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4B.2` — a full-component product/architecture amendment that closes FC1–FC10, including the FARTLEK structural-versus-nested recovery ownership conflict. `FREQ.6D.4C.3` must not retry production authoring until that decision closes. The DRAFT→VALIDATED/legacy-resolver question remains a separate prerequisite before real publication.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4B.3` — select the still-open warm-up/cooldown product defaults FC1–FC6, approve the narrow BLD-S FARTLEK v4→v5 reference amendment and finish the product-facing portion of FC10. A dedicated skeleton/validator implementation must then execute the approved R1 architecture before `FREQ.6D.4C.3` can retry profile authoring. The DRAFT→VALIDATED/legacy-resolver question remains a separate prerequisite before real publication.
 
 ---
 
@@ -194,9 +194,11 @@ FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescription
 FREQ.6D.4B.1 (DONE)             → EVIDENCE: all full-component fields inventoried; warm-up/cooldown
                                     envelopes established; FARTLEK structural RECOVERY conflicts
                                     with nested-recovery ownership in the current model.
-FREQ.6D.4B.2 (next)             → DECISION/ARCHITECTURE AMENDMENT: close FC1-FC10 without reopening
-                                    any frozen 4B main-set value.
-FREQ.6D.4C.3 (blocked)          → author all 8 WorkoutPrescriptionProfile documents only after 4B.2
+FREQ.6D.4B.2 (DONE)             → ARCHITECTURE: R1 selected; nested MAIN_SET recovery is sole owner;
+                                    BLD-S v4→v5 product-reference amendment required.
+FREQ.6D.4B.3 (next)             → PRODUCT DECISION: close FC1-FC6, reference amendment and FC10.
+[implementation required]       → correct DRAFT skeletons + WorkoutDefinition validation/tests.
+FREQ.6D.4C.3 (blocked)          → author all 8 profiles only after decision + implementation
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
 FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
