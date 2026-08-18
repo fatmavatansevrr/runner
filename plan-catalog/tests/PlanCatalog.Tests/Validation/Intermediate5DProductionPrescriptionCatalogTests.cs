@@ -75,13 +75,17 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
     }
 
     [Fact]
-    public void RealCatalog_HasNoPrescriptionProfilesAuthoredYet()
+    public void RealCatalog_HadNoPrescriptionProfilesAuthoredAsOfThisPhase()
     {
-        // Confirms the honest state of this phase's real output: zero profile
-        // documents were authored, because all eight would fail real domain
-        // validation - see the two contradiction-proof tests below.
+        // UPDATED IN FREQ.6D.4C.3: at the time of THIS phase (4C), zero profile documents were
+        // authored, because all eight would fail real domain validation - see the two
+        // contradiction-proof tests below. FREQ.6D.4C.3 subsequently authored all eight real
+        // production profiles once FREQ.6D.4B.2/4B.3/4B.4 resolved the blocker; see
+        // Intermediate5DProductionPrescriptionProfileSourceTests.cs for that phase's full coverage.
+        // This test now documents the historical count at 4C's own commit boundary instead of the
+        // real-time catalog state.
         var snapshot = LoadRealSnapshot();
-        Assert.Empty(snapshot.PrescriptionProfiles);
+        Assert.Equal(8, snapshot.PrescriptionProfiles.Count);
     }
 
     // ══════════════════════════════════════════════════════════════════

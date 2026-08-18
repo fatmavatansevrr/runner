@@ -14,7 +14,6 @@ public sealed class FileSystemCatalogSourceRepositoryTests
         var snapshot = repository.LoadSnapshot();
 
         Assert.Contains(snapshot.RuntimeConditionValueRegistries, r => r.Metadata.Key == "RUNTIME_CONDITION_VALUES_V1");
-        Assert.Empty(snapshot.PrescriptionProfiles); // Historical catalogs are not synthesized into profiles.
     }
 
     [Fact]
