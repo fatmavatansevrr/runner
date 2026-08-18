@@ -28,16 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; **FREQ.6D.4 confirmed blocked** (`FREQ6D4_BLOCKED_ON_PRODUCTION_PROFILE_CONTENT_AUTHORITY`) — zero real WorkoutPrescriptionProfile content exists for any of the 8 required Foundation/Build/RaceSpecific/Taper KEY1/KEY2 slots; **not publicly active** | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); **remaining blocker is solely the catalog-lifecycle DRAFT→VALIDATED closure**, required before FREQ.6D.4/4D dual-lane wiring; **not publicly active** | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4B.3` — Execution Status `DONE`, Final Classification `FREQ6D4B3_PRODUCT_POLICY_APPROVED_WITH_BLD_S_V5_REFERENCE_AMENDMENT`. All remaining full-component product choices are frozen: every profile uses WARM_UP Continuous 600s EffortBased/`EASY` and COOL_DOWN Continuous 300s EffortBased/`EASY`, invariant across phase and lane. R1 remains binding, FC8/FC9 are not applicable, FC10 retains `EstimatedSessionTotal` with recovery visible once, BLD-S is amended v4→corrected FARTLEK v5, and every other exact reference is preserved. All eight profiles now have complete athlete-facing authority.
+**Latest verified completed phase**: `FREQ.6D.4C.3` — Execution Status `DONE`, Final Classification `FREQ6D4C3_PROFILES_AUTHORED_CATALOG_LIFECYCLE_BLOCKER_REMAINS`. All 8 real production `WorkoutPrescriptionProfile` documents (FND-P/S, BLD-P/S, RS-P/S, TAP-P/S) are authored with exact D1-D18 + FC1-FC10 fidelity against the corrected FARTLEK v5 three-component recovery-ownership skeleton (FREQ.6D.4B.2/4B.4). All 8 validate, project losslessly and pass boundary validation; 8/8 real catalog capacity `READY`. Zero infrastructure/engineering code changed. The profiles are not wired into any progression/combination/bundle — legacy Intermediate×3D/×4D/Beginner×4D behavior is proven architecturally unaffected.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4B.4` (`IMPLEMENTATION`) — correct the affected DRAFT skeletons, contain WorkoutDefinition validation without invalidating historical v4, apply the approved BLD-S v5 exact-reference amendment and add no-double-count/all-eight representability regressions. Gate B has PASSED through remote SHA `0bc70c5` with divergence `0/0`. `FREQ.6D.4C.3` remains blocked until 4B.4 passes; DRAFT→VALIDATED/legacy-resolver safety remains separate before publication.
+**Next phase per repository-backed sequencing**: the catalog-lifecycle/resolver closure (`ARCHITECTURE_DESIGN` then `IMPLEMENTATION`, exact Phase ID not yet assigned) — resolve safe `DRAFT → VALIDATED` activation for `AEROBIC_STRENGTH_CONTROLLED_INTRO v3`, `THRESHOLD_TEMPO v5`, `FARTLEK v5` and `GOAL_PACE_TEN_K v3` without the legacy highest-non-retired resolver (`CatalogSourceSnapshot.FindWorkout(string, IRetirementLedger?)`) silently changing current 3D/4D/Beginner behavior. `FREQ.6D.4`/`FREQ.6D.4D` (dual-lane progression/runtime wiring) remain blocked until that closure — content capability alone (this phase) does not unblock them.
 
 ---
 
@@ -183,7 +183,7 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-65) confirms the chain through the FREQ.6D.4B.1 full-component evidence closure. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-69) confirms the chain through `FREQ.6D.4C.3`'s real production profile authoring. The real near-term sequence is now:
 
 ```
 FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescriptionProfileValidator's
@@ -202,10 +202,14 @@ Gate B (PASS: 0bc70c5)          → remote SHA matched local gate SHA; ahead/beh
 FREQ.6D.4B.4 (DONE)             → IMPLEMENTATION: corrected DRAFT skeletons and lifecycle-aware
                                     validation; BLD-S now targets v5; all-eight/no-double-count
                                     tests pass; immutable FARTLEK v4 preserved.
-FREQ.6D.4C.3 (next)             → author all 8 production profiles using the corrected exact
-                                    references and frozen full-component policy
+FREQ.6D.4C.3 (DONE)             → IMPLEMENTATION: authored all 8 real production
+                                    WorkoutPrescriptionProfile documents using the corrected exact
+                                    references and frozen full-component policy; 8/8 catalog
+                                    capacity READY; zero infrastructure delta; legacy bundles
+                                    architecturally unaffected.
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
+                                    (sole remaining blocker before FREQ.6D.4/4D)
 FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
                                     widening, persistence lineage, D18 KEY2-floor test
 FREQ.6D.5                       → integrated regression closure
