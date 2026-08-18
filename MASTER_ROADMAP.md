@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4C.1` — Execution Status `DONE`, Final Classification `FREQ6D4C1_ARCHITECTURE_APPROVED_WITH_CATALOG_LIFECYCLE_BLOCKER`. Root-caused FREQ.6D.4C's two blockers with real evidence (Golden Fixture v3, git history, existing validator/publisher/resolver code): the intensity-mode check (`AllowedPrescriptionModes` vs. `PrescriptionIntensityMode`) is a genuine semantic-axis mismatch — `MIXED` means session-level dosage heterogeneity, not "supports any typed intensity mode" — fixed by narrowing/removing that cross-check (M4), not by reinterpreting `MIXED`. The distance-accounting gap on `GOAL_PACE_TEN_K` v2 is a genuine missing-metadata gap on an immutable historical version — fixed by a narrow, additive-only capability-overlay artifact (M3). All 8 `FREQ.6D.4B` exact `WorkoutDefinition` references are preserved unchanged — **no `FREQ.6D.4B` amendment required**. One real, disclosed item remains open: whether the 4 new `DRAFT` `WorkoutDefinition` versions can safely be promoted to `VALIDATED` (a genuine precondition for real publication) without re-triggering the legacy highest-non-retired-version resolver's silent-behavior-change risk for live Intermediate×4D — explicitly not resolved in this design phase (resolver refactor was out of scope) and flagged as a required item before `FREQ.6D.4D`.
+**Latest verified completed phase**: `FREQ.6D.4B.1` — Execution Status `DONE`, Final Classification `FREQ6D4B1_FULL_PROFILE_MODEL_NON_REPRESENTABLE`. The evidence closure preserves every FREQ.6D.4B main-set decision, inventories all 26 structural components and 36 missing non-main athlete-facing fields, and supplies evidence-supported shared warm-up/cooldown envelopes. It also finds a narrower canonical conflict missed by the prior capability proof: FARTLEK v4/v5's separate `RECOVERY` skeleton row canonically means between-effort recovery, while the newer repeated MAIN_SET already owns and projects that exact recovery. The current exact skeleton/model combination would therefore require an unsupported additional executable component. FC1–FC10 enumerate the complete amendment scope.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4C.2` (not yet ledgered) — an `IMPLEMENTATION` phase that executes the approved hybrid architecture: narrow the `WorkoutPrescriptionProfileValidator` intensity-mode check, add the new capability-overlay artifact with its one real entry (`GOAL_PACE_TEN_K` v2 → `ESTIMATED_SESSION_TOTAL`), and complete `GOAL_PACE_TEN_K` v3's still-`DRAFT` content. Then `FREQ.6D.4C.3` retries production profile authoring for all 8 slots against the now-fixed catalog. The DRAFT→VALIDATED/legacy-resolver question must close (a separate, not-yet-scheduled item) before `FREQ.6D.4D` can attempt real bundle publication.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4B.2` — a full-component product/architecture amendment that closes FC1–FC10, including the FARTLEK structural-versus-nested recovery ownership conflict. `FREQ.6D.4C.3` must not retry production authoring until that decision closes. The DRAFT→VALIDATED/legacy-resolver question remains a separate prerequisite before real publication.
 
 ---
 
@@ -183,7 +183,7 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-64) confirms the full chain through `FREQ.6D.4C.2`'s implementation. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-65) confirms the chain through the FREQ.6D.4B.1 full-component evidence closure. The real near-term sequence is now:
 
 ```
 FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescriptionProfileValidator's
@@ -191,8 +191,12 @@ FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescription
                                     artifact + GOAL_PACE_TEN_K v2 entry (M3); completed
                                     GOAL_PACE_TEN_K v3's DRAFT content. All 8 approved slots now
                                     proven representable and lossless-projecting.
-FREQ.6D.4C.3 (not yet ledgered) → retry authoring all 8 WorkoutPrescriptionProfile documents
-                                    exactly per FREQ.6D.4B's frozen matrix
+FREQ.6D.4B.1 (DONE)             → EVIDENCE: all full-component fields inventoried; warm-up/cooldown
+                                    envelopes established; FARTLEK structural RECOVERY conflicts
+                                    with nested-recovery ownership in the current model.
+FREQ.6D.4B.2 (next)             → DECISION/ARCHITECTURE AMENDMENT: close FC1-FC10 without reopening
+                                    any frozen 4B main-set value.
+FREQ.6D.4C.3 (blocked)          → author all 8 WorkoutPrescriptionProfile documents only after 4B.2
 [not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
                                     highest-non-retired resolver, before any real publication
 FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
