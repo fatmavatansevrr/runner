@@ -35,9 +35,9 @@ Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2)
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4C` — Execution Status `DONE`, Final Classification `FREQ6D4C_BLOCKED_ON_PROFILE_REPRESENTABILITY`. The 4 approved `WorkoutDefinition` versioned eligibility extensions were authored successfully (`AEROBIC_STRENGTH_CONTROLLED_INTRO` v3, `THRESHOLD_TEMPO` v5, `FARTLEK` v5, `GOAL_PACE_TEN_K` v3 — all `DRAFT` status; a real regression where `VALIDATED` status would have silently promoted them to "active" for live Intermediate×4D was caught and fixed before commit). Real, first attempts to author the 8 approved `WorkoutPrescriptionProfile` documents discovered a systemic, previously-latent catalog-metadata gap blocking **all 8 slots**: `GOAL_PACE_TEN_K` never declared `allowedDistanceAccountingModes` (blocks RS-P/TAP-P); `AEROBIC_STRENGTH_CONTROLLED_INTRO`/`THRESHOLD_TEMPO`/`FARTLEK` all declare `allowedPrescriptionModes=["MIXED"]` only, which never satisfies the typed-intensity-mode check (blocks the other 6 slots, including on immutable historical versions). Zero profile documents were authored. 1353/1353 PlanCatalog tests pass (0 regressions).
+**Latest verified completed phase**: `FREQ.6D.4C.1` — Execution Status `DONE`, Final Classification `FREQ6D4C1_ARCHITECTURE_APPROVED_WITH_CATALOG_LIFECYCLE_BLOCKER`. Root-caused FREQ.6D.4C's two blockers with real evidence (Golden Fixture v3, git history, existing validator/publisher/resolver code): the intensity-mode check (`AllowedPrescriptionModes` vs. `PrescriptionIntensityMode`) is a genuine semantic-axis mismatch — `MIXED` means session-level dosage heterogeneity, not "supports any typed intensity mode" — fixed by narrowing/removing that cross-check (M4), not by reinterpreting `MIXED`. The distance-accounting gap on `GOAL_PACE_TEN_K` v2 is a genuine missing-metadata gap on an immutable historical version — fixed by a narrow, additive-only capability-overlay artifact (M3). All 8 `FREQ.6D.4B` exact `WorkoutDefinition` references are preserved unchanged — **no `FREQ.6D.4B` amendment required**. One real, disclosed item remains open: whether the 4 new `DRAFT` `WorkoutDefinition` versions can safely be promoted to `VALIDATED` (a genuine precondition for real publication) without re-triggering the legacy highest-non-retired-version resolver's silent-behavior-change risk for live Intermediate×4D — explicitly not resolved in this design phase (resolver refactor was out of scope) and flagged as a required item before `FREQ.6D.4D`.
 
-**Next phase per repository-backed sequencing**: **not** `FREQ.6D.4`/`FREQ.6D.4D` (their input contract — all 8 profiles existing — is unmet) and **not** a blind retry of `FREQ.6D.4C`. A narrow, not-yet-named follow-up phase (`DESIGN_VERIFICATION` or narrowly-scoped `ARCHITECTURE_DESIGN`, per FREQ.6D.4C's own report §24) must first resolve whether the 3 affected `WorkoutDefinition` identities may receive a version that widens `allowedPrescriptionModes`/`allowedDistanceAccountingModes` beyond a pure eligibility-only diff (no athlete-facing content is in question, only historical catalog-metadata completeness), or whether a different mechanism is the intended fix. Only after that closes can `FREQ.6D.4C`'s profile-authoring scope actually complete, unblocking `FREQ.6D.4`'s dual-lane engineering.
+**Next phase per repository-backed sequencing**: `FREQ.6D.4C.2` (not yet ledgered) — an `IMPLEMENTATION` phase that executes the approved hybrid architecture: narrow the `WorkoutPrescriptionProfileValidator` intensity-mode check, add the new capability-overlay artifact with its one real entry (`GOAL_PACE_TEN_K` v2 → `ESTIMATED_SESSION_TOTAL`), and complete `GOAL_PACE_TEN_K` v3's still-`DRAFT` content. Then `FREQ.6D.4C.3` retries production profile authoring for all 8 slots against the now-fixed catalog. The DRAFT→VALIDATED/legacy-resolver question must close (a separate, not-yet-scheduled item) before `FREQ.6D.4D` can attempt real bundle publication.
 
 ---
 
@@ -183,18 +183,22 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-62) confirms `FREQ.6D.4` was blocked, `FREQ.6D.4A` closed the evidence gap, `FREQ.6D.4B` froze exact production prescription decisions, and `FREQ.6D.4C` authored the 4 approved WorkoutDefinition versions but discovered all 8 profile slots blocked by a real catalog-metadata gap. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-63) confirms the full chain through `FREQ.6D.4C.1`'s architecture approval. The real near-term sequence is now:
 
 ```
-[narrow catalog-metadata design/decision phase, not yet ledgered] → resolve whether
-    AEROBIC_STRENGTH_CONTROLLED_INTRO/THRESHOLD_TEMPO/FARTLEK/GOAL_PACE_TEN_K may widen
-    allowedPrescriptionModes/allowedDistanceAccountingModes on a new version
-FREQ.6D.4C (resumed)  → author the 8 WorkoutPrescriptionProfile documents once unblocked
-FREQ.6D.4 (resumed)   → dual-KEY progression/runtime integration, 5D severity-table widening,
-                         persistence lineage, D18 KEY2-floor test
-FREQ.6D.5             → integrated regression closure
-FREQ.7                → first real Intermediate×5D candidate
-FREQ.8                → 5D activation decision
+FREQ.6D.4C.2 (not yet ledgered) → IMPLEMENTATION: narrow WorkoutPrescriptionProfileValidator's
+                                    intensity-mode check (M4); add the new capability-overlay
+                                    artifact + GOAL_PACE_TEN_K v2 entry (M3); complete
+                                    GOAL_PACE_TEN_K v3's DRAFT content
+FREQ.6D.4C.3                    → retry authoring all 8 WorkoutPrescriptionProfile documents
+                                    exactly per FREQ.6D.4B's frozen matrix
+[not-yet-scheduled]             → resolve DRAFT->VALIDATED promotion safety against the legacy
+                                    highest-non-retired resolver, before any real publication
+FREQ.6D.4 (resumed)             → dual-KEY progression/runtime integration, 5D severity-table
+                                    widening, persistence lineage, D18 KEY2-floor test
+FREQ.6D.5                       → integrated regression closure
+FREQ.7                          → first real Intermediate×5D candidate
+FREQ.8                          → 5D activation decision
 ```
 
 Then (capability milestones, no Phase IDs yet):
