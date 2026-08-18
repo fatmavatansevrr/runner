@@ -28,16 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); catalog-lifecycle/exact-version-activation architecture approved (FREQ.6D.4C.4) and **implemented (FREQ.6D.4C.5)** — all four required WorkoutDefinition versions are now VALIDATED, exact-reference-usable, and permanently excluded from legacy bare-key default resolution; live Intermediate×4D and historical replay proven unchanged; **the catalog-lifecycle blocker is now CLOSED — FREQ.6D.4D (dual-lane progression/runtime wiring) is the next concrete phase**; **not publicly active** | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); catalog-lifecycle/exact-version-activation architecture approved and implemented (FREQ.6D.4C.4/4C.5) — all four required WorkoutDefinition versions are VALIDATED and exact-reference-usable; **dual-KEY stage→profile production-integration architecture approved (FREQ.6D.4D)** — Week×LaneOrdinal→exact stage→exact profile chain fully designed, but **not yet implemented** (no code, schema, or migration exists yet for it); **not publicly active** | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4C.5` — Execution Status `DONE`, Final Classification `FREQ6D4C5_LIFECYCLE_BLOCKER_CLOSED_6D4D_READY`. Implemented the FREQ.6D.4C.4-approved containment architecture: added a nullable, hash-stable `WorkoutDefinition.EligibleForLegacyDefaultResolution` field consulted only by the legacy bare-key resolver (`CatalogSourceSnapshot.FindWorkout(string, IRetirementLedger?)`), then promoted `AEROBIC_STRENGTH_CONTROLLED_INTRO v3`, `THRESHOLD_TEMPO v5`, `FARTLEK v5` and `GOAL_PACE_TEN_K v3` from `DRAFT` to `VALIDATED` with the flag explicitly `false`, in the same atomic commit. Directly re-verified: the live `TEN_K__4D__INTERMEDIATE v4` combination's exact-pinned resolution is unchanged; historical combinations `v1`-`v3` resolve identically; all 8 real production profiles remain valid/lossless; the exact golden/cascade tests that caught the original FREQ.6D.4C regression now stay green with the four versions genuinely `VALIDATED`. Full regression: 1,485/1,485.
+**Latest verified completed phase**: `FREQ.6D.4D` — Execution Status `DONE`, Final Classification `FREQ6D4D_ARCHITECTURE_APPROVED_MULTI_PHASE_IMPLEMENTATION_REQUIRED`. Re-verified `FREQ.6D.1A`/`1B`'s earlier proposed Lane/Stage/Adaptation design against current real code — confirmed it was never implemented, and every gap it described (`stageWeeksByNumber` keyed by week only, hardcoded `StructuralRole`, transient `keyOrdinal`) is still real today. Selected and froze the binding architecture (Option D1: catalog-authored `LaneOrdinal` + bind-time structural ordinal, per-lane independent `ProgressionStageAllocator` invocation, exact profile references resolved at the catalog/binder boundary, reusing the already-implemented `FREQ.6D.3C`/`3D` projection/consumer machinery unmodified). Produced a full authority map, target dataflow, failure-semantics table, and a 5-part (A-E) implementation decomposition. Confirmed zero remaining product/domain decision, zero legacy 3D/4D/Beginner×4D delta (additive/degenerate-default design), and one real, disclosed, non-blocking code gap: the `FREQ.6`-approved 5-session Adaptation severity table is not yet implemented in `NextWindowLoadDecisionPolicy`.
 
-**Next phase per repository-backed sequencing**: `FREQ.6D.4D` — the catalog-lifecycle blocker is now CLOSED. `FREQ.6D.4D` designs and implements the previously-blocked real dual-lane engineering (`Week × LaneOrdinal → ProgressionStage → ProfileRef`), 5D severity-table widening, persistence lineage, and the D18 KEY2-floor test. It has not been started, designed, or ledgered by any prior phase.
+**Next phase per repository-backed sequencing**: the narrow Split-A `IMPLEMENTATION` phase (exact Phase ID not yet assigned) — slot/lane identity + stage binding only (PlanCatalog `Lanes[]`/`PrescriptionProfileCandidateKeys[]` + lane-coordination validators; RunningApp `CatalogWorkoutBinder`'s `(WeekNumber, LaneOrdinal)` lookup + `BoundCatalogSession` new fields), per `FREQ.6D.4D §41`'s own dependency-ordered decomposition. Splits B (exact profile dependency/bundle), C (RunningApp session lineage), D (persistence/Adaptation integration — may run in parallel with A-C), and E (integrated closure, including the still-absent `RUN_LAYOUT_5D` catalog authoring) follow. Dual-KEY production integration itself remains **not implemented**.
 
 ---
 
@@ -183,7 +183,7 @@ MASTER_ROADMAP must NOT pre-author speculative phase IDs beyond the near-term bl
 
 ## 14. Near-term roadmap block (populated from repository audit, `APPSEL-BACKEND.GOV.0`)
 
-Repository evidence (see `PHASE_LEDGER.md` rows 59-71) confirms the chain through `FREQ.6D.4C.5`'s catalog-lifecycle implementation closure. The real near-term sequence is now:
+Repository evidence (see `PHASE_LEDGER.md` rows 59-72) confirms the chain through `FREQ.6D.4D`'s dual-KEY production-integration architecture approval. The real near-term sequence is now:
 
 ```
 FREQ.6D.4C.2 (DONE)             → IMPLEMENTATION: narrowed WorkoutPrescriptionProfileValidator's
@@ -221,9 +221,19 @@ FREQ.6D.4C.5 (DONE)             → IMPLEMENTATION: added the narrow, nullable, 
                                     commit. Live v4 combination, historical v1-v3 replay, and all 8
                                     profiles proven unchanged; golden/cascade regressions green.
                                     CATALOG_LIFECYCLE_BLOCKER now CLOSED.
-FREQ.6D.4D (next, not started)  → dual-KEY progression/runtime integration (Week × LaneOrdinal →
-                                    ProgressionStage → ProfileRef), 5D severity-table widening,
-                                    persistence lineage, D18 KEY2-floor test
+FREQ.6D.4D (DONE)               → ARCHITECTURE: re-verified FREQ.6D.1A/1B's proposed Lane/Stage/
+                                    Adaptation design against current code (never implemented, every
+                                    gap still real); selected Option D1 (catalog-authored LaneOrdinal
+                                    + bind-time structural ordinal, per-lane independent allocator
+                                    invocation, exact profile refs at catalog/binder boundary); full
+                                    authority map/dataflow/failure-semantics/A-E implementation split
+                                    produced. Zero remaining product decision; zero legacy delta.
+[Split A, not yet scheduled]    → IMPLEMENTATION: slot/lane identity + stage binding (highest-risk
+                                    layer, touches shared single-lane code paths)
+[Splits B-E, not yet scheduled] → exact profile dependency/bundle; RunningApp session lineage;
+                                    persistence/Adaptation integration (incl. 5D severity-table fix,
+                                    2 new TrainingDay columns); integrated closure + RUN_LAYOUT_5D
+                                    authoring
 FREQ.6D.5                       → integrated regression closure
 FREQ.7                          → first real Intermediate×5D candidate
 FREQ.8                          → 5D activation decision
