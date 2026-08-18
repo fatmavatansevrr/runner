@@ -44,11 +44,16 @@ public sealed record CatalogSourceSnapshot
     /// </summary>
     /// <summary>
     /// LEGACY resolution only (schemaVersion 1 progression/level-modifier reading and historical
-    /// verification). Auto-selects the highest non-retired version for a bare key — this is exactly the
-    /// drift-prone behavior documented as a defect in
+    /// verification). Auto-selects the highest non-retired, legacy-default-eligible version for a bare
+    /// key — this is exactly the drift-prone behavior documented as a defect in
     /// artifacts/audits/deterministic-graph-prechange-assessment.md (Findings 5/6). Must never be used to
     /// assemble a new (schemaVersion >= 2) candidate graph — use <see cref="FindWorkout(string, int)"/> for
     /// that.
+    /// Phase 10K-FREQ.6D.4C.5: also excludes any version with
+    /// <see cref="WorkoutDefinition.EligibleForLegacyDefaultResolution"/> = false — a narrow, additive,
+    /// default-preserving containment filter (candidate-set filter only, never a new ranking rule) that
+    /// lets a version become a real, exact-reference-usable, VALIDATED artifact without silently becoming
+    /// this resolver's new answer for its key. See FREQ.6D.4C.4's architecture decision.
     /// </summary>
     public WorkoutDefinition? FindWorkout(string key, IRetirementLedger? retirementLedger = null)
     {
@@ -56,6 +61,7 @@ public sealed record CatalogSourceSnapshot
         return Workouts
             .Where(x => x.Metadata.Key == key
                 && x.Metadata.Status != CatalogStatus.Draft
+                && (x.EligibleForLegacyDefaultResolution ?? true)
                 && !retirement.IsRetired(x.Metadata.DocumentType, x.Metadata.Key, x.Metadata.Version))
             .OrderByDescending(x => x.Metadata.Version)
             .FirstOrDefault();

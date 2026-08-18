@@ -4,13 +4,14 @@
     "schemaVersion": 1,
     "key": "GOAL_PACE_TEN_K",
     "version": 3,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "family": "QUALITY",
   "complexityTier": 2,
   "eligiblePhases": ["RACE_SPECIFIC", "TAPER"],
   "allowedPrescriptionModes": ["PACE_BASED"],
   "allowedDistanceAccountingModes": ["ESTIMATED_SESSION_TOTAL"],
+  "eligibleForLegacyDefaultResolution": false,
   "components": [
     { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
     { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "GOAL_PACE" },

@@ -429,12 +429,20 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
     }
 
     [Fact]
-    public void FourNewWorkoutDefinitionVersions_RemainDraft()
+    public void FourNewWorkoutDefinitionVersions_AreValidatedWithLegacyDefaultResolutionDisabled()
     {
+        // UPDATED IN FREQ.6D.4C.5: the catalog-lifecycle blocker (FREQ.6D.4C.4's architecture) is now
+        // closed - these four versions are deliberately promoted DRAFT -> VALIDATED in the same
+        // change set that adds the legacy-resolver containment filter, so they become real,
+        // exact-reference-usable production artifacts without ever becoming a bare-key consumer's
+        // silent default. See FourNewWorkoutDefinitionVersions_AreExcludedFromLegacyBareKeyDefault
+        // and the golden/cascade regression tests for direct proof of containment.
         var snapshot = LoadRealSnapshot();
         foreach (var (key, version) in new[] { ("AEROBIC_STRENGTH_CONTROLLED_INTRO", 3), ("THRESHOLD_TEMPO", 5), ("FARTLEK", 5), ("GOAL_PACE_TEN_K", 3) })
         {
-            Assert.Equal(CatalogStatus.Draft, snapshot.FindWorkout(key, version)!.Metadata.Status);
+            var workout = snapshot.FindWorkout(key, version)!;
+            Assert.Equal(CatalogStatus.Validated, workout.Metadata.Status);
+            Assert.False(workout.EligibleForLegacyDefaultResolution ?? true);
         }
     }
 
