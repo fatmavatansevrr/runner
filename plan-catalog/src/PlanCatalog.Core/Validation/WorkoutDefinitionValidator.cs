@@ -1,5 +1,6 @@
 using PlanCatalog.Core.Models;
 using PlanCatalog.Contracts.Enums;
+using PlanCatalog.Core.Enums;
 
 namespace PlanCatalog.Core.Validation;
 
@@ -94,7 +95,29 @@ public static class WorkoutDefinitionValidator
             case "FARTLEK":
                 if (workout.Metadata.SchemaVersion >= 2)
                 {
-                    RequireExactComponents(workout, [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.Recovery, WorkoutComponentType.CoolDown], issues);
+                    if (workout.Metadata.Status == CatalogStatus.Draft)
+                    {
+                        RejectDuplicatedBetweenRepetitionRecovery(workout, issues);
+                        RequireExactComponents(workout, [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown], issues);
+                    }
+                    else
+                    {
+                        // Published/validated artifacts are replayed, never re-authored. Historical FARTLEK
+                        // versions legitimately exist in both the original 3-row form (v2) and the legacy
+                        // marker form (v4). New authoring always enters as DRAFT and is held to the corrected
+                        // single-owner shape above before it can cross the lifecycle boundary.
+                        RequireOneOfExactComponents(workout,
+                            [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown],
+                            [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.Recovery, WorkoutComponentType.CoolDown],
+                            issues);
+                    }
+                }
+                break;
+            case "AEROBIC_STRENGTH_CONTROLLED_PROGRESSED":
+                if (workout.Metadata.Status == CatalogStatus.Draft)
+                {
+                    RejectDuplicatedBetweenRepetitionRecovery(workout, issues);
+                    RequireExactComponents(workout, [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown], issues);
                 }
                 break;
             case "THRESHOLD_TEMPO":
@@ -108,6 +131,36 @@ public static class WorkoutDefinitionValidator
                     }
                 }
                 break;
+        }
+    }
+
+    private static void RejectDuplicatedBetweenRepetitionRecovery(WorkoutDefinition workout, List<ValidationIssue> issues)
+    {
+        if (workout.Components?.Any(c => c.ComponentType == WorkoutComponentType.Recovery) == true)
+        {
+            issues.Add(new ValidationIssue("WD_RECOVERY_OWNERSHIP_DUPLICATED", ValidationSeverity.Error,
+                "Between-repetition recovery is owned by the executable Repeated MAIN_SET and must not also be authored as a structural RECOVERY component.", "$.components"));
+        }
+    }
+
+    private static void RequireOneOfExactComponents(
+        WorkoutDefinition workout,
+        IReadOnlyList<WorkoutComponentType> current,
+        IReadOnlyList<WorkoutComponentType> historical,
+        List<ValidationIssue> issues)
+    {
+        if (workout.Components is null)
+        {
+            issues.Add(new ValidationIssue("COMPONENTS_REQUIRED_FOR_STRUCTURED_WORKOUT", ValidationSeverity.Error,
+                $"{workout.Metadata.Key} requires structural components.", "$.components"));
+            return;
+        }
+
+        var actual = workout.Components.Select(c => c.ComponentType).ToList();
+        if (!actual.SequenceEqual(current) && !actual.SequenceEqual(historical))
+        {
+            issues.Add(new ValidationIssue("COMPONENT_SEQUENCE_INVALID", ValidationSeverity.Error,
+                $"{workout.Metadata.Key} historical replay components must match a recognized exact sequence.", "$.components"));
         }
     }
 

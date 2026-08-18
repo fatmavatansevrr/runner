@@ -1,6 +1,6 @@
 # TEN_K / 4D / INTERMEDIATE Pilot — Domain Content Decision Audit
 
-Generated: 2026-08-18T08:57:41.5482565Z
+Generated: 2026-08-18T11:41:01.8216602Z
 
 Reconciled against Golden Fixture v3 per the source-governance hierarchy in `plan-catalog/docs/README.md`. See `canonical-source-preflight.md` for pre-flight results and `ten-k-pilot-vocabulary-decisions.md` for the dedicated vocabulary-ownership review.
 
@@ -111,7 +111,7 @@ Total: 194 | Canonical confirmed: 52 | Placeholder unconfirmed (blocking): 40 | 
 | AUD-301 | WORKOUT_DEFINITION | EASY_STANDARD | `$.complexityTier` | PLACEHOLDER_UNCONFIRMED | YES | NO | WAVE2 intentionally preserved the unresolved complexityTier decision from EASY_STANDARD v2. This task resolved only D6/components; D5 remains PLACEHOLDER_UNCONFIRMED. |
 | AUD-302 | WORKOUT_DEFINITION | EASY_STANDARD | `$.components` | TECHNICAL_ONLY | no | yes | WAVE2 D6: EASY_STANDARD is a continuous workout; components are optional and omitted rather than synthesized as WARM_UP/MAIN_SET/COOL_DOWN. This is a schema/ownership decision, not a dosage claim. |
 | AUD-303 | WORKOUT_DEFINITION | FARTLEK | `$.complexityTier` | PLACEHOLDER_UNCONFIRMED | YES | NO | WAVE2 intentionally preserved the unresolved complexityTier decision from FARTLEK v2. This task resolved only D8/components; D7 remains PLACEHOLDER_UNCONFIRMED. |
-| AUD-304 | WORKOUT_DEFINITION | FARTLEK | `$.components` | EXPLICIT_PRODUCT_DEFAULT | no | yes | WAVE2 D8 / WAVE3 evidence review: approved structural component sequence for FARTLEK. The Golden Fixture shows generated fartlek work with warm-up, variable-effort main work, recovery segments, and cool-down, but it does not canonically define this reusable catalog component sequence. RECOVERY represents recovery segments between variable efforts; no concrete duration, distance, pace, or repetition values are assigned. |
+| AUD-304 | WORKOUT_DEFINITION | FARTLEK | `$.components` | EXPLICIT_PRODUCT_DEFAULT | no | yes | WAVE2 D8 originally used a structural RECOVERY marker for between-effort recovery. FREQ.6D.4B.2/4B.4 corrects the still-DRAFT artifact to the executable ownership model: the Repeated MAIN_SET solely owns between-repetition recovery, so the source skeleton is WARM_UP, MAIN_SET, COOL_DOWN. No dosage value is assigned here. |
 | AUD-305 | WORKOUT_DEFINITION | LONG_RUN_STANDARD | `$.complexityTier` | PLACEHOLDER_UNCONFIRMED | YES | NO | WAVE2 intentionally preserved the unresolved complexityTier decision from LONG_RUN_STANDARD v2. This task resolved only D10/components; D9 remains PLACEHOLDER_UNCONFIRMED. |
 | AUD-306 | WORKOUT_DEFINITION | LONG_RUN_STANDARD | `$.components` | TECHNICAL_ONLY | no | yes | WAVE2 D10: LONG_RUN_STANDARD is a standard continuous long run; components are optional and omitted. No marathon-specific, fast-finish, progression, or embedded-quality structure was introduced. |
 | AUD-307 | WORKOUT_DEFINITION | THRESHOLD_TEMPO | `$.complexityTier` | PLACEHOLDER_UNCONFIRMED | YES | NO | WAVE2 intentionally preserved the unresolved complexityTier decision from THRESHOLD_TEMPO v2. This task resolved only D12/components; D11 remains PLACEHOLDER_UNCONFIRMED. |

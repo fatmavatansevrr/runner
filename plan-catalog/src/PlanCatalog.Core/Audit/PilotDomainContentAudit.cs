@@ -345,9 +345,9 @@ public static class PilotDomainContentAudit
             "WAVE2 intentionally preserved the unresolved complexityTier decision from FARTLEK v2. This task resolved only D8/components; D7 remains PLACEHOLDER_UNCONFIRMED.",
             ["WorkoutDefinitionValidator"]));
         entries.Add(ExplicitDefault("AUD-304", "workout-definitions", DocumentTypes.WorkoutDefinition, "FARTLEK", 3, "$.components",
-            "WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN",
+            "WARM_UP, MAIN_SET, COOL_DOWN",
             wave2Vocabulary,
-            "WAVE2 D8 / WAVE3 evidence review: approved structural component sequence for FARTLEK. The Golden Fixture shows generated fartlek work with warm-up, variable-effort main work, recovery segments, and cool-down, but it does not canonically define this reusable catalog component sequence. RECOVERY represents recovery segments between variable efforts; no concrete duration, distance, pace, or repetition values are assigned.",
+            "WAVE2 D8 originally used a structural RECOVERY marker for between-effort recovery. FREQ.6D.4B.2/4B.4 corrects the still-DRAFT artifact to the executable ownership model: the Repeated MAIN_SET solely owns between-repetition recovery, so the source skeleton is WARM_UP, MAIN_SET, COOL_DOWN. No dosage value is assigned here.",
             ["WorkoutDefinitionValidator"]));
 
         entries.Add(Placeholder("AUD-305", "workout-definitions", DocumentTypes.WorkoutDefinition, "LONG_RUN_STANDARD", 3, "$.complexityTier", "1",

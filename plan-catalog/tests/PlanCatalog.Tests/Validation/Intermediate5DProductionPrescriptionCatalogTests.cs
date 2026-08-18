@@ -148,7 +148,7 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
     }
 
     [Fact]
-    public void Fartlek_V5_OnlyAddsTaperEligibility()
+    public void Fartlek_V5_AddsTaperEligibility_AndUsesCorrectedRecoveryOwnershipSkeleton()
     {
         var snapshot = LoadRealSnapshot();
         var v4 = snapshot.FindWorkout("FARTLEK", 4)!;
@@ -157,7 +157,12 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
         Assert.Equal(v4.Family, v5.Family);
         Assert.Equal(v4.AllowedPrescriptionModes, v5.AllowedPrescriptionModes);
         Assert.Equal(v4.AllowedDistanceAccountingModes, v5.AllowedDistanceAccountingModes);
-        AssertSameComponentSkeleton(v4.Components!, v5.Components!);
+        Assert.Equal(
+            [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.Recovery, WorkoutComponentType.CoolDown],
+            v4.Components!.Select(x => x.ComponentType).ToList());
+        Assert.Equal(
+            [WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown],
+            v5.Components!.Select(x => x.ComponentType).ToList());
         Assert.Equal(v4.EligiblePhases.Append(PhaseKey.Taper).OrderBy(x => x), v5.EligiblePhases.OrderBy(x => x));
         Assert.DoesNotContain(PhaseKey.Taper, v4.EligiblePhases);
     }

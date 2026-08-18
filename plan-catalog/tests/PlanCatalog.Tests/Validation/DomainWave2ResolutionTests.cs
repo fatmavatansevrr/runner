@@ -94,8 +94,7 @@ public sealed class DomainWave2ResolutionTests
         var fartlek = Workout("FARTLEK", WorkoutFamily.Quality,
             Component(1, WorkoutComponentType.WarmUp),
             Component(2, WorkoutComponentType.MainSet),
-            Component(3, WorkoutComponentType.Recovery),
-            Component(4, WorkoutComponentType.CoolDown));
+            Component(3, WorkoutComponentType.CoolDown));
         var threshold = Workout("THRESHOLD_TEMPO", WorkoutFamily.Quality,
             Component(1, WorkoutComponentType.WarmUp),
             Component(2, WorkoutComponentType.MainSet),
@@ -109,7 +108,8 @@ public sealed class DomainWave2ResolutionTests
         Assert.Contains(WorkoutDefinitionValidator.Validate(Workout("FARTLEK", WorkoutFamily.Quality,
             Component(1, WorkoutComponentType.WarmUp),
             Component(2, WorkoutComponentType.MainSet),
-            Component(3, WorkoutComponentType.CoolDown))).Issues, i => i.Code == "COMPONENT_SEQUENCE_INVALID");
+            Component(3, WorkoutComponentType.Recovery),
+            Component(4, WorkoutComponentType.CoolDown))).Issues, i => i.Code == "WD_RECOVERY_OWNERSHIP_DUPLICATED");
 
         Assert.Contains(WorkoutDefinitionValidator.Validate(Workout("THRESHOLD_TEMPO", WorkoutFamily.Quality,
             Component(1, WorkoutComponentType.WarmUp),
@@ -150,7 +150,7 @@ public sealed class DomainWave2ResolutionTests
 
         Assert.Null(easy.Components);
         Assert.Null(longRun.Components);
-        Assert.Equal([WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.Recovery, WorkoutComponentType.CoolDown], fartlek.Components!.Select(c => c.ComponentType).ToList());
+        Assert.Equal([WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown], fartlek.Components!.Select(c => c.ComponentType).ToList());
         Assert.Equal([WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown], threshold.Components!.Select(c => c.ComponentType).ToList());
     }
 

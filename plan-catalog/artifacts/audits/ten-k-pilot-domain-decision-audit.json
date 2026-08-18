@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-18T08:57:41.5410933Z",
+  "generatedAtUtc": "2026-08-18T11:41:01.8180851Z",
   "boundaryAudit": {
     "contractsFiles": [
       "Bundles/PublishedTemplateBundle.cs",
@@ -1643,10 +1643,10 @@
       "key": "FARTLEK",
       "version": 3,
       "jsonPath": "$.components",
-      "currentValue": "WARM_UP, MAIN_SET, RECOVERY, COOL_DOWN",
+      "currentValue": "WARM_UP, MAIN_SET, COOL_DOWN",
       "classification": "EXPLICIT_PRODUCT_DEFAULT",
       "sourceFile": "artifacts/audits/domain-wave2-component-vocabulary.md",
-      "sourceSectionOrReason": "WAVE2 D8 / WAVE3 evidence review: approved structural component sequence for FARTLEK. The Golden Fixture shows generated fartlek work with warm-up, variable-effort main work, recovery segments, and cool-down, but it does not canonically define this reusable catalog component sequence. RECOVERY represents recovery segments between variable efforts; no concrete duration, distance, pace, or repetition values are assigned.",
+      "sourceSectionOrReason": "WAVE2 D8 originally used a structural RECOVERY marker for between-effort recovery. FREQ.6D.4B.2/4B.4 corrects the still-DRAFT artifact to the executable ownership model: the Repeated MAIN_SET solely owns between-repetition recovery, so the source skeleton is WARM_UP, MAIN_SET, COOL_DOWN. No dosage value is assigned here.",
       "isBlocking": false,
       "requiredDecision": null,
       "affectedValidators": [

@@ -323,7 +323,7 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
         yield return ["FND-P", "AEROBIC_STRENGTH_CONTROLLED_INTRO", 3, PrescriptionIntensityMode.EffortBased, true, 6, 90];
         yield return ["FND-S", "THRESHOLD_TEMPO", 5, PrescriptionIntensityMode.EffortBased, false, 0, 0];
         yield return ["BLD-P", "THRESHOLD_TEMPO", 4, PrescriptionIntensityMode.PaceBased, false, 0, 0];
-        yield return ["BLD-S", "FARTLEK", 4, PrescriptionIntensityMode.EffortBased, true, 10, 60];
+        yield return ["BLD-S", "FARTLEK", 5, PrescriptionIntensityMode.EffortBased, true, 10, 60];
         yield return ["RS-P", "GOAL_PACE_TEN_K", 2, PrescriptionIntensityMode.PaceBased, false, 0, 0];
         yield return ["RS-S", "THRESHOLD_TEMPO", 4, PrescriptionIntensityMode.PaceBased, false, 0, 0];
         yield return ["TAP-P", "GOAL_PACE_TEN_K", 3, PrescriptionIntensityMode.PaceBased, false, 0, 0];
@@ -340,9 +340,13 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
         Assert.NotNull(workout);
         var overlay = snapshot.FindCapabilityOverlay(workoutKey, workoutVersion);
 
-        var profile = repeated
-            ? RepeatedProfile(workout!, mode, reps!.Value, recoverySeconds!.Value)
-            : ContinuousProfile(workout!, mode, DistanceAccountingMode.EstimatedSessionTotal);
+        var profile = ExactFrozenProfile(slot, workout!);
+
+        var main = profile.Components.Single(x => x.ComponentType == WorkoutComponentType.MainSet);
+        Assert.Equal(mode, main.IntensityTarget.Mode);
+        Assert.Equal(repeated ? PrescriptionStructureMode.Repeated : PrescriptionStructureMode.Continuous, main.StructureMode);
+        Assert.Equal(repeated ? reps : null, main.WorkQuantity!.RepetitionCount);
+        Assert.Equal(repeated ? recoverySeconds : null, main.RecoveryQuantity?.DurationSeconds);
 
         var result = WorkoutPrescriptionProfileValidator.Validate(profile, workout, overlay);
 
@@ -359,12 +363,12 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
         var stamped = CatalogStamper.StampAsPublished(serializer, hasher, LoadRealSnapshot());
         var workout = stamped.FindWorkout(workoutKey, workoutVersion)!;
 
-        var profile = repeated
-            ? RepeatedProfile(workout, mode, reps!.Value, recoverySeconds!.Value)
-            : ContinuousProfile(workout, mode, DistanceAccountingMode.EstimatedSessionTotal);
+        var profile = ExactFrozenProfile(slot, workout);
         var stampedProfile = profile with { Metadata = profile.Metadata with { ContentHash = "test-hash-" + slot } };
 
         var executable = new WorkoutPrescriptionExecutionProjector().Project(stampedProfile, workout);
+        Assert.Equal((ExecutableIntensityMode)(int)mode,
+            executable.Components.Single(x => x.ComponentType == WorkoutComponentType.MainSet).Intensity.Mode);
 
         Assert.Empty(PlanCatalog.Contracts.Prescriptions.ExecutableWorkoutPrescriptionValidator.Validate(executable));
         if (repeated)
@@ -372,7 +376,40 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
             var mainSet = executable.Components.Single(c => c.ComponentType == WorkoutComponentType.MainSet);
             Assert.Equal(reps, mainSet.RepetitionCount);
             Assert.Equal(recoverySeconds, mainSet.Recovery!.Value);
+            Assert.Equal(reps - 1, mainSet.Recovery.RecoveryCount);
         }
+    }
+
+    [Fact]
+    public void CorrectedFartlekV5_BuildAndTaper_ProjectsExactlyThreeComponents_WithNestedRecoveryOnly()
+    {
+        var serializer = new SystemTextJsonCanonicalSerializer();
+        var hasher = new Sha256ContentHasher();
+        var stamped = CatalogStamper.StampAsPublished(serializer, hasher, LoadRealSnapshot());
+        var workout = stamped.FindWorkout("FARTLEK", 5)!;
+
+        Assert.Equal([WorkoutComponentType.WarmUp, WorkoutComponentType.MainSet, WorkoutComponentType.CoolDown],
+            workout.Components!.Select(x => x.ComponentType).ToList());
+
+        foreach (var slot in new[] { "BLD-S", "TAP-S" })
+        {
+            var profile = ExactFrozenProfile(slot, workout) with
+            {
+                Metadata = ExactFrozenProfile(slot, workout).Metadata with { ContentHash = "test-hash-" + slot }
+            };
+            var executable = new WorkoutPrescriptionExecutionProjector().Project(profile, workout);
+
+            Assert.Equal(3, executable.Components.Count);
+            Assert.DoesNotContain(executable.Components, x => x.ComponentType == WorkoutComponentType.Recovery);
+            Assert.NotNull(executable.Components.Single(x => x.ComponentType == WorkoutComponentType.MainSet).Recovery);
+        }
+
+        var taper = new WorkoutPrescriptionExecutionProjector().Project(
+            ExactFrozenProfile("TAP-S", workout) with
+            {
+                Metadata = ExactFrozenProfile("TAP-S", workout).Metadata with { ContentHash = "test-hash-tap" }
+            }, workout);
+        Assert.Equal(ExecutableRecoveryMode.Walk, taper.Components.Single(x => x.ComponentType == WorkoutComponentType.MainSet).Recovery!.Mode);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -460,5 +497,67 @@ public sealed class PrescriptionCapabilityMetadataOverlayTests
         DoseCategory = PrescriptionDoseCategory.Primary,
         DistanceAccountingMode = distanceMode,
         Components = components,
+    };
+
+    private static WorkoutPrescriptionProfile ExactFrozenProfile(string slot, WorkoutDefinition workout)
+    {
+        var main = slot switch
+        {
+            "FND-P" => RepeatedMain(30, 6, 90, PrescriptionRecoveryMode.Jog, "CONTROLLED_AEROBIC_POWER_INTRO"),
+            "FND-S" => ContinuousMain(1200, PrescriptionIntensityMode.EffortBased, "CONTROLLED_THRESHOLD_INTRO"),
+            "BLD-P" => ContinuousMain(2400, PrescriptionIntensityMode.PaceBased, "THRESHOLD_PACE"),
+            "BLD-S" => RepeatedMain(60, 10, 60, PrescriptionRecoveryMode.Jog, "SURGE_FASTER_THAN_5K_EFFORT"),
+            "RS-P" => ContinuousMain(1200, PrescriptionIntensityMode.PaceBased, "GOAL_PACE_TEN_K"),
+            "RS-S" => ContinuousMain(1500, PrescriptionIntensityMode.PaceBased, "THRESHOLD_SUPPORT_PACE"),
+            "TAP-P" => ContinuousMain(600, PrescriptionIntensityMode.PaceBased, "GOAL_PACE_TEN_K"),
+            "TAP-S" => RepeatedMain(20, 6, 100, PrescriptionRecoveryMode.Walk, "CONTROLLED_STRIDES_SHARPENING"),
+            _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null),
+        };
+        var dose = slot.EndsWith("-P", StringComparison.Ordinal)
+            ? PrescriptionDoseCategory.Primary
+            : PrescriptionDoseCategory.SecondaryControlled;
+
+        return ProfileWith(workout,
+        [
+            SupportComponent(1, WorkoutComponentType.WarmUp, 600),
+            main,
+            SupportComponent(3, WorkoutComponentType.CoolDown, 300),
+        ], DistanceAccountingMode.EstimatedSessionTotal) with { DoseCategory = dose };
+    }
+
+    private static PrescriptionProfileComponent SupportComponent(int order, WorkoutComponentType type, int seconds) => new()
+    {
+        SequenceOrder = order,
+        ComponentType = type,
+        StructureMode = PrescriptionStructureMode.Continuous,
+        WorkQuantity = new PrescriptionWorkQuantity { DurationSeconds = seconds },
+        IntensityTarget = new PrescriptionIntensityTarget { Mode = PrescriptionIntensityMode.EffortBased, EffortDescriptorKey = "EASY" },
+    };
+
+    private static PrescriptionProfileComponent ContinuousMain(int seconds, PrescriptionIntensityMode mode, string descriptor) => new()
+    {
+        SequenceOrder = 2,
+        ComponentType = WorkoutComponentType.MainSet,
+        StructureMode = PrescriptionStructureMode.Continuous,
+        WorkQuantity = new PrescriptionWorkQuantity { DurationSeconds = seconds },
+        IntensityTarget = ExactIntensity(mode, descriptor),
+    };
+
+    private static PrescriptionProfileComponent RepeatedMain(int workSeconds, int repetitions, int recoverySeconds, PrescriptionRecoveryMode recoveryMode, string descriptor) => new()
+    {
+        SequenceOrder = 2,
+        ComponentType = WorkoutComponentType.MainSet,
+        StructureMode = PrescriptionStructureMode.Repeated,
+        WorkQuantity = new PrescriptionWorkQuantity { DurationSeconds = workSeconds, RepetitionCount = repetitions },
+        RecoveryQuantity = new PrescriptionRecoveryQuantity { DurationSeconds = recoverySeconds, Mode = recoveryMode },
+        RecoveryPlacement = PrescriptionRecoveryPlacement.BetweenRepetitions,
+        IntensityTarget = new PrescriptionIntensityTarget { Mode = PrescriptionIntensityMode.EffortBased, EffortDescriptorKey = descriptor },
+    };
+
+    private static PrescriptionIntensityTarget ExactIntensity(PrescriptionIntensityMode mode, string descriptor) => mode switch
+    {
+        PrescriptionIntensityMode.PaceBased => new PrescriptionIntensityTarget { Mode = mode, PaceDescriptorKey = descriptor },
+        PrescriptionIntensityMode.HeartRateBased => new PrescriptionIntensityTarget { Mode = mode, HeartRateZoneKey = descriptor },
+        _ => new PrescriptionIntensityTarget { Mode = mode, EffortDescriptorKey = descriptor },
     };
 }
