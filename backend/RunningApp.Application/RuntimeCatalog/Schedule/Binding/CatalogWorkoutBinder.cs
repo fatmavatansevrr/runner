@@ -192,6 +192,30 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                     var definition = await ResolveDefinitionAsync(candidateReference);
                     ValidateInClosureAndPhase(definition, datedWeek.PhaseKey);
 
+                    // Backend Integration Phase 10K-FREQ.6D.4D Split B: exact prescription-profile
+                    // resolution, additive to workout-definition binding above. Zero declared
+                    // candidates leaves the session Legacy (both fields null) — no error, per the
+                    // additive/degenerate-default legacy boundary. Exactly one candidate makes the
+                    // session ProfileBacked. More than one is ambiguous and fails closed; RunningApp
+                    // never chooses among candidates by DoseCategory, phase, or any other search —
+                    // that invariant is enforced catalog-side, at publish time (PlanCatalog's
+                    // PrescriptionProfileLaneDoseValidator), not rediscovered here.
+                    string? prescriptionProfileKey = null;
+                    int? prescriptionProfileVersion = null;
+                    if (stageDefinition.PrescriptionProfileCandidateKeys.Count == 1)
+                    {
+                        var profileCandidate = stageDefinition.PrescriptionProfileCandidateKeys[0];
+                        prescriptionProfileKey = profileCandidate.Key;
+                        prescriptionProfileVersion = profileCandidate.Version;
+                    }
+                    else if (stageDefinition.PrescriptionProfileCandidateKeys.Count > 1)
+                    {
+                        throw new CatalogWorkoutBindingAmbiguousPrescriptionProfileCandidateException(
+                            $"Stage '{stageDefinition.ProgressionStageKey}' lane {laneOrdinal} declares " +
+                            $"{stageDefinition.PrescriptionProfileCandidateKeys.Count} prescription-profile candidates — " +
+                            "no multi-profile selection policy exists; a stage becomes ProfileBacked only with exactly one candidate.");
+                    }
+
                     session = new BoundCatalogSession
                     {
                         WeekNumber = datedWeek.WeekNumber,
@@ -199,6 +223,8 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                         PhaseKey = datedWeek.PhaseKey,
                         ProgressionStageKey = stageWeek.ProgressionStageKey,
                         LaneOrdinal = laneOrdinal,
+                        PrescriptionProfileKey = prescriptionProfileKey,
+                        PrescriptionProfileVersion = prescriptionProfileVersion,
                         StructuralRole = slot.StructuralRole,
                         WorkoutDefinitionKey = definition.Key,
                         WorkoutDefinitionVersion = definition.Version,
@@ -256,6 +282,8 @@ internal sealed class CatalogWorkoutBinder : ICatalogWorkoutBinder
                         PhaseKey = datedWeek.PhaseKey,
                         ProgressionStageKey = null,
                         LaneOrdinal = null,
+                        PrescriptionProfileKey = null,
+                        PrescriptionProfileVersion = null,
                         StructuralRole = slot.StructuralRole,
                         WorkoutDefinitionKey = definition.Key,
                         WorkoutDefinitionVersion = definition.Version,

@@ -143,6 +143,16 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
                 .ToList()
             : new List<PlanCatalogReference>();
 
+        // Backend Integration Phase 10K-FREQ.6D.4D Split B: optional "prescriptionProfileCandidates"
+        // array — additive, sibling to "workoutCandidates". Absent stages remain Legacy.
+        var prescriptionProfileCandidateKeys = stageEl.TryGetProperty("prescriptionProfileCandidates", out var profileCandidatesEl) && profileCandidatesEl.ValueKind == JsonValueKind.Array
+            ? profileCandidatesEl.EnumerateArray()
+                .Select(c => new PlanCatalogReference(
+                    RequireString(c, "key", reference),
+                    RequireInt(c, "version", reference)))
+                .ToList()
+            : new List<PlanCatalogReference>();
+
         return new CatalogWorkoutProgressionStage
         {
             ProgressionStageKey = stageKey,
@@ -154,6 +164,7 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
             Requires = requires,
             FallbackStageKey = fallbackStageKey,
             WorkoutCandidateReferences = workoutCandidateReferences,
+            PrescriptionProfileCandidateKeys = prescriptionProfileCandidateKeys,
         };
     }
 

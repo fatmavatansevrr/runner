@@ -55,6 +55,18 @@ internal sealed class BoundCatalogSession
     /// </summary>
     public int? LaneOrdinal { get; init; }
 
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split B — the exact, versioned prescription
+    /// profile this session was bound to, when its resolved progression stage declares exactly
+    /// one <c>PrescriptionProfileCandidateKeys</c> entry (ProfileBacked). Null for every
+    /// FixedDefault session and for any StageControlled session whose stage declares zero
+    /// candidates (Legacy — see <see cref="CatalogWorkoutBinder"/>). <see cref="PrescriptionProfileKey"/>
+    /// and <see cref="PrescriptionProfileVersion"/> are set together or not at all.
+    /// </summary>
+    public string? PrescriptionProfileKey { get; init; }
+
+    public int? PrescriptionProfileVersion { get; init; }
+
     public required string StructuralRole { get; init; }
     public required string WorkoutDefinitionKey { get; init; }
     public required int WorkoutDefinitionVersion { get; init; }

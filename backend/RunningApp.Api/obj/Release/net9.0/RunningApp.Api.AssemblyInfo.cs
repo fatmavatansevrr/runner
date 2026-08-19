@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RunningApp.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ea4caf3ebf5822e8bebeff9a549b94017971b1d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e0a513b49802118363f70341605c893c1ee88e0b")]
 [assembly: System.Reflection.AssemblyProductAttribute("RunningApp.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RunningApp.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

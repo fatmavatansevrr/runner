@@ -33,4 +33,16 @@ public sealed record WorkoutProgressionStageDefinition
     public required IReadOnlyList<RuntimeEligibilityCondition> Requires { get; init; }
 
     public string? FallbackStageKey { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D Split B — exact, versioned prescription-profile candidate(s) for
+    /// this stage (sibling to <see cref="WorkoutCandidates"/>, same exact-pin discipline: the
+    /// binder rejects more than one candidate rather than choosing). Null/empty for every stage
+    /// authored before this field existed, or intentionally left legacy — those stages remain
+    /// Legacy (never ProfileBacked); only a stage with exactly one candidate here becomes
+    /// ProfileBacked. Never selected by DoseCategory search — the lane the stage belongs to
+    /// (see <see cref="WorkoutProgressionLaneDefinition.LaneOrdinal"/>) determines the required
+    /// DoseCategory, checked by <see cref="Validation.PrescriptionProfileLaneDoseValidator"/>.
+    /// </summary>
+    public IReadOnlyList<VersionedCatalogReference>? PrescriptionProfileCandidates { get; init; }
 }

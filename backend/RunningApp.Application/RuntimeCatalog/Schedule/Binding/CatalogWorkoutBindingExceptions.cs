@@ -83,3 +83,9 @@ internal sealed class CatalogWorkoutBindingLaneCountMismatchException : CatalogW
 {
     public CatalogWorkoutBindingLaneCountMismatchException(string message) : base(message) { }
 }
+
+/// <summary>Backend Integration Phase 10K-FREQ.6D.4D Split B: the resolved progression stage declares more than one prescription-profile candidate — no multi-profile selection policy exists; a stage becomes ProfileBacked only with exactly one candidate.</summary>
+internal sealed class CatalogWorkoutBindingAmbiguousPrescriptionProfileCandidateException : CatalogWorkoutBindingException
+{
+    public CatalogWorkoutBindingAmbiguousPrescriptionProfileCandidateException(string message) : base(message) { }
+}

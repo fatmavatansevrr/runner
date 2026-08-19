@@ -80,7 +80,7 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
         // combinations v1-v3 keep resolving byte-identically. schemaVersion >= 2 (candidate) documents use
         // an exact, self-contained UNION closure (progression candidates ∪ level-modifier eligible
         // workouts) resolved only through exact key+version lookups — never FindWorkout(key).
-        var progressionIsExact = progression.PhaseProgressions.SelectMany(p => p.Stages).Any(s => s.WorkoutCandidates is not null);
+        var progressionIsExact = progression.PhaseProgressions.SelectMany(p => p.EffectiveLanes).SelectMany(l => l.Stages).Any(s => s.WorkoutCandidates is not null);
         var levelModifierIsExact = levelModifier.EligibleWorkouts is not null;
 
         if (progressionIsExact != levelModifierIsExact)
@@ -104,7 +104,8 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
         else
         {
             var candidateKeys = progression.PhaseProgressions
-                .SelectMany(p => p.Stages)
+                .SelectMany(p => p.EffectiveLanes)
+                .SelectMany(l => l.Stages)
                 .SelectMany(s => s.WorkoutCandidateKeys ?? Enumerable.Empty<string>())
                 .Distinct();
 

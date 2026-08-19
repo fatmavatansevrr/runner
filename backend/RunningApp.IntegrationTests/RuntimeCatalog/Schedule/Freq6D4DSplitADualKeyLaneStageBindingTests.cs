@@ -545,15 +545,20 @@ public sealed class Freq6D4DSplitADualKeyLaneStageBindingTests
     // ───────────────────────── 24: no production profile selection occurs in Split-A ─────────────────────────
 
     [Fact]
-    public void BoundCatalogSession_CarriesNoPrescriptionProfileField_ProfileSelectionRemainsSplitBScope()
+    public void BoundCatalogSession_CarriedNoPrescriptionProfileFieldAtSplitA_SplitBAddedItAsDisclosedNextStep()
     {
-        // Architectural proof by type shape: BoundCatalogSession has exactly the fields this
-        // Split-A phase introduced/preserved (WeekNumber/Date/PhaseKey/ProgressionStageKey/
-        // LaneOrdinal/StructuralRole/WorkoutDefinitionKey+Version/binding provenance) - no
-        // PrescriptionProfileKey/PrescriptionProfileVersion field exists anywhere on it.
+        // Architectural proof by type shape, updated for Split B: this Split-A phase itself
+        // introduced no profile-selection field — that was explicitly out of Split A's own
+        // scope (see this file's class-level doc comment) and was proven here at the time.
+        // Phase 10K-FREQ.6D.4D Split B (FREQ.6D.4D.2) has since closed exactly that boundary,
+        // additively: BoundCatalogSession now also carries PrescriptionProfileKey/Version,
+        // populated only for ProfileBacked StageControlled sessions, null otherwise. This is
+        // the EXPECTED, disclosed consequence of Split B landing — not a Split-A regression —
+        // mirroring this engagement's established practice of updating an old boundary-proof
+        // test once the boundary it proved is deliberately, subsequently closed.
         var properties = typeof(BoundCatalogSession).GetProperties().Select(p => p.Name).ToList();
-        Assert.DoesNotContain("PrescriptionProfileKey", properties);
-        Assert.DoesNotContain("PrescriptionProfileVersion", properties);
+        Assert.Contains("PrescriptionProfileKey", properties);
+        Assert.Contains("PrescriptionProfileVersion", properties);
         Assert.Contains("LaneOrdinal", properties);
     }
 

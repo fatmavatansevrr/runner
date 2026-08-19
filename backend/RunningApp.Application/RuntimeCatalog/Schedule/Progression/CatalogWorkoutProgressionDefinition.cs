@@ -105,6 +105,19 @@ public sealed class CatalogWorkoutProgressionStage
     /// that constructs a stage without this field continues to compile and behave unchanged.
     /// </summary>
     public IReadOnlyList<PlanCatalogReference> WorkoutCandidateReferences { get; init; } = Array.Empty<PlanCatalogReference>();
+
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split B — the stage's explicit, exact
+    /// prescription-profile candidate reference(s), sibling to
+    /// <see cref="WorkoutCandidateReferences"/>, same exact-pin discipline. Empty (the default)
+    /// for every stage authored before this field existed — that stage remains Legacy, never
+    /// ProfileBacked (see <see cref="Binding.CatalogWorkoutBinder"/>). Exactly one entry is the
+    /// only binder-resolvable shape; more than one is rejected as ambiguous at bind time. Never
+    /// filtered by DoseCategory here — that invariant is enforced catalog-side, at publish time,
+    /// by PlanCatalog's <c>PrescriptionProfileLaneDoseValidator</c> against the lane this stage
+    /// belongs to.
+    /// </summary>
+    public IReadOnlyList<PlanCatalogReference> PrescriptionProfileCandidateKeys { get; init; } = Array.Empty<PlanCatalogReference>();
 }
 
 public sealed class CatalogRuntimeEligibilityCondition
