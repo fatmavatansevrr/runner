@@ -25,6 +25,17 @@ public sealed class CatalogBundleAssembler(ICanonicalJsonSerializer serializer, 
         IRetirementLedger? retirementLedger = null)
         => AssembleInternal(snapshot, combinationKey, combinationVersion, executionDependencies, retirementLedger);
 
+    /// <inheritdoc cref="ICatalogBundleAssembler.Assemble(CatalogSourceSnapshot, string, int, IReadOnlyList{VersionedCatalogReference}, IRetirementLedger?)"/>
+    public PublishedTemplateBundle Assemble(
+        CatalogSourceSnapshot snapshot,
+        string combinationKey,
+        int combinationVersion,
+        IReadOnlyList<VersionedCatalogReference> exactPrescriptionProfileRefs,
+        IRetirementLedger? retirementLedger = null)
+        => AssembleInternal(snapshot, combinationKey, combinationVersion,
+            exactPrescriptionProfileRefs.Select(r => new ExactPrescriptionProjectionDependency { Profile = r }).ToList(),
+            retirementLedger);
+
     private PublishedTemplateBundle AssembleInternal(
         CatalogSourceSnapshot snapshot,
         string combinationKey,

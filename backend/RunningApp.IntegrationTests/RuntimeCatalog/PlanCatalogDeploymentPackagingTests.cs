@@ -9,7 +9,7 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog;
 
 public sealed class PlanCatalogDeploymentPackagingTests
 {
-    internal const int ExpectedRuntimeCatalogJsonFiles = 78;
+    internal const int ExpectedRuntimeCatalogJsonFiles = 97;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -92,7 +92,10 @@ public sealed class PlanCatalogDeploymentPackagingTests
         Assert.Contains("plan-catalog\\catalog\\**\\*.json", project);
         Assert.Contains("Link=\"plan-catalog\\catalog\\%(RecursiveDir)%(Filename)%(Extension)\"", project);
         Assert.Contains("CopyToPublishDirectory=\"PreserveNewest\"", project);
-        Assert.DoesNotContain("plan-catalog\\artifacts", project);
+        // Phase 10K-FREQ.6D.4D Split E: exactly one pinned published-bundle release folder is
+        // additionally packaged (see PlanCatalogOptions.PublishedBundleReleaseVersion), never the
+        // whole artifacts/ tree (other releases, docs, tests remain excluded).
+        Assert.Contains("plan-catalog\\artifacts\\appsel-plan-catalog\\1.1.0\\bundles\\**\\*.json", project);
         Assert.DoesNotContain("plan-catalog\\docs", project);
         Assert.DoesNotContain("plan-catalog\\tests", project);
     }

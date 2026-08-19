@@ -52,7 +52,7 @@ public sealed class PrescriptionBundleProjectionIntegrationTests
         var stamped = CatalogStamper.StampAsPublished(serializer, hasher, fixture.BuildSnapshot());
         var assembler = new CatalogBundleAssembler(serializer, hasher);
         var legacy = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 1);
-        var explicitEmpty = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 1, []);
+        var explicitEmpty = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 1, Array.Empty<ExactPrescriptionProjectionDependency>());
         Assert.Null(legacy.ExecutionPrescriptions);
         Assert.Null(explicitEmpty.ExecutionPrescriptions);
         Assert.Equal(legacy.BundleContentHash, explicitEmpty.BundleContentHash);

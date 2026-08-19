@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "INTERMEDIATE_5D_BUILD_SECONDARY_CONTROLLED",
     "version": 1,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 5 },
   "doseCategory": "SECONDARY_CONTROLLED",

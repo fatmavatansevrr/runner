@@ -128,7 +128,11 @@ builder.Services.AddScoped<IPlanGenerationEngine, PlaceholderPlanGenerationEngin
 // the architectural boundary (Process A = catalog authoring, Process B =
 // runtime plan assignment/generation, which this phase begins to integrate
 // with read-only).
-builder.Services.Configure<PlanCatalogOptions>(options => options.CatalogRootPath = catalogRoot.CatalogRootPath);
+builder.Services.Configure<PlanCatalogOptions>(options =>
+{
+    options.CatalogRootPath = catalogRoot.CatalogRootPath;
+    options.PublishedBundleReleaseVersion = builder.Configuration[$"{PlanCatalogOptions.SectionName}:PublishedBundleReleaseVersion"];
+});
 builder.Services.Configure<RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions>(
     builder.Configuration.GetSection(RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogLivePilotOptions.SectionName));
 // Backend Integration Phase 4F.9.3: Development-only local-acceptance seam.
@@ -169,6 +173,16 @@ builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Schedule.Bindin
 
 builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Prescription.Volume.ICatalogPeakVolumeBandLoader,
     RunningApp.Application.RuntimeCatalog.Prescription.Volume.CatalogPeakVolumeBandLoader>();
+
+// Backend Integration Phase 10K-FREQ.6D.4D Split E: reads the real, already-existing Process A
+// publish/release convention (plan-catalog/artifacts/appsel-plan-catalog/{PublishedBundleReleaseVersion}/
+// bundles/) to discover a published bundle's ExecutionPrescriptions for ProfileBacked consumption.
+// Pinned to an explicit, exact release version (PlanCatalogOptions.PublishedBundleReleaseVersion) —
+// absent/null means no lookup occurs at all, byte-identical to every deployment before this split.
+builder.Services.AddScoped<RunningApp.Application.RuntimeCatalog.Prescription.Execution.IPublishedTemplateBundleLoader>(sp =>
+    new RunningApp.Application.RuntimeCatalog.Prescription.Execution.PublishedTemplateBundleLoader(
+        sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlanCatalogOptions>>().Value,
+        catalogRoot.CatalogRootPath));
 
 // Backend Integration Phase 2: analysis-only vocabulary mapper. Consumes Phase 1's
 // PlanCatalogCandidateSummary and reports backend representation support per concept

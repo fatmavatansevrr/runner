@@ -28,6 +28,14 @@
              Link="plan-catalog\catalog\%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <!-- Phase 10K-FREQ.6D.4D Split E: package the pinned published-bundle release
+         (see PlanCatalogOptions.PublishedBundleReleaseVersion) as a sibling of the
+         catalog/ tree above, matching PublishedTemplateBundleLoader's sibling-root
+         resolution so packaged/deployed builds can discover it too. -->
+    <Content Include="..\..\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\**\*.json"
+             Link="plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

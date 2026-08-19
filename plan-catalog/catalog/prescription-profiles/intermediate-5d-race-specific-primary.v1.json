@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "INTERMEDIATE_5D_RACE_SPECIFIC_PRIMARY",
     "version": 1,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2 },
   "doseCategory": "PRIMARY",

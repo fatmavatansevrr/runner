@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "key": "INTERMEDIATE_5D_FOUNDATION_SECONDARY_CONTROLLED",
     "version": 1,
-    "status": "DRAFT"
+    "status": "VALIDATED"
   },
   "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 5 },
   "doseCategory": "SECONDARY_CONTROLLED",

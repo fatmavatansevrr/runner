@@ -136,23 +136,33 @@ public static class TemplateCombinationValidator
 
         var anyReachable = false;
 
+        // Phase 10K-FREQ.6D.4D Split E: EffectiveLanes (not .Stages directly) so a
+        // lane-authored phase's per-lane stages are correctly checked for reachability —
+        // degenerates to the original .Stages-only check for every existing single-lane
+        // progression document (EffectiveLanes normalizes that case to one implicit lane
+        // wrapping Stages). Fallback resolution stays scoped per-lane, matching the
+        // RunningApp binder's own per-lane stage lookup and this engagement's established
+        // lane-scoping precedent (see WorkoutProgressionValidator, FREQ.6D.4D Split B).
         foreach (var phaseProgression in progression.PhaseProgressions)
         {
-            var byKey = phaseProgression.Stages.ToDictionary(s => s.StageKey, StringComparer.Ordinal);
-
-            foreach (var stage in phaseProgression.Stages)
+            foreach (var lane in phaseProgression.EffectiveLanes)
             {
-                var reachable = StageHasReachableEffectiveCandidate(stage, byKey, IsUsableLegacy, IsUsableExact, new HashSet<string>(StringComparer.Ordinal));
-                anyReachable |= reachable;
+                var byKey = lane.Stages.ToDictionary(s => s.StageKey, StringComparer.Ordinal);
 
-                if (reachable)
+                foreach (var stage in lane.Stages)
                 {
-                    continue;
-                }
+                    var reachable = StageHasReachableEffectiveCandidate(stage, byKey, IsUsableLegacy, IsUsableExact, new HashSet<string>(StringComparer.Ordinal));
+                    anyReachable |= reachable;
 
-                issues.Add(new ValidationIssue("TC_STAGE_UNREACHABLE", ValidationSeverity.Error,
-                    $"Stage '{stage.StageKey}' in phase '{phaseProgression.PhaseKey}' has no effective candidate and no valid fallback chain.",
-                    $"$.phaseProgressions[{phaseProgression.PhaseKey}].stages[{stage.StageKey}]"));
+                    if (reachable)
+                    {
+                        continue;
+                    }
+
+                    issues.Add(new ValidationIssue("TC_STAGE_UNREACHABLE", ValidationSeverity.Error,
+                        $"Stage '{stage.StageKey}' in phase '{phaseProgression.PhaseKey}' lane {lane.LaneOrdinal} has no effective candidate and no valid fallback chain.",
+                        $"$.phaseProgressions[{phaseProgression.PhaseKey}].stages[{stage.StageKey}]"));
+                }
             }
         }
 

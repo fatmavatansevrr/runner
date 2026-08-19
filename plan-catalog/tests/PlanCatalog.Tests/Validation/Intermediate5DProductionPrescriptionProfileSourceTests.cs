@@ -458,7 +458,7 @@ public sealed class Intermediate5DProductionPrescriptionProfileSourceTests
 
         var assembler = new CatalogBundleAssembler(new SystemTextJsonCanonicalSerializer(), new Sha256ContentHasher());
         var legacy = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 10);
-        var explicitEmpty = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 10, []);
+        var explicitEmpty = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 10, Array.Empty<ExactPrescriptionProjectionDependency>());
 
         Assert.Null(legacy.ExecutionPrescriptions);
         Assert.Null(explicitEmpty.ExecutionPrescriptions);

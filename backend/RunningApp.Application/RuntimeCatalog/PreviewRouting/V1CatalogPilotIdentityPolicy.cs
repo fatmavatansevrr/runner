@@ -54,6 +54,21 @@ public static class V1CatalogPilotIdentityPolicy
     public const int ThreeDayCandidateVersion = 1;
 
     /// <summary>
+    /// Phase 10K-FREQ.6D.4D Split E — the real, published Intermediate 5D Core
+    /// candidate. Deliberately NOT yet in <see cref="IsSupportedLevelFrequency"/>
+    /// (see the comment there): <c>CatalogWeekSkeletonCalendarMaterializer</c>'s
+    /// KEY_SESSION calendar-date assignment algorithm hardcodes exactly one
+    /// KEY_SESSION slot per week; a 5D week has two (LaneOrdinal 0/1), which
+    /// needs a real algorithm change plus an undecided product question
+    /// (minimum separation between the two weekly KEY sessions) before this
+    /// candidate can be safely reached from a live request. Kept here, not
+    /// consumed anywhere yet, so the real key/version are recorded in one
+    /// place for whoever picks this up next.
+    /// </summary>
+    public const string FiveDayCandidateKey = "TEN_K__5D__INTERMEDIATE";
+    public const int FiveDayCandidateVersion = 1;
+
+    /// <summary>
     /// GEN.4E — Beginner 4D Core public activation. Per GEN.4A's frozen
     /// vocabulary decision, backend <see cref="RunningBackground.Beginner"/>
     /// is the exact canonical counterpart of the catalog's "NEW" experience
@@ -76,6 +91,14 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 3) or
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Beginner, 4);
+    // NOT (Intermediate, 5): reverted. CatalogWeekSkeletonCalendarMaterializer's
+    // KEY_SESSION date-assignment algorithm hardcodes exactly one KEY_SESSION
+    // slot per week (a scalar chosen date); a 5D week has two (LaneOrdinal 0/1),
+    // which this algorithm would either reject (DaysPerWeek is not (3 or 4)) or,
+    // if that guard were removed, silently collide onto the same calendar date.
+    // Widening this requires a real algorithm change (multi-slot backtracking)
+    // plus an undecided product question (minimum separation between the two
+    // weekly KEY sessions) -- STOP-condition territory, not mechanical routing.
 
     /// <summary>
     /// Returns whether the given request identity matches the pilot

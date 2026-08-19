@@ -3,6 +3,7 @@ using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog.Prescription;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Schedule;
@@ -109,6 +110,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
     private readonly ICatalogSessionPrescriptionPlanner _sessionPrescriptionPlanner;
     private readonly ICatalogFinalPrescribedPlanFinalizer _finalPrescribedPlanFinalizer;
     private readonly ICatalogPublicPreviewMaterializer _publicPreviewMaterializer;
+    private readonly IPublishedTemplateBundleLoader _publishedBundleLoader;
 
     /// <summary>
     /// Public, DI-facing constructor. Composes default <see cref="ICatalogPlanSkeletonOrchestrator"/>
@@ -149,12 +151,13 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         RuntimeConditionResolutionService orchestration,
         ICatalogWorkoutProgressionLoader progressionLoader,
         ICatalogWorkoutDefinitionLoader workoutDefinitionLoader,
-        ICatalogPeakVolumeBandLoader peakVolumeBandLoader)
+        ICatalogPeakVolumeBandLoader peakVolumeBandLoader,
+        IPublishedTemplateBundleLoader publishedBundleLoader)
         : this(gate, orchestration, DefaultSkeletonOrchestrator(), DefaultCalendarMaterializer(), DefaultDatedSkeletonValidator(),
             progressionLoader, DefaultStageAllocator(), DefaultStageScheduleValidator(),
             workoutDefinitionLoader, DefaultWorkoutBinder(), DefaultBoundPlanValidator(),
             peakVolumeBandLoader, DefaultVolumeAndLongRunPlanner(), DefaultSessionPrescriptionPlanner(),
-            DefaultFinalPrescribedPlanFinalizer(), DefaultPublicPreviewMaterializer())
+            DefaultFinalPrescribedPlanFinalizer(), DefaultPublicPreviewMaterializer(), publishedBundleLoader)
     {
     }
 
@@ -203,7 +206,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             progressionLoader, stageAllocator, stageScheduleValidator,
             DefaultWorkoutDefinitionLoader(), DefaultWorkoutBinder(), DefaultBoundPlanValidator(),
             DefaultPeakVolumeBandLoader(), DefaultVolumeAndLongRunPlanner(), DefaultSessionPrescriptionPlanner(),
-            DefaultFinalPrescribedPlanFinalizer(), DefaultPublicPreviewMaterializer())
+            DefaultFinalPrescribedPlanFinalizer(), DefaultPublicPreviewMaterializer(), DefaultPublishedBundleLoader())
     {
     }
 
@@ -224,7 +227,8 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         ICatalogVolumeAndLongRunPlanner volumeAndLongRunPlanner,
         ICatalogSessionPrescriptionPlanner sessionPrescriptionPlanner,
         ICatalogFinalPrescribedPlanFinalizer finalPrescribedPlanFinalizer,
-        ICatalogPublicPreviewMaterializer publicPreviewMaterializer)
+        ICatalogPublicPreviewMaterializer publicPreviewMaterializer,
+        IPublishedTemplateBundleLoader publishedBundleLoader)
     {
         _gate = gate;
         _orchestration = orchestration;
@@ -243,6 +247,16 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         _sessionPrescriptionPlanner = sessionPrescriptionPlanner;
         _finalPrescribedPlanFinalizer = finalPrescribedPlanFinalizer;
         _publicPreviewMaterializer = publicPreviewMaterializer;
+        _publishedBundleLoader = publishedBundleLoader;
+    }
+
+    private static IPublishedTemplateBundleLoader DefaultPublishedBundleLoader() => new NullPublishedTemplateBundleLoader();
+
+    /// <summary>Test-only default (reached only via internal constructor overloads, never via the public DI-facing constructor): always resolves to Legacy (no published bundle), matching every internal test seam's pre-Split-E behavior unchanged.</summary>
+    private sealed class NullPublishedTemplateBundleLoader : IPublishedTemplateBundleLoader
+    {
+        public Task<PlanCatalog.Contracts.Bundles.PublishedTemplateBundle?> TryLoadAsync(string combinationKey, int combinationVersion, CancellationToken ct = default)
+            => Task.FromResult<PlanCatalog.Contracts.Bundles.PublishedTemplateBundle?>(null);
     }
 
     private static ICatalogPlanSkeletonOrchestrator DefaultSkeletonOrchestrator() => new CatalogPlanSkeletonOrchestrator(
@@ -884,8 +898,11 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                     string.Join(", ", volumePlan.WeeklyVolumePlan.ValidationResult.Errors.Concat(volumePlan.LongRunProgression.ValidationResult.Errors)) + ".");
             }
 
+            var publishedBundle = _publishedBundleLoader.TryLoadAsync(candidate.CandidateKey, candidate.CandidateVersion).GetAwaiter().GetResult();
+            var executionIndex = publishedBundle is not null ? ExecutionPrescriptionIndex.Build(publishedBundle) : null;
+
             var prescribedPlan = _sessionPrescriptionPlanner.Build(new CatalogSessionPrescriptionRequest(
-                candidate, boundPlan, prescriptionContext, volumePlan, definitionMap));
+                candidate, boundPlan, prescriptionContext, volumePlan, definitionMap, executionIndex));
 
             if (!prescribedPlan.ValidationResult.IsValid)
             {

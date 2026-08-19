@@ -94,8 +94,17 @@ public sealed class CatalogPublisher(
             throw new CatalogValidationException("Candidate publish-graph validation", new Core.Validation.ValidationResult(publishGraphIssues));
         }
 
+        // Phase 10K-FREQ.6D.4D Split E: the narrow, catalog-authoring-time glue disclosed
+        // as unnamed by the FREQ.6D.4D architecture (§34) and built in Split B
+        // (PrescriptionProjectionDependencyResolver) is wired in here — the one real call
+        // site that assembles every published release's bundles. A combination whose
+        // resolved WorkoutProgression declares no PrescriptionProfileCandidates anywhere
+        // (every existing 3D/4D/Beginner×4D combination today) resolves an empty dependency
+        // list, which is functionally identical to the legacy 3-arg overload (both produce
+        // ExecutionPrescriptions == null) — confirmed by Intermediate5DRealCatalogIntegrationTests.
+        // Legacy4DCombination_RemainsExecutionPrescriptionsNull_ZeroDelta against the real catalog.
         var bundles = eligibleCombinations
-            .Select(c => bundleAssembler.Assemble(stamped, c.Metadata.Key, c.Metadata.Version, retirementLedger))
+            .Select(c => AssembleBundle(stamped, c, retirementLedger))
             .ToList();
 
         var bundleArtifactTuples = bundles.SelectMany(BundleArtifactTuples).Distinct().ToList();
@@ -148,6 +157,20 @@ public sealed class CatalogPublisher(
         var files = BuildReleaseFiles(stampedForRelease, bundles, manifest);
 
         return (manifest, files);
+    }
+
+    private Contracts.Bundles.PublishedTemplateBundle AssembleBundle(
+        CatalogSourceSnapshot stamped, Core.Models.TemplateCombinationDefinition combination, IRetirementLedger retirementLedger)
+    {
+        var master = stamped.FindPlanTemplate(combination.MasterTemplate);
+        var progression = master is not null ? stamped.FindWorkoutProgression(master.WorkoutProgression) : null;
+        var exactProfileRefs = progression is not null
+            ? Core.Catalog.PrescriptionProfileClosureResolver.ComputeExactClosureRefs(progression)
+            : Array.Empty<VersionedCatalogReference>();
+
+        return exactProfileRefs.Count > 0
+            ? bundleAssembler.Assemble(stamped, combination.Metadata.Key, combination.Metadata.Version, exactProfileRefs, retirementLedger)
+            : bundleAssembler.Assemble(stamped, combination.Metadata.Key, combination.Metadata.Version, retirementLedger);
     }
 
     /// <summary>
