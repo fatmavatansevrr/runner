@@ -680,6 +680,12 @@ public sealed class CatalogPlanConfirmationService : ICatalogPlanConfirmationSer
             CatalogProgressionStageKey = progressionStageKey,
             CatalogWorkoutDefinitionKey = session.Provenance.SourceWorkoutKey,
             CatalogWorkoutDefinitionVersion = session.Provenance.SourceWorkoutVersion,
+            // Backend Integration Phase 10K-FREQ.6D.4D Split D: exact prescription-profile
+            // lineage, copied verbatim from the already-resolved Split-C/mapper provenance --
+            // never independently looked up here. Both null for Legacy sessions (every real
+            // session today); both non-null together for a genuinely ProfileBacked session.
+            CatalogPrescriptionProfileKey = session.Provenance.SourcePrescriptionProfileKey,
+            CatalogPrescriptionProfileVersion = session.Provenance.SourcePrescriptionProfileVersion,
             CatalogSlotRole = session.Provenance.SourceLayoutSlotRole,
             CatalogStructuralRole = session.Provenance.SourceLayoutSlotRole,
             CatalogPrescriptionSchemaVersion = PrescriptionSchemaVersion,

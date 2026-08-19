@@ -153,6 +153,17 @@ public sealed class GeneratedCatalogDayProvenance
 
     /// <summary>Layout slot role (e.g. "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN") — mirrors <see cref="Domain.Entities.TrainingDay.CatalogSlotRole"/>.</summary>
     public string? SourceLayoutSlotRole { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D Split D — exact prescription-profile lineage, populated only when
+    /// the source <c>CatalogPrescribedSession.PrescriptionSource</c> is
+    /// <c>CatalogSessionPrescriptionSource.ProfileBacked</c> (both fields together); null/null
+    /// for Legacy sessions. Mirrors <see cref="Domain.Entities.TrainingDay.CatalogPrescriptionProfileKey"/>/
+    /// <see cref="Domain.Entities.TrainingDay.CatalogPrescriptionProfileVersion"/> exactly — carried
+    /// through, never re-derived or re-selected at this mapping boundary.
+    /// </summary>
+    public string? SourcePrescriptionProfileKey { get; init; }
+    public int? SourcePrescriptionProfileVersion { get; init; }
 }
 
 /// <summary>

@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Schedule;
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunway;
@@ -219,6 +220,8 @@ internal static class PreparationRunwayPersistablePlanMapper
             SourceWorkoutVersion = session.WorkoutDefinitionVersion,
             SourceProgressionStepKey = session.ProgressionStageKey,
             SourceLayoutSlotRole = session.StructuralRole,
+            SourcePrescriptionProfileKey = session.PrescriptionSource.ExactProfileKeyOrNull(),
+            SourcePrescriptionProfileVersion = session.PrescriptionSource.ExactProfileVersionOrNull(),
         },
     };
 

@@ -73,6 +73,25 @@ public class TrainingDay
     public string? CatalogProgressionStageKey { get; set; }
     public string? CatalogWorkoutDefinitionKey { get; set; }
     public int? CatalogWorkoutDefinitionVersion { get; set; }
+
+    // ── Phase 10K-FREQ.6D.4D Split D: exact prescription-profile lineage ──
+    // Nullable/additive, same discipline as CatalogWorkoutDefinitionKey/Version
+    // above. Null for Legacy days (no ProfileBacked prescription source);
+    // both populated together for ProfileBacked days, never one alone. Exact,
+    // immutable pins -- never re-resolved on read, never "latest" fallback.
+    // LaneOrdinal is deliberately NOT persisted here: per the FREQ.6D.4D
+    // architecture's own §17 finding it is safely reconstructible from this
+    // row's own (CatalogProgressionStageKey, progression key+version) once
+    // progression artifacts are treated as immutable, so a redundant column
+    // would be a second, unnecessary authority for the same fact. Execution-
+    // prescription content/hash is likewise deliberately NOT persisted here
+    // (BUNDLE_ONLY per that same architecture finding) -- it is always
+    // deterministically reconstructible from the exact, immutable
+    // (CatalogPrescriptionProfileKey, CatalogPrescriptionProfileVersion) pair
+    // against any historical published bundle for this row's exact candidate.
+    public string? CatalogPrescriptionProfileKey { get; set; }
+    public int? CatalogPrescriptionProfileVersion { get; set; }
+
     public string? CatalogStructuralRole { get; set; }
     public string? CatalogPrescriptionJson { get; set; }
     public int? CatalogPrescriptionSchemaVersion { get; set; }

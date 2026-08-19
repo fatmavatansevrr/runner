@@ -184,23 +184,34 @@ public sealed class Freq4TwoKeyCardinalityGeneralizationTests
     // ── Section E: NextWindowLoadDecisionPolicy, N=2 KEY count-aware branch ─
 
     [Fact]
-    public void OnlyEasyMissingBranch_TwoKeyBothMissingOneEasyMissing_ThreeCompleted_DoesNotProgressAsPlanned()
+    public void OnlyEasyMissingBranch_TwoKeyOneMissingBothEasyDone_FourCompleted_DoesNotProgressAsPlanned()
     {
-        // 3 of 5 completed: both EASY done, LONG done, ONE of two KEYs done
+        // 4 of 5 completed: both EASY done, LONG done, ONE of two KEYs done
         // (the other KEY missing). Pre-FREQ.4-equivalent single-KEY logic
         // would have called this "only Easy missing" (since the lossy
         // boolean can't see a partial KEY completion) and wrongly returned
         // ProgressAsPlanned. Post-FREQ.4 it must not.
+        //
+        // Phase 10K-FREQ.6D.4D Split D: EffectiveCompletedCount corrected
+        // from this test's original value of 3 to 4 -- the role fields below
+        // (2 EASY + 1 LONG + 1 KEY = 4) always summed to 4, not 3; the
+        // original literal predates the real, frozen FREQ.6 24-row table
+        // (which places the role-aware branch at count 4 for a genuine
+        // 5-session week, not count 3) and NextWindowLoadDecisionPolicy now
+        // validates this sum for any ExpectedSessionCount==5 summary,
+        // fail-closed, rather than silently accepting an inconsistent one.
+        // The originally-asserted outcome (Maintain) is unchanged and is now
+        // exactly FREQ.6 §6 row 12/18 (count=4, sole miss one KEY lane).
         var summary = new WindowExecutionSummary(
             ExpectedSessionCount: 5,
-            EffectiveCompletedCount: 3,
+            EffectiveCompletedCount: 4,
             KeySessionExpectedCount: 2,
             KeySessionCompletedCount: 1,
             LongRunExpected: true,
             LongRunCompleted: true,
             EasyExpectedCount: 2,
             EasyCompletedCount: 2,
-            UnrecoveredNotTodayCount: 2,
+            UnrecoveredNotTodayCount: 1,
             SupersededByAdaptationCount: 0,
             HasSafetyFlag: false);
 

@@ -1,4 +1,5 @@
 using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
@@ -151,6 +152,8 @@ internal sealed class CatalogPublicPreviewMaterializer : ICatalogPublicPreviewMa
             SourceWorkoutVersion = session.WorkoutDefinitionVersion,
             SourceProgressionStepKey = session.ProgressionStageKey,
             SourceLayoutSlotRole = session.StructuralRole,
+            SourcePrescriptionProfileKey = session.PrescriptionSource.ExactProfileKeyOrNull(),
+            SourcePrescriptionProfileVersion = session.PrescriptionSource.ExactProfileVersionOrNull(),
         }
     };
 

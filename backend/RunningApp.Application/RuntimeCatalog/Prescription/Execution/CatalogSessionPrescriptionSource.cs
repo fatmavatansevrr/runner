@@ -25,3 +25,19 @@ internal abstract record CatalogSessionPrescriptionSource
 
     internal sealed record ProfileBacked(ExecutableWorkoutPrescription Prescription) : CatalogSessionPrescriptionSource;
 }
+
+/// <summary>
+/// Backend Integration Phase 10K-FREQ.6D.4D Split D — the single, shared exact-profile-lineage
+/// accessor every persistable-plan mapper reads from, so no mapper reimplements the
+/// Legacy/ProfileBacked discriminator match itself (there were two real mapper call sites —
+/// <c>CatalogPublicPreviewMaterializer</c> and <c>PreparationRunwayPersistablePlanMapper</c> —
+/// both reused verbatim rather than duplicated).
+/// </summary>
+internal static class CatalogSessionPrescriptionSourceExtensions
+{
+    public static string? ExactProfileKeyOrNull(this CatalogSessionPrescriptionSource source) =>
+        source is CatalogSessionPrescriptionSource.ProfileBacked profileBacked ? profileBacked.Prescription.SourceProfile.Key : null;
+
+    public static int? ExactProfileVersionOrNull(this CatalogSessionPrescriptionSource source) =>
+        source is CatalogSessionPrescriptionSource.ProfileBacked profileBacked ? profileBacked.Prescription.SourceProfile.Version : null;
+}
