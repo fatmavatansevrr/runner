@@ -12,11 +12,12 @@ namespace RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 /// Follows this codebase's existing "abstract base + exactly two sealed subclasses" discriminator
 /// convention (<see cref="RunningApp.Application.Commands.Plan.PlanPreviewCommand"/>).
 ///
-/// This type is intentionally NOT wired into <see cref="CatalogSessionPrescriptionPlanner"/>'s live
-/// session-building branch in this phase: selecting which sessions become <see cref="ProfileBacked"/>
-/// requires an exact profile reference per (week, lane), which is FREQ.6D.4's own frozen scope (Week ×
-/// LaneOrdinal → exact progression stage → exact profile reference), not this phase's. It exists here,
-/// proven by tests, as the seam FREQ.6D.4 wires into.
+/// Phase 10K-FREQ.6D.4D Split C wired this type into <see cref="CatalogSessionPrescriptionPlanner"/>'s
+/// live session-building branch: every <see cref="CatalogPrescribedSession"/> now carries a
+/// <see cref="CatalogPrescribedSession.PrescriptionSource"/>, classified from the bound session's own
+/// <see cref="Schedule.Binding.BoundCatalogSession.PrescriptionProfileKey"/>/<c>Version</c> (Split B),
+/// resolved via <see cref="ExecutionPrescriptionIndex.ResolveExact"/> for <see cref="ProfileBacked"/>
+/// sessions — never falling back to <see cref="Legacy"/> once a session is explicitly ProfileBacked.
 /// </summary>
 internal abstract record CatalogSessionPrescriptionSource
 {

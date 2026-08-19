@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 
 namespace RunningApp.Application.RuntimeCatalog.Prescription.Session;
@@ -109,6 +110,20 @@ internal sealed record CatalogPrescribedSession
     public string? FallbackProvenance { get; init; }
     public required SessionPrescriptionDecisionTrace DecisionTrace { get; init; }
     public required CatalogSessionPrescriptionValidationResult ValidationResult { get; init; }
+
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split C — the discriminated Legacy/ProfileBacked
+    /// classification for this session (see <see cref="CatalogSessionPrescriptionSource"/>),
+    /// additive alongside the legacy fields above (which remain always-computed and unchanged for
+    /// every existing consumer). For a Legacy session this wraps the same
+    /// <see cref="CatalogWorkoutPrescription"/> already carried by <see cref="Prescription"/>. For
+    /// a ProfileBacked session this carries the exact, unmodified
+    /// <c>ExecutableWorkoutPrescription</c> resolved from the bundle — never rebuilt/recomputed.
+    /// Split D (persistence) decides how/whether to prefer this over the legacy fields once
+    /// TrainingDay gains durable lineage columns; this split only makes the resolved value
+    /// observable.
+    /// </summary>
+    public required CatalogSessionPrescriptionSource PrescriptionSource { get; init; }
 }
 
 internal sealed record CatalogPrescribedWeek
@@ -137,7 +152,15 @@ internal sealed record CatalogSessionPrescriptionRequest(
     BoundCatalogPlan BoundPlan,
     CatalogPlanPrescriptionContext PrescriptionContext,
     Volume.CatalogVolumeAndLongRunPlan VolumePlan,
-    IReadOnlyDictionary<string, CatalogWorkoutDefinitionSummary> WorkoutDefinitions);
+    IReadOnlyDictionary<string, CatalogWorkoutDefinitionSummary> WorkoutDefinitions,
+    // Backend Integration Phase 10K-FREQ.6D.4D Split C: optional, additive. Every real current
+    // caller omits this (defaults null), so every existing candidate resolves purely Legacy,
+    // byte-identical to before this split — no production caller yet sources a real published
+    // bundle (no RUN_LAYOUT_5D/combination exists to publish one for, see the Split-B/Split-C
+    // reports' own disclosed gap). When present, ProfileBacked bound sessions resolve their exact
+    // executable prescription against it; when absent, an explicitly ProfileBacked session fails
+    // closed rather than silently degrading to Legacy (Section 4 of the Split-C prompt).
+    ExecutionPrescriptionIndex? ExecutionIndex = null);
 
 internal enum TaperSharpenCapabilityClassification
 {

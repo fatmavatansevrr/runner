@@ -1,3 +1,5 @@
+using PlanCatalog.Contracts.References;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 
@@ -99,6 +101,18 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             ? CatalogSessionPrescriptionStatus.BaselinePrescribedSharpeningPending
             : CatalogSessionPrescriptionStatus.Complete;
         var validation = ValidateSession(definition, distance, segments, status);
+        var legacyPrescription = new CatalogWorkoutPrescription
+        {
+            PrescriptionMode = mode,
+            DistanceAccountingMode = accountingMode,
+            DistancePrescription = new CatalogDistancePrescription(distance, accountingMode.ToString(), "nearest_0.5km"),
+            DurationPrescription = duration,
+            PacePrescription = pace,
+            EffortGuidance = EffortFor(definition, session),
+            OrderedSegments = segments,
+            Status = status
+        };
+        var prescriptionSource = ResolvePrescriptionSource(request, session, legacyPrescription);
         var rawPace = request.PrescriptionContext.PaceSource.RawOutputValue ?? request.PrescriptionContext.PaceSource.RawStatus.ToString();
         var trace = new SessionPrescriptionDecisionTrace(
             session.WeekNumber,
@@ -133,24 +147,74 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             PlannedDistanceKm = distance,
             PlannedDuration = duration.Kind is CatalogDurationKind.Prescribed or CatalogDurationKind.DerivedFromSegments ? duration.Duration : null,
             EstimatedDuration = duration.Kind == CatalogDurationKind.EstimatedFromPace ? duration.Duration : null,
-            Prescription = new CatalogWorkoutPrescription
-            {
-                PrescriptionMode = mode,
-                DistanceAccountingMode = accountingMode,
-                DistancePrescription = new CatalogDistancePrescription(distance, accountingMode.ToString(), "nearest_0.5km"),
-                DurationPrescription = duration,
-                PacePrescription = pace,
-                EffortGuidance = EffortFor(definition, session),
-                OrderedSegments = segments,
-                Status = status
-            },
+            Prescription = legacyPrescription,
             BindingProvenance = $"{session.BindingPolicyKey} v{session.BindingPolicyVersion}; {session.SourceArtifactKey} v{session.SourceArtifactVersion}",
             PaceSourceProvenance = trace.RawPaceSource,
             VolumeAllocationProvenance = trace.AllocationPolicy,
             FallbackProvenance = session.FallbackOrigin,
             DecisionTrace = trace,
-            ValidationResult = validation
+            ValidationResult = validation,
+            PrescriptionSource = prescriptionSource
         };
+    }
+
+    /// <summary>
+    /// Backend Integration Phase 10K-FREQ.6D.4D Split C — the sole classification/resolution
+    /// boundary: consumes <see cref="BoundCatalogSession.PrescriptionProfileKey"/>/
+    /// <see cref="BoundCatalogSession.PrescriptionProfileVersion"/> verbatim (never re-derived from
+    /// LaneOrdinal/ProgressionStageKey/PhaseKey/DoseCategory/WorkoutDefinition/date/session order —
+    /// those authorities already terminated in Split A/B). Never falls back to Legacy for an
+    /// explicitly ProfileBacked session (Section 4 of the Split-C prompt) — every failure mode is
+    /// fail-closed via a typed exception.
+    /// </summary>
+    private static CatalogSessionPrescriptionSource ResolvePrescriptionSource(
+        CatalogSessionPrescriptionRequest request, BoundCatalogSession session, CatalogWorkoutPrescription legacyPrescription)
+    {
+        var key = session.PrescriptionProfileKey;
+        var version = session.PrescriptionProfileVersion;
+
+        if (key is null && version is null)
+        {
+            return new CatalogSessionPrescriptionSource.Legacy(legacyPrescription);
+        }
+
+        if (key is null || version is null)
+        {
+            throw new CatalogSessionPrescriptionInvalidProfileLineageException(
+                $"Week {session.WeekNumber} {session.StructuralRole}: partial prescription-profile lineage " +
+                $"(PrescriptionProfileKey='{key}', PrescriptionProfileVersion={version}) — a bound session must carry " +
+                "both exact fields (ProfileBacked) or neither (Legacy), never one alone.");
+        }
+
+        if (request.ExecutionIndex is not { } index)
+        {
+            throw new CatalogSessionPrescriptionMissingExecutionPrescriptionException(
+                $"Week {session.WeekNumber} {session.StructuralRole} is ProfileBacked (profile '{key}' v{version}) but no " +
+                "ExecutionPrescriptionIndex was supplied to resolve it against — a ProfileBacked session never falls " +
+                "back to the legacy prescription path.");
+        }
+
+        var profileRef = new VersionedCatalogReference
+        {
+            DocumentType = PlanCatalog.Contracts.DocumentTypes.WorkoutPrescriptionProfile,
+            Key = key,
+            Version = version.Value,
+        };
+
+        // ExecutionPrescriptionIndex.ResolveExact is already fail-closed for missing-entry and
+        // wrong-version (no latest/nearest/first-match) — propagated verbatim, not re-wrapped, so
+        // the existing FREQ.6D.3D typed exceptions remain the single authority for those cases.
+        var execution = index.ResolveExact(profileRef);
+
+        if (execution.SourceWorkout.Key != session.WorkoutDefinitionKey || execution.SourceWorkout.Version != session.WorkoutDefinitionVersion)
+        {
+            throw new CatalogSessionPrescriptionProfileWorkoutMismatchException(
+                $"Week {session.WeekNumber} {session.StructuralRole}: profile '{key}' v{version}'s own execution " +
+                $"provenance names workout '{execution.SourceWorkout.Key}' v{execution.SourceWorkout.Version}, but the " +
+                $"bound session's independently-resolved workout is '{session.WorkoutDefinitionKey}' v{session.WorkoutDefinitionVersion}.");
+        }
+
+        return new CatalogSessionPrescriptionSource.ProfileBacked(execution);
     }
 
     private static double DistanceFor(BoundCatalogSession session, V1FourDayWeekAllocation allocation, int easySupportOrdinal, int keySessionOrdinal) =>

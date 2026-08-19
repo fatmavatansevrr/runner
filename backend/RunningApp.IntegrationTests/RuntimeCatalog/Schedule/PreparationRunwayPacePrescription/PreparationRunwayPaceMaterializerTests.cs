@@ -1,4 +1,5 @@
 using RunningApp.Application.RuntimeCatalog.Prescription;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog;
@@ -378,6 +379,7 @@ public sealed class PreparationRunwayPaceMaterializerTests
                 role == "LONG_RUN" ? 8 : role == "KEY_SESSION" ? 6 : 5, "V1", "Distance", "V1", "NONE",
                 "NOT_EVALUATED", CatalogPaceSourceSelection.EffortOnly, [], "nearest_0.5km", "ExactSessionTotal", "Unresolved", null, []),
             ValidationResult = new CatalogSessionPrescriptionValidationResult(true, []),
+            PrescriptionSource = new CatalogSessionPrescriptionSource.Legacy(prescription),
         };
     }
 
