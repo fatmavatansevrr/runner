@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
@@ -43,6 +44,18 @@ internal sealed class DynamicCoreSessionPrescriptionContext
 
     public required ICatalogWorkoutDefinitionLoader WorkoutDefinitionLoader { get; init; }
     public required ICatalogPeakVolumeBandLoader PeakVolumeBandLoader { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5G — the same published-bundle execution index the exact-12-week
+    /// "preferred" pipeline (<see cref="PreviewRouting.CatalogPreviewGenerator"/>'s own main body)
+    /// already computes once per request and passes to <see cref="ICatalogSessionPrescriptionPlanner"/>.
+    /// Optional/additive (defaults null), matching <see cref="CatalogSessionPrescriptionRequest.ExecutionIndex"/>'s
+    /// own Split-C nullability — every existing Legacy-only 3D/4D/Beginner×4D candidate continues to
+    /// omit it and resolves purely Legacy, byte-identical to before. A ProfileBacked session that
+    /// reaches this orchestrator without one still fails closed, unchanged
+    /// (<see cref="CatalogSessionPrescriptionMissingExecutionPrescriptionException"/>).
+    /// </summary>
+    public ExecutionPrescriptionIndex? ExecutionIndex { get; init; }
 }
 
 /// <summary>Backend Integration Phase 4G.5G result — every intermediate artifact plus the final prescribed plan.</summary>
@@ -165,7 +178,7 @@ internal sealed class DynamicCoreSessionPrescriptionOrchestrator : IDynamicCoreS
         {
             baselinePlan = _sessionPrescriptionPlanner.Build(new CatalogSessionPrescriptionRequest(
                 candidate, volumeResult.BindingResult.BoundPlan, volumeResult.PrescriptionContext,
-                volumeResult.VolumeAndLongRunPlan, definitions));
+                volumeResult.VolumeAndLongRunPlan, definitions, context.ExecutionIndex));
         }
         catch (CatalogSessionPrescriptionException ex)
         {

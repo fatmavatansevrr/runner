@@ -620,6 +620,15 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         PlanCatalogCandidateSummary candidate, DateOnly asOfDate, GeneratePreviewRequest request, ResolverInputSnapshot input,
         IReadOnlyList<RuntimeConditionResolutionResult> conditionResults)
     {
+        // Phase 10K-FREQ.6D.4D.5G — the same published-bundle execution index every Core horizon
+        // strategy below must consume, loaded exactly once per request (never per-week, never
+        // per-session, never re-derived independently by CompressedCore/ExtendedCore) against the
+        // exact candidate identity — no "latest", no horizon-specific bundle, no 4D fallback. This
+        // was previously computed only inline in the exact-12-week "preferred" pipeline further
+        // down; the CompressedCore/ExtendedCore branch never received it at all (FREQ.6D.4D.5F's
+        // disclosed blocker) — now both consume this single instance.
+        var executionIndex = LoadExecutionIndex(candidate);
+
         if (request.RaceDate is { } activatedRaceDate)
         {
             var horizon = RaceHorizonPolicy.Decide(
@@ -651,6 +660,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                         PreferredDays = preferredDays, LongRunDayPreference = longRunDay,
                         ConditionResults = conditionResults, PreviewRequest = request, ResolverInput = input,
                         WorkoutDefinitionLoader = _workoutDefinitionLoader, PeakVolumeBandLoader = _peakVolumeBandLoader,
+                        ExecutionIndex = executionIndex,
                     }).GetAwaiter().GetResult();
                 }
                 catch (DynamicCoreVolumeAndLongRunFailedException ex) when (ex.InnerException is CatalogProductIneligibleException ineligible)
@@ -898,9 +908,6 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                     string.Join(", ", volumePlan.WeeklyVolumePlan.ValidationResult.Errors.Concat(volumePlan.LongRunProgression.ValidationResult.Errors)) + ".");
             }
 
-            var publishedBundle = _publishedBundleLoader.TryLoadAsync(candidate.CandidateKey, candidate.CandidateVersion).GetAwaiter().GetResult();
-            var executionIndex = publishedBundle is not null ? ExecutionPrescriptionIndex.Build(publishedBundle) : null;
-
             var prescribedPlan = _sessionPrescriptionPlanner.Build(new CatalogSessionPrescriptionRequest(
                 candidate, boundPlan, prescriptionContext, volumePlan, definitionMap, executionIndex));
 
@@ -941,6 +948,18 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                 $"CATALOG_INTERNAL_WORKOUT_BINDING_FAILED: internal exact workout-definition binding failed " +
                 $"for candidate '{candidate.CandidateKey}' v{candidate.CandidateVersion}': {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5G — the single, canonical, once-per-request execution-context load,
+    /// shared by every Core horizon strategy (<see cref="BuildDarkInternalDatedSkeleton"/>'s own
+    /// exact-12-week body and its CompressedCore/ExtendedCore branch alike). Exact candidate
+    /// identity only — never "latest," never horizon-specific, never a 4D fallback.
+    /// </summary>
+    private ExecutionPrescriptionIndex? LoadExecutionIndex(PlanCatalogCandidateSummary candidate)
+    {
+        var publishedBundle = _publishedBundleLoader.TryLoadAsync(candidate.CandidateKey, candidate.CandidateVersion).GetAwaiter().GetResult();
+        return publishedBundle is not null ? ExecutionPrescriptionIndex.Build(publishedBundle) : null;
     }
 
     private static ResolverDecisionTrace BuildDecisionTrace(IReadOnlyList<RuntimeConditionResolutionResult> results)

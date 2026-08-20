@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
@@ -48,6 +49,13 @@ internal sealed class DynamicCoreCalendarMaterializationContext
 
     public required Binding.ICatalogWorkoutDefinitionLoader WorkoutDefinitionLoader { get; init; }
     public required ICatalogPeakVolumeBandLoader PeakVolumeBandLoader { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5G — threaded straight through to
+    /// <see cref="DynamicCoreSessionPrescriptionContext.ExecutionIndex"/>; this orchestrator does not
+    /// itself construct, cache, or interpret it. See that type's own doc comment.
+    /// </summary>
+    public ExecutionPrescriptionIndex? ExecutionIndex { get; init; }
 }
 
 /// <summary>Backend Integration Phase 4G.5H result — every intermediate artifact from the full five-layer pipeline, plus race-date alignment verification.</summary>
@@ -124,6 +132,7 @@ internal sealed class DynamicCoreCalendarMaterializationOrchestrator : IDynamicC
             ResolverInput = context.ResolverInput,
             WorkoutDefinitionLoader = context.WorkoutDefinitionLoader,
             PeakVolumeBandLoader = context.PeakVolumeBandLoader,
+            ExecutionIndex = context.ExecutionIndex,
         }, ct);
 
         // Step 2: race-date alignment (the one genuinely new composition --

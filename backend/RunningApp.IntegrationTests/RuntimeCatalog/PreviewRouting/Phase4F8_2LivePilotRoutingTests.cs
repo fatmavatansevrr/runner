@@ -73,7 +73,10 @@ public sealed class Phase4F8_2LivePilotRoutingTests
             // mutation; Advanced remains genuinely unwidened at every
             // frequency and still exercises the same negative-identity path.
             case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Advanced; break;
-            case nameof(GeneratePreviewRequest.DaysPerWeek): request.DaysPerWeek = 5; break;
+            // FREQ.6D.4D.5G widened (Intermediate, 5) to a real, distinct pilot
+            // identity, so it's no longer a valid "make this non-pilot" mutation
+            // (see the Level case's identical note above for Beginner/GEN.4E).
+            case nameof(GeneratePreviewRequest.DaysPerWeek): request.DaysPerWeek = 6; break;
             case nameof(GeneratePreviewRequest.GoalType): request.GoalType = GoalType.Habit; break;
         }
 
