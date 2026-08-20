@@ -170,6 +170,18 @@ internal sealed record CatalogSessionPrescriptionContext
     public required string StructuralRole { get; init; }
     public required string WorkoutDefinitionKey { get; init; }
     public required int WorkoutDefinitionVersion { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5D — verbatim from <see cref="RunningApp.Application.RuntimeCatalog.Schedule.Binding.BoundCatalogSession.PrescriptionProfileKey"/>/
+    /// <see cref="RunningApp.Application.RuntimeCatalog.Schedule.Binding.BoundCatalogSession.PrescriptionProfileVersion"/>
+    /// (never re-derived from ProgressionStageKey/WorkoutDefinitionKey/DoseCategory/LaneOrdinal —
+    /// those authorities already terminated in Split A/B). Both null (Legacy), both non-null
+    /// (ProfileBacked), or exactly one non-null (invalid partial lineage) — the identical
+    /// three-way classification <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogSessionPrescriptionPlanner"/>
+    /// already applies downstream (Split C); not a second, incompatible rule.
+    /// </summary>
+    public string? PrescriptionProfileKey { get; init; }
+    public int? PrescriptionProfileVersion { get; init; }
     public required WorkoutMeasurementBasis PrimaryMeasurementBasis { get; init; }
     public required IReadOnlyList<string> AllowedPrescriptionModes { get; init; }
     public required WeeklyVolumeAnchorDecision WeeklyVolumeAnchor { get; init; }

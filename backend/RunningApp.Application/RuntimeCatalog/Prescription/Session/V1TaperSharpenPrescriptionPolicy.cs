@@ -1,5 +1,18 @@
 namespace RunningApp.Application.RuntimeCatalog.Prescription.Session;
 
+/// <summary>
+/// Scope: <c>LEGACY_TAPER_RUNTIME_ONLY</c> (Phase 10K-FREQ.6D.4D.5C/5D). Real,
+/// deliberate content policy for the pre-catalog-architecture 3D/4D/Beginner×4D
+/// pilot's single-KEY Taper session, injecting a synthetic "controlled
+/// sharpening" runtime component into an otherwise-plain <c>EASY_STANDARD</c>
+/// session (Phase 4F.7D). Never canonical Taper stage vocabulary — ProfileBacked
+/// Taper prescriptions (e.g. the real Intermediate×5D dual-lane Taper) use a
+/// completely different mechanism (real catalog-authored WorkoutDefinition +
+/// PrescriptionProfile, resolved via <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogSessionPrescriptionPlanner"/>)
+/// and never invoke this policy at all. Retained exactly as-is, still
+/// authoritative for every existing Legacy 3D/4D/Beginner×4D plan — not a
+/// deprecated mechanism, just a narrowly-scoped one.
+/// </summary>
 internal static class V1TaperSharpenPrescriptionPolicy
 {
     public const string PolicyKey = "V1_TAPER_SHARPEN_PRESCRIPTION_POLICY";

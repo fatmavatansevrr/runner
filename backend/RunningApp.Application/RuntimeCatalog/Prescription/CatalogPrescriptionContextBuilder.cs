@@ -114,6 +114,8 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
             StructuralRole = session.StructuralRole,
             WorkoutDefinitionKey = session.WorkoutDefinitionKey,
             WorkoutDefinitionVersion = session.WorkoutDefinitionVersion,
+            PrescriptionProfileKey = session.PrescriptionProfileKey,
+            PrescriptionProfileVersion = session.PrescriptionProfileVersion,
             PrimaryMeasurementBasis = MeasurementBasisFor(definition),
             AllowedPrescriptionModes = definition.AllowedPrescriptionModes,
             WeeklyVolumeAnchor = weekly,
@@ -435,10 +437,7 @@ internal static class CatalogPrescriptionContextValidator
             errors.Add("EASY_SUPPORT_MUST_NOT_HAVE_STAGE");
         }
 
-        if (!sessions.Any(s => s.PhaseKey == "TAPER" && s.ProgressionStageKey == "TAPER_SHARPEN" && s.StructuralRole == "KEY_SESSION" && s.WorkoutDefinitionKey == "EASY_STANDARD"))
-        {
-            errors.Add("TAPER_SHARPEN_CONTEXT_MISSING");
-        }
+        ValidateTaperCompleteness(sessions, errors);
 
         if (sessions.Any(s => s.GoalFeasibilityValue == "UNSUPPORTED" && s.PaceSource.Source == PrescriptionPaceSource.TargetGoal))
         {
@@ -451,5 +450,60 @@ internal static class CatalogPrescriptionContextValidator
         }
 
         return new CatalogPrescriptionValidationResult(errors.Count == 0, errors);
+    }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5D — partitions Taper KEY_SESSION completeness validation along the
+    /// same Legacy/ProfileBacked classification <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogSessionPrescriptionPlanner"/>
+    /// already uses (Split C), per the FREQ.6D.4D.5C decision
+    /// (<c>TAPER_COMPLETENESS_EXISTING_AUTHORITY_CONFIRMED_IMPLEMENTATION_DEFECT</c>).
+    ///
+    /// <c>TAPER_SHARPEN</c>/<c>EASY_STANDARD</c> is the real, LEGACY_TAPER_RUNTIME_ONLY prescription
+    /// identity <c>V1_TAPER_SHARPEN_PRESCRIPTION_POLICY</c> (Phase 4F.7D) defines for the pre-catalog-
+    /// architecture 3D/4D/Beginner×4D pilot — it was never canonical Taper stage vocabulary, and
+    /// remains exactly as strict as before for every Legacy (non-ProfileBacked) Taper KEY_SESSION
+    /// instance. ProfileBacked Taper KEY_SESSION instances (e.g. the real Intermediate×5D
+    /// <c>TAPER_PRIMARY_STAGE</c>/<c>TAPER_SECONDARY_STAGE</c>) are exempt from this identity check
+    /// entirely — their completeness is already independently, and more strongly, proven downstream
+    /// by <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogSessionPrescriptionPlanner"/>'s
+    /// fail-closed exact-execution-resolution guarantee (missing index, missing profile, wrong
+    /// version, and workout-provenance mismatch are all already typed, fail-closed exceptions there
+    /// — never re-implemented or duplicated here, per the FREQ.6D.4D.5D prompt's own §16).
+    ///
+    /// Partial prescription-profile lineage (exactly one of <see cref="CatalogSessionPrescriptionContext.PrescriptionProfileKey"/>/
+    /// <see cref="CatalogSessionPrescriptionContext.PrescriptionProfileVersion"/> set) is never treated
+    /// as Legacy merely to preserve old behavior — it is its own distinct, always-fail-closed
+    /// condition, kept separate from <c>TAPER_SHARPEN_CONTEXT_MISSING</c> so the two failure causes
+    /// are never collapsed into one generic message.
+    /// </summary>
+    private static void ValidateTaperCompleteness(IReadOnlyList<CatalogSessionPrescriptionContext> sessions, List<string> errors)
+    {
+        var taperKeySessions = sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
+
+        var partialLineage = taperKeySessions
+            .Where(s => (s.PrescriptionProfileKey is null) != (s.PrescriptionProfileVersion is null))
+            .ToList();
+        if (partialLineage.Count > 0)
+        {
+            errors.Add("TAPER_KEY_SESSION_PARTIAL_PROFILE_LINEAGE");
+        }
+
+        var legacyTaperKeySessions = taperKeySessions
+            .Where(s => s.PrescriptionProfileKey is null && s.PrescriptionProfileVersion is null)
+            .ToList();
+        var profileBackedTaperKeySessions = taperKeySessions
+            .Where(s => s.PrescriptionProfileKey is not null && s.PrescriptionProfileVersion is not null)
+            .ToList();
+
+        bool IsLegacySharpenIdentity(CatalogSessionPrescriptionContext s) =>
+            s.ProgressionStageKey == "TAPER_SHARPEN" && s.WorkoutDefinitionKey == "EASY_STANDARD";
+
+        var everyLegacyInstanceValid = legacyTaperKeySessions.Count == 0 || legacyTaperKeySessions.All(IsLegacySharpenIdentity);
+        var anyCompletenessAuthorityPresent = profileBackedTaperKeySessions.Count > 0 || legacyTaperKeySessions.Any(IsLegacySharpenIdentity);
+
+        if (!everyLegacyInstanceValid || !anyCompletenessAuthorityPresent)
+        {
+            errors.Add("TAPER_SHARPEN_CONTEXT_MISSING");
+        }
     }
 }

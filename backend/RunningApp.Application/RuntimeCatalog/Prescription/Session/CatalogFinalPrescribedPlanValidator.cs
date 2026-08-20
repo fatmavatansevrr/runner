@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 
@@ -75,15 +76,7 @@ internal static class CatalogFinalPrescribedPlanValidator
             }
         }
 
-        var taperSharpen = prescribedPlan.Sessions.Where(V1TaperSharpenPrescriptionPolicy.IsTaperSharpen).ToList();
-        if (taperSharpen.Count != 1)
-        {
-            errors.Add("FINAL_TAPER_SHARPEN_COUNT_INVALID");
-        }
-        else
-        {
-            ValidateTaperSharpen(taperSharpen[0], errors);
-        }
+        ValidateTaperCompleteness(prescribedPlan, errors);
 
         return new CatalogFinalPrescribedPlanValidationResult(errors.Count == 0, errors);
     }
@@ -108,6 +101,49 @@ internal static class CatalogFinalPrescribedPlanValidator
             session.Prescription.PacePrescription.Kind != CatalogPacePrescriptionKind.ExactPace)
         {
             errors.Add($"FINAL_SESSION_{session.WeekNumber}_{session.StructuralRole}_UNSUPPORTED_DURATION");
+        }
+    }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.4D.5D — the same Legacy/ProfileBacked partition
+    /// principle FREQ.6D.4D.5D applied to <c>CatalogPrescriptionContextValidator</c>,
+    /// found necessary a second time here (a second, closely-related
+    /// occurrence of the identical root cause disclosed by FREQ.6D.4D.5C,
+    /// not a new independent blocker): this validator's own
+    /// <c>taperSharpen.Count != 1</c> check hardcoded the same legacy
+    /// <c>V1_TAPER_SHARPEN_PRESCRIPTION_POLICY</c> identity unconditionally.
+    /// For Legacy Taper KEY_SESSION instances the exact pre-existing
+    /// requirement (exactly one, matching the full <see cref="ValidateTaperSharpen"/>
+    /// content-structure check) is unchanged. For ProfileBacked instances
+    /// (real 5D dual-lane Taper) this validator performs no additional
+    /// check — their completeness was already proven upstream by Split-C's
+    /// fail-closed exact-execution-resolution guarantee before this final
+    /// plan could ever be reached with a ProfileBacked session present.
+    /// </summary>
+    private static void ValidateTaperCompleteness(CatalogPrescribedPlan prescribedPlan, List<string> errors)
+    {
+        var taperKeySessions = prescribedPlan.Sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
+        var legacyTaperKeySessions = taperKeySessions.Where(s => s.PrescriptionSource is CatalogSessionPrescriptionSource.Legacy).ToList();
+        var profileBackedTaperKeySessions = taperKeySessions.Where(s => s.PrescriptionSource is CatalogSessionPrescriptionSource.ProfileBacked).ToList();
+
+        if (legacyTaperKeySessions.Count > 0)
+        {
+            var legacyTaperSharpen = legacyTaperKeySessions.Where(V1TaperSharpenPrescriptionPolicy.IsTaperSharpen).ToList();
+            if (legacyTaperKeySessions.Count != 1 || legacyTaperSharpen.Count != 1)
+            {
+                errors.Add("FINAL_TAPER_SHARPEN_COUNT_INVALID");
+            }
+            else
+            {
+                ValidateTaperSharpen(legacyTaperSharpen[0], errors);
+            }
+        }
+        else if (profileBackedTaperKeySessions.Count == 0)
+        {
+            // Neither Legacy nor ProfileBacked Taper completeness authority
+            // present at all -- the exact pre-existing "zero Taper sessions"
+            // failure mode, unchanged.
+            errors.Add("FINAL_TAPER_SHARPEN_COUNT_INVALID");
         }
     }
 

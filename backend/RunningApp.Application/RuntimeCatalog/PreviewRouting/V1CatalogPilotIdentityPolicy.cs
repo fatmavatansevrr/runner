@@ -54,26 +54,22 @@ public static class V1CatalogPilotIdentityPolicy
     public const int ThreeDayCandidateVersion = 1;
 
     /// <summary>
-    /// Phase 10K-FREQ.6D.4D Split 5B — the real, published Intermediate 5D
-    /// Core candidate. <c>CatalogWeekSkeletonCalendarMaterializer</c> was
-    /// generalized (Split 5B) to a multi-KEY_SESSION-per-week search
-    /// enforcing the frozen KEY&lt;-&gt;KEY separation rule (Split 5A,
-    /// <see cref="DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays"/>
-    /// = 2 calendar days) and proven end-to-end against the real dark 5D
-    /// candidate for every supported horizon. Public activation was
-    /// attempted and reverted again: real E2E testing found
-    /// <c>CatalogPrescriptionContextValidator.Validate</c> hardcodes a
-    /// requirement that some session carry
-    /// <c>ProgressionStageKey == "TAPER_SHARPEN"</c> — the legacy 3D/4D/
-    /// Beginner4D Taper stage-key naming (still real and correct for those
-    /// candidates); the real 5D dual-lane progression's Taper stages are
-    /// named <c>TAPER_PRIMARY_STAGE</c>/<c>TAPER_SECONDARY_STAGE</c>
-    /// instead, so this check fails closed for every 5D request that
-    /// includes a Taper phase (effectively all supported 8-14 week
-    /// horizons) — a second, independent, calendar-unrelated blocker, out
-    /// of this split's scope (STOP condition: prescription-context
-    /// completeness logic must change, which is its own decision, not a
-    /// calendar fix). Kept here, not consumed anywhere yet.
+    /// Phase 10K-FREQ.6D.4D Split 5B/5C/5D — the real, published Intermediate
+    /// 5D Core candidate. Both real Taper-completeness blockers Split 5B/5C
+    /// found (<c>CatalogPrescriptionContextValidator</c> and
+    /// <c>CatalogFinalPrescribedPlanValidator</c>, both hardcoding the legacy
+    /// <c>TAPER_SHARPEN</c>/<c>EASY_STANDARD</c> identity unconditionally)
+    /// are now fixed (Split 5D) by partitioning each check along the
+    /// existing Legacy/ProfileBacked classification — the real 5D dual-lane
+    /// Taper is proven correct without any stage-name special-casing.
+    /// Public activation was attempted a third time and reverted again: real
+    /// E2E testing got past both Taper checks and found a third, genuinely
+    /// independent blocker — <c>V1CatalogPublicWorkoutTypeMappingPolicy.Map</c>
+    /// (in <c>CatalogPublicPreviewMaterializer.cs</c>) has no public
+    /// workout-type mapping for <c>AEROBIC_STRENGTH_CONTROLLED_INTRO</c> (the
+    /// real 5D FOUNDATION lane0 workout) — deciding which public workout-type
+    /// category it belongs to is a real product decision, out of scope here.
+    /// Kept here, not consumed anywhere yet.
     /// </summary>
     public const string FiveDayCandidateKey = "TEN_K__5D__INTERMEDIATE";
     public const int FiveDayCandidateVersion = 1;
@@ -101,11 +97,12 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 3) or
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Beginner, 4);
-    // NOT (Intermediate, 5): reverted again (Split 5B). The calendar blocker
-    // (Split E) is now genuinely fixed and proven dark -- see FiveDayCandidateKey's
-    // own doc comment for the real, independent, calendar-unrelated blocker
-    // (CatalogPrescriptionContextValidator's hardcoded TAPER_SHARPEN stage-key
-    // check) found by real E2E testing when this was widened.
+    // NOT (Intermediate, 5): reverted a third time (Split 5D). Both Taper
+    // completeness blockers are genuinely fixed -- see FiveDayCandidateKey's
+    // own doc comment for the real, independent, third blocker
+    // (V1CatalogPublicWorkoutTypeMappingPolicy has no mapping for
+    // AEROBIC_STRENGTH_CONTROLLED_INTRO) found by real E2E testing when this
+    // was widened.
 
     /// <summary>
     /// Returns whether the given request identity matches the pilot
