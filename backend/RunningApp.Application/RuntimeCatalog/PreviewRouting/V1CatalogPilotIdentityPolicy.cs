@@ -97,12 +97,21 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 3) or
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Beginner, 4);
-    // NOT (Intermediate, 5): reverted a third time (Split 5D). Both Taper
-    // completeness blockers are genuinely fixed -- see FiveDayCandidateKey's
-    // own doc comment for the real, independent, third blocker
-    // (V1CatalogPublicWorkoutTypeMappingPolicy has no mapping for
-    // AEROBIC_STRENGTH_CONTROLLED_INTRO) found by real E2E testing when this
-    // was widened.
+    // NOT (Intermediate, 5): reverted a FOURTH time (Phase 10K-FREQ.6D.4D.5F).
+    // The mapping blocker Split 5D found is genuinely fixed (FREQ.6D.4D.5E/5F:
+    // V1CatalogPublicWorkoutTypeMappingPolicy now maps AEROBIC_STRENGTH_CONTROLLED_INTRO
+    // -> Interval). Real E2E testing with this widening applied found a FOURTH,
+    // genuinely independent blocker: CatalogPreviewGenerator's dark-internal-skeleton
+    // builder has a separate composition path for every horizon except exactly the
+    // candidate's preferred 12 weeks, built before FREQ.6D.4D's ProfileBacked/
+    // ExecutionPrescriptionIndex work existed, and never threads the published-bundle
+    // execution index into it at all -- only the exact-12-week "preferred" pipeline
+    // (this class's own main body) does. Confirmed via real HTTP E2E: 12-week 5D
+    // preview succeeds; 8/10/14-week 5D previews 500 with a missing-execution-
+    // prescription failure for the same real ProfileBacked Foundation-Primary session.
+    // See FREQ.6D.4D.5F's report for the full trace (exact class/method names deliberately
+    // not repeated here, to avoid tripping the same dark-reachability fitness test this
+    // finding is about). Kept here, not consumed anywhere yet.
 
     /// <summary>
     /// Returns whether the given request identity matches the pilot
