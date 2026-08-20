@@ -28,14 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `BLOCKED` — product policy approved (FREQ.6), numeric authority approved (FREQ.6C), catalog architecture design verified (FREQ.6D.1/1A/1B), engineering machinery (schema/projector/RunningApp consumer) implemented through FREQ.6D.3D; recovery-ownership architecture resolved (FREQ.6D.4B.2/4B.4) and all 8 real production WorkoutPrescriptionProfile documents now authored (FREQ.6D.4C.3); catalog-lifecycle/exact-version-activation architecture approved and implemented (FREQ.6D.4C.4/4C.5); **dual-KEY stage→profile production-integration architecture approved (FREQ.6D.4D)** — slot/lane identity + per-lane stage binding (FREQ.6D.4D.1), exact profile resolution + bundle wiring (FREQ.6D.4D.2), RunningApp session-lineage consumption (FREQ.6D.4D.3), durable profile-lineage persistence + the complete 5-session Adaptation severity table (FREQ.6D.4D.4), and the real 5D catalog content + RunningApp published-bundle runtime discovery (FREQ.6D.4D.5, Split E, partial) now implemented and verified; **public activation attempted and reverted three times (FREQ.6D.4D.5, FREQ.6D.4D.5B, FREQ.6D.4D.5D)** — the calendar blocker (Split E/5B) and both real Taper-completeness blockers (`CatalogPrescriptionContextValidator` + a second occurrence in `CatalogFinalPrescribedPlanValidator`, both fixed FREQ.6D.4D.5D per the FREQ.6D.4D.5C decision) are now resolved and verified — the request reaches its furthest point yet, past calendar and both Taper checks; **a third, independent, out-of-scope blocker was found (FREQ.6D.4D.5D)** — `V1CatalogPublicWorkoutTypeMappingPolicy` has no public workout-type mapping for the real 5D `AEROBIC_STRENGTH_CONTROLLED_INTRO` workout; **that gap was fully diagnosed and product-decided (FREQ.6D.4D.5E)**, then implemented and exhaustively gate-tested (FREQ.6D.4D.5F) — the mapping fix is done and verified; **a fourth, independent, out-of-scope blocker was found (FREQ.6D.4D.5F)** — `CatalogPreviewGenerator`'s `CompressedCore`/`ExtendedCore` dynamic-orchestration branch (every horizon except exactly 12 weeks) never threads the published-bundle execution index through, unlike the exact-12-week pipeline; 12-week 5D preview genuinely succeeds, 8/10/14-week previews 500; **not publicly active** | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G) — full dual-KEY stage→profile production-integration architecture (FREQ.6D.4D.1-5) implemented and verified; all five real, independent public-activation blockers found across five prior retries (calendar 5-slot assumption/Split E/5B; both Taper-completeness validators/5C/5D; public workout-type mapping gap/5E/5F; CompressedCore/ExtendedCore execution-context propagation gap/5G) are now fixed and verified with zero legacy 3D/4D/Beginner×4D regression. Real public preview, confirmation, and reads proven for all four representative Core horizons (8/10/12/14 weeks). Parent `FREQ.6D.4D` closed as `FREQ6D4D_DUAL_KEY_PRODUCTION_INTEGRATION_IMPLEMENTED_AND_VERIFIED`. Preparation Runway (15-20w)/Long-Horizon (21-52w) 5D activation remain a further, separate, not-yet-opened gap | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.4D.5F` — Execution Status `DONE (PARTIAL)`, Final Classification `FREQ6D4D5F_MAPPING_FIXED_PUBLIC_ACTIVATION_BLOCKED_ELSEWHERE`. Implemented the `FREQ.6D.4D.5E`-approved public workout-type mapping (`AEROBIC_STRENGTH_CONTROLLED_INTRO` → `Interval`, one new key-only switch arm, zero taxonomy change) plus a real, catalog-file-driven exhaustive completeness gate reproducing the real 8-combination/6-pair Intermediate×5D closure and proving every reachable pair maps exactly once, deterministically. Both retained and green regardless of activation status. Retried public activation a fourth time via real HTTP E2E testing against the real committed catalog and real published `1.1.0` bundle: the 12-week preview genuinely succeeds (furthest point yet), but 8/10/14-week previews 500 — root-caused to a fourth, independent, out-of-scope blocker: `CatalogPreviewGenerator`'s `CompressedCore`/`ExtendedCore` dynamic-orchestration branch (every horizon except exactly 12 weeks) was built before FREQ.6D.4D's ProfileBacked/ExecutionPrescriptionIndex work existed and never threads the published-bundle execution index through it. Reverted the routing widening a fourth time per this phase's own STOP discipline. Full regression: 3671/3672 RuntimeCatalog (1 pre-existing unrelated failure), 1510/1510 PlanCatalog, zero legacy delta. `TEN_K__5D__INTERMEDIATE` remains fully dark to public traffic.
+**Latest verified completed phase**: `FREQ.6D.4D.5G` — Execution Status `DONE`, Final Classification `FREQ6D4D5G_CORE_HORIZON_CONTEXT_AND_PUBLIC_5D_ACTIVATION_IMPLEMENTED`. Root-caused `FREQ.6D.4D.5F`'s blocker exactly: `DynamicCoreSessionPrescriptionOrchestrator` constructed `CatalogSessionPrescriptionRequest` with its optional `ExecutionIndex` argument omitted, the single narrow wiring gap causing every `CompressedCore`/`ExtendedCore` horizon to fail closed on ProfileBacked sessions. Fixed by threading the same published-bundle `ExecutionPrescriptionIndex` through both dynamic-orchestration context types, computed once per request via a new shared helper — no new prescription logic, no horizon-number special-casing, `ExecutionPrescriptionIndex.ResolveExact` remains the sole consumer authority, Legacy sessions unaffected. Proved at the real dark level (18 new tests) before retrying public activation a fifth time: real HTTP E2E showed 8/10/12/14-week previews all succeed, confirmed 8-week/14-week/12-week plans against real PostgreSQL with correct persistence, unsupported neighbors remain closed, zero legacy regression (3704/3705 full regression, 1 pre-existing unrelated failure; 1510/1510 PlanCatalog). `TEN_K__5D__INTERMEDIATE` is now genuinely publicly active. **Parent `FREQ.6D.4D` closed as `FREQ6D4D_DUAL_KEY_PRODUCTION_INTEGRATION_IMPLEMENTED_AND_VERIFIED`.**
+
+Prior phase: `FREQ.6D.4D.5F` — Execution Status `DONE (PARTIAL)`, Final Classification `FREQ6D4D5F_MAPPING_FIXED_PUBLIC_ACTIVATION_BLOCKED_ELSEWHERE`. Implemented the approved public workout-type mapping and found the CompressedCore/ExtendedCore execution-context gap `FREQ.6D.4D.5G` fixed.
 
 Prior phase: `FREQ.6D.4D.5E` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_PUBLIC_WORKOUT_MAPPING_CLOSURE_APPROVED`. Derived the complete real Intermediate×5D workout closure fresh from the catalog and decided the `AEROBIC_STRENGTH_CONTROLLED_INTRO` → `Interval` mapping `FREQ.6D.4D.5F` implemented.
 
@@ -67,7 +69,7 @@ WAVE D — Cross-distance backend closure / release readiness
 
 ## 4. Current Wave
 
-**WAVE A — 10K completion.** Intermediate×5D is the active cell (FREQ chain, mid-implementation per §2). No Half Marathon or Marathon work may begin under this roadmap's own rule until 10K's architectural closure (§25/Wave A milestones) is reached.
+**WAVE A — 10K completion.** Intermediate×5D Core (8-14 weeks) is now `PUBLICLY_ACTIVE` (FREQ.6D.4D.5G, §2) — the FREQ.6D.4D dual-KEY production integration chain is closed and verified. Preparation Runway (15-20w)/Long-Horizon (21-52w) 5D activation remain open, not-yet-scheduled gaps. No Half Marathon or Marathon work may begin under this roadmap's own rule until 10K's full architectural closure (§25/Wave A milestones, including the Runway/Long-Horizon 5D gap) is reached.
 
 ---
 
@@ -383,16 +385,33 @@ FREQ.6D.4D.5F (DONE, PARTIAL)   → IMPLEMENTATION + INTEGRATED VERIFICATION: im
                                     exact-12-week pipeline. Reverted the widening a fourth time;
                                     retained the independently-correct mapping fix. Zero legacy delta
                                     (3,671/3,672, 1,510/1,510 PlanCatalog).
-[Next, not yet scheduled]       → thread IPublishedTemplateBundleLoader/ExecutionPrescriptionIndex
-                                    into CatalogPreviewGenerator's CompressedCore/ExtendedCore branch
-                                    (narrow, unambiguous engineering fix, not a product/evidence
-                                    question), then re-attempt 8-14w public activation a fifth time;
-                                    Preparation Runway (15-20w) / Long-Horizon (21-52w) 5D activation
-                                    remain a further, structurally harder, separate gap (hardcoded
-                                    4-slot weekly shape)
-FREQ.6D.5                       → integrated regression closure
-FREQ.7                          → first real Intermediate×5D candidate
-FREQ.8                          → 5D activation decision
+FREQ.6D.4D.5G (DONE)            → IMPLEMENTATION + INTEGRATED VERIFICATION: root-caused the
+                                    FREQ.6D.4D.5F blocker exactly -- DynamicCoreSessionPrescriptionOrchestrator
+                                    constructed CatalogSessionPrescriptionRequest with ExecutionIndex
+                                    omitted (defaulted null), the single narrow wiring gap affecting
+                                    every CompressedCore/ExtendedCore horizon. Fixed by threading the
+                                    same published-bundle ExecutionPrescriptionIndex through both
+                                    dynamic-orchestration context types, computed once per request via
+                                    a new shared CatalogPreviewGenerator.LoadExecutionIndex helper -- no
+                                    new prescription logic, no horizon-number special-casing,
+                                    ExecutionPrescriptionIndex.ResolveExact remains the sole ProfileBacked
+                                    consumer authority, Legacy sessions unaffected. Proved dark first (18
+                                    new tests: real 8/10/14-week CompressedCore/ExtendedCore generation,
+                                    every ProfileBacked session resolves exact execution, omitted-context
+                                    still fails closed, Taper/calendar/determinism zero-delta) before
+                                    retrying public activation a fifth time. Real HTTP E2E: 8/10/12/14-
+                                    week previews all succeed; confirmed 8-week (CompressedCore),
+                                    14-week (ExtendedCore), 12-week (PreferredCore reference) plans
+                                    against real PostgreSQL with correct persistence; unsupported
+                                    neighbors remain closed; zero legacy regression (3,704/3,705,
+                                    1,510/1,510 PlanCatalog). TEN_K__5D__INTERMEDIATE genuinely
+                                    publicly active. Parent FREQ.6D.4D closed as
+                                    FREQ6D4D_DUAL_KEY_PRODUCTION_INTEGRATION_IMPLEMENTED_AND_VERIFIED.
+[Next, not yet scheduled]       → Preparation Runway (15-20w) / Long-Horizon (21-52w) Intermediate x5D
+                                    activation -- a further, structurally harder, separate gap
+                                    (the hardcoded 4-slot weekly shape those subsystems still assume);
+                                    FREQ.6D.5 / FREQ.7 / FREQ.8 per the pre-existing sequence, now that
+                                    Core 5D activation (this chain's original goal) is complete
 ```
 
 Then (capability milestones, no Phase IDs yet):
