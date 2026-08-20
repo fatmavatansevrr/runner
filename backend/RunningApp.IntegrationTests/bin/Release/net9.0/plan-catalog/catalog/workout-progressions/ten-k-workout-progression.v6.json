@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "schemaVersion": 2,
+    "key": "TEN_K_WORKOUT_PROGRESSION_V1",
+    "version": 6,
+    "status": "VALIDATED"
+  },
+  "distanceFamily": "TEN_K",
+  "phaseProgressions": [
+    {
+      "phaseKey": "FOUNDATION",
+      "stages": [],
+      "lanes": [
+        {
+          "laneOrdinal": 0,
+          "stages": [
+            {
+              "stageKey": "FOUNDATION_PRIMARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 3 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_FOUNDATION_PRIMARY", "version": 1 }],
+              "minimumExposures": 2,
+              "maximumExposures": 4,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        },
+        {
+          "laneOrdinal": 1,
+          "stages": [
+            {
+              "stageKey": "FOUNDATION_SECONDARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 5 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_FOUNDATION_SECONDARY_CONTROLLED", "version": 1 }],
+              "minimumExposures": 2,
+              "maximumExposures": 4,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "BUILD",
+      "stages": [],
+      "lanes": [
+        {
+          "laneOrdinal": 0,
+          "stages": [
+            {
+              "stageKey": "BUILD_PRIMARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_BUILD_PRIMARY", "version": 1 }],
+              "minimumExposures": 3,
+              "maximumExposures": 5,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        },
+        {
+          "laneOrdinal": 1,
+          "stages": [
+            {
+              "stageKey": "BUILD_SECONDARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 5 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_BUILD_SECONDARY_CONTROLLED", "version": 1 }],
+              "minimumExposures": 3,
+              "maximumExposures": 5,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "stages": [],
+      "lanes": [
+        {
+          "laneOrdinal": 0,
+          "stages": [
+            {
+              "stageKey": "RACE_SPECIFIC_PRIMARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_RACE_SPECIFIC_PRIMARY", "version": 1 }],
+              "minimumExposures": 2,
+              "maximumExposures": 4,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        },
+        {
+          "laneOrdinal": 1,
+          "stages": [
+            {
+              "stageKey": "RACE_SPECIFIC_SECONDARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_RACE_SPECIFIC_SECONDARY_CONTROLLED", "version": 1 }],
+              "minimumExposures": 2,
+              "maximumExposures": 4,
+              "compressionBehavior": "COMPRESSIBLE",
+              "extensionBehavior": "EXTENDABLE",
+              "requires": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "TAPER",
+      "stages": [],
+      "lanes": [
+        {
+          "laneOrdinal": 0,
+          "stages": [
+            {
+              "stageKey": "TAPER_PRIMARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 3 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_TAPER_PRIMARY", "version": 1 }],
+              "minimumExposures": 1,
+              "maximumExposures": 2,
+              "compressionBehavior": "PROTECTED",
+              "extensionBehavior": "FIXED_EXPOSURE",
+              "requires": []
+            }
+          ]
+        },
+        {
+          "laneOrdinal": 1,
+          "stages": [
+            {
+              "stageKey": "TAPER_SECONDARY_STAGE",
+              "relativeOrder": 1,
+              "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 5 }],
+              "prescriptionProfileCandidates": [{ "documentType": "WORKOUT_PRESCRIPTION_PROFILE", "key": "INTERMEDIATE_5D_TAPER_SECONDARY_CONTROLLED", "version": 1 }],
+              "minimumExposures": 1,
+              "maximumExposures": 2,
+              "compressionBehavior": "PROTECTED",
+              "extensionBehavior": "FIXED_EXPOSURE",
+              "requires": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
