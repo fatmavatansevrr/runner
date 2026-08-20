@@ -28,14 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G) — full dual-KEY stage→profile production-integration architecture (FREQ.6D.4D.1-5) implemented and verified; parent `FREQ.6D.4D` closed as `FREQ6D4D_DUAL_KEY_PRODUCTION_INTEGRATION_IMPLEMENTED_AND_VERIFIED`. **Preparation Runway (15-20w)/Long-Horizon (21-52w) 5D remain `BLOCKED` (FREQ.6D.5 readiness audit)** — Runway is hardcoded to Intermediate×4D at three independent code layers plus a fixed single-KEY structural layout with no product authority for 5D's Runway weekly structure (`PRODUCT_DECISION_REQUIRED`); LongHorizon is hardcoded even more pervasively (~10 independent gates) with a genuine architecture/schema gap (`LongHorizonRollingSessionState` has no lane/stage/profile lineage columns; real JIT Core-week composition discards dual-KEY lineage). Both require separate, sequenced implementation waves (Runway product decision + implementation first, then LongHorizon architecture-design + implementation) — see `FREQ.6D.5`'s own report | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G). **Preparation Runway (15-20w) product authorities now APPROVED (FREQ.6D.6)** — weekly structure (1 KEY + 3 EASY + 1 LONG, second KEY at Core entry) and starting-volume rules (confirmed already-live 5D Core numeric authority, not a cross-frequency borrow) both decided, feasibility structurally proven for all 15-20 week horizons; `BLOCKED` only on the remaining engineering generalization (routing gate, candidate load, orchestrator validation, new Runway-specific structural policy) — implementation-ready, not yet implemented. **Long-Horizon (21-52w) 5D remains `BLOCKED` on a separate, deeper architecture/schema gap** (`LongHorizonRollingSessionState` has no lane/stage/profile lineage columns; real JIT Core-week composition discards dual-KEY lineage) — a distinct, later, unscheduled wave per `FREQ.6D.5` | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.5` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_RUNWAY_LONGHORIZON_SEPARATE_WAVES_REQUIRED`. Full pipeline trace of Preparation Runway (15-20w) and LongHorizon (21-52w) against the now-proven Core 5D architecture (no code touched — evidence/architecture audit only). Found Runway hardcoded to Intermediate×4D at three independent layers (routing gate, unconditional candidate load, orchestrator's own `ValidateRequest`) plus a fixed single-KEY 4-slot structural layout with no product authority deciding 5D Runway's weekly shape (`PRODUCT_DECISION_REQUIRED`) — but its catalog content is candidate-agnostic and most numeric coefficients are already generic. Found LongHorizon hardcoded even more pervasively (~10 independent `DaysPerWeek==4` gates) with a materially deeper gap: the persisted session schema has no lane/stage/profile lineage columns at all, and real JIT Core-week composition actively discards dual-KEY lineage by grouping on raw structural-role string — a real, DB-migration-carrying architecture gap. The 5-session Adaptation policy is already frequency-generic and correctly shared, but unreachable for LongHorizon since nothing upstream produces a 5-session shape. Zero `ExecutionPrescriptionIndex` references exist anywhere in LongHorizon; both Runway's and LongHorizon's Core-entry share the same orchestrator (`TenKPreparationRunwayDarkOrchestrator`) rather than `CatalogPreviewGenerator` directly. Recommended sequence: Runway product decision → Runway implementation → LongHorizon architecture-design → LongHorizon implementation (sequenced, not parallel, since both depend on the same shared orchestrator).
+**Latest verified completed phase**: `FREQ.6D.6` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_RUNWAY_PRODUCT_POLICY_APPROVED`. Resolved both open Preparation Runway product authorities for Intermediate×5D. Weekly structure: 1 KEY_SESSION + 3 EASY_SUPPORT + 1 LONG_RUN every Runway week (session count invariant at 5, never ramps), generalizing the existing 4D block-role override table by one additional EASY slot; second KEY introduced only at real Core Week 1. Starting-volume: direct repository-truth discovery that `CatalogVolumeAndLongRunPlanner.Build` only special-cases Intermediate×3D and Beginner×4D — Intermediate×5D already falls through to the same `V1MissingReadinessStartingVolumePolicy` (16km missing / 12km explicit-zero) Runway itself uses, so adopting it for Runway confirms the already-live Core numeric authority rather than borrowing a different frequency's value. This also proves Runway's own Week-1 volume and its Core-entry target resolve through the identical policy, making feasibility structurally assured across all 15-20 week horizons and every readiness state — zero blocked cells in the representability matrix. No production code, catalog, or LongHorizon work touched. Next: Preparation Runway architecture + implementation.
+
+Prior phase: `FREQ.6D.5` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_RUNWAY_LONGHORIZON_SEPARATE_WAVES_REQUIRED`. Full pipeline trace of Preparation Runway and LongHorizon against Core 5D; found Runway hardcoded to 4D at three layers with no product authority for its 5D weekly shape (the gap `FREQ.6D.6` closed), and LongHorizon hardcoded even more pervasively with a deeper schema-level gap remaining fully open.
 
 Prior phase: `FREQ.6D.4D.5G` — Execution Status `DONE`, Final Classification `FREQ6D4D5G_CORE_HORIZON_CONTEXT_AND_PUBLIC_5D_ACTIVATION_IMPLEMENTED`. Fixed the CompressedCore/ExtendedCore execution-context propagation gap and completed the fifth public-activation retry across all four Core horizons. **Parent `FREQ.6D.4D` closed as `FREQ6D4D_DUAL_KEY_PRODUCTION_INTEGRATION_IMPLEMENTED_AND_VERIFIED`.**
 
@@ -428,13 +430,37 @@ FREQ.6D.5 (DONE)                → ARCHITECTURE + READINESS AUDIT: full pipelin
                                     Core-entry share the same orchestrator rather than
                                     CatalogPreviewGenerator directly. Classification:
                                     INTERMEDIATE_5D_RUNWAY_LONGHORIZON_SEPARATE_WAVES_REQUIRED.
-[Next, not yet scheduled]       → Preparation Runway weekly-structure & starting-volume product
-                                    decision (EVIDENCE + PRODUCT_DECISION) -- resolve dual-KEY vs
-                                    single-KEY vs reduced-frequency Runway structure for 5D, and
-                                    whether the 4D-provenance-tagged starting-volume defaults need a
-                                    dedicated 5D-evidenced variant. Then Runway architecture+
-                                    implementation; then LongHorizon architecture-design (schema);
-                                    then LongHorizon implementation. FREQ.7 / FREQ.8 remain further out
+FREQ.6D.6 (DONE)                → EVIDENCE + PRODUCT_DECISION: approved both open Preparation Runway
+                                    product authorities. Weekly structure: 1 KEY_SESSION + 3
+                                    EASY_SUPPORT + 1 LONG_RUN every Runway week (session count
+                                    invariant at 5, never ramps -- grounded in RunLayout's fixed-
+                                    cardinality architecture, Core's own phase-invariant frequency, and
+                                    external base-phase coaching evidence), generalizing the existing
+                                    4D block-role override table by one additional EASY slot; second
+                                    KEY introduced only at real Core Week 1. Starting-volume: direct
+                                    repository-truth discovery that CatalogVolumeAndLongRunPlanner.Build
+                                    only special-cases Intermediate x3D and Beginner x4D --
+                                    Intermediate x5D already falls through to the same
+                                    V1MissingReadinessStartingVolumePolicy (16km missing / 12km
+                                    explicit-zero) Runway itself uses, confirming rather than borrowing
+                                    the already-live 5D Core numeric authority. This also proves
+                                    Runway's own Week-1 volume and its Core-entry target resolve
+                                    through the identical policy, making feasibility structurally
+                                    assured across all 15-20 week horizons and every readiness state --
+                                    zero blocked cells in the representability matrix. No production
+                                    code, catalog, or LongHorizon work touched. Classification:
+                                    INTERMEDIATE_5D_RUNWAY_PRODUCT_POLICY_APPROVED.
+[Next, not yet scheduled]       → Preparation Runway architecture + implementation (10-item contract:
+                                    remove the 4D-only routing/candidate-load/orchestrator-validation
+                                    gates, author the new Runway-specific 5-slot structural policy,
+                                    reuse the numeric allocator verbatim, generalize the Runway->Core
+                                    continuity check for legitimate KEY-count redistribution, wire the
+                                    execution-index gap into the shared orchestrator, add the missing
+                                    AEROBIC_STRENGTH_CONTROLLED_PROGRESSED public-mapping arm) --
+                                    IMPLEMENTATION + INTEGRATED VERIFICATION, same dark-proof-then-
+                                    activation-retry discipline as FREQ.6D.4D.5x. Then LongHorizon
+                                    architecture-design (schema); then LongHorizon implementation.
+                                    FREQ.7 / FREQ.8 remain further out
 ```
 
 Then (capability milestones, no Phase IDs yet):
