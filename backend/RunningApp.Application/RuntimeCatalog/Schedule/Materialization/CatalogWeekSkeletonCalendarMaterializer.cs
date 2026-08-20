@@ -22,46 +22,70 @@ internal interface ICatalogWeekSkeletonCalendarMaterializer
 /// <see cref="CatalogCalendarAssignmentContext"/> argument and never mutates
 /// <see cref="CatalogCalendarAssignmentContext.PlanSkeleton"/>.
 ///
+/// Phase 10K-FREQ.6D.4D.5B — generalized from an exactly-one-KEY_SESSION-
+/// per-week assumption to any keyCount >= 1 (e.g. the real Intermediate 5D
+/// layout, 2 KEY_SESSION + 2 EASY_SUPPORT + 1 LONG_RUN), per the frozen
+/// FREQ.6D.4D.5A rule (<see cref="DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays"/>).
+/// For keyCount == 1 every step below reduces exactly to the pre-5B
+/// algorithm (proven by full legacy 3D/4D/Beginner×4D regression, not
+/// merely asserted) — this is one generic solver, not two competing
+/// algorithms.
+///
 /// Algorithm summary (see PHASE4F_5_CALENDAR_DAY_ASSIGNMENT_POLICY_AND_MATERIALIZER.md
-/// for the full narrative):
-/// 1. Validate the source skeleton's structural role composition (exactly one
-///    KEY_SESSION, two EASY_SUPPORT, one LONG_RUN per week; no REST/OPTIONAL).
+/// for the original narrative; this remark documents the 5B generalization):
+/// 1. Validate the source skeleton's structural role composition (keyCount >= 1
+///    KEY_SESSION, DaysPerWeek - keyCount - 1 EASY_SUPPORT, one LONG_RUN per
+///    week; no REST/OPTIONAL; DaysPerWeek in {3, 4, 5} — the real layouts
+///    this catalog authors today).
 /// 2. Validate PreferredDays/LongRunDayPreference per the race-plan hard-constraint
-///    policy (required, exactly 4 distinct days, LongRunDayPreference ∈ PreferredDays).
+///    policy (required, exactly DaysPerWeek distinct days, LongRunDayPreference ∈ PreferredDays).
 /// 3. For every plan-relative week, map each preferred weekday to the unique
 ///    date inside that week's own [StartDate, EndDate] range (works regardless
 ///    of which weekday the week starts on — no Monday alignment).
 /// 4. LONG_RUN is fixed to LongRunDayPreference's mapped date in every week.
-/// 5. For each week, rank the remaining 3 dates as KEY_SESSION candidates:
-///    only dates >= 2 calendar days from that week's own LONG_RUN date qualify;
-///    ranked by (a) descending distance from LONG_RUN, (b) ascending
-///    (chronologically earlier) date as the tie-break. ("Preserve structural
-///    slot ordering" from the product decision is a no-op tie-break here:
-///    there is exactly one KEY_SESSION slot to place per week, so no second
-///    slot-ordering signal exists beyond the date itself.)
-/// 6. A bounded depth-first backtracking search picks one KEY_SESSION
-///    candidate per week, in WeekNumber order, trying each week's own
-///    ranked candidates in order and checking only the two cross-week
-///    adjacency facts that can ever be affected (this week's fixed LONG_RUN
-///    vs the previous week's chosen KEY_SESSION; this week's candidate
-///    KEY_SESSION vs the previous week's fixed LONG_RUN) — the search space
-///    is at most 3 candidates × 12 weeks, trivially bounded. The first
-///    complete valid assignment found (in this fixed, deterministic
+/// 5. For each week, rank the remaining (DaysPerWeek - 1) dates as
+///    KEY_SESSION candidates: only dates >= <see cref="DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToLongRunSeparationDays"/>
+///    calendar days from that week's own LONG_RUN date qualify; ranked by
+///    (a) descending distance from LONG_RUN, (b) ascending (chronologically
+///    earlier) date as the tie-break — unchanged from the pre-5B algorithm;
+///    this ranking is itself the "existing materializer authority" FREQ.6D.4D.5A
+///    §14 permits reusing instead of raw chronological order.
+/// 6. A bounded depth-first backtracking search picks one <em>keyCount-sized
+///    combination</em> of KEY_SESSION dates per week (not a single date), in
+///    WeekNumber order, enumerating each week's own ranked candidates as
+///    ascending-index combinations (so keyCount == 1 degenerates to trying
+///    each candidate singly, in the exact original order) and rejecting any
+///    combination whose dates are not all pairwise >= <see cref="DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays"/>
+///    apart (a no-op filter for keyCount == 1 — no pairs exist), while still
+///    checking the same two cross-week LONG_RUN adjacency facts as before
+///    (now against every date in the combination, not a single scalar). The
+///    search space is bounded by C(DaysPerWeek - 1, keyCount) combinations
+///    per week (at most C(6,2) = 15 for the real 5D shape) × the plan's week
+///    count — trivially bounded for every supported horizon (8-14 weeks).
+///    The first complete valid assignment found (in this fixed, deterministic
 ///    exploration order) is returned — never randomized, never dependent on
 ///    hash-set iteration order.
 /// 7. The two EASY_SUPPORT slots receive the two remaining dates, matched by
 ///    ascending original <see cref="GeneratedCatalogSessionSlotSkeleton.SlotOrderInWeek"/>
-///    to ascending chronological date order — deterministic, no reliance on
-///    collection iteration order.
+///    to ascending chronological date order — unchanged from the pre-5B
+///    algorithm. The keyCount KEY_SESSION slots receive the keyCount chosen
+///    dates the identical way: ascending <see cref="GeneratedCatalogSessionSlotSkeleton.SlotOrderInWeek"/>
+///    maps to ascending chosen date — the same, already-existing tie-break
+///    convention applied to a second repeated role, per FREQ.6D.4D.5A §19/§20
+///    (not a new decision). This means the layout-authored earlier KEY_SESSION
+///    slot (lower SlotOrderInWeek, e.g. RUN_LAYOUT_5D's LaneOrdinal 0) always
+///    receives the chronologically earlier of the two chosen dates — a
+///    byproduct of the tie-break, never a hard requirement the search itself
+///    enforces (LaneOrdinal is never derived from the assigned date; it is
+///    already fixed upstream by the binder before this class ever runs).
 /// 8. If no full-plan assignment satisfies every constraint, throws
 ///    <see cref="CatalogPreferredDayConfigurationUnsafeException"/> — never a
 ///    partial result, never a moved/dropped session, never a substituted
-///    default weekday pattern.
+///    default weekday pattern, never a fallback to a different DaysPerWeek/
+///    RunLayout.
 /// </remarks>
 internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkeletonCalendarMaterializer
 {
-    private const int MinimumKeySessionToLongRunSeparationDays = 2;
-
     public DatedGeneratedCatalogPlanSkeleton Materialize(CatalogCalendarAssignmentContext context)
     {
         var skeleton = context.PlanSkeleton;
@@ -81,20 +105,21 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             .Select(week => BuildWeekPlan(week, preferredDays, longRunDay))
             .ToList();
 
-        var chosenKeySessionDates = new DateOnly?[weekPlans.Count];
+        var chosenKeySessionDates = new IReadOnlyList<DateOnly>?[weekPlans.Count];
         if (!TryAssignKeySessionDates(weekPlans, chosenKeySessionDates, 0))
         {
             throw new CatalogPreferredDayConfigurationUnsafeException(
-                "No deterministic full-plan assignment satisfies the KEY_SESSION/LONG_RUN separation invariant " +
-                "(same-week or cross-week) for the supplied PreferredDays/LongRunDayPreference combination. " +
-                "No session was moved to an unselected date, no role was changed, and no default weekday " +
-                "pattern was substituted.");
+                "No deterministic full-plan assignment satisfies the KEY_SESSION/LONG_RUN and " +
+                "KEY_SESSION/KEY_SESSION separation invariants (same-week or cross-week) for the " +
+                "supplied PreferredDays/LongRunDayPreference combination. No session was moved to " +
+                "an unselected date, no session was dropped, no role was changed, and no default " +
+                "weekday pattern was substituted.");
         }
 
         var datedWeeks = new List<DatedGeneratedCatalogWeekSkeleton>(weekPlans.Count);
         for (var i = 0; i < weekPlans.Count; i++)
         {
-            datedWeeks.Add(BuildDatedWeek(weekPlans[i], chosenKeySessionDates[i]!.Value, longRunDay));
+            datedWeeks.Add(BuildDatedWeek(weekPlans[i], chosenKeySessionDates[i]!, longRunDay));
         }
 
         var provenance = new CatalogCalendarMaterializationProvenance(
@@ -121,10 +146,15 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     private static void ValidateSkeletonRoleStructure(GeneratedCatalogPlanSkeleton skeleton)
     {
-        if (skeleton.DaysPerWeek is not (3 or 4))
+        // Phase 10K-FREQ.6D.4D.5B: admits the real 5D layout (2 KEY_SESSION)
+        // alongside the pre-existing 3D/4D layouts. Not opened to arbitrary
+        // DaysPerWeek -- these are the only real layouts this catalog authors
+        // today (FREQ.6D.4D.5B §5: "do not widen implementation beyond what
+        // the real root cause requires").
+        if (skeleton.DaysPerWeek is not (3 or 4 or 5))
         {
             throw new CatalogCalendarRoleStructureInvalidException(
-                $"Core calendar assignment supports resolved 3D/4D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
+                $"Core calendar assignment supports resolved 3D/4D/5D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
         }
 
         foreach (var week in skeleton.Weeks)
@@ -150,11 +180,17 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             var easyCount = roleCounts.GetValueOrDefault("EASY_SUPPORT");
             var longCount = roleCounts.GetValueOrDefault("LONG_RUN");
 
-            var expectedEasy = skeleton.DaysPerWeek - 2;
-            if (keyCount != 1 || easyCount != expectedEasy || longCount != 1 || keyCount + easyCount + longCount != skeleton.DaysPerWeek)
+            // Phase 10K-FREQ.6D.4D.5B: generalized from an exact KEY_SESSION
+            // == 1 assumption to any keyCount >= 1, mirroring the identical
+            // generalization FREQ.4 already applied to the separate output
+            // validator (DatedGeneratedCatalogPlanSkeletonValidator). For
+            // keyCount == 1 this reduces exactly to the pre-5B formula
+            // (DaysPerWeek - 1 - 1 == DaysPerWeek - 2).
+            var expectedEasy = skeleton.DaysPerWeek - keyCount - 1;
+            if (keyCount < 1 || easyCount != expectedEasy || longCount != 1 || keyCount + easyCount + longCount != skeleton.DaysPerWeek)
             {
                 throw new CatalogCalendarRoleStructureInvalidException(
-                    $"Week {week.WeekNumber} does not match resolved RunLayout cardinality: expected KEY_SESSION=1, " +
+                    $"Week {week.WeekNumber} does not match resolved RunLayout cardinality: expected KEY_SESSION>=1, " +
                     $"EASY_SUPPORT={expectedEasy}, LONG_RUN=1; found KEY_SESSION={keyCount}, EASY_SUPPORT={easyCount}, LONG_RUN={longCount}.");
             }
 
@@ -215,6 +251,7 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
     private sealed record WeekPlan(
         GeneratedCatalogWeekSkeleton Source,
         DateOnly LongRunDate,
+        int KeyCount,
         IReadOnlyDictionary<DayOfWeek, DateOnly> DateByWeekday,
         IReadOnlyList<DateOnly> KeySessionCandidates);
 
@@ -222,16 +259,17 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
     {
         var dateByWeekday = preferredDays.ToDictionary(day => day, day => MapWeekdayToDateInWeek(week.StartDate, day));
         var longRunDate = dateByWeekday[longRunDay];
+        var keyCount = week.SessionSlots.Count(s => s.StructuralRole == "KEY_SESSION");
 
         var candidates = preferredDays
             .Where(day => day != longRunDay)
             .Select(day => dateByWeekday[day])
-            .Where(date => DaySeparation(date, longRunDate) >= MinimumKeySessionToLongRunSeparationDays)
+            .Where(date => DaySeparation(date, longRunDate) >= DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToLongRunSeparationDays)
             .OrderByDescending(date => DaySeparation(date, longRunDate))
             .ThenBy(date => date.DayNumber)
             .ToList();
 
-        return new WeekPlan(week, longRunDate, dateByWeekday, candidates);
+        return new WeekPlan(week, longRunDate, keyCount, dateByWeekday, candidates);
     }
 
     /// <summary>
@@ -248,9 +286,68 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     private static int DaySeparation(DateOnly a, DateOnly b) => Math.Abs(a.DayNumber - b.DayNumber);
 
+    /// <summary>
+    /// Yields every <paramref name="k"/>-sized subset of <paramref name="items"/>
+    /// as ascending-index combinations (indices i_0 &lt; i_1 &lt; ... &lt; i_(k-1)),
+    /// preserving <paramref name="items"/>' own order — for k == 1 this yields
+    /// each item singly, in list order, identical to a plain foreach.
+    /// Deterministic; never randomized; never dependent on hash-set order.
+    /// </summary>
+    private static IEnumerable<IReadOnlyList<DateOnly>> Combinations(IReadOnlyList<DateOnly> items, int k)
+    {
+        if (k <= 0 || k > items.Count)
+        {
+            yield break;
+        }
+
+        var indices = new int[k];
+        for (var i = 0; i < k; i++)
+        {
+            indices[i] = i;
+        }
+
+        while (true)
+        {
+            yield return indices.Select(i => items[i]).ToList();
+
+            var slot = k - 1;
+            while (slot >= 0 && indices[slot] == items.Count - k + slot)
+            {
+                slot--;
+            }
+
+            if (slot < 0)
+            {
+                yield break;
+            }
+
+            indices[slot]++;
+            for (var i = slot + 1; i < k; i++)
+            {
+                indices[i] = indices[i - 1] + 1;
+            }
+        }
+    }
+
+    private static bool AllPairsSatisfyKeyToKeySeparation(IReadOnlyList<DateOnly> combination)
+    {
+        for (var i = 0; i < combination.Count; i++)
+        {
+            for (var j = i + 1; j < combination.Count; j++)
+            {
+                if (DaySeparation(combination[i], combination[j]) < DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     // ── Step 6: bounded cross-week backtracking search ───────────────────────
 
-    private static bool TryAssignKeySessionDates(IReadOnlyList<WeekPlan> weekPlans, DateOnly?[] chosen, int weekIndex)
+    private static bool TryAssignKeySessionDates(IReadOnlyList<WeekPlan> weekPlans, IReadOnlyList<DateOnly>?[] chosen, int weekIndex)
     {
         if (weekIndex == weekPlans.Count)
         {
@@ -261,27 +358,37 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
         if (weekIndex > 0)
         {
-            // This week's fixed LONG_RUN date vs the previous week's already-chosen KEY_SESSION date.
-            var previousKeySessionDate = chosen[weekIndex - 1]!.Value;
-            if (DaySeparation(plan.LongRunDate, previousKeySessionDate) < MinimumKeySessionToLongRunSeparationDays)
+            // This week's fixed LONG_RUN date vs every one of the previous
+            // week's already-chosen KEY_SESSION dates.
+            var previousKeySessionDates = chosen[weekIndex - 1]!;
+            foreach (var previousKeySessionDate in previousKeySessionDates)
             {
-                return false;
+                if (DaySeparation(plan.LongRunDate, previousKeySessionDate) < DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToLongRunSeparationDays)
+                {
+                    return false;
+                }
             }
         }
 
-        foreach (var candidate in plan.KeySessionCandidates)
+        foreach (var combination in Combinations(plan.KeySessionCandidates, plan.KeyCount))
         {
+            if (!AllPairsSatisfyKeyToKeySeparation(combination))
+            {
+                continue;
+            }
+
             if (weekIndex > 0)
             {
-                // This week's candidate KEY_SESSION date vs the previous week's fixed LONG_RUN date.
+                // Every date in this week's candidate combination vs the
+                // previous week's fixed LONG_RUN date.
                 var previousLongRunDate = weekPlans[weekIndex - 1].LongRunDate;
-                if (DaySeparation(candidate, previousLongRunDate) < MinimumKeySessionToLongRunSeparationDays)
+                if (combination.Any(candidate => DaySeparation(candidate, previousLongRunDate) < DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToLongRunSeparationDays))
                 {
                     continue;
                 }
             }
 
-            chosen[weekIndex] = candidate;
+            chosen[weekIndex] = combination;
             if (TryAssignKeySessionDates(weekPlans, chosen, weekIndex + 1))
             {
                 return true;
@@ -295,16 +402,27 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     // ── Steps 7-8: building the final dated week ─────────────────────────────
 
-    private static DatedGeneratedCatalogWeekSkeleton BuildDatedWeek(WeekPlan plan, DateOnly keySessionDate, DayOfWeek longRunDay)
+    private static DatedGeneratedCatalogWeekSkeleton BuildDatedWeek(WeekPlan plan, IReadOnlyList<DateOnly> keySessionDates, DayOfWeek longRunDay)
     {
         var week = plan.Source;
+        // Ascending SlotOrderInWeek -> ascending chosen date, the same
+        // already-existing tie-break convention EASY_SUPPORT already used,
+        // now also applied to the (possibly repeated) KEY_SESSION role -- not
+        // a new decision (FREQ.6D.4D.5A §19/§20). This never derives lane
+        // identity from the date: LaneOrdinal is fixed upstream by the
+        // binder before this class ever runs; this is purely a deterministic
+        // tie-break for which of the keyCount chosen dates goes to which
+        // already-existing structural slot.
+        var sortedKeySessionDates = keySessionDates.OrderBy(date => date.DayNumber).ToList();
+        var keySessionDateSet = new HashSet<DateOnly>(sortedKeySessionDates);
         var remainingForEasy = plan.DateByWeekday.Values
-            .Where(date => date != plan.LongRunDate && date != keySessionDate)
+            .Where(date => date != plan.LongRunDate && !keySessionDateSet.Contains(date))
             .OrderBy(date => date.DayNumber)
             .ToList();
 
         var datedSlots = new List<DatedGeneratedCatalogSessionSlotSkeleton>(week.SessionSlots.Count);
         var easyIndex = 0;
+        var keyIndex = 0;
 
         foreach (var slot in week.SessionSlots.OrderBy(s => s.SlotOrderInWeek))
         {
@@ -318,8 +436,9 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             }
             else if (slot.StructuralRole == "KEY_SESSION")
             {
-                assignedDate = keySessionDate;
-                assignmentRule = "KEY_SESSION_DETERMINISTIC_MAX_SEPARATION_FROM_LONG_RUN";
+                assignedDate = sortedKeySessionDates[keyIndex];
+                assignmentRule = "KEY_SESSION_DETERMINISTIC_MAX_SEPARATION_FROM_LONG_RUN_AND_KEY_TO_KEY";
+                keyIndex++;
             }
             else
             {

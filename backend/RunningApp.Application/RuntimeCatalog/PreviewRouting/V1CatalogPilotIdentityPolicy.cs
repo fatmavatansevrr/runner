@@ -54,16 +54,26 @@ public static class V1CatalogPilotIdentityPolicy
     public const int ThreeDayCandidateVersion = 1;
 
     /// <summary>
-    /// Phase 10K-FREQ.6D.4D Split E — the real, published Intermediate 5D Core
-    /// candidate. Deliberately NOT yet in <see cref="IsSupportedLevelFrequency"/>
-    /// (see the comment there): <c>CatalogWeekSkeletonCalendarMaterializer</c>'s
-    /// KEY_SESSION calendar-date assignment algorithm hardcodes exactly one
-    /// KEY_SESSION slot per week; a 5D week has two (LaneOrdinal 0/1), which
-    /// needs a real algorithm change plus an undecided product question
-    /// (minimum separation between the two weekly KEY sessions) before this
-    /// candidate can be safely reached from a live request. Kept here, not
-    /// consumed anywhere yet, so the real key/version are recorded in one
-    /// place for whoever picks this up next.
+    /// Phase 10K-FREQ.6D.4D Split 5B — the real, published Intermediate 5D
+    /// Core candidate. <c>CatalogWeekSkeletonCalendarMaterializer</c> was
+    /// generalized (Split 5B) to a multi-KEY_SESSION-per-week search
+    /// enforcing the frozen KEY&lt;-&gt;KEY separation rule (Split 5A,
+    /// <see cref="DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays"/>
+    /// = 2 calendar days) and proven end-to-end against the real dark 5D
+    /// candidate for every supported horizon. Public activation was
+    /// attempted and reverted again: real E2E testing found
+    /// <c>CatalogPrescriptionContextValidator.Validate</c> hardcodes a
+    /// requirement that some session carry
+    /// <c>ProgressionStageKey == "TAPER_SHARPEN"</c> — the legacy 3D/4D/
+    /// Beginner4D Taper stage-key naming (still real and correct for those
+    /// candidates); the real 5D dual-lane progression's Taper stages are
+    /// named <c>TAPER_PRIMARY_STAGE</c>/<c>TAPER_SECONDARY_STAGE</c>
+    /// instead, so this check fails closed for every 5D request that
+    /// includes a Taper phase (effectively all supported 8-14 week
+    /// horizons) — a second, independent, calendar-unrelated blocker, out
+    /// of this split's scope (STOP condition: prescription-context
+    /// completeness logic must change, which is its own decision, not a
+    /// calendar fix). Kept here, not consumed anywhere yet.
     /// </summary>
     public const string FiveDayCandidateKey = "TEN_K__5D__INTERMEDIATE";
     public const int FiveDayCandidateVersion = 1;
@@ -91,14 +101,11 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 3) or
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Beginner, 4);
-    // NOT (Intermediate, 5): reverted. CatalogWeekSkeletonCalendarMaterializer's
-    // KEY_SESSION date-assignment algorithm hardcodes exactly one KEY_SESSION
-    // slot per week (a scalar chosen date); a 5D week has two (LaneOrdinal 0/1),
-    // which this algorithm would either reject (DaysPerWeek is not (3 or 4)) or,
-    // if that guard were removed, silently collide onto the same calendar date.
-    // Widening this requires a real algorithm change (multi-slot backtracking)
-    // plus an undecided product question (minimum separation between the two
-    // weekly KEY sessions) -- STOP-condition territory, not mechanical routing.
+    // NOT (Intermediate, 5): reverted again (Split 5B). The calendar blocker
+    // (Split E) is now genuinely fixed and proven dark -- see FiveDayCandidateKey's
+    // own doc comment for the real, independent, calendar-unrelated blocker
+    // (CatalogPrescriptionContextValidator's hardcoded TAPER_SHARPEN stage-key
+    // check) found by real E2E testing when this was widened.
 
     /// <summary>
     /// Returns whether the given request identity matches the pilot

@@ -114,7 +114,11 @@ public sealed class CatalogWeekSkeletonCalendarMaterializerTests
 
     public static IEnumerable<object[]> InvalidRoleCompositions()
     {
-        yield return new object[] { new[] { "KEY_SESSION", "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN" } };
+        // Phase 10K-FREQ.6D.4D.5B: KEY_SESSION == 2 is no longer inherently
+        // invalid (the real 5D layout has 2) -- this case now specifically
+        // exercises "wrong LONG_RUN cardinality alongside a repeated
+        // KEY_SESSION role", which remains invalid regardless of keyCount.
+        yield return new object[] { new[] { "KEY_SESSION", "KEY_SESSION", "LONG_RUN", "LONG_RUN" } };
         yield return new object[] { new[] { "KEY_SESSION", "EASY_SUPPORT", "EASY_SUPPORT", "EASY_SUPPORT" } };
         yield return new object[] { new[] { "KEY_SESSION", "EASY_SUPPORT", "REST", "LONG_RUN" } };
     }
