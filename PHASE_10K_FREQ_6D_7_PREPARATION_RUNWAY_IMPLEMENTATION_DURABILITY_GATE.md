@@ -87,11 +87,11 @@ Non-source-code diff content is entirely: (a) the 9 real phase reports + `PHASE_
 
 ## 8. Push result
 
-`git push origin main` — plain push, no force, no force-with-lease. Fast-forward, accepted.
+This gate's own documentation commit (`1a8d6ecbc18dde1957b70078ce9f2e1877144ce7`, containing this report) was committed on top of the 22 commits verified above, then `git push origin main` was run — plain push, no force, no force-with-lease. Fast-forward, accepted (`0b740a2..1a8d6ec main -> main`).
 
 ## 9. Remote HEAD after push
 
-`origin/main` now points to `3c3cb3bdd9d61f79e3ce0b8a8b0a7e53a4259d79` (this gate's own pre-push local `HEAD`).
+`origin/main` now points to `1a8d6ecbc18dde1957b70078ce9f2e1877144ce7`.
 
 ## 10. Final ahead/behind
 
@@ -102,7 +102,7 @@ Zero behind, zero ahead — full convergence, the required durability-gate outco
 
 ## 11. Durable baseline SHA
 
-**`3c3cb3bdd9d61f79e3ce0b8a8b0a7e53a4259d79`**
+**`1a8d6ecbc18dde1957b70078ce9f2e1877144ce7`**
 
 ## 12. Remaining unrelated dirty files
 
