@@ -75,22 +75,35 @@ internal static class LongHorizonStructuralValidator
         if (coreCount != 12)
             findings.Add($"Core week count in Weeks ({coreCount}) is not 12.");
 
+        // Phase 10K-FREQ.6D.14 -- generalized off the candidate's own resolved
+        // shape instead of a hardcoded "exactly 4" literal. GE/Runway carry the
+        // same role composition as each other (1 KEY + N EASY + 1 LONG); Core's
+        // own approved 5D shape is genuinely different (2 KEY + 2 EASY + 1 LONG,
+        // FREQ.6D.4D Split E), so expected KEY/EASY counts are derived per
+        // segment, not uniformly. Byte-identical for every 4D candidate (the
+        // `isFiveDay` branch never taken).
+        var isFiveDay = skeleton.CandidateKey == LongHorizonStructuralMaterializer.CandidateKeyFiveDay;
+        var expectedSlotCount = isFiveDay ? 5 : 4;
+
         foreach (var week in skeleton.Weeks)
         {
-            if (week.OrderedWorkoutSlots.Count != 4)
+            if (week.OrderedWorkoutSlots.Count != expectedSlotCount)
             {
-                findings.Add($"Global week {week.GlobalWeekNumber} has {week.OrderedWorkoutSlots.Count} slots, expected exactly 4.");
+                findings.Add($"Global week {week.GlobalWeekNumber} has {week.OrderedWorkoutSlots.Count} slots, expected exactly {expectedSlotCount}.");
             }
             else
             {
                 var keyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "KEY_SESSION");
                 var easyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "EASY_SUPPORT");
                 var longCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "LONG_RUN");
-                if (keyCount != 1 || easyCount != 2 || longCount != 1)
-                    findings.Add($"Global week {week.GlobalWeekNumber} does not contain exactly 1 KEY_SESSION, 2 EASY_SUPPORT, and 1 LONG_RUN slot.");
+                var (expectedKey, expectedEasy) = isFiveDay && week.Segment == LongHorizonSegmentType.Core
+                    ? (2, 2)
+                    : isFiveDay ? (1, 3) : (1, 2);
+                if (keyCount != expectedKey || easyCount != expectedEasy || longCount != 1)
+                    findings.Add($"Global week {week.GlobalWeekNumber} does not contain exactly {expectedKey} KEY_SESSION, {expectedEasy} EASY_SUPPORT, and 1 LONG_RUN slot.");
                 var indices = week.OrderedWorkoutSlots.Select(s => s.StructuralSlotIndex).ToList();
                 if (!indices.SequenceEqual(Enumerable.Range(1, indices.Count)))
-                    findings.Add($"Global week {week.GlobalWeekNumber} slot indices are not 1..4 in order.");
+                    findings.Add($"Global week {week.GlobalWeekNumber} slot indices are not 1..{expectedSlotCount} in order.");
             }
 
             switch (week.Segment)

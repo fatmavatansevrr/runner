@@ -4,6 +4,7 @@ using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.Prescription;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.PreviewRouting;
@@ -52,6 +53,17 @@ internal static class LongHorizonFullNumericOrchestrator
 {
     public const string RunwayEntryContextSourceGeExit = "PrecedingGeneralEnduranceExit";
 
+    /// <summary>Phase 10K-FREQ.6D.14 -- the pinned Process A release whose published bundles carry ProfileBacked execution prescriptions for the real 5D Core Week 1 KEY_SESSION, reusing the exact same version FREQ.6D.13's own dark 5D tests already verify against.</summary>
+    private const string RealPublishedBundleReleaseVersion = "1.1.0";
+
+    /// <param name="daysPerWeek">
+    /// Phase 10K-FREQ.6D.14 -- the resolved session cardinality. Defaults to
+    /// 4, reproducing every pre-FREQ.6D.14 caller byte-for-byte (GE structure/
+    /// numeric policy, candidate identity, and Runway entry evidence all
+    /// resolve to the exact same 4D values as before). Only 4 and 5 are
+    /// recognized; any other value fails closed rather than silently
+    /// falling back to 4D.
+    /// </param>
     public static async Task<LongHorizonExecutedSchedule> ExecuteAsync(
         LongHorizonCompositionDecision decision,
         DateOnly startDate,
@@ -61,25 +73,40 @@ internal static class LongHorizonFullNumericOrchestrator
         DayOfWeek longRunDay,
         string catalogRoot,
         ICatalogWorkoutDefinitionLoader workoutLoader,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        int daysPerWeek = 4)
     {
         if (decision.HorizonPath != LongHorizonPath.LongHorizonGeneralEnduranceRunwayAndCore)
             throw new InvalidOperationException(
                 $"LongHorizonFullNumericOrchestrator only accepts HorizonPath={LongHorizonPath.LongHorizonGeneralEnduranceRunwayAndCore}; received {decision.HorizonPath}.");
+        if (daysPerWeek is not (4 or 5))
+            throw new InvalidOperationException($"LongHorizonFullNumericOrchestrator only recognizes daysPerWeek 4 or 5; received {daysPerWeek}.");
         var geWeeks = decision.GeneralEnduranceWeeks ?? throw new InvalidOperationException("GeneralEnduranceWeeks is required.");
         var profile = decision.ReadinessProfile ?? throw new InvalidOperationException("ReadinessProfile is required.");
         if (decision.PreparationRunwayWeeks != 8) throw new InvalidOperationException("PreparationRunwayWeeks must be exactly 8.");
         if (decision.CoreWeeks != 12) throw new InvalidOperationException("CoreWeeks must be exactly 12.");
 
-        // ── Stage 1: GE (fully reused from Phase 4I.6, unchanged) ───────────
-        var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile);
-        var geNumeric = LongHorizonGeNumericExecutor.Execute(geDescriptors, geBaseline);
+        // ── Stage 1: GE (fully reused from Phase 4I.6; Phase 10K-FREQ.6D.14 threads the resolved EASY cardinality and, for 5D, the already-approved FiveDayIntermediate policy + target cap) ──
+        var easySupportCount = daysPerWeek == 5 ? 3 : 2;
+        var geVolumePolicy = daysPerWeek == 5 ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
+        var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile, easySupportCount);
+        var geNumeric = LongHorizonGeNumericExecutor.Execute(geDescriptors, geBaseline, geVolumePolicy, applyTargetCap: daysPerWeek == 5);
         var geExit = LongHorizonGeExitState.From(geDescriptors, geNumeric, profile);
 
-        var options = Options.Create(new PlanCatalogOptions { CatalogRootPath = catalogRoot });
+        // Phase 10K-FREQ.6D.14: real 5D Core Week 1 KEY_SESSION is ProfileBacked
+        // and requires a real ExecutionPrescriptionIndex to resolve -- the exact
+        // same missing-context gap FREQ.6D.13 found and fixed for the rolling-
+        // activation JIT path (LongHorizonRollingJitCompositionOrchestrator),
+        // reused verbatim here for this orchestrator's own separately-built Core
+        // pipeline. Every existing 4D caller has no published bundle for this
+        // release, so PublishedBundleReleaseVersion resolves to a no-op there.
+        var planCatalogOptions = new PlanCatalogOptions { CatalogRootPath = catalogRoot, PublishedBundleReleaseVersion = RealPublishedBundleReleaseVersion };
+        var options = Options.Create(planCatalogOptions);
         var bundleLoader = new PlanCatalogBundleLoader(options, NullLogger<PlanCatalogBundleLoader>.Instance);
         var gate = new CatalogCandidateEligibilityGate(bundleLoader);
-        var candidate = await gate.LoadForInternalDryRunAsync(V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion);
+        var candidate = daysPerWeek == 5
+            ? await gate.LoadForInternalDryRunAsync(V1CatalogPilotIdentityPolicy.FiveDayCandidateKey, V1CatalogPilotIdentityPolicy.FiveDayCandidateVersion)
+            : await gate.LoadForInternalDryRunAsync(V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion);
 
         // ── Stage 2: real horizon decision + pure-date-arithmetic calendar authority ──
         // The reused Preparation Runway calendar authority represents ONLY the
@@ -112,7 +139,8 @@ internal static class LongHorizonFullNumericOrchestrator
         var workoutLoaderForCore = new CatalogWorkoutDefinitionLoader(options);
         var peakLoader = new CatalogPeakVolumeBandLoader(options);
         var corePipeline = BuildCorePipeline(options);
-        var coreGenerator = new TenKPreparationRunwayCoreGenerator(corePipeline, workoutLoaderForCore, peakLoader);
+        var publishedBundleLoader = new PublishedTemplateBundleLoader(planCatalogOptions, catalogRoot);
+        var coreGenerator = new TenKPreparationRunwayCoreGenerator(corePipeline, workoutLoaderForCore, peakLoader, publishedBundleLoader);
         var coreGenerationRequest = new TenKPreparationRunwayCoreGenerationRequest(
             candidate, coreStartDate, raceDate, startDate, preferredDays, longRunDay, conditionResults, previewRequest, resolverInput);
         var core = await coreGenerator.GenerateAsync(coreGenerationRequest, ct);
@@ -132,12 +160,12 @@ internal static class LongHorizonFullNumericOrchestrator
         var startingEvidence = new PreparationRunwayStartingLoadEvidence(
             PreparationRunwayLoadEvidenceState.Provided, geExit.FinalWeeklyVolumeKm,
             PreparationRunwayLoadEvidenceState.Provided, geExit.FinalLongRunKm,
-            4, RunwayEntryContextSourceGeExit);
+            daysPerWeek, RunwayEntryContextSourceGeExit);
 
         var numeric = PreparationRunwayNumericMaterializer.Materialize(
             new PreparationRunwayNumericMaterializationRequest<PreparationRunwayBlockType>(
                 allocationProfile, structuralRunwayWeeks, startingEvidence, coreNumericTarget,
-                TenKPreparationRunwayNumericPolicyFactory.Build(), PreparationRunwayQuantityUnit.Kilometers));
+                TenKPreparationRunwayNumericPolicyFactory.Build(candidate), PreparationRunwayQuantityUnit.Kilometers));
         if (!numeric.IsSuccess)
             throw new InvalidOperationException($"Preparation Runway numeric materialization failed: {numeric.FailureReason}");
 
@@ -177,7 +205,7 @@ internal static class LongHorizonFullNumericOrchestrator
             weeks.Add(BuildCoreExecutedWeek(coreWeek, globalWeekNumber++));
 
         var executed = new LongHorizonExecutedSchedule(
-            Structural: await LongHorizonStructuralMaterializer.MaterializeAsync(decision, catalogRoot, workoutLoader, ct),
+            Structural: await LongHorizonStructuralMaterializer.MaterializeAsync(decision, catalogRoot, workoutLoader, ct, daysPerWeek),
             StartDate: startDate,
             GeNumericExecutionComplete: true,
             RunwayNumericExecutionComplete: true,
@@ -266,7 +294,7 @@ internal static class LongHorizonFullNumericOrchestrator
         GoalType = GoalType.Race,
         GoalDistance = GoalDistance.TenK,
         Level = RunningBackground.Intermediate,
-        DaysPerWeek = 4,
+        DaysPerWeek = preferredDays.Count,
         Unit = DistanceUnit.Km,
         StartDate = startDate,
         RaceDate = raceDate,
@@ -307,15 +335,20 @@ internal static class LongHorizonFullNumericOrchestrator
         DateOnly startDate, IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDay)
     {
         var weekStartDate = LongHorizonCalendarAssigner.WeekStartDate(startDate, globalWeekNumber);
-        var weekdayAssignments = LongHorizonCalendarAssigner.AssignWeekdays(preferredDays, longRunDay);
+        var weekdayAssignments = LongHorizonCalendarAssigner.AssignWeekdays(preferredDays, longRunDay, preferredDays.Count);
 
-        var slots = new List<LongHorizonExecutedWorkoutSlot>(4)
+        var slots = new List<LongHorizonExecutedWorkoutSlot>(2 + descriptor.EasySupportWorkouts.Count)
         {
-            BuildGeSlot(1, "KEY_SESSION", descriptor.Roles[LongHorizonGeWeekRole.KeySession], numeric.KeySessionDistanceKm, weekStartDate, weekdayAssignments),
-            BuildGeSlot(2, "EASY_SUPPORT", descriptor.Roles[LongHorizonGeWeekRole.EasySupportA], numeric.FirstEasySupportDistanceKm, weekStartDate, weekdayAssignments, "EASY_SUPPORT_1"),
-            BuildGeSlot(3, "EASY_SUPPORT", descriptor.Roles[LongHorizonGeWeekRole.EasySupportB], numeric.SecondEasySupportDistanceKm, weekStartDate, weekdayAssignments, "EASY_SUPPORT_2"),
-            BuildGeSlot(4, "LONG_RUN", descriptor.Roles[LongHorizonGeWeekRole.LongRun], numeric.LongRunDistanceKm, weekStartDate, weekdayAssignments),
+            BuildGeSlot(1, "KEY_SESSION", descriptor.KeySessionWorkout, numeric.KeySessionDistanceKm, weekStartDate, weekdayAssignments),
         };
+        var slotIndex = 2;
+        for (var easyOrdinal = 0; easyOrdinal < descriptor.EasySupportWorkouts.Count; easyOrdinal++)
+        {
+            slots.Add(BuildGeSlot(
+                slotIndex++, "EASY_SUPPORT", descriptor.EasySupportWorkouts[easyOrdinal], numeric.EasySupportDistancesKm[easyOrdinal],
+                weekStartDate, weekdayAssignments, $"EASY_SUPPORT_{easyOrdinal + 1}"));
+        }
+        slots.Add(BuildGeSlot(slotIndex, "LONG_RUN", descriptor.LongRunWorkout, numeric.LongRunDistanceKm, weekStartDate, weekdayAssignments));
 
         var structuralWeek = new LongHorizonStructuralWeek(
             globalWeekNumber, descriptor.WeekIndex, LongHorizonSegmentType.LongHorizonGeneralEndurance,

@@ -32,12 +32,17 @@ internal static class LongHorizonFullExecutionValidator
         if (!schedule.RunwayNumericExecutionComplete) findings.Add("RunwayNumericExecutionComplete must be true.");
         if (!schedule.CoreNumericExecutionComplete) findings.Add("CoreNumericExecutionComplete must be true.");
 
+        // Phase 10K-FREQ.6D.14 -- derived off the schedule's own resolved
+        // candidate identity instead of a hardcoded "exactly 4" literal.
+        // Byte-identical for every 4D candidate.
+        var expectedSlotCount = schedule.Structural.CandidateKey == LongHorizonStructuralMaterializer.CandidateKeyFiveDay ? 5 : 4;
+
         foreach (var week in schedule.Weeks)
         {
             if (week.TotalVolumeKm is null || week.LongRunDistanceKm is null)
                 findings.Add($"Global week {week.Structural.GlobalWeekNumber} ({week.Structural.Segment}) is missing weekly volume/long-run.");
-            if (week.OrderedSlots.Count != 4)
-                findings.Add($"Global week {week.Structural.GlobalWeekNumber} does not have exactly 4 slots.");
+            if (week.OrderedSlots.Count != expectedSlotCount)
+                findings.Add($"Global week {week.Structural.GlobalWeekNumber} does not have exactly {expectedSlotCount} slots.");
 
             foreach (var slot in week.OrderedSlots)
             {

@@ -26,27 +26,34 @@ internal static class LongHorizonCalendarAssigner
     /// Assigns one weekday per structural role: LONG_RUN to
     /// <paramref name="longRunDay"/>; KEY_SESSION to the first remaining
     /// preferred day (ordered ascending by <see cref="DayOfWeek"/>) that is
-    /// not the long-run day; the two EASY_SUPPORT slots to the two remaining
-    /// preferred days in ascending order. Requires exactly 4 distinct
-    /// preferred days including the long-run day (the existing 4-day race
-    /// plan hard-constraint policy, unchanged).
+    /// not the long-run day; the remaining EASY_SUPPORT slots to the
+    /// remaining preferred days in ascending order, keyed
+    /// <c>EASY_SUPPORT_1</c>.."EASY_SUPPORT_&lt;<paramref name="daysPerWeek"/>-2&gt;".
+    /// Requires exactly <paramref name="daysPerWeek"/> distinct preferred
+    /// days including the long-run day. Phase 10K-FREQ.6D.14 generalized the
+    /// prior hardcoded <c>==4</c> requirement/2-EASY output off
+    /// <paramref name="daysPerWeek"/> (default 4, byte-identical for every
+    /// pre-FREQ.6D.14 caller).
     /// </summary>
     public static IReadOnlyDictionary<string, DayOfWeek> AssignWeekdays(
-        IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDay)
+        IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDay, int daysPerWeek = 4)
     {
-        if (preferredDays is null || preferredDays.Count != 4 || preferredDays.Distinct().Count() != 4)
-            throw new InvalidOperationException("Preferred days must contain exactly 4 distinct weekdays.");
+        if (daysPerWeek < 3)
+            throw new InvalidOperationException("daysPerWeek must be at least 3 (KEY_SESSION + at least one EASY_SUPPORT + LONG_RUN).");
+        if (preferredDays is null || preferredDays.Count != daysPerWeek || preferredDays.Distinct().Count() != daysPerWeek)
+            throw new InvalidOperationException($"Preferred days must contain exactly {daysPerWeek} distinct weekdays.");
         if (!preferredDays.Contains(longRunDay))
             throw new InvalidOperationException("Long-run day must be one of the preferred days.");
 
         var remaining = preferredDays.Where(d => d != longRunDay).OrderBy(d => (int)d).ToList();
-        return new Dictionary<string, DayOfWeek>
+        var assignments = new Dictionary<string, DayOfWeek>
         {
             ["LONG_RUN"] = longRunDay,
             ["KEY_SESSION"] = remaining[0],
-            ["EASY_SUPPORT_1"] = remaining[1],
-            ["EASY_SUPPORT_2"] = remaining[2],
         };
+        for (var i = 1; i < remaining.Count; i++)
+            assignments[$"EASY_SUPPORT_{i}"] = remaining[i];
+        return assignments;
     }
 
     public static DateOnly AssignedDate(DateOnly weekStartDate, DayOfWeek weekday)
