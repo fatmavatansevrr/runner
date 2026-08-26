@@ -138,7 +138,17 @@ public sealed class LongHorizonRunwayDirectionAndBoundedMaterializationGovernanc
     public void ProductionSource_StillCarriesExistingFailClosedAndFullBlockGuards()
     {
         var text = File.ReadAllText(MaterializerPath());
-        Assert.Contains("startingWeekly - targetWeekly > policy.ContinuityToleranceKm", text);
+        // Phase 10K-FREQ.6D.16/FREQ.6D.17: the Phase 4K.8/4K.8A "starting
+        // above Core target fails closed" guard was superseded by a real,
+        // evidenced, approved product/numeric decision (FREQ.6D.16) --
+        // Runway's starting evidence is now clamped to Core's own already-
+        // computed Week-1 target (no new number) rather than failing closed,
+        // resolving the shared 22-week GE->Runway continuity gap those
+        // phases could not have anticipated. Every other invariant this
+        // decision approved (full-block numeric authority, terminal-stage
+        // exactness, week-count bounds) is unaffected and still asserted below.
+        Assert.Contains("var startingWeekly = Math.Min(rawStartingWeekly, targetWeekly);", text);
+        Assert.Contains("var startingLongRun = Math.Min(rawStartingLongRun, targetLongRun);", text);
         Assert.Contains("weeklyChange < -policy.ContinuityToleranceKm", text);
         Assert.Contains("MaterializedWeeks.Count is < 3 or > 8", text);
         Assert.Contains("\"PreSpecificTransition\"", text);
