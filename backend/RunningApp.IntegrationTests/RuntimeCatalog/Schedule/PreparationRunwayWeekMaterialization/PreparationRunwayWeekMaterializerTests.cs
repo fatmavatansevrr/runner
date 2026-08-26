@@ -223,7 +223,7 @@ public sealed class PreparationRunwayWeekMaterializerTests
     {
         var request = new PreparationRunwayWeekMaterializationRequest<string>(
             "SYNTHETIC_PROFILE", "SYNTHETIC_CANDIDATE", 1, "SYNTHETIC_ALLOCATION", 1,
-            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(),
+            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(4),
             [new PreparationRunwayBlockAllocationOutcome<string>("CUSTOM_BLOCK", 1, 7)],
             [new PreparationRunwayMaterializationBlockBinding<string>(
                 "CUSTOM_BLOCK",
@@ -354,7 +354,7 @@ public sealed class PreparationRunwayWeekMaterializerTests
             TenKPreparationRunwayWeekMaterializationPolicyFactory.CandidateVersion,
             TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyId,
             TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
-            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(),
+            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(4),
             allocationResult.Allocations!,
             bindings,
             TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),

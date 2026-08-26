@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using RunningApp.Application.RuntimeCatalog;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
@@ -28,7 +29,7 @@ public sealed class PreparationRunwayNumericMaterializerTests
         var context = await SafetyVerificationContextFixtures.RealAsync(12, "REALISTIC");
         var plan = new CatalogVolumeAndLongRunPlan(context.VolumePlan, context.LongRunPlan);
 
-        var target = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(plan);
+        var target = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(plan, SingleKeySessionFirstWeekPlan());
 
         Assert.Equal("TEN_K__4D__INTERMEDIATE", target.CandidateKey);
         Assert.Equal(10, target.CandidateVersion);
@@ -358,4 +359,63 @@ public sealed class PreparationRunwayNumericMaterializerTests
             block, $"TEN_K_{block.ToString().ToUpperInvariant()}_PROGRESSION", 1, step,
             PreparationRunwayWorkoutSlotSource.SupportPolicy,
             "TEN_K_PREPARATION_RUNWAY_SUPPORT_WORKOUT_POLICY", 1);
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.7: a minimal synthetic single-week plan containing
+    /// exactly one KEY_SESSION (plus 2 EASY_SUPPORT + 1 LONG_RUN), used only
+    /// to exercise <see cref="PreparationRunwayCoreWeekOneTargetAdapter"/>'s
+    /// real-session KEY_SESSION-count derivation for the existing 4D case.
+    /// </summary>
+    private static CatalogPrescribedPlan SingleKeySessionFirstWeekPlan()
+    {
+        var sessions = new[]
+        {
+            SyntheticSession("KEY_SESSION", "EASY_STANDARD", 5, new DateOnly(2026, 1, 5)),
+            SyntheticSession("EASY_SUPPORT", "EASY_STANDARD", 5, new DateOnly(2026, 1, 6)),
+            SyntheticSession("EASY_SUPPORT", "EASY_STANDARD", 5, new DateOnly(2026, 1, 7)),
+            SyntheticSession("LONG_RUN", "LONG_RUN_STANDARD", 5, new DateOnly(2026, 1, 8)),
+        };
+        var week = new CatalogPrescribedWeek
+        {
+            WeekNumber = 1, PhaseKey = "FOUNDATION", PlannedWeeklyVolumeKm = 24, AccountedWeeklyDistanceKm = 24,
+            AllocationTrace = new SessionVolumeAllocationTrace(1, 24, 8, 16, 6, 5, 5, "TEN_K_PREPARATION_RUNWAY_NUMERIC_POLICY", 1),
+            Sessions = sessions,
+        };
+        return new CatalogPrescribedPlan
+        {
+            CandidateKey = "TEN_K__4D__INTERMEDIATE", CandidateVersion = 10,
+            Weeks = [week], Sessions = sessions,
+            ValidationResult = new CatalogSessionPrescriptionValidationResult(true, []),
+        };
+    }
+
+    private static CatalogPrescribedSession SyntheticSession(string role, string workout, int version, DateOnly date)
+    {
+        var pace = new CatalogPacePrescription(CatalogPacePrescriptionKind.EffortOnly, null, null, null,
+            CatalogPaceSourceSelection.EffortOnly, "EASY", "EASY", "SYNTHETIC");
+        var prescription = new CatalogWorkoutPrescription
+        {
+            PrescriptionMode = CatalogPrescriptionMode.Distance,
+            DistanceAccountingMode = CatalogDistanceAccountingMode.ExactSessionTotal,
+            DistancePrescription = new CatalogDistancePrescription(role == "LONG_RUN" ? 8 : role == "KEY_SESSION" ? 6 : 5, "ExactSessionTotal", "nearest_0.5km"),
+            DurationPrescription = new CatalogDurationPrescription(CatalogDurationKind.Unresolved, null, "SYNTHETIC"),
+            PacePrescription = pace,
+            EffortGuidance = "EASY",
+            OrderedSegments = [],
+            Status = CatalogSessionPrescriptionStatus.Complete,
+        };
+        return new CatalogPrescribedSession
+        {
+            WeekNumber = 1, Date = date, PhaseKey = "FOUNDATION", ProgressionStageKey = "FOUNDATION_EASY_BASE",
+            StructuralRole = role, WorkoutDefinitionKey = workout, WorkoutDefinitionVersion = version,
+            PlannedDistanceKm = role == "LONG_RUN" ? 8 : role == "KEY_SESSION" ? 6 : 5,
+            Prescription = prescription, BindingProvenance = "CORE_BINDING", PaceSourceProvenance = "CORE_SOURCE",
+            VolumeAllocationProvenance = "CORE_VOLUME",
+            DecisionTrace = new SessionPrescriptionDecisionTrace(1, date, workout, 24, 8, 16,
+                role == "LONG_RUN" ? 8 : role == "KEY_SESSION" ? 6 : 5, "V1", "Distance", "V1", "NONE",
+                "NOT_EVALUATED", CatalogPaceSourceSelection.EffortOnly, [], "nearest_0.5km", "ExactSessionTotal", "Unresolved", null, []),
+            ValidationResult = new CatalogSessionPrescriptionValidationResult(true, []),
+            PrescriptionSource = new CatalogSessionPrescriptionSource.Legacy(prescription),
+        };
+    }
 }

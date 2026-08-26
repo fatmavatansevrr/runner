@@ -274,7 +274,7 @@ public sealed class LongHorizonCoreWeekOneEvidenceAuthorityDiagnosticTests
             conditions, preview, resolver), CancellationToken.None);
 
         var volumePlan = core.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
-        var target = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(volumePlan);
+        var target = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(volumePlan, core.PrescriptionResult.FinalPrescribedPlan);
         var readiness = conditions.Single(r => r.ConditionType == CoreEntryReadinessResolver.ConditionTypeValue);
         return new DiagnosticResult(
             target.WeeklyVolumeKm,
