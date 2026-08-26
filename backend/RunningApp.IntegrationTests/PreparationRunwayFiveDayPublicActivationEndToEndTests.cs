@@ -160,58 +160,64 @@ public sealed class PreparationRunwayFiveDayPublicActivationEndToEndTests
     // ── §16-18: readiness matrix ──────────────────────────────────────────────
 
     [Fact]
-    public async Task MissingReadinessEvidence_RevealsPreExistingCoreVolumeFeasibilityBlocker()
+    public async Task MissingReadinessEvidence_ResolvesViaFreq6CAuthority_Returns200()
     {
-        // Phase 10K-FREQ.6D.8 finding, disclosed rather than fixed (out of
-        // scope: NO CORE POLICY CHANGE, NO NEW NUMERIC AUTHORITY). Real HTTP
-        // testing shows this request does NOT return 200: it fails at real
-        // Core generation because the real, pre-existing Core Week 1 volume
-        // computation for missing-evidence Intermediate candidates cannot
-        // supply enough residual volume to satisfy a real 5D Core week's
-        // 2-KEY_SESSION minimum. This is confirmed to be a PRE-EXISTING Core
-        // defect, not something Runway generalization introduced: the same
-        // missing-evidence request against the already-publicly-active
-        // Intermediate x5D Core-ONLY route (e.g. a 12-week horizon, no
-        // Runway involved at all) fails identically (HTTP 500,
-        // PLAN_PREVIEW_GENERATION_FAILED) -- independently reproduced during
-        // this phase's investigation. The Runway path at least fails typed
-        // (422, PREPARATION_RUNWAY_PREVIEW_GENERATION_FAILED) rather than
-        // 500, consistent with Runway's existing fail-closed design.
+        // Phase 10K-FREQ.6D.8 disclosed this as a real, pre-existing Core
+        // volume-feasibility blocker (missing-readiness Intermediate x5D
+        // Core Week 1 residual volume could not satisfy the 2-KEY_SESSION
+        // minimum). Phase 10K-FREQ.6D.9 reconciled the numeric authority
+        // (missing=26.0km, explicit-zero=19.5km, already approved by
+        // FREQ.6C but never wired to any 5D call site) and Phase
+        // 10K-FREQ.6D.10 wired it into both the Core dispatcher
+        // (CatalogVolumeAndLongRunPlanner) and the Preparation Runway
+        // numeric policy factory (TenKPreparationRunwayNumericPolicyFactory).
+        // This now succeeds end-to-end. recent_longest_run_km is supplied
+        // (non-zero) alongside a missing recent_weekly_volume_km so
+        // CoreEntryReadinessResolver (Phase 4D.3.1, a separate, pre-existing,
+        // unrelated gate on GOAL_PACE_TEN_K sessions) lands in its non-
+        // blocking CAUTION band rather than NOT_READY -- it only rejects
+        // when BOTH fields are missing/low, never when just one is missing.
         await ResetAsync();
-        var startDate = new DateOnly(2026, 7, 20);
+        var startDate = new DateOnly(2027, 7, 19);
         var raceDate = startDate.AddDays(17 * 7);
 
         var response = await _client.PostRawAsync(
             "/api/v1/plans/generate-preview/race",
             RaceRequest(startDate.ToString("yyyy-MM-dd"), raceDate.ToString("yyyy-MM-dd"),
-                recentWeeklyVolumeKm: null, recentLongestRunKm: null, recentRunsPerWeek: null));
+                recentWeeklyVolumeKm: null, recentLongestRunKm: 8, recentRunsPerWeek: null));
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.True(response.StatusCode == HttpStatusCode.UnprocessableEntity, body);
-        var error = JsonNode.Parse(body)!;
-        Assert.Equal("PREPARATION_RUNWAY_PREVIEW_GENERATION_FAILED", error["errorCode"]!.GetValue<string>());
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        var preview = JsonNode.Parse(body)!;
+        Assert.Equal("TEN_K__5D__INTERMEDIATE", preview["template_id"]!.GetValue<string>());
+        Assert.Equal(17, preview["weeks"]!.AsArray().Count);
     }
 
     [Fact]
-    public async Task ExplicitZeroReadinessEvidence_RevealsSamePreExistingCoreVolumeFeasibilityBlocker()
+    public async Task ExplicitZeroReadinessEvidence_ResolvesViaFreq6CAuthority_Returns200()
     {
-        // Same disclosed, out-of-scope, pre-existing Core defect as
-        // MissingReadinessEvidence_RevealsPreExistingCoreVolumeFeasibilityBlocker
-        // above -- explicit-zero evidence hits the identical Core Week 1
-        // residual-volume-minimum shortfall.
+        // Same FREQ.6D.8->6D.9->6D.10 resolution as
+        // MissingReadinessEvidence_ResolvesViaFreq6CAuthority_Returns200
+        // above, for the explicit-zero axis (resolves 19.5km). Here
+        // recent_longest_run_km is left unset (rather than 0) for the same
+        // CoreEntryReadinessResolver-isolation reason: "one field missing"
+        // lands in CAUTION from the other side, without changing what
+        // recent_weekly_volume_km=0 itself reports to the starting-volume
+        // policy.
         await ResetAsync();
-        var startDate = new DateOnly(2026, 7, 20);
+        var startDate = new DateOnly(2027, 7, 19);
         var raceDate = startDate.AddDays(17 * 7);
 
         var response = await _client.PostRawAsync(
             "/api/v1/plans/generate-preview/race",
             RaceRequest(startDate.ToString("yyyy-MM-dd"), raceDate.ToString("yyyy-MM-dd"),
-                recentWeeklyVolumeKm: 0, recentLongestRunKm: 0, recentRunsPerWeek: 0));
+                recentWeeklyVolumeKm: 0, recentLongestRunKm: null, recentRunsPerWeek: null));
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.True(response.StatusCode == HttpStatusCode.UnprocessableEntity, body);
-        var error = JsonNode.Parse(body)!;
-        Assert.Equal("PREPARATION_RUNWAY_PREVIEW_GENERATION_FAILED", error["errorCode"]!.GetValue<string>());
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        var preview = JsonNode.Parse(body)!;
+        Assert.Equal("TEN_K__5D__INTERMEDIATE", preview["template_id"]!.GetValue<string>());
+        Assert.Equal(17, preview["weeks"]!.AsArray().Count);
     }
 
     [Fact]

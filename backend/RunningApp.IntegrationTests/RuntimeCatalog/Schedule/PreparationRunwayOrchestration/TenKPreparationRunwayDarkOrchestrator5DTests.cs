@@ -94,17 +94,17 @@ public sealed class TenKPreparationRunwayDarkOrchestrator5DTests
         Assert.True(Math.Abs(continuity.LongRunChangeKm) <= continuity.ToleranceKm);
     }
 
-    // Phase 10K-FREQ.6D.7: only the missing-evidence (16km) case is exercised end-to-end here.
-    // Explicit-zero (0km/0km) recent evidence, fed through the real CatalogVolumeAndLongRunPlanner
-    // Core also uses for its OWN Week 1 (pre-existing, unmodified by this phase), produces a
-    // residual too small to satisfy the real 5D Core's 2-KEY minimum -- a pre-existing Core-side
-    // numeric-authority edge unrelated to Runway generalization (Core policy is explicitly out of
-    // scope for this phase to change) and disclosed in the phase report rather than masked here.
-    // The explicit-zero -> 12km resolution itself is still proven generically (candidate-agnostic)
-    // by the existing, unmodified V1MissingReadinessStartingVolumePolicy/PreparationRunwayNumericMaterializer
-    // test suite.
+    // Phase 10K-FREQ.6D.7 originally exercised only the missing-evidence
+    // case here, resolving to the (accidental, 4D-scoped) 16km fallback --
+    // see the by-then-superseded comment this replaces. Phase 10K-FREQ.6D.9
+    // reconciled the FREQ.6C numeric authority for Intermediate x5D
+    // (missing=26.0km, explicit-zero=19.5km, distinct from the 4D
+    // defaults) and Phase 10K-FREQ.6D.10 wired it into both
+    // CatalogVolumeAndLongRunPlanner (Core) and
+    // TenKPreparationRunwayNumericPolicyFactory (Runway), so missing
+    // readiness now resolves the dedicated 26.0km value here.
     [Theory]
-    [InlineData(null, null, 16d)]
+    [InlineData(null, null, 26d)]
     public async Task StartingWeeklyVolume_Missing_ResolvesViaExistingCanonicalAuthority(
         double? weekly, double? longest, double expectedFirstWeekKm)
     {
