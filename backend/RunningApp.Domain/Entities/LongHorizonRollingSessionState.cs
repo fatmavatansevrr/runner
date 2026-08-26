@@ -47,5 +47,19 @@ public class LongHorizonRollingSessionState
     /// itself, so it never has this set on itself.</summary>
     public Guid? AdaptedFromSessionId { get; set; }
 
+    /// <summary>Phase 10K-FREQ.6D.13 -- catalog-authored KEY_SESSION lane identity (0=primary, 1=secondary-controlled), carried verbatim from <c>BoundCatalogSession.LaneOrdinal</c>/<c>CatalogPrescribedSession.LaneOrdinal</c>. Null for FixedDefault roles (EASY_SUPPORT/LONG_RUN) and for every historical row predating this column -- never backfilled, never recomputed from date/repair (FREQ.6D.11 §13-14/§22).</summary>
+    public int? LaneOrdinal { get; set; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 -- week-wide slot ordinal, populated for every role, disambiguating repeated same-role slots (e.g. multiple EASY_SUPPORT) where LaneOrdinal is null. Carried verbatim, never recomputed (FREQ.6D.11 §15/§40).</summary>
+    public int? SlotOrdinal { get; set; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 -- fine-grained progression stage this session was bound from. Null for FixedDefault roles and for every historical row. Never inferred later from date or catalog-latest (FREQ.6D.11 §16).</summary>
+    public string? ProgressionStageKey { get; set; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 -- exact prescription-profile reference, both-null (Legacy) or both-present (ProfileBacked) with <see cref="CatalogPrescriptionProfileVersion"/>, mirroring TrainingDay's own established invariant (FREQ.6D.11 §17/§38).</summary>
+    public string? CatalogPrescriptionProfileKey { get; set; }
+
+    public int? CatalogPrescriptionProfileVersion { get; set; }
+
     public LongHorizonRollingWeekState Week { get; set; } = null!;
 }

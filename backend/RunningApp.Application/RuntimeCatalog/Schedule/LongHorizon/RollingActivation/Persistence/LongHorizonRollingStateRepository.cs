@@ -105,15 +105,23 @@ internal sealed class LongHorizonRollingStateRepository : ILongHorizonRollingSta
                 weekRow.ActivationContextVersionSequence = request.ContextVersion.Sequence;
                 weekRow.ActivatedAtUtc = now;
 
+                if (activated.SessionPrescriptions is { } toValidate)
+                    LongHorizonLineageValidator.ValidateNoDuplicateIdentity(globalWeek, toValidate);
                 var ordinal = 0;
                 foreach (var session in activated.SessionPrescriptions ?? [])
                 {
+                    LongHorizonLineageValidator.ValidateProfilePair(session.ProfileKey, session.ProfileVersion, globalWeek, session.SessionRole);
                     _db.LongHorizonRollingSessionStates.Add(new LongHorizonRollingSessionState
                     {
                         Id = Guid.NewGuid(),
                         WeekStateId = weekRow.Id,
                         SessionOrdinal = session.SessionOrdinal ?? ordinal++,
                         SessionRole = session.SessionRole,
+                        LaneOrdinal = session.LaneOrdinal,
+                        SlotOrdinal = session.SlotOrdinal,
+                        ProgressionStageKey = session.ProgressionStageKey,
+                        CatalogPrescriptionProfileKey = session.ProfileKey,
+                        CatalogPrescriptionProfileVersion = session.ProfileVersion,
                         WorkoutKey = session.WorkoutKey,
                         WorkoutVersion = session.WorkoutVersion,
                         DistanceKm = session.DistanceKm,
@@ -219,15 +227,23 @@ internal sealed class LongHorizonRollingStateRepository : ILongHorizonRollingSta
             weekRow.BlockedReasonCode = null;
             weekRow.BlockedDecisionId = null;
 
+            if (week.SessionPrescriptions is { } toValidate)
+                LongHorizonLineageValidator.ValidateNoDuplicateIdentity(week.GlobalWeekNumber, toValidate);
             var ordinal = 0;
             foreach (var session in week.SessionPrescriptions ?? [])
             {
+                LongHorizonLineageValidator.ValidateProfilePair(session.ProfileKey, session.ProfileVersion, week.GlobalWeekNumber, session.SessionRole);
                 _db.LongHorizonRollingSessionStates.Add(new LongHorizonRollingSessionState
                 {
                     Id = Guid.NewGuid(),
                     WeekStateId = weekRow.Id,
                     SessionOrdinal = session.SessionOrdinal ?? ordinal++,
                     SessionRole = session.SessionRole,
+                    LaneOrdinal = session.LaneOrdinal,
+                    SlotOrdinal = session.SlotOrdinal,
+                    ProgressionStageKey = session.ProgressionStageKey,
+                    CatalogPrescriptionProfileKey = session.ProfileKey,
+                    CatalogPrescriptionProfileVersion = session.ProfileVersion,
                     WorkoutKey = session.WorkoutKey,
                     WorkoutVersion = session.WorkoutVersion,
                     DistanceKm = session.DistanceKm,

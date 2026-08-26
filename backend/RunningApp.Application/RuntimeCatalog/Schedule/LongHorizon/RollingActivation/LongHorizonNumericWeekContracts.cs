@@ -35,6 +35,21 @@ internal sealed record LongHorizonSessionPrescriptionReference
     /// <summary>Stable structural slot ordinal used for one-to-one calendar mapping.</summary>
     public int? SessionOrdinal { get; init; }
     public required string SessionRole { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — carried verbatim from the source <c>CatalogPrescribedSession</c>/<c>BoundCatalogSession</c>. Null for FixedDefault (EASY_SUPPORT/LONG_RUN) roles, matching Core's own convention.</summary>
+    public int? LaneOrdinal { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — carried verbatim, populated for every role. Together with <see cref="SessionRole"/> and <see cref="LaneOrdinal"/> this is the canonical (StructuralRole, LaneOrdinal, SlotOrdinal) identity FREQ.6D.11 approved; disambiguates repeated same-role slots (e.g. multiple EASY_SUPPORT) where LaneOrdinal alone is null.</summary>
+    public int? SlotOrdinal { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — carried verbatim from the source session. Null for FixedDefault roles.</summary>
+    public string? ProgressionStageKey { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — exact prescription-profile reference, both-null-or-both-present with <see cref="ProfileVersion"/> (mirrors the existing TrainingDay/BoundCatalogSession invariant).</summary>
+    public string? ProfileKey { get; init; }
+
+    public int? ProfileVersion { get; init; }
+
     public required double DistanceKm { get; init; }
     public string? WorkoutKey { get; init; }
     public int? WorkoutVersion { get; init; }
