@@ -71,9 +71,9 @@ Prior phase: `FREQ.6D.15` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.16` — Execution Status `DONE`, Final Classification `SHARED_10K_LONGHORIZON_22_WEEK_NUMERIC_AUTHORITY_APPROVED`. Resolved the shared 22-week GE→Runway numeric-continuity gap via real numeric traces (temporary, uncommitted, read-only diagnostics against production code, fully reverted — zero residual code changes). Root-caused two compounding issues in `PreparationRunwayNumericMaterializer.Materialize`: Runway's starting evidence is always the raw, unclamped GE exit with no reconciliation against Core's own Week-1 target; the reachability check reuses a 0.001km floating-point sum-reconciliation epsilon (`V1FourDaySessionVolumeAllocationPolicy.ToleranceKm`) for an unrelated product-level question — the same class of mistake `FREQ.6D.10` already fixed once, on a different field. Discovered a previously-unnoticed 4D/24-week long-run edge case (Recovery week's reduced long run still exceeds Core's target by exactly one rounding increment) alongside the already-known 22/23-week weekly-volume failures. Approved a generic, no-new-number rule: clamp Runway's starting weekly volume and long run to Core's own already-computed Week-1 target whenever GE's exit would otherwise exceed it — day-count-neutral, conservative (only reduces, never raises), zero GE/Core/Runway structural change. Evidence/decision only, no production code authored.
 
-**Next phase**: `FREQ.6D.17` — **SHARED 10K LONGHORIZON CORE-ENTRY CLAMP IMPLEMENTATION, FULL 21-52 DARK RE-VERIFICATION & PERSISTED ADAPTATION/REPAIR CLOSURE**. Phase type: **IMPLEMENTATION + REAL POSTGRESQL VERIFICATION + DARK CLOSURE**. Implements only `FREQ.6D.16`'s approved clamp (no new product/numeric decision), re-verifies the full 21-52 week dark matrix at a representative baseline range for both 4D and 5D, and completes `FREQ.6D.15`'s own disclosed real-Postgres persisted adaptation/repair scope. No public activation.
+Prior phase: `FREQ.6D.17` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_CORE_ENTRY_CLAMP_IMPLEMENTED_AND_DARK_VERIFIED_PERSISTED_ADAPTATION_REPAIR_REMAINING`. Implemented `FREQ.6D.16`'s approved GE→Runway Core-entry clamp at its single shared owner (`PreparationRunwayNumericMaterializer.Materialize`) — no new numeric constant, conservative by construction. Re-verified via real numeric traces that 4D/22, 4D/23, 5D/22, 5D/23, and the 4D/24 long-run edge all now succeed; mechanically re-ran the full 21-52 week dark matrix at 32/32 success using the same representative baseline every other test already uses (the forced near-cap workaround baseline is no longer required). Did **not** complete real PostgreSQL persisted adaptation or persisted repair verification (`LongHorizonRollingCheckpointRuntime` not touched) — `FREQ.6D.15`'s own disclosed remaining scope, still open, not a blocker.
 
-`FREQ.6D.17` is scheduled only — not started.
+**Next phase**: an implementation phase completing real PostgreSQL persisted adaptation and persisted repair verification for the Intermediate×5D LongHorizon GE checkpoint-continuation path (`LongHorizonRollingCheckpointRuntime`), reusing `FREQ.6D.15`'s own real-Postgres infrastructure and the already-5D-aware `NextWindowLoadDecisionPolicy`/`ScheduleRepairPersistenceService`. Not yet scheduled as a Phase ID — no production code, migration, or public activation is authorized until that phase itself executes.
 
 ---
 
@@ -637,11 +637,25 @@ FREQ.6D.16 (DONE)               → EVIDENCE + PRODUCT_DECISION + NUMERIC_DECISI
                                     new number, day-count-neutral, conservative, zero GE/Core/Runway
                                     structural change. No production code authored. Classification:
                                     SHARED_10K_LONGHORIZON_22_WEEK_NUMERIC_AUTHORITY_APPROVED.
-NEXT (NOT_YET_SCHEDULED)        → implementation phase applying FREQ.6D.16's approved clamp, full
-                                    21-52 dark re-verification at a representative baseline range (4D
-                                    + 5D), then FREQ.6D.15's own disclosed persisted adaptation/repair
-                                    completion. Then real environment / public HTTP verification +
-                                    public activation for Intermediate×5D LongHorizon 21-52.
+FREQ.6D.17 (DONE, PARTIAL)      → IMPLEMENTATION + REAL POSTGRESQL VERIFICATION + DARK CLOSURE:
+                                    implemented the FREQ.6D.16-approved clamp at its single shared
+                                    owner (PreparationRunwayNumericMaterializer.Materialize) -- no new
+                                    numeric constant, conservative by construction. Re-verified 4D/22,
+                                    4D/23, 5D/22, 5D/23, and the 4D/24 long-run edge all now succeed.
+                                    Mechanically re-ran the full 21-52 week dark matrix: 32/32 success
+                                    at the same representative baseline every other test already uses
+                                    (the forced near-cap workaround is no longer needed for any
+                                    horizon). Real PostgreSQL persisted adaptation/repair verification
+                                    (LongHorizonRollingCheckpointRuntime) NOT completed -- FREQ.6D.15's
+                                    own disclosed remaining scope, still open, not a blocker.
+                                    Classification:
+                                    INTERMEDIATE_5D_LONGHORIZON_CORE_ENTRY_CLAMP_IMPLEMENTED_AND_DARK_
+                                    VERIFIED_PERSISTED_ADAPTATION_REPAIR_REMAINING.
+NEXT (NOT_YET_SCHEDULED)        → implementation phase completing real PostgreSQL persisted
+                                    adaptation/repair verification for the 5D GE checkpoint-
+                                    continuation path. Then real environment / public HTTP
+                                    verification + public activation for Intermediate×5D LongHorizon
+                                    21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
