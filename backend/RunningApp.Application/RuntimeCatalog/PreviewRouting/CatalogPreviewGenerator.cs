@@ -411,8 +411,8 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         GeneratePreviewRequest request, CoreHorizonDecision horizonDecision, DateOnly asOfDate, PlanCatalogOptions catalogOptions,
         bool confirmationEnabled = false, CancellationToken ct = default)
     {
-        var candidate = await _gate.LoadForPublicPreviewAsync(
-            V1CatalogPilotIdentityPolicy.CandidateKey, V1CatalogPilotIdentityPolicy.CandidateVersion, ct);
+        var (runwayCandidateKey, runwayCandidateVersion) = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.Level, request.DaysPerWeek);
+        var candidate = await _gate.LoadForPublicPreviewAsync(runwayCandidateKey, runwayCandidateVersion, ct);
 
         var input = BuildInputSnapshot(request, asOfDate, candidate);
         var context = new RuntimeResolverContext
@@ -517,7 +517,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         var trace = BuildDecisionTrace(results);
         var createdAtUtc = DateTime.UtcNow;
         var snapshot = CatalogPreviewSnapshotBuilder.Build(
-            input, asOfDate, candidate, "PILOT_TEN_K_INTERMEDIATE_4D_PREPARATION_RUNWAY_MATCH",
+            input, asOfDate, candidate, $"PILOT_TEN_K_INTERMEDIATE_{request.DaysPerWeek}D_PREPARATION_RUNWAY_MATCH",
             results, trace, createdAtUtc, createdAtUtc.Add(PreviewLifetime), generatedPreviewPlanPayload: persistablePayload);
 
         return (snapshot, weeks);

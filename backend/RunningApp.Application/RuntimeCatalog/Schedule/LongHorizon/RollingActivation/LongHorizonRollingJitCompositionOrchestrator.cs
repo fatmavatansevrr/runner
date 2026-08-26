@@ -127,7 +127,8 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
                 }
 
                 extractedTarget = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(
-                    realComposition.CoreResult!.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan);
+                    realComposition.CoreResult!.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan,
+                    realComposition.CoreResult!.PrescriptionResult.FinalPrescribedPlan);
                 stages.Add("CoreWeekOneTargetExtraction");
 
                 if (needsRunwayEntry)

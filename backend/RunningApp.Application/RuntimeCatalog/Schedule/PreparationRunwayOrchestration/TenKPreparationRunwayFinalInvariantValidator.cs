@@ -52,10 +52,7 @@ internal sealed class TenKPreparationRunwayFinalInvariantValidator : ITenKPrepar
         if (!allocationExact) findings.Add("ALLOCATION_OR_POSITIVE_BLOCK_CLOSURE_MISMATCH");
 
         var structuralExact = structuralWeeks.Count == runwayWeeks &&
-                              structuralWeeks.All(w => w.OrderedWorkoutSlots.Count == 4 &&
-                                  w.OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.KeySession) == 1 &&
-                                  w.OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.EasySupport) == 2 &&
-                                  w.OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.LongRun) == 1);
+                              structuralWeeks.All(w => PreparationRunwayWeeklyShape.IsValid(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray()));
         if (!structuralExact) findings.Add("STRUCTURAL_WEEK_OR_ROLE_CARDINALITY_MISMATCH");
 
         var numericExact = numeric.IsSuccess && numeric.ContinuityAnalysis?.IsWithinTolerance == true &&
@@ -112,7 +109,12 @@ internal sealed class TenKPreparationRunwayFinalInvariantValidator : ITenKPrepar
 
         var totalWeeks = combined.Count;
         var totalSessions = paced.Sum(w => w.StructuralOrderedSlots.Count) + corePlan.Sessions.Count;
-        var counts = coreWeeks == 12 && totalWeeks == runwayWeeks + 12 && totalSessions == (runwayWeeks + 12) * 4;
+        // Phase 10K-FREQ.6D.7: Runway and Core (post-boundary) share the same real
+        // candidate and therefore the same sessions-per-week count for a given
+        // request (only the KEY/EASY split changes, never the total) -- read from
+        // the resolved candidate rather than a hardcoded literal.
+        var sessionsPerWeek = request.Candidate.DaysPerWeek;
+        var counts = coreWeeks == 12 && totalWeeks == runwayWeeks + 12 && totalSessions == (runwayWeeks + 12) * sessionsPerWeek;
         if (!counts) findings.Add("TOTAL_WEEK_OR_SESSION_COUNT_MISMATCH");
 
         var valid = allocationExact && structuralExact && numericExact && calendarExact && paceExact &&

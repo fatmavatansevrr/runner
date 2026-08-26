@@ -189,9 +189,8 @@ internal sealed class PreparationRunwayCalendarComposer
         if (request.Policy.PolicyKey != TenKPreparationRunwayCalendarCompositionPolicyFactory.PolicyKey ||
             request.Policy.PolicyVersion != TenKPreparationRunwayCalendarCompositionPolicyFactory.PolicyVersion)
             return (PreparationRunwayCalendarCompositionFailureCode.InvalidCalendarCompositionRequest, "Approved TEN_K calendar composition policy is required.");
-        if (request.CandidateKey != TenKPreparationRunwayCalendarCompositionPolicyFactory.CandidateKey ||
-            request.CandidateVersion != TenKPreparationRunwayCalendarCompositionPolicyFactory.CandidateVersion)
-            return (PreparationRunwayCalendarCompositionFailureCode.InvalidCalendarCompositionRequest, "Composer is scoped to TEN_K__4D__INTERMEDIATE v10.");
+        if (!PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(request.CandidateKey, request.CandidateVersion))
+            return (PreparationRunwayCalendarCompositionFailureCode.InvalidCalendarCompositionRequest, "Composer is scoped to the approved Intermediate 4D/5D Preparation Runway candidates.");
 
         var authority = request.DateAuthority;
         var canonical = authority.HorizonDecision;
@@ -225,7 +224,7 @@ internal sealed class PreparationRunwayCalendarComposer
             return (PreparationRunwayCalendarCompositionFailureCode.SegmentOrderInvalid, "Final runway week must be PreSpecificTransition.");
         foreach (var week in runwayWeeks)
         {
-            if (week.OrderedSlots.Count != 4 ||
+            if (!PreparationRunwayWeeklyShape.IsValid(week.OrderedSlots.Select(s => s.StructuralSlot.SlotRole).ToArray()) ||
                 Math.Abs(week.OrderedSlots.Sum(s => s.PlannedDistanceKm) - week.PlannedWeeklyVolumeKm) > 0.001d ||
                 Math.Abs(week.OrderedSlots.Single(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.LongRun).PlannedDistanceKm - week.PlannedLongRunDistanceKm) > 0.001d)
                 return (PreparationRunwayCalendarCompositionFailureCode.NumericPrescriptionChanged, "Numeric runway totals or slot quantities are inconsistent.");
@@ -233,10 +232,24 @@ internal sealed class PreparationRunwayCalendarComposer
 
         var target = request.CoreWeekOneNumericTarget;
         var final = runwayWeeks[^1];
+        // Phase 10K-FREQ.6D.7: per FREQ.6D.6, only total weekly volume and long-run
+        // distance are the Core-entry compatibility authority. Per-slot KEY/EASY
+        // continuity only applies when Runway's final week and the Core target share
+        // the exact same role composition (every existing Intermediate 4D case, 1
+        // KEY + 2 EASY on both sides). When the approved structure legitimately
+        // redistributes KEY/EASY counts across the boundary (Intermediate 5D: 1 KEY
+        // + 3 EASY -> 2 KEY + 2 EASY), per-slot values are not comparable even for
+        // roles that happen to share an ordinal (e.g. Runway's sole KEY carries a
+        // different share of weekly volume than either of Core's two KEY sessions).
+        var finalKeyCount = final.OrderedSlots.Count(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.KeySession);
+        var finalEasyCount = final.OrderedSlots.Count(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.EasySupport);
+        var targetKeyCount = target.OrderedSlots.Count(t => t.Role == PreparationRunwaySlotRole.KeySession);
+        var targetEasyCount = target.OrderedSlots.Count(t => t.Role == PreparationRunwaySlotRole.EasySupport);
+        var roleCompositionMatches = finalKeyCount == targetKeyCount && finalEasyCount == targetEasyCount;
         if (Math.Abs(final.PlannedWeeklyVolumeKm - target.WeeklyVolumeKm) > 0.001d ||
             Math.Abs(final.PlannedLongRunDistanceKm - target.LongRunDistanceKm) > 0.001d ||
-            target.OrderedSlots.Any(t => Math.Abs(final.OrderedSlots.Single(s =>
-                s.StructuralSlot.SlotRole == t.Role && s.StructuralSlot.RoleOrdinal == t.RoleOrdinal).PlannedDistanceKm - t.DistanceKm) > 0.001d))
+            (roleCompositionMatches && target.OrderedSlots.Any(t =>
+                Math.Abs(final.OrderedSlots.Single(s => s.StructuralSlot.SlotRole == t.Role && s.StructuralSlot.RoleOrdinal == t.RoleOrdinal).PlannedDistanceKm - t.DistanceKm) > 0.001d)))
             return (PreparationRunwayCalendarCompositionFailureCode.NumericPrescriptionChanged, "Final runway numeric boundary no longer equals Core Week 1 target.");
 
         var core = request.UndatedCoreSkeleton;
@@ -298,7 +311,7 @@ internal sealed class PreparationRunwayCalendarComposer
             StartDate = runway.StartDate,
             EndDate = core.EndDate,
             PlannedWeekCount = weeks.Length,
-            DaysPerWeek = 4,
+            DaysPerWeek = core.DaysPerWeek,
             CanonicalDistanceFamily = core.CanonicalDistanceFamily,
             CandidateKey = request.CandidateKey,
             CandidateVersion = request.CandidateVersion,

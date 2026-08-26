@@ -193,7 +193,7 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
                     profile.Value.ToString(), request.Candidate.CandidateKey, request.Candidate.CandidateVersion,
                     TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyId,
                     TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
-                    TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(),
+                    TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(request.Candidate.DaysPerWeek),
                     allocation.Allocations,
                     bindings.Select(b => new PreparationRunwayMaterializationBlockBinding<PreparationRunwayBlockType>(
                         b.BlockType, b.Binding, b.ProgressionId, b.ProgressionVersion, b.OrderedProgressionStepNumbers)).ToArray(),
@@ -236,7 +236,7 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
                     "DynamicCoreCalendarMaterializationOrchestrator", exception.GetType().Name, exception.Message, trace);
             }
             var coreVolume = core.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
-            var coreNumericTarget = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(coreVolume);
+            var coreNumericTarget = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(coreVolume, core.PrescriptionResult.FinalPrescribedPlan);
             var corePaceTarget = PreparationRunwayCoreWeekOnePaceAdapter.FromAuthoritativeCoreBehavior(core.PrescriptionResult.FinalPrescribedPlan);
             var corePrescriptionContext = core.PrescriptionResult.VolumeResult.PrescriptionContext;
             Add(trace, TenKPreparationRunwayOrchestrationStage.CoreGeneration, "authoritative_core",
@@ -333,10 +333,10 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
             request.ConditionResults is null || request.PreviewRequest is null || request.ResolverInput is null ||
             request.PreferredDays is null)
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "Request and all authoritative contexts are required.");
-        if (request.Candidate.CandidateKey != "TEN_K__4D__INTERMEDIATE" || request.Candidate.CandidateVersion != 10 ||
+        if (!PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(request.Candidate.CandidateKey, request.Candidate.CandidateVersion) ||
             request.Candidate.CanonicalDistanceFamily != "TEN_K" || request.Candidate.Level != "INTERMEDIATE" ||
-            request.Candidate.DaysPerWeek != 4 || request.Candidate.CoreCycle.DefaultWeeks != 12 || request.Candidate.CoreCycle.MaximumWeeks is null)
-            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only TEN_K__4D__INTERMEDIATE v10 / Intermediate / 4D / 12-week preferred Core is supported.");
+            request.Candidate.CoreCycle.DefaultWeeks != 12 || request.Candidate.CoreCycle.MaximumWeeks is null)
+            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Intermediate 4D/5D Preparation Runway candidates are supported.");
         if (!request.ConditionResults.Any(r => ReferenceEquals(r, request.CoreEntryReadinessResult)))
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "The readiness result must be the same resolved object carried into Core ConditionResults.");
         if (request.PreviewRequest.StartDate != request.StartDate || request.PreviewRequest.RaceDate != request.RaceDate ||

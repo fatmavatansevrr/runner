@@ -1,4 +1,5 @@
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayWeekMaterialization;
 
 namespace RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayNumericMaterialization;
@@ -92,10 +93,14 @@ internal static class PreparationRunwayNumericMaterializer
                         $"Week {weeks[index].RunwayWeekNumber} long-run share {share:P2} is outside the approved range.", trace);
                 }
 
+                // Runway itself always has exactly one KEY_SESSION (FREQ.6D.6: dual KEY begins
+                // only at real Core Week 1); the EASY_SUPPORT count is read from the real
+                // materialized layout width so it generalizes to any approved Runway shape.
+                var easySupportCount = weeks[index].OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.EasySupport);
                 FourDaySessionDistanceAllocation allocation;
                 try
                 {
-                    allocation = FourDaySessionDistanceAllocationPolicy.Allocate(weekly, longRun);
+                    allocation = FourDaySessionDistanceAllocationPolicy.Allocate(weekly, longRun, easySupportCount: easySupportCount);
                 }
                 catch (CatalogSessionPrescriptionInfeasibleException exception)
                 {
@@ -174,14 +179,16 @@ internal static class PreparationRunwayNumericMaterializer
             return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Runway must contain 3..8 full weeks.");
         var ordered = request.MaterializedWeeks.OrderBy(w => w.RunwayWeekNumber).ToArray();
         if (!ordered.Select(w => w.RunwayWeekNumber).SequenceEqual(Enumerable.Range(1, ordered.Length)) ||
-            ordered.Any(w => w.OrderedWorkoutSlots.Count != 4))
-            return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Structural weeks must be contiguous canonical four-slot weeks.");
+            ordered.Any(w => !PreparationRunwayWeeklyShape.IsValid(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray())))
+            return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Structural weeks must be contiguous, canonical-shape (1 KEY + 1 LONG + N EASY) weeks.");
         if (!string.Equals(ordered[^1].BlockType?.ToString(), "PreSpecificTransition", StringComparison.Ordinal))
             return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "The terminal week must be PreSpecificTransition.");
         var target = request.CoreWeekOneTarget;
-        if (target.CandidateKey != TenKPreparationRunwayNumericPolicyFactory.CandidateKey || target.CandidateVersion != TenKPreparationRunwayNumericPolicyFactory.CandidateVersion ||
-            target.WeeklyVolumeKm <= 0 || target.LongRunDistanceKm <= 0 || target.OrderedSlots.Count != 4)
-            return (PreparationRunwayNumericMaterializationFailureCode.CoreWeekOneTargetUnavailable, "A complete TEN_K__4D__INTERMEDIATE v10 Core Week 1 target is required.");
+        if (!V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(target.CandidateKey, target.CandidateVersion) ||
+            target.WeeklyVolumeKm <= 0 || target.LongRunDistanceKm <= 0 ||
+            target.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.KeySession) < 1 ||
+            target.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.LongRun) != 1)
+            return (PreparationRunwayNumericMaterializationFailureCode.CoreWeekOneTargetUnavailable, "A complete approved Core Week 1 target (>=1 KEY, exactly 1 LONG_RUN) is required.");
         if (Math.Abs(target.OrderedSlots.Sum(s => s.DistanceKm) - target.WeeklyVolumeKm) > request.Policy.ContinuityToleranceKm)
             return (PreparationRunwayNumericMaterializationFailureCode.CoreWeekOneTargetUnavailable, "Core Week 1 slot quantities do not equal its weekly total.");
         if (target.LongRunDistanceKm > target.WeeklyVolumeKm)
@@ -232,13 +239,12 @@ internal static class PreparationRunwayNumericMaterializer
             {
                 PreparationRunwaySlotRole.KeySession => allocation.KeySessionDistanceKm,
                 PreparationRunwaySlotRole.LongRun => allocation.LongRunDistanceKm,
-                PreparationRunwaySlotRole.EasySupport when ++easyOrdinal == 1 => allocation.FirstEasySupportDistanceKm,
-                PreparationRunwaySlotRole.EasySupport => allocation.SecondEasySupportDistanceKm,
+                PreparationRunwaySlotRole.EasySupport => allocation.EasySupportDistancesKm[easyOrdinal++],
                 _ => throw new InvalidOperationException("Unsupported runway slot role."),
             };
             return new PreparationRunwayPrescribedSlot<TKey>(
                 slot, quantity, unit,
-                $"{policy.PolicyKey} v{policy.PolicyVersion}; V1_FOUR_DAY_SESSION_VOLUME_ALLOCATION_POLICY v1; deterministic residual to second EASY_SUPPORT");
+                $"{policy.PolicyKey} v{policy.PolicyVersion}; V1_FOUR_DAY_SESSION_VOLUME_ALLOCATION_POLICY v1; deterministic residual to last EASY_SUPPORT");
         }).ToArray();
     }
 
@@ -256,13 +262,35 @@ internal static class PreparationRunwayNumericMaterializer
 
         var weekly = core.WeeklyVolumeKm - final.PlannedWeeklyVolumeKm;
         var longRun = core.LongRunDistanceKm - final.PlannedLongRunDistanceKm;
-        var key = Delta(PreparationRunwaySlotRole.KeySession, 1);
-        var easy = new[] { Delta(PreparationRunwaySlotRole.EasySupport, 1), Delta(PreparationRunwaySlotRole.EasySupport, 2) };
-        var within = new[] { weekly, longRun, key, easy[0], easy[1] }.All(v => Math.Abs(v) <= policy.ContinuityToleranceKm);
+
+        var finalKeyCount = final.OrderedSlots.Count(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.KeySession);
+        var finalEasyCount = final.OrderedSlots.Count(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.EasySupport);
+        var coreKeyCount = core.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.KeySession);
+        var coreEasyCount = core.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.EasySupport);
+        // Phase 10K-FREQ.6D.7: per FREQ.6D.6 (approved product decision), Core-entry
+        // compatibility is total weekly volume and long-run distance continuity --
+        // NOT per-slot KEY/EASY role-count equality. Per-slot deltas are only
+        // meaningful (and are still checked, byte-for-byte as before) when Runway's
+        // final week and the Core Week 1 target share the exact same role
+        // composition, e.g. every existing Intermediate 4D case. When the approved
+        // structure legitimately redistributes KEY/EASY counts across the boundary
+        // (Intermediate 5D: 1 KEY + 3 EASY -> 2 KEY + 2 EASY), only weekly/long-run
+        // totals are the compatibility authority.
+        var roleCompositionMatches = finalKeyCount == coreKeyCount && finalEasyCount == coreEasyCount;
+
+        var key = roleCompositionMatches ? Delta(PreparationRunwaySlotRole.KeySession, 1) : 0d;
+        var easy = roleCompositionMatches
+            ? Enumerable.Range(1, finalEasyCount).Select(ordinal => Delta(PreparationRunwaySlotRole.EasySupport, ordinal)).ToArray()
+            : Array.Empty<double>();
+        var within = roleCompositionMatches
+            ? new[] { weekly, longRun, key }.Concat(easy).All(v => Math.Abs(v) <= policy.ContinuityToleranceKm)
+            : new[] { weekly, longRun }.All(v => Math.Abs(v) <= policy.ContinuityToleranceKm);
         return new PreparationRunwayCoreContinuityAnalysis(
             weekly, longRun, key, easy, final.OrderedSlots.Count == core.OrderedSlots.Count,
             within, policy.ContinuityToleranceKm,
-            core.SourceProvenance + "; exact numeric equality at the undated boundary");
+            core.SourceProvenance + (roleCompositionMatches
+                ? "; exact numeric equality at the undated boundary"
+                : "; approved KEY/EASY redistribution at the undated boundary -- weekly volume and long-run distance are the compatibility authority (FREQ.6D.6)"));
     }
 
     private static string TrajectoryFor(string block, bool transition, double change) => transition

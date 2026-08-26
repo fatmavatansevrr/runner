@@ -167,18 +167,11 @@ internal static class PreparationRunwayWeekMaterializer
                 "Materialization identity, collections, layout, and policies are required.");
 
         var layout = request.CanonicalWeeklyLayout;
-        var expectedLayout = new[]
-        {
-            PreparationRunwaySlotRole.KeySession,
-            PreparationRunwaySlotRole.EasySupport,
-            PreparationRunwaySlotRole.EasySupport,
-            PreparationRunwaySlotRole.LongRun,
-        };
         if (layout.SourceLayout is null || layout.OrderedRoles is null ||
             string.IsNullOrWhiteSpace(layout.SourceLayout.Key) || layout.SourceLayout.Version < 1 ||
-            !layout.OrderedRoles.SequenceEqual(expectedLayout))
+            !PreparationRunwayWeeklyShape.IsValid(layout.OrderedRoles))
             return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
-                "Canonical weekly layout must be exactly KEY_SESSION, EASY_SUPPORT, EASY_SUPPORT, LONG_RUN.");
+                "Canonical weekly layout must be exactly one KEY_SESSION, one LONG_RUN, and one or more EASY_SUPPORT slots.");
 
         var support = request.SupportWorkoutPolicy;
         if (string.IsNullOrWhiteSpace(support.PolicyId) || support.PolicyVersion < 1 ||
@@ -330,13 +323,10 @@ internal static class PreparationRunwayWeekMaterializer
         IReadOnlyList<PreparationRunwayMaterializedWorkoutSlot<TKey>> slots,
         int runwayWeekNumber) where TKey : notnull
     {
-        if (slots.Count != 4 ||
-            slots.Count(s => s.SlotRole == PreparationRunwaySlotRole.KeySession) != 1 ||
-            slots.Count(s => s.SlotRole == PreparationRunwaySlotRole.EasySupport) != 2 ||
-            slots.Count(s => s.SlotRole == PreparationRunwaySlotRole.LongRun) != 1 ||
-            slots.Select(s => s.SlotOrdinal).Distinct().Count() != 4)
+        if (!PreparationRunwayWeeklyShape.IsValid(slots.Select(s => s.SlotRole).ToArray()) ||
+            slots.Select(s => s.SlotOrdinal).Distinct().Count() != slots.Count)
             return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
-                $"Runway week {runwayWeekNumber} does not contain exactly 1 KEY_SESSION, 2 EASY_SUPPORT, and 1 LONG_RUN slot.");
+                $"Runway week {runwayWeekNumber} does not contain exactly 1 KEY_SESSION, 1 LONG_RUN, and one or more EASY_SUPPORT slots.");
         return null;
     }
 

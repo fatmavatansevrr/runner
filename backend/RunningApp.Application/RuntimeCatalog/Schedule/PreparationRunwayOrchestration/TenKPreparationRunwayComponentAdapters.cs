@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.RuntimeCatalog.Prescription;
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
@@ -91,24 +92,38 @@ internal sealed class TenKPreparationRunwayCoreGenerator : ITenKPreparationRunwa
     private readonly IDynamicCoreCalendarMaterializationOrchestrator _orchestrator;
     private readonly ICatalogWorkoutDefinitionLoader _workoutLoader;
     private readonly ICatalogPeakVolumeBandLoader _peakVolumeLoader;
+    private readonly IPublishedTemplateBundleLoader? _publishedBundleLoader;
 
     public TenKPreparationRunwayCoreGenerator(
         IDynamicCoreCalendarMaterializationOrchestrator orchestrator,
         ICatalogWorkoutDefinitionLoader workoutLoader,
-        ICatalogPeakVolumeBandLoader peakVolumeLoader)
+        ICatalogPeakVolumeBandLoader peakVolumeLoader,
+        IPublishedTemplateBundleLoader? publishedBundleLoader = null)
     {
         _orchestrator = orchestrator;
         _workoutLoader = workoutLoader;
         _peakVolumeLoader = peakVolumeLoader;
+        _publishedBundleLoader = publishedBundleLoader;
     }
 
-    public Task<DynamicCoreCalendarMaterializationResult> GenerateAsync(
+    /// <summary>
+    /// Phase 10K-FREQ.6D.7: loads the same real, exact-identity published bundle
+    /// <see cref="RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogPreviewGenerator"/>'s
+    /// own dynamic (Compressed/Extended) Core paths already load for
+    /// <see cref="ExecutionPrescriptionIndex"/> resolution -- closing the same
+    /// missing-context gap FREQ.6D.4D.5G fixed there, for this Runway-owned
+    /// Core-call site. Every existing Intermediate 4D caller has no published
+    /// bundle (Legacy prescription, unaffected); Intermediate 5D's real Core
+    /// Week 1 KEY_SESSION is ProfileBacked and requires this index to resolve.
+    /// </summary>
+    public async Task<DynamicCoreCalendarMaterializationResult> GenerateAsync(
         TenKPreparationRunwayCoreGenerationRequest request,
         CancellationToken ct)
     {
         var corePreview = PreparationRunwayCoreInputAdapter.ForCore(request.PreviewRequest, request.CoreStartDate);
         var coreResolver = PreparationRunwayCoreInputAdapter.ForCore(request.ResolverInput, request.CoreStartDate);
-        return _orchestrator.MaterializeAsync(new DynamicCoreCalendarMaterializationContext
+        var executionIndex = await LoadExecutionIndexAsync(request.Candidate, ct);
+        return await _orchestrator.MaterializeAsync(new DynamicCoreCalendarMaterializationContext
         {
             Candidate = request.Candidate,
             TargetWeekCount = request.Candidate.CoreCycle.DefaultWeeks,
@@ -122,7 +137,15 @@ internal sealed class TenKPreparationRunwayCoreGenerator : ITenKPreparationRunwa
             ResolverInput = coreResolver,
             WorkoutDefinitionLoader = _workoutLoader,
             PeakVolumeBandLoader = _peakVolumeLoader,
+            ExecutionIndex = executionIndex,
         }, ct);
+    }
+
+    private async Task<ExecutionPrescriptionIndex?> LoadExecutionIndexAsync(PlanCatalogCandidateSummary candidate, CancellationToken ct)
+    {
+        if (_publishedBundleLoader is null) return null;
+        var bundle = await _publishedBundleLoader.TryLoadAsync(candidate.CandidateKey, candidate.CandidateVersion, ct);
+        return bundle is not null ? ExecutionPrescriptionIndex.Build(bundle) : null;
     }
 }
 
@@ -257,11 +280,12 @@ internal static class TenKPreparationRunwayDarkOrchestratorFactory
         var calendar = new PreparationRunwayCalendarComposer(
             new CatalogWeekSkeletonCalendarMaterializer(),
             new DatedGeneratedCatalogPlanSkeletonValidator());
+        var publishedBundleLoader = new PublishedTemplateBundleLoader(options, options.CatalogRootPath);
 
         return new TenKPreparationRunwayDarkOrchestrator(
             workoutLoader,
             new TenKPreparationRunwayProgressionLoader(options.CatalogRootPath, workoutLoader),
-            new TenKPreparationRunwayCoreGenerator(core, workoutLoader, peakLoader),
+            new TenKPreparationRunwayCoreGenerator(core, workoutLoader, peakLoader, publishedBundleLoader),
             new TenKPreparationRunwayNumericStage(),
             new TenKPreparationRunwayCalendarStage(calendar),
             new TenKPreparationRunwayPaceStage(),

@@ -18,14 +18,35 @@ internal static class TenKPreparationRunwayWeekMaterializationPolicyFactory
     public const string BlockRolePolicyId = "TEN_K_PREPARATION_RUNWAY_BLOCK_ROLE_POLICY";
     public const int BlockRolePolicyVersion = 1;
 
-    public static PreparationRunwayCanonicalWeeklyLayout BuildLayout() => new(
-        new PlanCatalogReference("RUN_LAYOUT_4D", 2),
-        [
-            PreparationRunwaySlotRole.KeySession,
-            PreparationRunwaySlotRole.EasySupport,
-            PreparationRunwaySlotRole.EasySupport,
-            PreparationRunwaySlotRole.LongRun,
-        ]);
+    /// <summary>
+    /// Phase 10K-FREQ.6D.7: parameterized by the real candidate's DaysPerWeek.
+    /// 4D is byte-for-byte unchanged. 5D materializes the FREQ.6D.6-approved
+    /// Runway shape (1 KEY + 3 EASY + 1 LONG) under a purely-internal,
+    /// non-catalog-loaded provenance reference -- <c>SourceLayout</c> is never
+    /// dereferenced by the materializer (pure provenance metadata), and the
+    /// Core structural authority <c>RUN_LAYOUT_5D</c> is untouched.
+    /// </summary>
+    public static PreparationRunwayCanonicalWeeklyLayout BuildLayout(int daysPerWeek) => daysPerWeek switch
+    {
+        4 => new(
+            new PlanCatalogReference("RUN_LAYOUT_4D", 2),
+            [
+                PreparationRunwaySlotRole.KeySession,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.LongRun,
+            ]),
+        5 => new(
+            new PlanCatalogReference("PREPARATION_RUNWAY_LAYOUT_5D_V1", 1),
+            [
+                PreparationRunwaySlotRole.KeySession,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.LongRun,
+            ]),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "Only the approved Intermediate 4D/5D Preparation Runway layouts are supported."),
+    };
 
     public static PreparationRunwaySupportWorkoutPolicy BuildSupportPolicy() => new(
         SupportPolicyId,

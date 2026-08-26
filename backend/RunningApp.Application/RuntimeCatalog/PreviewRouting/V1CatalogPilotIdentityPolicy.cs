@@ -137,4 +137,32 @@ public static class V1CatalogPilotIdentityPolicy
     /// </summary>
     public static (string CandidateKey, int CandidateVersion)? TryResolveCandidate(RunningBackground level, int daysPerWeek) =>
         IsSupportedLevelFrequency(level, daysPerWeek) ? ResolveCandidate(level, daysPerWeek) : null;
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.7 — the Preparation Runway's own, deliberately
+    /// narrower allow-list. Runway is NOT simply "whatever Core supports":
+    /// Core's identity set also includes Intermediate 3D and Beginner 4D,
+    /// neither of which has an approved Runway product decision (see
+    /// PHASE_10K_FREQ_6D_6_INTERMEDIATE_5D_RUNWAY_PRODUCT_DECISION.md).
+    /// Widening Core's allow-list must never silently widen Runway
+    /// eligibility, so Runway consults this separate, explicit list instead.
+    /// </summary>
+    private static bool IsSupportedPreparationRunwayLevelFrequency(RunningBackground level, int daysPerWeek) =>
+        (level, daysPerWeek) is
+            (RunningBackground.Intermediate, 4) or
+            (RunningBackground.Intermediate, 5);
+
+    public static bool IsSupportedPreparationRunwayIdentity(
+        GoalType goalType,
+        GoalDistance goalDistance,
+        RunningBackground level,
+        int daysPerWeek) =>
+        goalType == GoalType &&
+        goalDistance == GoalDistance &&
+        IsSupportedPreparationRunwayLevelFrequency(level, daysPerWeek);
+
+    public static bool IsSupportedPreparationRunwayCandidate(string candidateKey, int candidateVersion) =>
+        (candidateKey, candidateVersion) is
+            (CandidateKey, CandidateVersion) or
+            (FiveDayCandidateKey, FiveDayCandidateVersion);
 }

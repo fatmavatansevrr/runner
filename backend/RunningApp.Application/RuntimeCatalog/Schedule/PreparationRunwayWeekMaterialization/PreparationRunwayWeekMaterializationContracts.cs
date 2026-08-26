@@ -26,6 +26,30 @@ internal sealed record PreparationRunwayCanonicalWeeklyLayout(
     IReadOnlyList<PreparationRunwaySlotRole> OrderedRoles);
 
 /// <summary>
+/// Phase 10K-FREQ.6D.7 — the single, shared definition of a structurally
+/// valid Preparation Runway week shape: exactly one <see cref="PreparationRunwaySlotRole.KeySession"/>,
+/// exactly one <see cref="PreparationRunwaySlotRole.LongRun"/>, and an
+/// approved <see cref="PreparationRunwaySlotRole.EasySupport"/> count making
+/// up the rest. Only the two FREQ.6D.6-approved shapes are valid -- 2 EASY
+/// (Intermediate 4D: 1K+2E+1L) or 3 EASY (Intermediate 5D: 1K+3E+1L) -- not
+/// an arbitrary width; a hypothetical future approved layout would extend
+/// <see cref="ApprovedEasySupportCounts"/> explicitly, the same way this
+/// phase added 3, rather than silently accepting any count. Every
+/// structural/numeric/pace validator that previously hardcoded an exact
+/// 4-slot count now consults this instead.
+/// </summary>
+internal static class PreparationRunwayWeeklyShape
+{
+    private static readonly int[] ApprovedEasySupportCounts = [2, 3];
+
+    public static bool IsValid(IReadOnlyList<PreparationRunwaySlotRole> roles) =>
+        roles.Count(r => r == PreparationRunwaySlotRole.KeySession) == 1 &&
+        roles.Count(r => r == PreparationRunwaySlotRole.LongRun) == 1 &&
+        roles.Count(r => r == PreparationRunwaySlotRole.EasySupport) == roles.Count - 2 &&
+        ApprovedEasySupportCounts.Contains(roles.Count(r => r == PreparationRunwaySlotRole.EasySupport));
+}
+
+/// <summary>
 /// Enriches the existing binder output with the progression provenance the
 /// pure binder deliberately does not own. A future orchestrator may build
 /// this adapter, but this phase keeps that composition dark and direct-test

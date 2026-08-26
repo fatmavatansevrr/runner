@@ -90,13 +90,13 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
     /// Backend Integration Phase 4G.6B — the exact, narrow activation scope
     /// for the 15-20 week TEN_K Preparation Runway public preview. Verified
     /// through typed candidate identity, never inferred from distance/duration
-    /// alone.
+    /// alone. Phase 10K-FREQ.6D.7 widened this to also admit Intermediate 5D
+    /// by delegating to the single, centrally-owned Runway allow-list rather
+    /// than repeating a hardcoded DaysPerWeek comparison here.
     /// </summary>
     private static bool IsPreparationRunwayPilotScope(GeneratePreviewRequest request) =>
-        request.GoalType == GoalType.Race &&
-        request.GoalDistance == GoalDistance.TenK &&
-        request.Level == RunningBackground.Intermediate &&
-        request.DaysPerWeek == 4;
+        V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
+            request.GoalType, request.GoalDistance, request.Level, request.DaysPerWeek);
 
     /// <summary>
     /// Public entry point for <c>POST /api/v1/plans/generate-preview/race</c>.

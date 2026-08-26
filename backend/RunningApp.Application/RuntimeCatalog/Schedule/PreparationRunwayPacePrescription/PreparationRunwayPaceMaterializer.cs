@@ -102,9 +102,12 @@ internal static class PreparationRunwayPaceMaterializer
             return (PreparationRunwayPaceMaterializationFailureCode.InvalidPaceMaterializationRequest, "A successful 3..8-week dated runway is required.");
         if (request.Policy.PolicyKey != TenKPreparationRunwayPacePolicyFactory.PolicyKey || request.Policy.PolicyVersion != TenKPreparationRunwayPacePolicyFactory.PolicyVersion)
             return (PreparationRunwayPaceMaterializationFailureCode.InvalidPaceMaterializationRequest, "Approved TEN_K runway pace policy is required.");
-        if (request.PaceContext.CandidateKey != TenKPreparationRunwayPacePolicyFactory.CandidateKey || request.PaceContext.CandidateVersion != TenKPreparationRunwayPacePolicyFactory.CandidateVersion)
-            return (PreparationRunwayPaceMaterializationFailureCode.PaceContextUnavailable, "Pace context is not for the pilot candidate.");
-        if (request.CoreWeekOnePaceTarget.CandidateKey != request.PaceContext.CandidateKey || request.CoreWeekOnePaceTarget.CandidateVersion != request.PaceContext.CandidateVersion || request.CoreWeekOnePaceTarget.OrderedSlots.Count != 4)
+        if (!RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(request.PaceContext.CandidateKey, request.PaceContext.CandidateVersion))
+            return (PreparationRunwayPaceMaterializationFailureCode.PaceContextUnavailable, "Pace context is not for an approved Preparation Runway candidate.");
+        var targetKeyCount = request.CoreWeekOnePaceTarget.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.KeySession);
+        var targetLongCount = request.CoreWeekOnePaceTarget.OrderedSlots.Count(s => s.Role == PreparationRunwaySlotRole.LongRun);
+        if (request.CoreWeekOnePaceTarget.CandidateKey != request.PaceContext.CandidateKey || request.CoreWeekOnePaceTarget.CandidateVersion != request.PaceContext.CandidateVersion ||
+            targetKeyCount < 1 || targetLongCount != 1)
             return (PreparationRunwayPaceMaterializationFailureCode.CoreWeekOnePaceTargetUnavailable, "A complete matching Core Week 1 pace target is required.");
         if (request.PaceContext.EvidenceState == PreparationRunwayPaceEvidenceState.PaceSourceUnsupported)
             return (PreparationRunwayPaceMaterializationFailureCode.PaceSourceUnsupported, "The authoritative Core pace context has no approved prescription-usable source.");
@@ -125,18 +128,30 @@ internal static class PreparationRunwayPaceMaterializer
         _ => false,
     };
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.7: per FREQ.6D.6, per-slot role-count equality is not
+    /// a Core-entry compatibility dimension -- so a Runway slot with no
+    /// structurally-corresponding Core Week 1 target slot (e.g. Runway's 3rd
+    /// EASY_SUPPORT against a 2-EASY Core target, or a would-be 2nd KEY
+    /// against a 1-KEY Core target) is simply not checked here, rather than
+    /// treated as a failure. Every existing Intermediate 4D case has an exact
+    /// 1:1 role/ordinal correspondence and is checked byte-for-byte as before.
+    /// </summary>
     private static IReadOnlyList<PreparationRunwayPaceContinuityCheck> BuildContinuityChecks<TKey>(
         PreparationRunwayPacedWeek<TKey> final,
         PreparationRunwayCoreWeekOnePaceTarget core) where TKey : notnull =>
-        final.StructuralOrderedSlots.Select(slot =>
-        {
-            var structural = slot.OriginalSlot.PrescribedSlot.StructuralSlot;
-            var target = core.OrderedSlots.Single(t => t.Role == structural.SlotRole && t.RoleOrdinal == structural.RoleOrdinal);
-            var compatible = Compatible(slot.PacePrescription, target.PacePrescription);
-            return new PreparationRunwayPaceContinuityCheck(
-                structural.SlotRole, structural.RoleOrdinal, slot.PacePrescription, target.PacePrescription,
-                compatible, compatible ? "same canonical effort label" : "pace representation or effort label differs");
-        }).ToArray();
+        final.StructuralOrderedSlots
+            .Select(slot => (slot, structural: slot.OriginalSlot.PrescribedSlot.StructuralSlot))
+            .Select(x => (x.slot, x.structural,
+                target: core.OrderedSlots.SingleOrDefault(t => t.Role == x.structural.SlotRole && t.RoleOrdinal == x.structural.RoleOrdinal)))
+            .Where(x => x.target is not null)
+            .Select(x =>
+            {
+                var compatible = Compatible(x.slot.PacePrescription, x.target!.PacePrescription);
+                return new PreparationRunwayPaceContinuityCheck(
+                    x.structural.SlotRole, x.structural.RoleOrdinal, x.slot.PacePrescription, x.target!.PacePrescription,
+                    compatible, compatible ? "same canonical effort label" : "pace representation or effort label differs");
+            }).ToArray();
 
     private static bool Compatible(CatalogPacePrescription runway, CatalogPacePrescription core) =>
         runway.Kind == CatalogPacePrescriptionKind.EffortOnly &&

@@ -61,7 +61,7 @@ internal static class PreparationRunwayCalendarSkeletonAdapter
             StartDate = runwayStart,
             EndDate = runwayStart.AddDays(prescribed.Length * 7 - 1),
             PlannedWeekCount = prescribed.Length,
-            DaysPerWeek = 4,
+            DaysPerWeek = prescribed[0].OrderedSlots.Count,
             CanonicalDistanceFamily = "TEN_K",
             CandidateKey = request.CandidateKey,
             CandidateVersion = request.CandidateVersion,

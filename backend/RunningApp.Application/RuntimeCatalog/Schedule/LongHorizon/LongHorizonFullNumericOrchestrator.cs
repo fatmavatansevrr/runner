@@ -118,7 +118,7 @@ internal static class LongHorizonFullNumericOrchestrator
         var core = await coreGenerator.GenerateAsync(coreGenerationRequest, ct);
 
         var coreVolume = core.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
-        var coreNumericTarget = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(coreVolume);
+        var coreNumericTarget = PreparationRunwayCoreWeekOneTargetAdapter.FromAuthoritativeCoreBehavior(coreVolume, core.PrescriptionResult.FinalPrescribedPlan);
         var corePaceTarget = PreparationRunwayCoreWeekOnePaceAdapter.FromAuthoritativeCoreBehavior(core.PrescriptionResult.FinalPrescribedPlan);
         var corePrescriptionContext = core.PrescriptionResult.VolumeResult.PrescriptionContext;
 
@@ -233,7 +233,7 @@ internal static class LongHorizonFullNumericOrchestrator
                 allocationProfile.ToString(), candidate.CandidateKey, candidate.CandidateVersion,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyId,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
-                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(),
+                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(candidate.DaysPerWeek),
                 allocationResult.Allocations, bindings,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy()),

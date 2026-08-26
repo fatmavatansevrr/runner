@@ -204,7 +204,7 @@ internal static class LongHorizonStructuralMaterializer
                 CandidateVersion,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyId,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
-                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(),
+                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(4),
                 allocationResult.Allocations,
                 bindings,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
