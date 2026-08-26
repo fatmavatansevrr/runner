@@ -594,6 +594,9 @@ FREQ.6D.13 (DONE, PARTIAL)      → IMPLEMENTATION + DARK INTEGRATION VERIFICATI
                                     remaining scope, not a blocker. Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_ROLLING_LINEAGE_AND_JIT_DUAL_KEY_IMPLEMENTED_
                                     AND_VERIFIED_GE_IMPLEMENTATION_REMAINING.
+Gate B (PASS: fc34d7e)          → remote SHA matched local gate SHA; ahead/behind 0/0. 16
+                                    completed phase prompts since the prior Gate B (13594ac):
+                                    FREQ.6D.4D.5A through FREQ.6D.13.
 NEXT (NOT_YET_SCHEDULED)        → continuation implementation phase: GE 5D structural/numeric
                                     implementation, dark 21/24/32/52-week verification, remaining 4D-only
                                     gates, then public activation + real PostgreSQL E2E.
