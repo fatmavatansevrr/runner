@@ -28,14 +28,16 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G) and `PUBLICLY_ACTIVE` (Preparation Runway, 15-20 weeks; FREQ.6D.8) for positive-observed and representative readiness evidence. **Missing/explicit-zero readiness currently fails real Core generation at every 8-14/15-20 week horizon** — reconciled in `FREQ.6D.9` as a confirmed **implementation defect**, not a product/representability gap: `FREQ.6C` already approved exact Intermediate×5D missing (26.0km) and explicit-zero (19.5km) starting-volume authority, but runtime still falls through to Intermediate×4D's generic 16km/12km policy, which sits at/below the real 5D 2-KEY structural minimum (~12.5-13.4km). Narrow implementation to wire the confirmed existing authority is the next open item — no new numeric research needed. **Long-Horizon (21-52w) 5D remains `BLOCKED` on a separate, deeper architecture/schema gap** (`LongHorizonRollingSessionState` has no lane/stage/profile lineage columns; real JIT Core-week composition discards dual-KEY lineage) — a distinct, later, unscheduled wave per `FREQ.6D.5` | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G) and `PUBLICLY_ACTIVE` (Preparation Runway, 15-20 weeks; FREQ.6D.8) for positive-observed and representative readiness evidence. **Missing/explicit-zero readiness is now implemented and verified** (`FREQ.6D.10`): the `FREQ.6C`-approved Intermediate×5D missing (26.0km) and explicit-zero (19.5km) starting-volume authority is wired into both Core and Preparation Runway, real HTTP + real PostgreSQL confirmed across all previously-failing 8/10/12/14-week Core and 15/17/20-week Runway horizons. **Long-Horizon (21-52w) 5D remains `BLOCKED` on a separate, deeper architecture/schema gap** (`LongHorizonRollingSessionState` has no lane/stage/profile lineage columns; real JIT Core-week composition discards dual-KEY lineage) — architecture-design phase in progress (`FREQ.6D.11`) per `FREQ.6D.5`'s recommended sequence | not yet opened | not yet opened |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 ### Current active phase / next phase
 
-**Latest verified completed phase**: `FREQ.6D.9` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_MISSING_ZERO_EXISTING_NUMERIC_AUTHORITY_CONFIRMED_IMPLEMENTATION_DEFECT`. Reconciled the `FREQ.6D.8`-disclosed Intermediate×5D missing/explicit-zero Core starting-volume failure against the complete `FREQ.6`/`FREQ.6B`/`FREQ.6C` authority chain. Found `FREQ.6C` already approved exact 5D-specific values (missing=26.0km, explicit-zero=19.5km, peak reference=44.5km, long-run share=28%/36%), all `ELIGIBLE` across all 14 representability cells — but runtime never wires to them: `CatalogVolumeAndLongRunPlanner.Build` special-cases only Intermediate×3D/Beginner×4D, so 5D falls through to the generic, 4D-provenance-labeled `V1MissingReadinessStartingVolumePolicy` (16km/12km), which sits at/below the real 5D 2-KEY structural minimum (~12.5-13.4km, computed from real unmodified per-session minima). Corrected `FREQ.6D.6`'s prior premise that this fallthrough was "already-live Intermediate×5D Core numeric authority" (`SUPERSEDED_BY_EXISTING_FREQ6C_AUTHORITY`) — its Runway weekly-structure decision itself is unaffected. Re-reproduced all 8 Core-only missing/zero HTTP 500s (8/10/12/14wk × missing/zero) against the real host/DB. No production code touched — evidence/decision only. Next: narrow implementation + real verification wiring the confirmed existing `FREQ.6C` authority.
+**Latest verified completed phase**: `FREQ.6D.10` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_MISSING_ZERO_NUMERIC_AUTHORITY_IMPLEMENTED_AND_VERIFIED`. Wired the `FREQ.6D.9`-confirmed existing `FREQ.6C` Intermediate×5D numeric authority (missing=26.0km, explicit-zero=19.5km, peak=44.5km, long-run share 28%/36%) into `CatalogVolumeAndLongRunPlanner` (Core) and `TenKPreparationRunwayNumericPolicyFactory` (Preparation Runway) via exact-identity-only dispatch, mirroring the existing 3D/Beginner4D pattern; LongHorizon untouched. Fixed a latent units bug in `PreparationRunwayNumericMaterializer`'s long-run-share validation discovered during verification, isolated per-policy so Default/3D/Beginner4D behavior stays byte-identical. Real HTTP + real PostgreSQL: all 8 previously-failing Core-only cases and all 6 representative Runway cases now return 200 with exact identity/structure; real Postgres confirmation for one Core-missing, one Core-zero, one Runway-missing, one Runway-zero case. Full regression 3787/3791 (all four diagnosed — one genuine regression from this phase's own initial fix corrected in-phase, three confirmed pre-existing/unrelated), 1719/1719 targeted LongHorizon/Runway/5D, 1510/1510 PlanCatalog, Debug+Release clean. Next: Intermediate×5D LongHorizon architecture design.
+
+Prior phase: `FREQ.6D.9` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_MISSING_ZERO_EXISTING_NUMERIC_AUTHORITY_CONFIRMED_IMPLEMENTATION_DEFECT`. Reconciled the `FREQ.6D.8`-disclosed Intermediate×5D missing/explicit-zero Core starting-volume failure against the complete `FREQ.6`/`FREQ.6B`/`FREQ.6C` authority chain; found `FREQ.6C` already approved exact 5D-specific values, all `ELIGIBLE`, but runtime never wired to them. No production code touched — evidence/decision only.
 
 Prior phase: `FREQ.6D.8` — Execution Status `DONE`, Final Classification `INTERMEDIATE_5D_PREPARATION_RUNWAY_IMPLEMENTED_AND_PUBLICLY_ACTIVATED`. Real HTTP + real PostgreSQL verification for Intermediate×5D Preparation Runway (15-20 weeks); found and disclosed (not fixed) the pre-existing Core starting-volume defect `FREQ.6D.9` reconciled.
 
@@ -57,7 +59,7 @@ Prior phase: `FREQ.6D.4D.5C` — Execution Status `DONE`, Final Classification `
 
 Prior phase: `FREQ.6D.4D.5` (Split E, partial) — Execution Status `DONE (PARTIAL)`, Final Classification `FREQ6D4D_SPLIT_E_PARTIAL_RUNTIME_DISCOVERY_IMPLEMENTED_PUBLIC_ACTIVATION_BLOCKED`. Authored the complete real Intermediate×5D PlanCatalog chain — `RUN_LAYOUT_5D`, `TEN_K__5D__INTERMEDIATE` combination, dual-lane progression, all 8 real production profiles promoted `VALIDATED`, a real CLI-published `1.1.0` release with `ExecutionPrescriptions` present for all 8 profiles — 1,510/1,510 PlanCatalog.Tests. Wired RunningApp's runtime published-bundle discovery end to end (`IPublishedTemplateBundleLoader`/`PublishedTemplateBundleLoader`, threaded through `CatalogPreviewGenerator`'s full constructor chain, DI, `PlanCatalog:PublishedBundleReleaseVersion` config, deployment packaging) — the exact gap Split C disclosed, now closed, though no candidate reaches it in production yet. Attempted public activation of `TEN_K__5D__INTERMEDIATE` for the 8-14 week Core route only (widest activation the user approved); real end-to-end HTTP testing (not static analysis) found `CatalogWeekSkeletonCalendarMaterializer` hardcodes exactly one `KEY_SESSION` slot per week in both its validation and its date-assignment backtracking algorithm — a real 5D week has two (LaneOrdinal 0/1), which would either be rejected outright or, if the count guard were removed, silently collide both slots onto the same calendar date. The routing widening was reverted rather than shipped with a confirmed live 500. Full regression: 3,612/3,613 RuntimeCatalog (1 pre-existing unrelated `Sw09` failure, unrelated to 5D), 1,510/1,510 PlanCatalog.
 
-**Next phase per repository-backed sequencing**: a narrow **IMPLEMENTATION + REAL VERIFICATION** phase wiring `CatalogVolumeAndLongRunPlanner` to the `FREQ.6D.9`-confirmed existing `FREQ.6C` Intermediate×5D authority (26.0km missing / 19.5km explicit-zero / 44.5km peak reference / 28%-36% long-run share) — a new dedicated `VolumeSafetyPolicy` variant + missing-readiness policy class + dispatch branch, mirroring the existing `ThreeDayIntermediate`/`BeginnerFourDay` pattern, plus the full 8/10/12/14-week Core-only and 15/17/20-week Runway+Core missing/zero real HTTP + PostgreSQL test matrix `FREQ.6D.9` §23 specifies. LongHorizon's own architecture-design phase (persisted-schema lineage gap) remains queued after that, unscheduled.
+**Next phase per repository-backed sequencing**: `FREQ.6D.11` — Intermediate×5D LongHorizon dual-KEY lineage, JIT composition, persistence & execution-context **ARCHITECTURE DESIGN** (no implementation), per `FREQ.6D.5`'s own recommended sequence item C, now that `FREQ.6D.10` has closed the missing/zero numeric-authority gap and left the 5D Core/Runway baseline stable.
 
 ---
 
@@ -79,7 +81,7 @@ WAVE D — Cross-distance backend closure / release readiness
 
 ## 4. Current Wave
 
-**WAVE A — 10K completion.** Intermediate×5D Core (8-14 weeks) is `PUBLICLY_ACTIVE` (FREQ.6D.4D.5G, §2). Preparation Runway (15-20w) is `PUBLICLY_ACTIVE` for positive-observed/representative readiness, real HTTP/DB verified (FREQ.6D.8, §2). Missing/explicit-zero readiness fails at every 8-14/15-20 week horizon — reconciled as a confirmed implementation defect with existing approved authority (FREQ.6D.9, §2), narrow implementation still open. Long-Horizon (21-52w) 5D activation remains an open, not-yet-scheduled gap. No Half Marathon or Marathon work may begin under this roadmap's own rule until 10K's full architectural closure (§25/Wave A milestones, including the missing/zero numeric-authority wiring and the Long-Horizon 5D gap) is reached.
+**WAVE A — 10K completion.** Intermediate×5D Core (8-14 weeks) is `PUBLICLY_ACTIVE` (FREQ.6D.4D.5G, §2). Preparation Runway (15-20w) is `PUBLICLY_ACTIVE` for all readiness states including missing/explicit-zero, real HTTP/DB verified (FREQ.6D.8/FREQ.6D.10, §2). Long-Horizon (21-52w) 5D activation remains an open gap; its architecture-design phase (FREQ.6D.11) is now in progress. No Half Marathon or Marathon work may begin under this roadmap's own rule until 10K's full architectural closure (§25/Wave A milestones, including the Long-Horizon 5D gap) is reached.
 
 ---
 
@@ -528,15 +530,23 @@ FREQ.6D.9 (DONE)                → EVIDENCE + PRODUCT/NUMERIC AUTHORITY DECISIO
                                     missing/zero) against the real host/DB. No production code touched.
                                     Classification:
                                     INTERMEDIATE_5D_MISSING_ZERO_EXISTING_NUMERIC_AUTHORITY_CONFIRMED_IMPLEMENTATION_DEFECT.
-[Next, not yet scheduled]       → Narrow IMPLEMENTATION + REAL VERIFICATION wiring
-                                    CatalogVolumeAndLongRunPlanner to the FREQ.6D.9-confirmed existing
-                                    FREQ.6C authority (dedicated VolumeSafetyPolicy variant + missing-
-                                    readiness policy class + DaysPerWeek==5 dispatch branch, mirroring
-                                    ThreeDayIntermediate/BeginnerFourDay), plus the full 8/10/12/14-week
-                                    Core-only and 15/17/20-week Runway+Core missing/zero real HTTP +
-                                    PostgreSQL test matrix. Then LongHorizon architecture-design
-                                    (persisted-schema lineage gap); then LongHorizon implementation.
-                                    FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
+FREQ.6D.10 (DONE)               → IMPLEMENTATION + INTEGRATED VERIFICATION: wired the FREQ.6D.9-
+                                    confirmed existing FREQ.6C authority into CatalogVolumeAndLongRunPlanner
+                                    (Core) and TenKPreparationRunwayNumericPolicyFactory (Runway) via
+                                    exact-identity-only dispatch (mirroring ThreeDayIntermediate/
+                                    BeginnerFourDay, never a broad DaysPerWeek>=5 condition). Fixed a
+                                    latent units bug in PreparationRunwayNumericMaterializer's long-run-
+                                    share validation, isolated per-policy (Default/3D/Beginner4D byte-
+                                    identical). Real HTTP + real PostgreSQL: all 8 previously-failing
+                                    Core-only cases and all 6 representative Runway cases now return 200.
+                                    Full regression 3787/3791 (all diagnosed), 1719/1719 targeted,
+                                    1510/1510 PlanCatalog. Classification:
+                                    INTERMEDIATE_5D_MISSING_ZERO_NUMERIC_AUTHORITY_IMPLEMENTED_AND_VERIFIED.
+[Next, active]                  → FREQ.6D.11 -- Intermediate x5D LongHorizon dual-KEY lineage, JIT
+                                    composition, persistence & execution-context ARCHITECTURE DESIGN
+                                    (no implementation), per FREQ.6D.5's recommended sequence item C.
+                                    Then LongHorizon implementation. FREQ.7 / FREQ.8 (legacy placeholder
+                                    IDs) remain further out
 ```
 
 Then (capability milestones, no Phase IDs yet):
