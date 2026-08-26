@@ -115,12 +115,13 @@ Untouched. `LongHorizonPublicPlanService.cs`'s own public-routing gates remain u
 - New test files: `LongHorizonRollingInitialActivationFiveDayPersistenceTests.cs` (7/7, real PostgreSQL), plus 6 new boundary-gap evidence tests appended to `LongHorizonFullNumericOrchestratorFiveDayTests.cs`.
 - Full LongHorizon suite: **1207/1207** passing (1194 pre-existing + 13 new), zero regressions.
 - PlanCatalog full suite: **1510/1510**, unaffected.
-- Debug build: clean, 0 errors.
-- Full `RunningApp.IntegrationTests` regression: running at report time; result to be confirmed in the governance commit / final report addendum if it completes after this document is written, per the same discipline established in prior phases (report reflects what was actually verified, not what is merely expected).
+- Debug build: clean, 0 errors. Release build: clean, 0 errors.
+- Full `RunningApp.IntegrationTests` regression: **3839/3841** passing (3828 pre-existing + 13 new), only the same two already-documented, unrelated, pre-existing failures below. **Zero new regressions.**
+- `git diff --check`: clean (only LF/CRLF conversion warnings, no conflicts).
 
 ## 42. Baseline failure attribution
 
-The two previously-documented, unrelated, pre-existing stale-date failures (`Gen4EBeginnerFourDayPublicActivationTests.ExplicitZeroAtOrAboveBreakEven_Generates(weeks: 13)`, `Sw09ExplicitZeroReadinessEndToEndTests...`) are expected to remain the only failures in the full suite, consistent with every prior phase's own independently-reproduced baseline.
+The two previously-documented, unrelated, pre-existing stale-date failures (`Gen4EBeginnerFourDayPublicActivationTests.ExplicitZeroAtOrAboveBreakEven_Generates(weeks: 13)`, `Sw09ExplicitZeroReadinessEndToEndTests.Sw09Request_ExplicitZeroReadiness_GeneratesFullPreview_UsingExplicitZeroPolicy_NotDefaultOrMissingSubstitution`) recurred identically (same error, same assertion, same stack trace) in the full regression run — confirmed consistent with every prior phase's own independently-reproduced stale-date baseline, unrelated to any change in this phase.
 
 ---
 
