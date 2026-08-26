@@ -194,11 +194,18 @@ public sealed class LongHorizonNumericActivationBoundaryScanTests
     /// orchestrator (LongHorizonFullNumericOrchestrator, Phase 4I.6A) -- not just the raw
     /// GE-exit-vs-Core-target arithmetic. This is the required "real pipeline, not formula-only"
     /// confirmation for the boundary decision.
+    ///
+    /// Phase 10K-FREQ.6D.16/FREQ.6D.17: the raw "geExit &lt;= coreTarget" arithmetic in
+    /// <see cref="HorizonScan_AllClassesBothProfiles_ProducesUniversalBoundaryEvidence"/> above is
+    /// frozen, historical, pre-clamp evidence (that method never calls the real orchestrator, so it
+    /// is unaffected and left as the original Phase 4I.6B.1 record). The REAL pipeline this test
+    /// exercises now clamps Runway's entry to Core's target whenever GE's exit would otherwise
+    /// exceed it, so 22 weeks (previously the first real failure) now succeeds here too.
     /// </summary>
     [Theory]
     [InlineData(21, true)]
-    [InlineData(22, false)]
-    [InlineData(24, true)] // isolated later success -- confirmed real, but excluded from the activated range (non-contiguous).
+    [InlineData(22, true)] // FREQ.6D.16/FREQ.6D.17: now succeeds via the approved GE->Runway clamp.
+    [InlineData(24, true)]
     public async Task BoundaryPrediction_MatchesRealFullOrchestrator(int totalWeeks, bool expectedSuccess)
     {
         var startDate = new DateOnly(2026, 8, 3);

@@ -188,16 +188,20 @@ public sealed class PreparationRunwayNumericMaterializerTests
     }
 
     [Fact]
-    public void StartingAboveCore_FailsClosedBecauseNoReductionRuleExists()
+    public void StartingAboveCore_ClampsToTarget_PerFreq6D16ApprovedAuthority()
     {
+        // Phase 10K-FREQ.6D.16/FREQ.6D.17: GE exit exceeding Core's Week-1
+        // boundary is now clamped down to that boundary (no new number --
+        // Core's own already-computed target is the ceiling) rather than
+        // failing closed. Runway's own 8-week bridge then runs flat at 24km.
         var result = PreparationRunwayNumericMaterializer.Materialize(Request(
             PreparationRunwayAllocationProfile.CoreEntryReady, 8,
             Evidence(PreparationRunwayLoadEvidenceState.Provided, 30,
                 PreparationRunwayLoadEvidenceState.Provided, 10), Target(24, 8)));
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(PreparationRunwayNumericMaterializationFailureCode.RunwayProgressionInfeasible, result.FailureCode);
-        Assert.Null(result.PrescribedWeeks);
+        Assert.True(result.IsSuccess, result.FailureReason);
+        Assert.All(result.PrescribedWeeks!, week => Assert.Equal(24d, week.PlannedWeeklyVolumeKm));
+        Assert.All(result.PrescribedWeeks, week => Assert.Equal(8d, week.PlannedLongRunDistanceKm));
     }
 
     [Fact]

@@ -22,19 +22,18 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog.Schedule.LongHorizon;
 /// catalog only -- no database, no network. Not called from any live
 /// request path; no public 21+ activation.
 ///
-/// Baseline choice is empirically constrained by a genuine, PRE-EXISTING
-/// (not 5D-specific, not introduced by this phase) Preparation Runway
-/// numeric-materializer gap: it has no accepted rule for "entry evidence
-/// exceeds the independently-computed Core Week 1 boundary" outside Taper
-/// (see <see cref="LongHorizonFullNumericOrchestratorTests"/>'s own
-/// documented 4D "LongerGeHorizons_FailClosed" cases). A diagnostic sweep
-/// this phase confirmed a near-target-cap starting evidence (SustainedHighBaseline,
-/// 40km) reaches every one of 21/24/28/32/40/52 weeks without hitting that
-/// gap, while lower baselines only reach it at the shorter horizons. 22
-/// weeks specifically fails at every baseline tried, INCLUDING the
-/// unmodified 4D orchestrator with its own existing 20km TypicalBaseline --
-/// confirmed via a direct 4D repro (not merely asserted) to be the same
-/// pre-existing, day-count-neutral gap, not a 5D regression.
+/// Phase 10K-FREQ.6D.15 found, and FREQ.6D.16 root-caused, a genuine,
+/// PRE-EXISTING (not 5D-specific) Preparation Runway numeric-materializer
+/// gap: it had no accepted rule for "entry evidence exceeds the
+/// independently-computed Core Week 1 boundary" outside Taper, requiring a
+/// forced near-target-cap baseline (<c>SustainedHighBaseline</c>, retained
+/// below for the tests that specifically document that history) to reach
+/// long horizons at all. FREQ.6D.17 implements FREQ.6D.16's approved,
+/// no-new-number clamp (Runway's own starting evidence is bounded to Core's
+/// already-computed Week-1 target), so the full 21-52 matrix now succeeds
+/// uniformly at the same representative baseline every other test in this
+/// file uses -- see <see cref="Full21To52Matrix_RepresentativeBaseline_NoHorizonHole_ExactFiveDayCandidate"/>
+/// and <see cref="PositiveReadinessMatrix_LowRepresentativeHigh_AllRepresentativeHorizons_NoLongerBaselineTuned"/>.
 /// </summary>
 public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
 {
@@ -122,6 +121,32 @@ public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
         var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, SustainedHighBaseline);
         Assert.Equal(totalWeeks, schedule.Weeks.Count);
         Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
+    }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.17 — with the FREQ.6D.16-approved clamp in place,
+    /// the representative-baseline-range constraint documented in this
+    /// class's own doc comment (SustainedHighBaseline was previously the
+    /// ONLY baseline that reached long horizons without hitting the
+    /// boundary gap) no longer applies: Low/Representative/High all now
+    /// succeed at every representative horizon, proving the clamp is not
+    /// tuned to one baseline.
+    /// </summary>
+    [Theory]
+    [InlineData(21)]
+    [InlineData(22)]
+    [InlineData(24)]
+    [InlineData(32)]
+    [InlineData(40)]
+    [InlineData(52)]
+    public async Task PositiveReadinessMatrix_LowRepresentativeHigh_AllRepresentativeHorizons_NoLongerBaselineTuned(int totalWeeks)
+    {
+        foreach (var baseline in new[] { LowBaseline, RepresentativeBaseline, HighBaseline })
+        {
+            var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, baseline);
+            Assert.Equal(totalWeeks, schedule.Weeks.Count);
+            Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
+        }
     }
 
     [Theory]
@@ -240,18 +265,27 @@ public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
         }
     }
 
-    // ── Full 21-52 matrix (documented exception: 22 weeks, a pre-existing, day-count-neutral gap) ──
+    // ── Full 21-52 matrix: 32/32, no exclusions, per FREQ.6D.16/FREQ.6D.17 ──
 
+    public static IEnumerable<object[]> AllSupportedHorizons() =>
+        Enumerable.Range(21, 32).Select(weeks => new object[] { weeks });
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.17 — mechanically exercises every one of the 32
+    /// supported horizons (21-52 inclusive) with the FREQ.6D.9/10-approved
+    /// representative positive-readiness baseline. Previously 22 weeks (and
+    /// the wider non-Recovery-terminal set FREQ.6D.15 found) required a
+    /// forced near-cap workaround baseline (SustainedHighBaseline) to reach
+    /// at all; with the FREQ.6D.16-approved clamp implemented, the full
+    /// matrix now succeeds uniformly at the SAME representative baseline
+    /// every other LongHorizon test in this file uses. No exclusions, no
+    /// "22 known issue," no fallback.
+    /// </summary>
     [Theory]
-    [InlineData(21)]
-    [InlineData(24)]
-    [InlineData(28)]
-    [InlineData(32)]
-    [InlineData(40)]
-    [InlineData(52)]
-    public async Task Full21To52Matrix_SustainedBaseline_NoHorizonHole_ExactFiveDayCandidate(int totalWeeks)
+    [MemberData(nameof(AllSupportedHorizons))]
+    public async Task Full21To52Matrix_RepresentativeBaseline_NoHorizonHole_ExactFiveDayCandidate(int totalWeeks)
     {
-        var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, SustainedHighBaseline);
+        var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, RepresentativeBaseline);
         Assert.Equal(totalWeeks, schedule.Weeks.Count);
         Assert.Equal(LongHorizonStructuralMaterializer.CandidateKeyFiveDay, schedule.Structural.CandidateKey);
         Assert.Equal(LongHorizonStructuralMaterializer.CandidateVersionFiveDay, schedule.Structural.CandidateVersion);
@@ -261,99 +295,68 @@ public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
     }
 
     /// <summary>
-    /// 22 weeks fails at every baseline this phase tried (20/26/32/34/36/40/44km),
-    /// and -- confirmed via <see cref="TwentyTwoWeeks_AlsoFailsOnUnmodifiedFourDayOrchestrator_PreExistingNotFiveDaySpecific"/> --
-    /// so does the completely unmodified 4D orchestrator with its own existing
-    /// 20km TypicalBaseline. This is a genuine, pre-existing, day-count-neutral
-    /// gap in the same Preparation Runway "no non-taper reduction rule" class
-    /// documented by <see cref="LongHorizonFullNumericOrchestratorTests"/>'s own
-    /// 4D tests -- not a 5D regression, not introduced by this phase's GE
-    /// generalization, and out of this phase's scope to fix (fixing it would
-    /// mean adding a new Runway numeric continuity rule, a class of change this
-    /// phase's own STOP discipline reserves for a dedicated, explicitly-decided
-    /// phase, not an incidental fix here).
+    /// Phase 10K-FREQ.6D.16/FREQ.6D.17 — 22 weeks previously failed at every
+    /// baseline tried (documented by FREQ.6D.15), and so did the completely
+    /// unmodified 4D orchestrator (a genuine, pre-existing, day-count-neutral
+    /// gap, not a 5D regression). FREQ.6D.16 root-caused it precisely to
+    /// <see cref="RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayNumericMaterialization.PreparationRunwayNumericMaterializer.Materialize{TKey}"/>
+    /// never reconciling GE's exit against Core's own Week-1 target, and
+    /// approved a generic clamp (no new number) resolving it. Both frequencies
+    /// now succeed at 22 weeks.
     /// </summary>
     [Fact]
-    public async Task TwentyTwoWeeks_FailsClosed_PreExistingRunwayCoreBoundaryGap_NotFiveDaySpecific()
+    public async Task TwentyTwoWeeks_SucceedsViaFreq6D16ApprovedClamp()
     {
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => ExecuteAsync(22, ReadinessProfile.ConsistencyNeeded, SustainedHighBaseline));
-        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+        var schedule = await ExecuteAsync(22, ReadinessProfile.ConsistencyNeeded, SustainedHighBaseline);
+        Assert.Equal(22, schedule.Weeks.Count);
+        Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
     }
 
     [Fact]
-    public async Task TwentyTwoWeeks_AlsoFailsOnUnmodifiedFourDayOrchestrator_PreExistingNotFiveDaySpecific()
+    public async Task TwentyTwoWeeks_AlsoSucceedsOnUnmodifiedFourDayOrchestrator_SharedClampConfirmed()
     {
         var startDate = new DateOnly(2026, 8, 3);
         var raceDate = startDate.AddDays(22 * 7);
         var fourDayPreferredDays = new[] { DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday, DayOfWeek.Sunday };
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            LongHorizonFullNumericOrchestrator.ExecuteAsync(
-                Decide(22, ReadinessProfile.ConsistencyNeeded), startDate, raceDate,
-                new LongHorizonGeEntryBaselineInput(20, 8, 3), fourDayPreferredDays, LongRunDay, CatalogRoot(), Loader()));
-        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+        var schedule = await LongHorizonFullNumericOrchestrator.ExecuteAsync(
+            Decide(22, ReadinessProfile.ConsistencyNeeded), startDate, raceDate,
+            new LongHorizonGeEntryBaselineInput(20, 8, 3), fourDayPreferredDays, LongRunDay, CatalogRoot(), Loader());
+        Assert.Equal(22, schedule.Weeks.Count);
     }
 
     /// <summary>
-    /// Phase 10K-FREQ.6D.15 — root-cause evidence for the 22-week gap
-    /// FREQ.6D.14 disclosed, and the wider pattern it turned out to belong
-    /// to. <see cref="PreparationRunwayNumericMaterializer.Materialize"/>
-    /// (source-verified, not inferred) linearly interpolates from GE's own
-    /// exit volume to Core's independently-computed Week-1 target across
-    /// the 8 Runway weeks, and fails closed the moment GE's exit exceeds
-    /// that target by more than the continuity tolerance -- there is no
-    /// approved rule for Runway to reduce down to a lower Core boundary.
-    /// Because GE's own progression only ever grows (except on a
-    /// FullPhase mesocycle's own internal Recovery week, which reduces by
-    /// ~15% off the prior peak), ANY GE trajectory whose final week is NOT
-    /// a Recovery week keeps climbing, and eventually exceeds Core's fixed
-    /// boundary -- for a ShortExtension GE (1-3 weeks, ENTRY/CONTROLLED/
-    /// PRE-RUNWAY roles, no Recovery role exists in that vocabulary at
-    /// all) this happens almost immediately. This is confirmed empirically
-    /// non-narrow: 23/25/26/27 weeks (all non-Recovery-terminal) fail
-    /// identically to 22 weeks; even 28 weeks (Recovery-terminal, 2 full
-    /// mesocycles) fails at a low (20km) baseline, because two mesocycles
-    /// of growth before the recovery cutback still leaves the reduced
-    /// value above a low Core boundary. Only 24 weeks (1 mesocycle,
-    /// Recovery-terminal, tested down to a 20km baseline) reliably lands
-    /// back under the boundary within this phase's own sample.
-    ///
-    /// No existing authority defines what Runway (or GE, or the Core
-    /// Week-1 target computation) should do when this margin is violated
-    /// -- reducing Runway's own entry evidence, capping GE's growth
-    /// earlier, or recomputing Core's Week-1 target relative to GE's exit
-    /// would each be a genuinely new product/numeric decision, not a
-    /// rounding/off-by-one/tolerance-units defect. Per this phase's own
-    /// STOP discipline (do not invent a value to make a horizon pass),
-    /// this is classified BLOCKED_ON_SHARED_NUMERIC_AUTHORITY, not fixed
-    /// here. Confirmed day-count-neutral (identical failure and identical
-    /// message on the completely unmodified 4D orchestrator).
+    /// Phase 10K-FREQ.6D.15 root-caused the 22-week gap and found it was far
+    /// wider: 23/25/26/27 weeks (all non-Recovery-terminal GE segments) and
+    /// even a Recovery-terminal 28-week horizon at a low baseline failed
+    /// identically. FREQ.6D.16 approved, and FREQ.6D.17 implemented, a
+    /// generic clamp resolving all of them uniformly -- no per-horizon
+    /// branching, no new numeric constant.
     /// </summary>
     [Theory]
     [InlineData(23)]
     [InlineData(25)]
     [InlineData(26)]
     [InlineData(27)]
-    public async Task NonRecoveryTerminalShortHorizons_FailClosed_SameRunwayCoreBoundaryGapAs22Weeks(int totalWeeks)
+    public async Task NonRecoveryTerminalShortHorizons_SucceedViaFreq6D16ApprovedClamp(int totalWeeks)
     {
         var baseline = new LongHorizonGeEntryBaselineInput(26, 8, 5);
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, baseline));
-        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+        var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, baseline);
+        Assert.Equal(totalWeeks, schedule.Weeks.Count);
+        Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
     }
 
     [Fact]
-    public async Task RecoveryTerminalHorizon_LowBaseline_StillFailsIfPeakBeforeRecoveryExceedsBoundary()
+    public async Task RecoveryTerminalHorizon_LowBaseline_SucceedsViaFreq6D16ApprovedClamp()
     {
         // 28 weeks = 8 GE weeks = 2 full mesocycles, ending on a Recovery week --
-        // yet still fails at a low baseline, proving "ends on Recovery" alone
-        // does not guarantee the boundary holds; the cumulative pre-recovery
-        // peak matters too. Confirms this is a genuine numeric-magnitude
-        // interaction, not a simple structural/off-by-one classification.
+        // previously still failed at a low baseline because the cumulative
+        // pre-recovery peak (not just "ends on Recovery") determined the
+        // outcome. The shared clamp resolves this the same way it resolves
+        // every other case: by construction, not by tuning to this baseline.
         var lowBaseline = new LongHorizonGeEntryBaselineInput(20, 6, 5);
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => ExecuteAsync(28, ReadinessProfile.ConsistencyNeeded, lowBaseline));
-        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+        var schedule = await ExecuteAsync(28, ReadinessProfile.ConsistencyNeeded, lowBaseline);
+        Assert.Equal(28, schedule.Weeks.Count);
+        Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
     }
 
     [Fact]
@@ -364,6 +367,20 @@ public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
         var lastGe = schedule.Weeks.Last(w => w.Structural.Segment == LongHorizonSegmentType.LongHorizonGeneralEndurance);
         Assert.True(lastGe.Structural.IsRecoveryWeek);
         Assert.Equal(24, schedule.Weeks.Count);
+    }
+
+    [Fact]
+    public async Task ClampNeverRaisesVolume_RunwayEntryNeverExceedsRawGeExit()
+    {
+        // Phase 10K-FREQ.6D.17 permanent regression: the clamp is a Math.Min,
+        // so wherever it activates, Runway's own entry can only be <= the raw
+        // GE exit -- never above it.
+        var baseline = new LongHorizonGeEntryBaselineInput(26, 8, 5);
+        var schedule = await ExecuteAsync(23, ReadinessProfile.ConsistencyNeeded, baseline);
+        var lastGe = schedule.Weeks.Last(w => w.Structural.Segment == LongHorizonSegmentType.LongHorizonGeneralEndurance);
+        var firstRunway = schedule.Weeks.First(w => w.Structural.Segment == LongHorizonSegmentType.PreparationRunway);
+        Assert.True(firstRunway.TotalVolumeKm!.Value <= lastGe.TotalVolumeKm!.Value + 0.01);
+        Assert.True(firstRunway.LongRunDistanceKm!.Value <= lastGe.LongRunDistanceKm!.Value + 0.01);
     }
 
     // ── Determinism ──────────────────────────────────────────────────────────

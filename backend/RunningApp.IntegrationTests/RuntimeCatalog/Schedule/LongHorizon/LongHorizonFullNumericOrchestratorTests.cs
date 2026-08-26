@@ -147,20 +147,20 @@ public sealed class LongHorizonFullNumericOrchestratorTests
                 PreferredDays, LongRunDay, CatalogRoot(), Loader()));
     }
 
-    // ── Existing-pipeline compatibility gap (Phase 4I.6A's own primary finding) ──
+    // ── Shared GE->Runway continuity clamp (Phase 10K-FREQ.6D.16/FREQ.6D.17) ──
     //
-    // The existing Preparation Runway numeric materializer has no accepted rule
-    // for "entry evidence exceeds the Core Week-1 boundary target" outside of
-    // Taper (Taper is Core-internal, not a Runway concept). Because GE's approved
-    // development-progression caps compound over as many as 32 weeks while Core's
-    // own Week-1 target is independently computed from the SAME raw evidence over
-    // a fixed 12-week peak-volume-band ceiling, GE's exit volume can legitimately
-    // exceed that independently-computed Core boundary once GE is long enough --
-    // and the existing Runway numeric engine fails closed (correctly: this is
-    // real, existing, unmodified production validation, not a new rule this
-    // phase invented) rather than silently producing an invalid downward ramp.
-    // This is a genuine, disclosed "existing pipeline compatibility gap" -- see
-    // the phase document's own non-implementation statement.
+    // The Preparation Runway numeric materializer previously had no accepted
+    // rule for "entry evidence exceeds the Core Week-1 boundary target"
+    // outside of Taper. Because GE's approved development-progression caps
+    // compound over as many as 32 weeks while Core's own Week-1 target is
+    // independently computed from the SAME raw evidence over a fixed 12-week
+    // peak-volume-band ceiling, GE's exit volume could legitimately exceed
+    // that independently-computed Core boundary once GE was long enough.
+    // FREQ.6D.16 approved, and FREQ.6D.17 implemented, a generic clamp:
+    // Runway's own starting weekly volume and long run are clamped down to
+    // Core's already-computed Week-1 target whenever GE's exit would
+    // otherwise exceed it -- no new number, day-count-neutral, conservative
+    // (only ever reduces). This resolves every horizon in this file.
     [Theory]
     [InlineData(21)]
     [InlineData(24)]
@@ -175,10 +175,15 @@ public sealed class LongHorizonFullNumericOrchestratorTests
     [InlineData(28)]
     [InlineData(40)]
     [InlineData(52)]
-    public async Task LongerGeHorizons_FailClosed_ExistingRunwayNoNonTaperReductionRule(int totalWeeks)
+    public async Task LongerGeHorizons_SucceedViaFreq6D16ApprovedClamp(int totalWeeks)
     {
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, TypicalBaseline));
-        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+        var schedule = await ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, TypicalBaseline);
+        Assert.Equal(totalWeeks, schedule.Weeks.Count);
+        Assert.All(schedule.Weeks, w => Assert.NotNull(w.TotalVolumeKm));
+
+        var firstRunway = schedule.Weeks.First(w => w.Structural.Segment == LongHorizonSegmentType.PreparationRunway);
+        var firstCore = schedule.Weeks.First(w => w.Structural.Segment == LongHorizonSegmentType.Core);
+        Assert.True(firstRunway.TotalVolumeKm!.Value <= firstCore.TotalVolumeKm!.Value + 0.01,
+            "Runway Week 1 (clamped) must never exceed Core Week 1's own target.");
     }
 }

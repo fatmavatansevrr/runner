@@ -12,7 +12,7 @@ public sealed class Phase4K8ADirectionDiagnosticsTests
     [Theory]
     [InlineData(PreparationRunwayAllocationProfile.ConsistencyNeeded)]
     [InlineData(PreparationRunwayAllocationProfile.CoreEntryReady)]
-    internal void WeeklyBelowBuilds_EqualIsFlat_AboveFailsClosed(PreparationRunwayAllocationProfile profile)
+    internal void WeeklyBelowBuilds_EqualIsFlat_AboveClampsToTarget(PreparationRunwayAllocationProfile profile)
     {
         var below = Materialize(profile, 18, 6, 20, 6.5);
         var equal = Materialize(profile, 20, 6.5, 20, 6.5);
@@ -22,9 +22,13 @@ public sealed class Phase4K8ADirectionDiagnosticsTests
         Assert.All(below.PrescribedWeeks!.Skip(1), week => Assert.True(week.NumericTrace.WeeklyChangeKm >= 0));
         Assert.True(equal.IsSuccess, equal.FailureReason);
         Assert.All(equal.PrescribedWeeks!, week => Assert.Equal(20, week.PlannedWeeklyVolumeKm));
-        Assert.False(above.IsSuccess);
-        Assert.Equal(PreparationRunwayNumericMaterializationFailureCode.RunwayProgressionInfeasible, above.FailureCode);
-        Assert.Null(above.PrescribedWeeks);
+
+        // Phase 10K-FREQ.6D.16/FREQ.6D.17: GE exit (22/7) above Core's target
+        // (20/6.5) is now clamped to the target rather than failing closed --
+        // Runway's own bridge then runs flat, identical to the "equal" case.
+        Assert.True(above.IsSuccess, above.FailureReason);
+        Assert.All(above.PrescribedWeeks!, week => Assert.Equal(20, week.PlannedWeeklyVolumeKm));
+        Assert.All(above.PrescribedWeeks, week => Assert.Equal(6.5, week.PlannedLongRunDistanceKm));
     }
 
     [Theory]
@@ -45,12 +49,37 @@ public sealed class Phase4K8ADirectionDiagnosticsTests
     }
 
     [Fact]
-    public void WeeklyEqualButEffectiveLongRunStillAboveTarget_FailsClosedIndependently()
+    public void WeeklyEqualButEffectiveLongRunStillAboveTarget_ClampsIndependently_ThenFailsOnUnrelatedShareBand()
     {
+        // Phase 10K-FREQ.6D.16/FREQ.6D.17: long run (raw 8, target 5.5) is now
+        // independently clamped to 5.5 -- the same rule as the weekly-volume
+        // dimension, applied separately (weekly is already at the target, no
+        // clamp needed there). This specific synthetic combination still
+        // fails, but now for a genuinely different, already-existing, and
+        // correct reason: a clamped long run of 5.5km against an unclamped
+        // weekly volume of 20km is a 27.5% share, below the approved 30%
+        // preferred-minimum band -- a real Core Week-1 target is always
+        // internally share-consistent by construction, so this exact
+        // combination could not arise from real Core output; it only
+        // demonstrates the clamp and the pre-existing share-band validator
+        // compose correctly and independently.
         var result = Materialize(PreparationRunwayAllocationProfile.CoreEntryReady, 20, 8, 20, 5.5);
         Assert.False(result.IsSuccess);
-        Assert.Equal(PreparationRunwayNumericMaterializationFailureCode.LongRunContinuityViolation, result.FailureCode);
+        Assert.Equal(PreparationRunwayNumericMaterializationFailureCode.LongRunShareViolation, result.FailureCode);
         Assert.Null(result.PrescribedWeeks);
+    }
+
+    [Fact]
+    public void WeeklyEqualButLongRunAboveTarget_WithinShareBand_ClampsAndSucceeds()
+    {
+        // The positive counterpart of the test above: a realistic Core
+        // Week-1 target (20/6.5, share = 32.5%, within the approved band)
+        // with a raw GE long run (8) exceeding it -- the clamp alone
+        // resolves this, matching a real Core Week-1 target's own
+        // internally-consistent share.
+        var result = Materialize(PreparationRunwayAllocationProfile.CoreEntryReady, 20, 8, 20, 6.5);
+        Assert.True(result.IsSuccess, result.FailureReason);
+        Assert.All(result.PrescribedWeeks!, week => Assert.Equal(6.5, week.PlannedLongRunDistanceKm));
     }
 
     private static PreparationRunwayNumericMaterializationResult<PreparationRunwayBlockType> Materialize(
