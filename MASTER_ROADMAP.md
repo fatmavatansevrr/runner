@@ -65,7 +65,7 @@ Prior phase: `FREQ.6D.4D.5` (Split E, partial) — Execution Status `DONE (PARTI
 
 Prior phase: `FREQ.6D.13` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_ROLLING_LINEAGE_AND_JIT_DUAL_KEY_IMPLEMENTED_AND_VERIFIED_GE_IMPLEMENTATION_REMAINING`. Implemented and real-PostgreSQL-verified rolling-session lineage persistence (5 new nullable columns, zero 4D delta) and the JIT dual-KEY collision fix (`BuildBoundedCoreSelection` now matches by exact `SlotOrdinal` identity). Discovered and fixed two real gaps blocking any 5D candidate from reaching real Core generation via LongHorizon rolling-activation: `PublishedBundleReleaseVersion` threading (correcting `FREQ.6D.11`'s stale finding that `ExecutionPrescriptionIndex` propagation was entirely missing — it was already present since `FREQ.6D.7`, just unreachable from this one call site) and `IsValidFourDayAvailability`'s hardcoded `==4` gate. Did **not** implement `FREQ.6D.12`'s approved GE 5D structural/numeric policy or the dependent dark 21-52 week verification — deliberately scoped out rather than risk an incomplete change to already-shipped 4D GE logic, disclosed explicitly as remaining work, not a blocker (no architecture/product/numeric-authority contradiction found).
 
-**Next phase**: a continuation implementation phase completing `FREQ.6D.13`'s own disclosed remaining scope:
+**Next phase**: `FREQ.6D.14` — **INTERMEDIATE×5D LONGHORIZON GE IMPLEMENTATION & DARK 21-52 VERIFICATION**. Phase type: **IMPLEMENTATION + DARK INTEGRATION VERIFICATION**. Completes `FREQ.6D.13`'s own disclosed remaining scope:
 
 - GE 5D structural implementation: generalize `LongHorizonGeWeekDescriptor`'s fixed 4-role enum-keyed `Roles` dictionary (`LongHorizonGeStructuralContracts.cs`, `LongHorizonGeStructuralSelector.cs`, `LongHorizonGeNumericExecutor.cs`, `LongHorizonFullNumericOrchestrator.cs`, `LongHorizonStructuralMaterializer.cs`) to the approved 1 KEY + 3 EASY + 1 LONG 5D shape (`FREQ.6D.12` §34).
 - Approved positive-readiness GE numeric behavior (direct volume reuse, existing growth ratios, `FREQ.6D.12` §35-36).
@@ -76,7 +76,7 @@ Prior phase: `FREQ.6D.13` — Execution Status `DONE (PARTIAL)`, Final Classific
 - Session-level persistence round-trip proof for the five new lineage columns on a real 5D plan.
 - Historical 4D zero-delta.
 
-Not yet scheduled as a Phase ID (`NEXT_PHASE_NOT_YET_SCHEDULED`) — no production code, migration, or public activation is authorized until that phase itself executes.
+`FREQ.6D.14` is scheduled only — not started. No production code, migration, or public activation is authorized until that phase itself executes.
 
 ---
 
@@ -597,9 +597,16 @@ FREQ.6D.13 (DONE, PARTIAL)      → IMPLEMENTATION + DARK INTEGRATION VERIFICATI
 Gate B (PASS: fc34d7e)          → remote SHA matched local gate SHA; ahead/behind 0/0. 16
                                     completed phase prompts since the prior Gate B (13594ac):
                                     FREQ.6D.4D.5A through FREQ.6D.13.
-NEXT (NOT_YET_SCHEDULED)        → continuation implementation phase: GE 5D structural/numeric
-                                    implementation, dark 21/24/32/52-week verification, remaining 4D-only
-                                    gates, then public activation + real PostgreSQL E2E.
+FREQ.6D.14 (SCHEDULED)          → IMPLEMENTATION + DARK INTEGRATION VERIFICATION: INTERMEDIATE×5D
+                                    LONGHORIZON GE IMPLEMENTATION & DARK 21-52 VERIFICATION. Completes
+                                    FREQ.6D.13's disclosed remaining scope only -- GE 5D structural/numeric
+                                    policy (FREQ.6D.12 authority: 1K+3E+1L, 44.5km cap, 28%/36% share,
+                                    missing/zero PRODUCT_INELIGIBLE) and the dependent dark 21/24/32/52-week
+                                    verification matrix. Does not reopen rolling-lineage schema, JIT identity
+                                    architecture, or Core/Runway numeric authority. No public 21+ activation.
+                                    Scheduled only; not started.
+NEXT (NOT_YET_SCHEDULED)        → after FREQ.6D.14 closes: real environment verification + public
+                                    activation for Intermediate×5D LongHorizon 21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
