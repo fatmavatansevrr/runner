@@ -51,6 +51,22 @@ internal sealed record LongHorizonRollingJitCompositionRequest
 
     /// <summary>Real catalog dependencies the unchanged production pipeline already requires.</summary>
     public required string CatalogRootPath { get; init; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.13 — the pinned Process A release version whose
+    /// published bundles carry ProfileBacked execution prescriptions (see
+    /// <c>PlanCatalogOptions.PublishedBundleReleaseVersion</c>'s own doc
+    /// comment). Without it, <c>TenKPreparationRunwayDarkOrchestratorFactory.Create</c>'s
+    /// already-existing <c>PublishedTemplateBundleLoader</c> wiring (Phase
+    /// 10K-FREQ.6D.7, threaded into Runway's own Core-generation call site)
+    /// silently resolves no bundle, and any real ProfileBacked Core session
+    /// (every Intermediate x5D KEY_SESSION) fails closed with
+    /// <c>DynamicCoreSessionPrescriptionFailedException</c> rather than
+    /// resolving. Null preserves exact prior behavior for every existing
+    /// (4D, Legacy-only) caller.
+    /// </summary>
+    public string? PublishedBundleReleaseVersion { get; init; }
+
     public required RunningApp.Application.RuntimeCatalog.PlanCatalogCandidateSummary Candidate { get; init; }
 }
 

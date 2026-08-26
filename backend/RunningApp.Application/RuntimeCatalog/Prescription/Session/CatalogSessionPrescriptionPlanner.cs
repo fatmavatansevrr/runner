@@ -141,6 +141,8 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             Date = session.Date,
             PhaseKey = session.PhaseKey,
             ProgressionStageKey = session.ProgressionStageKey,
+            LaneOrdinal = session.LaneOrdinal,
+            SlotOrdinal = session.SlotOrdinal,
             StructuralRole = session.StructuralRole,
             WorkoutDefinitionKey = session.WorkoutDefinitionKey,
             WorkoutDefinitionVersion = session.WorkoutDefinitionVersion,

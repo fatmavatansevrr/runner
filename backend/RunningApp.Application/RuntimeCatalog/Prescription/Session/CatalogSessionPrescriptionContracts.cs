@@ -97,6 +97,13 @@ internal sealed record CatalogPrescribedSession
     public required DateOnly Date { get; init; }
     public required string PhaseKey { get; init; }
     public string? ProgressionStageKey { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — carried verbatim from the source <see cref="RunningApp.Application.RuntimeCatalog.Schedule.Binding.BoundCatalogSession"/>, mirroring <see cref="ProgressionStageKey"/>'s own carry-forward pattern. Never recomputed here.</summary>
+    public int? LaneOrdinal { get; init; }
+
+    /// <summary>Phase 10K-FREQ.6D.13 — carried verbatim from the source <c>BoundCatalogSession</c>, same pattern as <see cref="LaneOrdinal"/>.</summary>
+    public int? SlotOrdinal { get; init; }
+
     public required string StructuralRole { get; init; }
     public required string WorkoutDefinitionKey { get; init; }
     public required int WorkoutDefinitionVersion { get; init; }

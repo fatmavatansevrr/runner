@@ -56,6 +56,19 @@ internal sealed class BoundCatalogSession
     public int? LaneOrdinal { get; init; }
 
     /// <summary>
+    /// Phase 10K-FREQ.6D.13 — the catalog-authored <c>SlotOrderInWeek</c> this
+    /// session was bound from (see <see cref="CatalogWorkoutBinder"/>), a
+    /// week-wide (not per-role) rank over every slot in the week. Populated
+    /// for every role, including FixedDefault (unlike <see cref="LaneOrdinal"/>,
+    /// which is StageControlled-only) — it is the durable identity that
+    /// disambiguates repeated same-role slots (e.g. multiple EASY_SUPPORT
+    /// occurrences) where <see cref="LaneOrdinal"/> alone is null and
+    /// therefore insufficient. Never recomputed from calendar date or
+    /// dictionary order once assigned.
+    /// </summary>
+    public int? SlotOrdinal { get; init; }
+
+    /// <summary>
     /// Backend Integration Phase 10K-FREQ.6D.4D Split B — the exact, versioned prescription
     /// profile this session was bound to, when its resolved progression stage declares exactly
     /// one <c>PrescriptionProfileCandidateKeys</c> entry (ProfileBacked). Null for every

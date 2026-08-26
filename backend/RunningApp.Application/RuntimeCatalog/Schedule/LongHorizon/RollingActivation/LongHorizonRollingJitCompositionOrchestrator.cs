@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
 using RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PreparationRunway;
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunway;
@@ -67,7 +68,7 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
             var (previewRequest, resolverInput) = LongHorizonRollingCoreGenerationInputAdapter.Build(
                 request.ValidatedLoad, request.ExactCompletedFrequency, runwayStartDate, request.RaceDate,
                 request.TargetFinishTimeSeconds, request.TargetFinishTimeSource, request.RecentRace,
-                request.PreferredDays, request.LongRunDay);
+                request.PreferredDays, request.LongRunDay, request.Candidate.DaysPerWeek);
             stages.Add("RollingCoreInputMapping");
 
             // Part 2: real, unmodified condition resolution -- the same four
@@ -110,7 +111,11 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
 
             if (needsCoreGeneration)
             {
-                var orchestrator = TenKPreparationRunwayDarkOrchestratorFactory.Create(new PlanCatalogOptions { CatalogRootPath = request.CatalogRootPath });
+                var orchestrator = TenKPreparationRunwayDarkOrchestratorFactory.Create(new PlanCatalogOptions
+                {
+                    CatalogRootPath = request.CatalogRootPath,
+                    PublishedBundleReleaseVersion = request.PublishedBundleReleaseVersion,
+                });
                 var compositionRequest = new TenKPreparationRunwayDarkOrchestrationRequest(
                     request.Candidate, runwayStartDate, request.RaceDate, request.CheckpointDate,
                     request.PreferredDays, request.LongRunDay, coreEntryReadiness, conditionResults,
@@ -159,6 +164,7 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
                 RaceDate = request.RaceDate,
                 SafetyState = request.SafetyState,
                 ConditionResults = conditionResults,
+                DaysPerWeek = request.Candidate.DaysPerWeek,
                 ResolvedCoreWeekOneTarget = extractedTarget,
                 RunwayStartingLoadEvidence = runwayStartingEvidence,
                 RunwayStructuralWeeks = runwayStructuralWeeks,
@@ -225,24 +231,37 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
         {
             var datedCoreWeek = composition.CalendarComposition!.DatedCoreWeeks!
                 .Single(w => w.SegmentLocalWeekNumber == week.WeekNumber).CoreWeek;
-            var remainingByRole = week.Sessions.OrderBy(s => s.Date).ThenBy(s => s.StructuralRole)
-                .GroupBy(s => s.StructuralRole, StringComparer.Ordinal)
-                .ToDictionary(g => g.Key, g => new Queue<RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogPrescribedSession>(g), StringComparer.Ordinal);
+            // Phase 10K-FREQ.6D.13: match each prescribed session to its dated
+            // slot by exact SlotOrdinal equality -- SlotOrdinal is a week-wide
+            // (not per-role) rank assigned once at binding time (§9/§28,
+            // FREQ.6D.11), so this is an unambiguous 1:1 lookup regardless of
+            // how many same-role slots the week has. The prior
+            // GroupBy(StructuralRole)+FIFO-by-date dequeue collapsed a dual-KEY
+            // week's two lanes into one bucket and could dequeue either lane
+            // into either dated slot depending on date order alone (Date is
+            // never a valid lane/slot identity signal, §18/§22).
+            var byOrdinal = week.Sessions.ToDictionary(s => s.SlotOrdinal
+                ?? throw new LongHorizonJitContextInvalidException(
+                    $"Core week {week.WeekNumber} session role {s.StructuralRole} has no SlotOrdinal identity."));
             var sessions = new List<LongHorizonSessionPrescriptionReference>();
             foreach (var datedSlot in datedCoreWeek.SessionSlots.OrderBy(slot => slot.SlotOrderInWeek))
             {
-                if (!remainingByRole.TryGetValue(datedSlot.StructuralRole, out var candidates) || candidates.Count == 0)
-                    throw new LongHorizonJitContextInvalidException($"Core week {week.WeekNumber} role {datedSlot.StructuralRole} has no prescribed-session identity.");
-                var prescribed = candidates.Dequeue();
+                if (!byOrdinal.TryGetValue(datedSlot.SlotOrderInWeek, out var prescribed))
+                    throw new LongHorizonJitContextInvalidException($"Core week {week.WeekNumber} slot {datedSlot.SlotOrderInWeek} ({datedSlot.StructuralRole}) has no prescribed-session identity.");
                 sessions.Add(new LongHorizonSessionPrescriptionReference
                 {
                     SessionOrdinal = datedSlot.SlotOrderInWeek,
                     SessionRole = prescribed.StructuralRole,
+                    LaneOrdinal = prescribed.LaneOrdinal,
+                    SlotOrdinal = prescribed.SlotOrdinal,
+                    ProgressionStageKey = prescribed.ProgressionStageKey,
+                    ProfileKey = prescribed.PrescriptionSource.ExactProfileKeyOrNull(),
+                    ProfileVersion = prescribed.PrescriptionSource.ExactProfileVersionOrNull(),
                     DistanceKm = prescribed.PlannedDistanceKm,
                     WorkoutKey = prescribed.WorkoutDefinitionKey,
                     WorkoutVersion = prescribed.WorkoutDefinitionVersion,
                     AssignedDate = datedSlot.SessionDate,
-                    Source = "CalendarComposition.DatedCoreWeeks + FinalPrescribedPlan role-occurrence identity",
+                    Source = "CalendarComposition.DatedCoreWeeks + FinalPrescribedPlan SlotOrdinal-exact identity",
                 });
             }
             var longRunKm = week.Sessions.Count == 0 ? 0 : week.Sessions.Max(s => s.PlannedDistanceKm);
