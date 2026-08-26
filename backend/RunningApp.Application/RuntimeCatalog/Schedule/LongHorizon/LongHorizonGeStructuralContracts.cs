@@ -34,15 +34,6 @@ internal enum LongHorizonGeShortExtensionRole
     PreRunwayAlignment,
 }
 
-/// <summary>The four weekly running-session roles for a GE week, per Phase 4I.2's approved skeleton (1 KEY_SESSION + 2 EASY_SUPPORT + 1 LONG_RUN).</summary>
-internal enum LongHorizonGeWeekRole
-{
-    KeySession,
-    EasySupportA,
-    EasySupportB,
-    LongRun,
-}
-
 /// <summary>A single catalog workout reference -- key + version + family only, never a materialized numeric prescription.</summary>
 internal sealed record LongHorizonGeWorkoutReference(string Key, int Version, string Family);
 
@@ -59,6 +50,14 @@ internal sealed record LongHorizonGeWorkoutReference(string Key, int Version, st
 /// (backend's own mirror of plan-catalog's <c>LongHorizonReadinessProfile</c>)
 /// and for <c>CatalogWorkoutProgressionDefinition</c>'s doc-commented mirror
 /// of <c>StageCompressionBehavior</c>.
+///
+/// Phase 10K-FREQ.6D.14 -- <see cref="EasySupportWorkouts"/> replaces the
+/// prior fixed <c>EasySupportA</c>/<c>EasySupportB</c> two-member enum keying:
+/// GE's role cardinality is now derived from this list's own length (2 for
+/// every existing 4D caller, 3 for the FREQ.6D.12-approved 5D shape) rather
+/// than a hardcoded <c>DaysPerWeek==5</c> branch. GE never carries more than
+/// one KEY_SESSION, so no lane-ordinal ambiguity exists here the way it does
+/// for Core -- only the EASY cardinality varies.
 /// </summary>
 internal sealed record LongHorizonGeWeekDescriptor(
     int WeekIndex,
@@ -70,7 +69,9 @@ internal sealed record LongHorizonGeWeekDescriptor(
     bool IsRecoveryWeek,
     bool IsTerminalAlignment,
     ReadinessProfile ReadinessProfile,
-    IReadOnlyDictionary<LongHorizonGeWeekRole, LongHorizonGeWorkoutReference> Roles,
+    LongHorizonGeWorkoutReference KeySessionWorkout,
+    IReadOnlyList<LongHorizonGeWorkoutReference> EasySupportWorkouts,
+    LongHorizonGeWorkoutReference LongRunWorkout,
     string CatalogSourceId,
     int CatalogSourceVersion)
 {

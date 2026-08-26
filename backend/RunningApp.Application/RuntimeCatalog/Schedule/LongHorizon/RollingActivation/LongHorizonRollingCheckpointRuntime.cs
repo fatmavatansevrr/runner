@@ -85,7 +85,7 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
             var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(total, longRun);
             return new LongHorizonGeWeekNumericResult(
                 week.WeekIndex, total, longRun, allocation.KeySessionDistanceKm,
-                allocation.FirstEasySupportDistanceKm, allocation.SecondEasySupportDistanceKm);
+                allocation.EasySupportDistancesKm);
         }).ToList();
     }
 }

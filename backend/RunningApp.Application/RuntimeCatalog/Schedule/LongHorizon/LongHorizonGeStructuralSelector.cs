@@ -71,17 +71,27 @@ internal static class LongHorizonGeStructuralSelector
         _ => throw new ArgumentOutOfRangeException(nameof(geWeeks), geWeeks, "GE week count must be 1..32."),
     };
 
-    public static IReadOnlyList<LongHorizonGeWeekDescriptor> Select(int geWeeks, ReadinessProfile profile)
+    /// <param name="easySupportCount">
+    /// Phase 10K-FREQ.6D.14 -- number of EASY_SUPPORT sessions per full GE
+    /// week (2 for every existing 4D caller via the default parameter,
+    /// exactly reproducing pre-FREQ.6D.14 output; 3 for the FREQ.6D.12-
+    /// approved Intermediate x5D shape). Reuses the same EASY_STANDARD
+    /// catalog content already approved for EasySupportA/B -- no new
+    /// content, no new WorkoutDefinition.
+    /// </param>
+    public static IReadOnlyList<LongHorizonGeWeekDescriptor> Select(int geWeeks, ReadinessProfile profile, int easySupportCount = 2)
     {
         if (geWeeks is < 1 or > 32)
             throw new ArgumentOutOfRangeException(nameof(geWeeks), geWeeks, "GE week count must be 1..32.");
+        if (easySupportCount < 1)
+            throw new ArgumentOutOfRangeException(nameof(easySupportCount), easySupportCount, "GE requires at least one EASY_SUPPORT session.");
 
         return Classify(geWeeks) == GeneralEnduranceDurationClassification.ShortExtension
-            ? SelectShortExtension(geWeeks, profile)
-            : SelectFullPhase(geWeeks, profile);
+            ? SelectShortExtension(geWeeks, profile, easySupportCount)
+            : SelectFullPhase(geWeeks, profile, easySupportCount);
     }
 
-    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectShortExtension(int geWeeks, ReadinessProfile profile)
+    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectShortExtension(int geWeeks, ReadinessProfile profile, int easySupportCount)
     {
         var plan = geWeeks switch
         {
@@ -114,12 +124,13 @@ internal static class LongHorizonGeStructuralSelector
                 stageFamily: stageFamily,
                 isRecoveryWeek: false,
                 isTerminalAlignment: isTerminal,
-                profile: profile));
+                profile: profile,
+                easySupportCount: easySupportCount));
         }
         return result;
     }
 
-    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectFullPhase(int geWeeks, ReadinessProfile profile)
+    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectFullPhase(int geWeeks, ReadinessProfile profile, int easySupportCount)
     {
         var fullMesocycles = geWeeks / 4;
         var remainder = geWeeks % 4;
@@ -146,7 +157,8 @@ internal static class LongHorizonGeStructuralSelector
                     stageFamily: developmentStageFamily,
                     isRecoveryWeek: false,
                     isTerminalAlignment: false,
-                    profile: profile));
+                    profile: profile,
+                    easySupportCount: easySupportCount));
             }
 
             result.Add(BuildDescriptor(
@@ -158,7 +170,8 @@ internal static class LongHorizonGeStructuralSelector
                 stageFamily: LongHorizonGeStageFamily.Consolidation,
                 isRecoveryWeek: true,
                 isTerminalAlignment: false,
-                profile: profile));
+                profile: profile,
+                easySupportCount: easySupportCount));
         }
 
         var remainderPlan = remainder switch
@@ -190,7 +203,8 @@ internal static class LongHorizonGeStructuralSelector
                 stageFamily: stageFamily,
                 isRecoveryWeek: false,
                 isTerminalAlignment: true,
-                profile: profile));
+                profile: profile,
+                easySupportCount: easySupportCount));
         }
 
         return result;
@@ -212,15 +226,12 @@ internal static class LongHorizonGeStructuralSelector
         LongHorizonGeStageFamily stageFamily,
         bool isRecoveryWeek,
         bool isTerminalAlignment,
-        ReadinessProfile profile)
+        ReadinessProfile profile,
+        int easySupportCount)
     {
-        var roles = new Dictionary<LongHorizonGeWeekRole, LongHorizonGeWorkoutReference>
-        {
-            [LongHorizonGeWeekRole.KeySession] = ResolveWorkout(stageFamily, "KEY_SESSION", profile),
-            [LongHorizonGeWeekRole.EasySupportA] = ResolveWorkout(stageFamily, "EASY_SUPPORT", profile),
-            [LongHorizonGeWeekRole.EasySupportB] = ResolveWorkout(stageFamily, "EASY_SUPPORT", profile),
-            [LongHorizonGeWeekRole.LongRun] = ResolveWorkout(stageFamily, "LONG_RUN", profile),
-        };
+        var easySupportWorkouts = Enumerable.Range(0, easySupportCount)
+            .Select(_ => ResolveWorkout(stageFamily, "EASY_SUPPORT", profile))
+            .ToList();
 
         return new LongHorizonGeWeekDescriptor(
             WeekIndex: weekIndex,
@@ -232,7 +243,9 @@ internal static class LongHorizonGeStructuralSelector
             IsRecoveryWeek: isRecoveryWeek,
             IsTerminalAlignment: isTerminalAlignment,
             ReadinessProfile: profile,
-            Roles: roles,
+            KeySessionWorkout: ResolveWorkout(stageFamily, "KEY_SESSION", profile),
+            EasySupportWorkouts: easySupportWorkouts,
+            LongRunWorkout: ResolveWorkout(stageFamily, "LONG_RUN", profile),
             CatalogSourceId: CatalogSourceId,
             CatalogSourceVersion: CatalogSourceVersion);
     }
