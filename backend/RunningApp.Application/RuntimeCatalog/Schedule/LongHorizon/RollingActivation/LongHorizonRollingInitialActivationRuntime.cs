@@ -27,10 +27,23 @@ internal interface ILongHorizonRollingGeWindowMaterializer
 
 internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRollingGeWindowMaterializer
 {
+    /// <summary>
+    /// Phase 10K-FREQ.6D.15 -- derives the FREQ.6D.14-approved 5D GE policy
+    /// (VolumeSafetyPolicy.FiveDayIntermediate, target-capped growth) off
+    /// the selected descriptors' own resolved EasySupportWorkouts.Count
+    /// (3 for 5D, already selected by the daysPerWeek-aware
+    /// LongHorizonGeStructuralSelector.Select this runtime now calls)
+    /// rather than adding a new interface parameter or a DaysPerWeek
+    /// special case here. Byte-identical for every 4D caller (Count == 2).
+    /// </summary>
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-        LongHorizonGeEntryBaselineInput onboardingBaseline) =>
-        LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline);
+        LongHorizonGeEntryBaselineInput onboardingBaseline)
+    {
+        var isFiveDay = selectedGeneralEnduranceWeeks.Count > 0 && selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count == 3;
+        var policy = isFiveDay ? Prescription.Volume.VolumeSafetyPolicy.FiveDayIntermediate : Prescription.Volume.VolumeSafetyPolicy.Default;
+        return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: isFiveDay);
+    }
 }
 
 /// <summary>
@@ -71,7 +84,8 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
                 request.CompositionDecision,
                 request.CatalogRoot,
                 request.WorkoutLoader,
-                cancellationToken);
+                cancellationToken,
+                request.DaysPerWeek);
         }
         catch (Exception exception) when (exception is PlanCatalogLoadException or JsonException or InvalidOperationException or IOException)
         {
@@ -141,7 +155,7 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
 
         IReadOnlyList<LongHorizonGeWeekNumericResult> numericResults;
         var selectedDescriptors = LongHorizonGeStructuralSelector
-            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile)
+            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile, request.DaysPerWeek == 5 ? 3 : 2)
             .Take(actualWindowSize)
             .ToList();
         try
@@ -178,7 +192,7 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         IReadOnlyDictionary<string, DayOfWeek> weekdays;
         try
         {
-            weekdays = LongHorizonCalendarAssigner.AssignWeekdays(request.PreferredDays, request.LongRunDay);
+            weekdays = LongHorizonCalendarAssigner.AssignWeekdays(request.PreferredDays, request.LongRunDay, request.DaysPerWeek);
         }
         catch (InvalidOperationException exception)
         {
@@ -326,16 +340,17 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         IReadOnlyDictionary<string, DayOfWeek> weekdays)
     {
         var weekStart = LongHorizonCalendarAssigner.WeekStartDate(request.StartDate, structural.GlobalWeekNumber);
+        var easyOccurrence = 0;
         var sessions = structural.OrderedWorkoutSlots.Select(slot =>
         {
-            var roleKey = RoleKeyFor(slot.StructuralRole, slot.StructuralSlotIndex);
-            var distance = roleKey switch
+            if (slot.StructuralRole == "EASY_SUPPORT") easyOccurrence++;
+            var roleKey = RoleKeyFor(slot.StructuralRole, easyOccurrence);
+            var distance = slot.StructuralRole switch
             {
                 "KEY_SESSION" => numeric.KeySessionDistanceKm,
-                "EASY_SUPPORT_1" => numeric.FirstEasySupportDistanceKm,
-                "EASY_SUPPORT_2" => numeric.SecondEasySupportDistanceKm,
+                "EASY_SUPPORT" => numeric.EasySupportDistancesKm[easyOccurrence - 1],
                 "LONG_RUN" => numeric.LongRunDistanceKm,
-                _ => throw new InvalidOperationException($"Unsupported GE structural role '{roleKey}'."),
+                _ => throw new InvalidOperationException($"Unsupported GE structural role '{slot.StructuralRole}'."),
             };
             var weekday = weekdays[roleKey];
             return new LongHorizonSessionPrescriptionReference
@@ -346,6 +361,18 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
                 WorkoutVersion = slot.WorkoutVersion,
                 AssignedDate = LongHorizonCalendarAssigner.AssignedDate(weekStart, weekday),
                 Source = "LongHorizonStructuralMaterializer+LongHorizonGeNumericExecutor+LongHorizonCalendarAssigner",
+                // Phase 10K-FREQ.6D.15 -- GE never carries more than one KEY session in any
+                // approved shape (4D or 5D), so LaneOrdinal stays null (matching the same
+                // "no lane ambiguity for GE" invariant FREQ.6D.14 established); SlotOrdinal
+                // is the slot's own week-wide positional index (0-based, matching the
+                // FREQ.6D.13 Core convention), populated for every role. GE sessions are
+                // always Legacy (never ProfileBacked), so ProfileKey/Version stay null --
+                // matching the existing both-null-or-both-present invariant.
+                LaneOrdinal = null,
+                SlotOrdinal = slot.StructuralSlotIndex - 1,
+                ProgressionStageKey = structural.GeStageFamily?.ToString() ?? structural.WeekType,
+                ProfileKey = null,
+                ProfileVersion = null,
             };
         }).ToList();
 
@@ -505,11 +532,18 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         _ => throw new ArgumentOutOfRangeException(nameof(segment)),
     };
 
-    private static string RoleKeyFor(string structuralRole, int structuralSlotIndex) => structuralRole switch
+    /// <summary>
+    /// Phase 10K-FREQ.6D.15 -- generalized off the week's own EASY_SUPPORT
+    /// occurrence ordinal (1-based rank among EASY_SUPPORT slots only, not
+    /// the raw structural slot index) instead of a hardcoded
+    /// <c>&lt;=2 ? "_1" : "_2"</c> literal. Byte-identical for every 4D week
+    /// (exactly 2 EASY_SUPPORT slots, occurrence 1 and 2).
+    /// </summary>
+    private static string RoleKeyFor(string structuralRole, int easySupportOccurrence) => structuralRole switch
     {
         "KEY_SESSION" => "KEY_SESSION",
         "LONG_RUN" => "LONG_RUN",
-        "EASY_SUPPORT" => structuralSlotIndex <= 2 ? "EASY_SUPPORT_1" : "EASY_SUPPORT_2",
+        "EASY_SUPPORT" => $"EASY_SUPPORT_{easySupportOccurrence}",
         _ => throw new ArgumentOutOfRangeException(nameof(structuralRole)),
     };
 

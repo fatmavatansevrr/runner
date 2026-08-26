@@ -102,12 +102,12 @@ internal static class LongHorizonRollingInitialActivationInputValidator
         }
 
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek != 4)
+            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5))
         {
             throw new LongHorizonRollingInitialActivationException(
                 LongHorizonRollingInitialActivationFailureReason.InvalidEligibility,
                 "LONG_HORIZON_ROLLING_INITIAL_ELIGIBILITY_INVALID",
-                "Rolling initial activation is restricted to Race / exact 10K / Intermediate / 4 days per week.");
+                "Rolling initial activation is restricted to Race / exact 10K / Intermediate / 4 or 5 days per week.");
         }
 
         if (request.StartDate >= request.RaceDate
@@ -130,13 +130,13 @@ internal static class LongHorizonRollingInitialActivationInputValidator
                 "Onboarding weekly volume must be positive; optional longest-run and frequency evidence must be positive when supplied.");
         }
 
-        if (request.PreferredDays.Count != 4 || request.PreferredDays.Distinct().Count() != 4
+        if (request.PreferredDays.Count != request.DaysPerWeek || request.PreferredDays.Distinct().Count() != request.DaysPerWeek
             || !request.PreferredDays.Contains(request.LongRunDay))
         {
             throw new LongHorizonRollingInitialActivationException(
                 LongHorizonRollingInitialActivationFailureReason.CalendarAssignmentFailure,
                 "LONG_HORIZON_ROLLING_INITIAL_CALENDAR_INPUT_INVALID",
-                "Exactly four distinct preferred days including the long-run day are required.");
+                $"Exactly {request.DaysPerWeek} distinct preferred days including the long-run day are required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.CatalogRoot))

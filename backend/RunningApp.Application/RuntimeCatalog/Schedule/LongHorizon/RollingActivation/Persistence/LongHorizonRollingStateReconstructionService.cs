@@ -84,6 +84,15 @@ internal static class LongHorizonRollingStateReconstructionService
                     WorkoutVersion = s.WorkoutVersion,
                     AssignedDate = s.AssignedDate,
                     Source = s.Provenance,
+                    // Phase 10K-FREQ.6D.15 -- these five FREQ.6D.13 lineage columns were already
+                    // written on persist but never read back here on reconstruction; a real
+                    // Postgres reload proved the gap (raw-row queries saw them, this projection
+                    // did not). Restoring them, not inventing new values.
+                    LaneOrdinal = s.LaneOrdinal,
+                    SlotOrdinal = s.SlotOrdinal,
+                    ProgressionStageKey = s.ProgressionStageKey,
+                    ProfileKey = s.CatalogPrescriptionProfileKey,
+                    ProfileVersion = s.CatalogPrescriptionProfileVersion,
                 }).ToList();
 
                 activatedWeeks[row.GlobalWeek] = new ActivatedNumericWeek
