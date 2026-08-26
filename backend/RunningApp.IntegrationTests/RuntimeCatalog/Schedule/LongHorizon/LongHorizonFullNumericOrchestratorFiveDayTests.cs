@@ -294,6 +294,78 @@ public sealed class LongHorizonFullNumericOrchestratorFiveDayTests
         Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
     }
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.15 — root-cause evidence for the 22-week gap
+    /// FREQ.6D.14 disclosed, and the wider pattern it turned out to belong
+    /// to. <see cref="PreparationRunwayNumericMaterializer.Materialize"/>
+    /// (source-verified, not inferred) linearly interpolates from GE's own
+    /// exit volume to Core's independently-computed Week-1 target across
+    /// the 8 Runway weeks, and fails closed the moment GE's exit exceeds
+    /// that target by more than the continuity tolerance -- there is no
+    /// approved rule for Runway to reduce down to a lower Core boundary.
+    /// Because GE's own progression only ever grows (except on a
+    /// FullPhase mesocycle's own internal Recovery week, which reduces by
+    /// ~15% off the prior peak), ANY GE trajectory whose final week is NOT
+    /// a Recovery week keeps climbing, and eventually exceeds Core's fixed
+    /// boundary -- for a ShortExtension GE (1-3 weeks, ENTRY/CONTROLLED/
+    /// PRE-RUNWAY roles, no Recovery role exists in that vocabulary at
+    /// all) this happens almost immediately. This is confirmed empirically
+    /// non-narrow: 23/25/26/27 weeks (all non-Recovery-terminal) fail
+    /// identically to 22 weeks; even 28 weeks (Recovery-terminal, 2 full
+    /// mesocycles) fails at a low (20km) baseline, because two mesocycles
+    /// of growth before the recovery cutback still leaves the reduced
+    /// value above a low Core boundary. Only 24 weeks (1 mesocycle,
+    /// Recovery-terminal, tested down to a 20km baseline) reliably lands
+    /// back under the boundary within this phase's own sample.
+    ///
+    /// No existing authority defines what Runway (or GE, or the Core
+    /// Week-1 target computation) should do when this margin is violated
+    /// -- reducing Runway's own entry evidence, capping GE's growth
+    /// earlier, or recomputing Core's Week-1 target relative to GE's exit
+    /// would each be a genuinely new product/numeric decision, not a
+    /// rounding/off-by-one/tolerance-units defect. Per this phase's own
+    /// STOP discipline (do not invent a value to make a horizon pass),
+    /// this is classified BLOCKED_ON_SHARED_NUMERIC_AUTHORITY, not fixed
+    /// here. Confirmed day-count-neutral (identical failure and identical
+    /// message on the completely unmodified 4D orchestrator).
+    /// </summary>
+    [Theory]
+    [InlineData(23)]
+    [InlineData(25)]
+    [InlineData(26)]
+    [InlineData(27)]
+    public async Task NonRecoveryTerminalShortHorizons_FailClosed_SameRunwayCoreBoundaryGapAs22Weeks(int totalWeeks)
+    {
+        var baseline = new LongHorizonGeEntryBaselineInput(26, 8, 5);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ExecuteAsync(totalWeeks, ReadinessProfile.ConsistencyNeeded, baseline));
+        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+    }
+
+    [Fact]
+    public async Task RecoveryTerminalHorizon_LowBaseline_StillFailsIfPeakBeforeRecoveryExceedsBoundary()
+    {
+        // 28 weeks = 8 GE weeks = 2 full mesocycles, ending on a Recovery week --
+        // yet still fails at a low baseline, proving "ends on Recovery" alone
+        // does not guarantee the boundary holds; the cumulative pre-recovery
+        // peak matters too. Confirms this is a genuine numeric-magnitude
+        // interaction, not a simple structural/off-by-one classification.
+        var lowBaseline = new LongHorizonGeEntryBaselineInput(20, 6, 5);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ExecuteAsync(28, ReadinessProfile.ConsistencyNeeded, lowBaseline));
+        Assert.Contains("no approved non-taper runway reduction rule exists", ex.Message);
+    }
+
+    [Fact]
+    public async Task RecoveryTerminalHorizon_TwentyFourWeeks_LowBaseline_SucceedsBecauseRecoveryLandsUnderBoundary()
+    {
+        var lowBaseline = new LongHorizonGeEntryBaselineInput(20, 6, 5);
+        var schedule = await ExecuteAsync(24, ReadinessProfile.ConsistencyNeeded, lowBaseline);
+        var lastGe = schedule.Weeks.Last(w => w.Structural.Segment == LongHorizonSegmentType.LongHorizonGeneralEndurance);
+        Assert.True(lastGe.Structural.IsRecoveryWeek);
+        Assert.Equal(24, schedule.Weeks.Count);
+    }
+
     // ── Determinism ──────────────────────────────────────────────────────────
 
     [Fact]
