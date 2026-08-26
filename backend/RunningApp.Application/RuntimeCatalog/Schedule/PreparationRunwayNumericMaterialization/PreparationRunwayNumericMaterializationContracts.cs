@@ -59,7 +59,8 @@ internal sealed record PreparationRunwayNumericPolicy(
     double RoundingIncrementKm,
     double ContinuityToleranceKm,
     string RoundingRule,
-    IReadOnlyDictionary<string, PreparationRunwayNumericRuleClassification> RuleClassifications);
+    IReadOnlyDictionary<string, PreparationRunwayNumericRuleClassification> RuleClassifications,
+    double LongRunShareTolerance);
 
 internal sealed record PreparationRunwayNumericMaterializationRequest<TKey>(
     PreparationRunwayAllocationProfile Profile,

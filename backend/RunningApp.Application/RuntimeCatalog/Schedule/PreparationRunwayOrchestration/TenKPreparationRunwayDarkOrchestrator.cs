@@ -260,7 +260,7 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
             }
             var numeric = _numericStage.Materialize(new PreparationRunwayNumericMaterializationRequest<PreparationRunwayBlockType>(
                 profile.Value, structural.Weeks, startingEvidence, coreNumericTarget,
-                TenKPreparationRunwayNumericPolicyFactory.Build(), request.Unit));
+                TenKPreparationRunwayNumericPolicyFactory.Build(request.Candidate), request.Unit));
             if (!numeric.IsSuccess)
                 return Fail(TenKPreparationRunwayOrchestrationStage.NumericMaterialization,
                     TenKPreparationRunwayOrchestrationFailureCode.NumericMaterializationFailed,

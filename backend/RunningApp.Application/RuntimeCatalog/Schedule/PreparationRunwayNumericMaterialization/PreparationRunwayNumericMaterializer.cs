@@ -84,10 +84,25 @@ internal static class PreparationRunwayNumericMaterializer
                         $"Week {weeks[index].RunwayWeekNumber} would reduce the long run without an approved settle rule.", trace);
                 }
 
+                // `share` is a ratio (0..1), not a km quantity -- it needs a
+                // ratio-scale tolerance, not the km-scale ContinuityToleranceKm
+                // epsilon (meant for exact sum-reconciliation checks). Each
+                // policy now owns its own LongRunShareTolerance explicitly:
+                // Default/ThreeDayIntermediate/BeginnerFourDay keep the exact
+                // prior numeric behavior (a governance test asserts one of
+                // them still rejects a real violation at the original tight
+                // margin -- see the direction-matrix diagnostic test in
+                // LongHorizonCoreWeekOneEvidenceAuthorityDiagnosticTests).
+                // FiveDayIntermediate (Phase 10K-FREQ.6D.10) needs a wider,
+                // still-non-invented tolerance because FREQ.6C approved
+                // exactly two 5D long-run figures (28% selection, 36% hard
+                // cap) with no separate preferred-minimum, so its floor sits
+                // exactly at the selection share with zero nominal gap -- see
+                // TenKPreparationRunwayNumericPolicyFactory for the derivation.
                 var share = longRun / weekly;
-                if (share + policy.ContinuityToleranceKm < policy.LongRunPreferredMinimumShare ||
-                    share - policy.ContinuityToleranceKm > policy.LongRunPreferredMaximumShare ||
-                    share - policy.ContinuityToleranceKm > policy.LongRunHardCapShare)
+                if (share + policy.LongRunShareTolerance < policy.LongRunPreferredMinimumShare ||
+                    share - policy.LongRunShareTolerance > policy.LongRunPreferredMaximumShare ||
+                    share - policy.LongRunShareTolerance > policy.LongRunHardCapShare)
                 {
                     return Fail<TKey>(PreparationRunwayNumericMaterializationFailureCode.LongRunShareViolation,
                         $"Week {weeks[index].RunwayWeekNumber} long-run share {share:P2} is outside the approved range.", trace);

@@ -103,6 +103,36 @@ public sealed record VolumeSafetyPolicy(
         RoundingIncrementKm: 0.5d,
         RoundingRule: "3d_round_nearest_0.5km_then_reconcile_and_revalidate");
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.10 — implements the already-approved FREQ.6C
+    /// Intermediate×5D numeric authority (`PHASE_10K_FREQ_6C_INTERMEDIATE_5D_NUMERIC_DECISION_CLOSURE.md`
+    /// §A). <see cref="GoldenFixtureStartingVolumeKm"/> is the FREQ.6C
+    /// missing-readiness anchor itself (26.0, self-referential per that
+    /// closure — not borrowed from the 4D golden fixture); <see cref="ResolvedPeakReference"/>
+    /// is FREQ.6C's own 44.5km peak reference. FREQ.6C approved exactly two
+    /// long-run share figures (28% selection, 36% hard cap) — no separate
+    /// "preferred range" was calibrated for 5D, so the preferred
+    /// minimum/maximum bounds below reuse those same two approved figures
+    /// rather than inventing a third number: the preferred range collapses
+    /// to exactly [28%, 36%], with the deterministic selection target sitting
+    /// at its own lower edge. No new numeric constant appears anywhere in
+    /// this record.
+    /// </summary>
+    public static VolumeSafetyPolicy FiveDayIntermediate { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 26.0d,
+        ResolvedPeakReference: new(44.5d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.28d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.36d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
     public static VolumeSafetyPolicy BeginnerFourDay { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,
         HardMaxWeeklyIncreaseRatio: 0.08d,

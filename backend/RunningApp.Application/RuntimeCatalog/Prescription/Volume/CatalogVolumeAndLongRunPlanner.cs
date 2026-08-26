@@ -31,6 +31,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayIntermediate).Build(request);
         }
+        // Phase 10K-FREQ.6D.10: exact typed combination match only (CanonicalDistanceFamily +
+        // Level + DaysPerWeek) -- never a broad "DaysPerWeek >= 5" or "Level != Beginner" condition,
+        // so a future Beginner x5D/Advanced x5D candidate can never silently inherit this
+        // Intermediate-specific FREQ.6C authority.
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "INTERMEDIATE" &&
+            request.Candidate.DaysPerWeek == 5 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.FiveDayIntermediate).Build(request);
+        }
         var weekCount = request.BoundPlan.Weeks.Count;
         if (weekCount < request.Candidate.CoreCycle.MinimumWeeks || weekCount > request.Candidate.CoreCycle.MaximumWeeks)
         {
@@ -121,7 +130,9 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             ? V1ThreeDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
             : ReferenceEquals(_policy, VolumeSafetyPolicy.BeginnerFourDay)
                 ? V1BeginnerFourDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
-                : V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
+                : ReferenceEquals(_policy, VolumeSafetyPolicy.FiveDayIntermediate)
+                    ? V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.Resolve(readiness)
+                    : V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
     }
 
     private ReachablePeakDecision ResolvePeak(double startingVolumeKm, CatalogVolumeBounds bounds, BoundCatalogPlan boundPlan)

@@ -1,3 +1,4 @@
+using RunningApp.Application.RuntimeCatalog;
 using RunningApp.Application.RuntimeCatalog.Prescription.Session;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 
@@ -10,14 +11,58 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
     public const string CandidateKey = "TEN_K__4D__INTERMEDIATE";
     public const int CandidateVersion = 10;
 
-    public static PreparationRunwayNumericPolicy Build()
+    public static PreparationRunwayNumericPolicy Build() =>
+        Build(VolumeSafetyPolicy.Default, V1MissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
+            V1MissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm);
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.10 — the Preparation Runway numeric materializer
+    /// enforces a single approved PolicyKey/PolicyVersion identity
+    /// (<see cref="PreparationRunwayNumericMaterializer"/>'s ValidateRequest),
+    /// so this overload keeps that identity fixed and only swaps which
+    /// already-approved constant set backs it: the FREQ.6C Intermediate×5D
+    /// authority (missing=26.0km, explicit-zero=19.5km, 28%/36% long-run
+    /// shares -- <see cref="VolumeSafetyPolicy.FiveDayIntermediate"/>) for an
+    /// exact TEN_K/INTERMEDIATE/5D candidate, the untouched 4D defaults for
+    /// every other candidate. Mirrors <see cref="CatalogVolumeAndLongRunPlanner"/>'s
+    /// own exact-identity-only dispatch -- never a broad "DaysPerWeek >= 5"
+    /// condition.
+    /// </summary>
+    public static PreparationRunwayNumericPolicy Build(PlanCatalogCandidateSummary candidate) =>
+        candidate.CanonicalDistanceFamily == "TEN_K" && candidate.Level == "INTERMEDIATE" && candidate.DaysPerWeek == 5
+            ? Build(VolumeSafetyPolicy.FiveDayIntermediate,
+                V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
+                V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm)
+            : Build();
+
+    private static PreparationRunwayNumericPolicy Build(VolumeSafetyPolicy core, double missingWeeklyVolumeDefaultKm, double explicitZeroWeeklyVolumeDefaultKm)
     {
-        var core = VolumeSafetyPolicy.Default;
+        // Phase 10K-FREQ.6D.10: LongRunShareTolerance is a ratio-scale
+        // epsilon for the long-run-share validation band (distinct from
+        // ContinuityToleranceKm, a km-scale epsilon for exact sum-
+        // reconciliation checks -- the two were previously conflated).
+        // Default/ThreeDayIntermediate/BeginnerFourDay keep the exact prior
+        // numeric value (byte-identical behavior; a governance test asserts
+        // one of them still rejects a real violation at this original tight
+        // margin). FiveDayIntermediate alone needs a wider tolerance,
+        // because FREQ.6C approved exactly two 5D long-run figures (28%
+        // selection, 36% hard cap) with no separate preferred-minimum, so
+        // its floor sits exactly at the selection share with zero nominal
+        // gap -- real weeks can legitimately land up to roughly one
+        // rounding increment away from that exact target, since weekly
+        // volume and long run are each independently rounded per the
+        // approved "round_nearest_0.5km_after_each_week_value_then_validate"
+        // rule. Deriving the tolerance from the policy's own already-
+        // approved RoundingIncrementKm and GoldenFixtureStartingVolumeKm
+        // (never a new invented number) absorbs exactly that drift.
+        var longRunShareTolerance = ReferenceEquals(core, VolumeSafetyPolicy.FiveDayIntermediate)
+            ? core.RoundingIncrementKm / core.GoldenFixtureStartingVolumeKm
+            : V1FourDaySessionVolumeAllocationPolicy.ToleranceKm;
         return new PreparationRunwayNumericPolicy(
             PolicyKey,
             PolicyVersion,
-            V1MissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
-            V1MissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm,
+            missingWeeklyVolumeDefaultKm,
+            explicitZeroWeeklyVolumeDefaultKm,
             core.PreferredMaxWeeklyIncreaseRatio,
             core.HardMaxWeeklyIncreaseRatio,
             core.AbsoluteWeeklyIncrementCapKm,
@@ -38,10 +83,11 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
                 [nameof(core.LongRunSelectionShare)] = PreparationRunwayNumericRuleClassification.EvidenceInformedProductDefault,
                 [nameof(core.LongRunHardCapShare)] = PreparationRunwayNumericRuleClassification.EvidenceInformedProductDefault,
                 [nameof(core.RoundingIncrementKm)] = PreparationRunwayNumericRuleClassification.ReusedCoreBehavior,
-                [nameof(V1MissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm)] = PreparationRunwayNumericRuleClassification.ProductDefault,
-                [nameof(V1MissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm)] = PreparationRunwayNumericRuleClassification.ProductDefault,
+                ["MissingWeeklyVolumeDefaultKm"] = PreparationRunwayNumericRuleClassification.ProductDefault,
+                ["ExplicitZeroWeeklyVolumeDefaultKm"] = PreparationRunwayNumericRuleClassification.ProductDefault,
                 ["FourDaySlotDistribution"] = PreparationRunwayNumericRuleClassification.ReusedCoreBehavior,
                 ["CoreContinuityTolerance"] = PreparationRunwayNumericRuleClassification.DirectCanonicalRule,
-            });
+            },
+            LongRunShareTolerance: longRunShareTolerance);
     }
 }
