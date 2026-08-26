@@ -94,6 +94,38 @@ public sealed class TenKPreparationRunwayDarkOrchestrator5DTests
         Assert.True(Math.Abs(continuity.LongRunChangeKm) <= continuity.ToleranceKm);
     }
 
+    // Phase 10K-FREQ.6D.13 — proves the real dual-KEY/repeated-EASY identity
+    // (LaneOrdinal/SlotOrdinal) survives the full production Core-generation
+    // chain (CatalogWorkoutBinder -> CatalogSessionPrescriptionPlanner ->
+    // FinalPrescribedPlan) for real Core Week 1, using the same real
+    // TenKPreparationRunwayDarkOrchestrator every other test in this file
+    // uses -- the exact orchestrator FREQ.6D.11 traced the JIT collision
+    // through (via LongHorizon's shared BuildBoundedCoreSelection call site).
+    [Fact]
+    public async Task RealCoreWeekOne_DualKeyLanesAndRepeatedEasySlots_CarryDistinctCanonicalIdentity()
+    {
+        var request = await RequestAsync(15, "READY", weekly: 24d, longest: 9d);
+        var result = await Orchestrator().OrchestrateAsync(request);
+
+        Assert.True(result.IsSuccess, $"{result.Failure?.Stage}/{result.Failure?.Code}: {result.Failure?.Reason}");
+        var coreWeekOne = result.CoreResult!.PrescriptionResult.FinalPrescribedPlan.Weeks.OrderBy(w => w.WeekNumber).First();
+
+        var keySessions = coreWeekOne.Sessions.Where(s => s.StructuralRole == "KEY_SESSION").ToList();
+        Assert.Equal(2, keySessions.Count);
+        Assert.All(keySessions, s => Assert.NotNull(s.LaneOrdinal));
+        Assert.Equal([0, 1], keySessions.Select(s => s.LaneOrdinal!.Value).OrderBy(v => v));
+
+        // SlotOrdinal disambiguates every slot in the week -- including the
+        // two EASY_SUPPORT occurrences, where LaneOrdinal is null by design.
+        Assert.All(coreWeekOne.Sessions, s => Assert.NotNull(s.SlotOrdinal));
+        Assert.Equal(coreWeekOne.Sessions.Count, coreWeekOne.Sessions.Select(s => s.SlotOrdinal).Distinct().Count());
+
+        var easySessions = coreWeekOne.Sessions.Where(s => s.StructuralRole == "EASY_SUPPORT").ToList();
+        Assert.Equal(2, easySessions.Count);
+        Assert.All(easySessions, s => Assert.Null(s.LaneOrdinal));
+        Assert.NotEqual(easySessions[0].SlotOrdinal, easySessions[1].SlotOrdinal);
+    }
+
     // Phase 10K-FREQ.6D.7 originally exercised only the missing-evidence
     // case here, resolving to the (accidental, 4D-scoped) 16km fallback --
     // see the by-then-superseded comment this replaces. Phase 10K-FREQ.6D.9
