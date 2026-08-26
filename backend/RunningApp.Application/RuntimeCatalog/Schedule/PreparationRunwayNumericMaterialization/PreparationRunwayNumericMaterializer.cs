@@ -22,27 +22,28 @@ internal static class PreparationRunwayNumericMaterializer
 
             var weeks = request.MaterializedWeeks.OrderBy(w => w.RunwayWeekNumber).ToArray();
             var policy = request.Policy;
-            var startingWeekly = ResolveStartingWeeklyVolume(request.StartingLoadEvidence, policy);
+            var rawStartingWeekly = ResolveStartingWeeklyVolume(request.StartingLoadEvidence, policy);
             var targetWeekly = request.CoreWeekOneTarget.WeeklyVolumeKm;
-            trace.Add($"starting_weekly={startingWeekly:0.###}km; target_core_week_one={targetWeekly:0.###}km");
 
-            // There is no approved non-taper runway reduction coefficient.
-            // Fail closed instead of repurposing the Core taper or inventing a
-            // symmetric percentage when evidence and Core target conflict.
-            if (startingWeekly - targetWeekly > policy.ContinuityToleranceKm)
-            {
-                return Fail<TKey>(PreparationRunwayNumericMaterializationFailureCode.RunwayProgressionInfeasible,
-                    "Starting weekly volume exceeds Core Week 1 and no approved non-taper runway reduction rule exists.", trace);
-            }
+            // Phase 10K-FREQ.6D.16/FREQ.6D.17: there is no approved non-taper
+            // runway reduction coefficient, so Runway can never grow DOWN from
+            // an entry evidence above Core's boundary via its own interpolation.
+            // The approved resolution (FREQ.6D.16) is not a new reduction
+            // formula -- it clamps Runway's own starting point to the boundary
+            // it was already never allowed to exceed, reusing Core's own
+            // already-computed Week-1 target as the ceiling (never a new
+            // number). When evidence is already at or below the target this is
+            // a byte-identical no-op. The interpolation formula below already
+            // handles start == target correctly (a flat bridge), so no other
+            // code path changes.
+            var startingWeekly = Math.Min(rawStartingWeekly, targetWeekly);
+            trace.Add($"raw_starting_weekly={rawStartingWeekly:0.###}km; target_core_week_one={targetWeekly:0.###}km; effective_starting_weekly={startingWeekly:0.###}km");
 
-            var startingLongRun = ResolveStartingLongRun(
-                request.StartingLoadEvidence, startingWeekly, policy);
+            var rawStartingLongRun = ResolveStartingLongRun(
+                request.StartingLoadEvidence, rawStartingWeekly, policy);
             var targetLongRun = request.CoreWeekOneTarget.LongRunDistanceKm;
-            if (startingLongRun - targetLongRun > policy.ContinuityToleranceKm)
-            {
-                return Fail<TKey>(PreparationRunwayNumericMaterializationFailureCode.LongRunContinuityViolation,
-                    "Starting long run exceeds Core Week 1 and no approved runway reduction rule exists.", trace);
-            }
+            var startingLongRun = Math.Min(rawStartingLongRun, targetLongRun);
+            trace.Add($"raw_starting_long_run={rawStartingLongRun:0.###}km; target_long_run={targetLongRun:0.###}km; effective_starting_long_run={startingLongRun:0.###}km");
 
             var prescribed = new List<PreparationRunwayPrescribedWeek<TKey>>(weeks.Length);
             double? previousWeekly = null;
