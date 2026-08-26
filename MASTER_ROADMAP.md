@@ -67,14 +67,9 @@ Prior phase: `FREQ.6D.13` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.14` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_GE_IMPLEMENTED_AND_DARK_VERIFIED_PARTIAL`. Implemented the `FREQ.6D.12`-approved GE 5D structural/numeric policy (1 KEY + 3 EASY + 1 LONG, 44.5km target cap with plateau and 28%/36% long-run share both reused verbatim from `FREQ.6D.10`'s `VolumeSafetyPolicy.FiveDayIntermediate`, missing/explicit-zero → typed `PRODUCT_INELIGIBLE`), generalized `LongHorizonGeWeekDescriptor` off its own resolved EASY count rather than a hardcoded shape. Dark-verified the full 21/24/28/32/40/52 week matrix (35 new tests: structure, readiness matrices, cap/plateau, long-run share, GE→Runway and Runway→Core dual-KEY continuity exercising `FREQ.6D.13`'s own fix end-to-end, determinism, 4D zero-delta). Found and fixed three real gaps only surfaced by actual dark execution (missing `ExecutionPrescriptionIndex` wiring in this orchestrator's own separate Core pipeline, a non-candidate-aware Runway numeric-policy call, two independently-hardcoded "exactly 4 slots" validators). Found, and honestly excluded rather than hid, a genuine pre-existing, non-5D-specific 22-week Runway numeric-continuity gap (confirmed via direct 4D repro). Did **not** complete real PostgreSQL persistence for the 5D GE rolling-activation path specifically, or full adaptation/repair verification through that path — both disclosed as open, not a blocker.
 
-**Next phase**: `FREQ.6D.15` — **INTERMEDIATE×5D LONGHORIZON 22-WEEK CONTINUITY CLOSURE, REAL POSTGRESQL ROLLING VERIFICATION & PERSISTED ADAPTATION/REPAIR COMPLETION**. Phase type: **IMPLEMENTATION + REAL DATABASE VERIFICATION + DARK CLOSURE**. Completes `FREQ.6D.14`'s own disclosed remaining scope:
+Prior phase: `FREQ.6D.15` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_DARK_COMPLETION_BLOCKED_ON_SHARED_22_WEEK_NUMERIC_AUTHORITY`. Root-caused the 22-week gap: `PreparationRunwayNumericMaterializer` linearly interpolates from GE's exit volume to Core's independently-computed Week-1 target and fails closed with no reduction rule when GE's exit exceeds it. Proved this is systemic, not narrow — 23/25/26/27 weeks fail identically (any GE segment not ending on a Recovery week keeps climbing), even a Recovery-terminal 28-week horizon fails at a low baseline — and day-count-neutral (direct 4D repro fails identically). Classified as a genuine unresolved numeric authority gap and correctly did not invent a value to force a fix. Separately completed real PostgreSQL persistence/fresh-reload verification for the 5D GE rolling-activation window (`LongHorizonRollingInitialActivationRuntime`, which never reaches the broken boundary), fixing two real gaps found only via actual dark/DB execution (a role-key collision silently merging a 5D week's 3rd EASY session into the 2nd; a reload-projection that silently dropped the FREQ.6D.13 lineage columns despite writing them correctly). Did **not** complete persisted adaptation/repair verification — `LongHorizonRollingCheckpointRuntime` not touched.
 
-- Diagnose and, only if existing authority permits, fix the 22-week Runway numeric-continuity gap (generic, not `if horizon==22`).
-- Relax `LongHorizonRollingInitialActivationInputValidator`'s and `LongHorizonRollingCheckpointRuntime`'s own separate `DaysPerWeek != 4` gates (the same class of fix `FREQ.6D.13` made to `IsValidFourDayAvailability`), and thread `daysPerWeek` into their own `LongHorizonStructuralMaterializer.MaterializeAsync` call sites.
-- Real PostgreSQL persist/reload proof for a 5D GE rolling window (one short — 21 or 24 — and one long — prefer 52-week — case), with a genuinely fresh reload (disposed/cleared EF context).
-- Adaptation (Progress/Maintain/Reduce) and repair-lineage regression verified through that real persisted 5D path.
-
-`FREQ.6D.15` is scheduled only — not started. No production code, migration, or public activation is authorized until that phase itself executes.
+**Next phase**: two independent, well-scoped continuations exist, neither yet scheduled — (1) a dedicated PRODUCT_DECISION/NUMERIC_DECISION phase to resolve the shared Preparation Runway/GE numeric-continuity authority gap `FREQ.6D.15` root-caused (a genuine new-authority decision, not an implementation task, and a prerequisite for any full 21-52 dark matrix); (2) a continuation implementation phase extending real-Postgres verification to `LongHorizonRollingCheckpointRuntime` (5D gate relaxation, persisted adaptation, persisted repair) — achievable independently of (1). `NEXT_PHASE_NOT_YET_SCHEDULED` — no production code, migration, or public activation is authorized until a future phase explicitly schedules and executes one of these.
 
 ---
 
@@ -610,18 +605,26 @@ FREQ.6D.14 (DONE, PARTIAL)      → IMPLEMENTATION + DARK INTEGRATION VERIFICATI
                                     full adaptation/repair verification NOT completed -- disclosed as
                                     remaining scope, not a blocker. Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_GE_IMPLEMENTED_AND_DARK_VERIFIED_PARTIAL.
-FREQ.6D.15 (SCHEDULED)          → IMPLEMENTATION + REAL DATABASE VERIFICATION + DARK CLOSURE:
-                                    INTERMEDIATE×5D LONGHORIZON 22-WEEK CONTINUITY CLOSURE, REAL
-                                    POSTGRESQL ROLLING VERIFICATION & PERSISTED ADAPTATION/REPAIR
-                                    COMPLETION. Completes FREQ.6D.14's disclosed remaining scope only --
-                                    22-week Runway numeric-continuity gap, real Postgres 5D GE
-                                    rolling-activation persistence/reload, persisted adaptation/repair
-                                    verification. Does not reopen GE structure/cap/share/PRODUCT_INELIGIBLE,
-                                    LaneOrdinal/SlotOrdinal or JIT dual-KEY architecture, the applied
-                                    migration, ExecutionPrescriptionIndex architecture, or Core/Runway
-                                    product structure. No public 21+ activation. Scheduled only; not started.
-NEXT (NOT_YET_SCHEDULED)        → after FREQ.6D.15 closes: real environment / public HTTP verification
-                                    + public activation for Intermediate×5D LongHorizon 21-52.
+FREQ.6D.15 (DONE, PARTIAL)      → IMPLEMENTATION + REAL DATABASE VERIFICATION + DARK CLOSURE:
+                                    root-caused the 22-week gap to a genuine, pre-existing, day-count-
+                                    neutral Preparation Runway numeric-continuity authority gap (GE's
+                                    forward-only growth vs Runway's forward-only interpolation vs Core's
+                                    fixed boundary) -- proved systemic (23/25/26/27wk fail identically;
+                                    even Recovery-terminal 28wk fails at low baseline), confirmed via
+                                    direct 4D repro. Correctly did not invent a value to force a fix.
+                                    Completed real PostgreSQL persistence + fresh reload for the 5D GE
+                                    rolling-activation window (short + 52wk long case), fixing 2 real
+                                    gaps (EASY role-key collision; reload projection silently dropping
+                                    FREQ.6D.13 lineage columns). Persisted adaptation/repair NOT
+                                    completed. Classification:
+                                    INTERMEDIATE_5D_LONGHORIZON_DARK_COMPLETION_BLOCKED_ON_SHARED_22_
+                                    WEEK_NUMERIC_AUTHORITY.
+NEXT (NOT_YET_SCHEDULED)        → two independent continuations: (1) PRODUCT_DECISION/NUMERIC_DECISION
+                                    phase resolving the shared Runway/GE numeric-continuity gap; (2)
+                                    continuation implementation phase extending real-Postgres
+                                    verification to the checkpoint-continuation runtime (adaptation/
+                                    repair). Then real environment / public HTTP verification + public
+                                    activation for Intermediate×5D LongHorizon 21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
