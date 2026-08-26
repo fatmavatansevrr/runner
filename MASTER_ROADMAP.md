@@ -69,9 +69,9 @@ Prior phase: `FREQ.6D.14` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.15` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_DARK_COMPLETION_BLOCKED_ON_SHARED_22_WEEK_NUMERIC_AUTHORITY`. Root-caused the 22-week gap: `PreparationRunwayNumericMaterializer` linearly interpolates from GE's exit volume to Core's independently-computed Week-1 target and fails closed with no reduction rule when GE's exit exceeds it. Proved this is systemic, not narrow — 23/25/26/27 weeks fail identically (any GE segment not ending on a Recovery week keeps climbing), even a Recovery-terminal 28-week horizon fails at a low baseline — and day-count-neutral (direct 4D repro fails identically). Classified as a genuine unresolved numeric authority gap and correctly did not invent a value to force a fix. Separately completed real PostgreSQL persistence/fresh-reload verification for the 5D GE rolling-activation window (`LongHorizonRollingInitialActivationRuntime`, which never reaches the broken boundary), fixing two real gaps found only via actual dark/DB execution (a role-key collision silently merging a 5D week's 3rd EASY session into the 2nd; a reload-projection that silently dropped the FREQ.6D.13 lineage columns despite writing them correctly). Did **not** complete persisted adaptation/repair verification — `LongHorizonRollingCheckpointRuntime` not touched.
 
-**Next phase**: `FREQ.6D.16` — **SHARED 10K LONGHORIZON 22-WEEK GE→RUNWAY NUMERIC CONTINUITY PRODUCT / NUMERIC AUTHORITY DECISION**. Phase type: **EVIDENCE + PRODUCT_DECISION + NUMERIC_DECISION**. Resolves the shared Preparation Runway/GE numeric-continuity authority gap `FREQ.6D.15` root-caused — evidence and decision only, no production code, no test-fix implementation, no migration, no routing, no catalog content, no GE/Core/Runway structural change.
+Prior phase: `FREQ.6D.16` — Execution Status `DONE`, Final Classification `SHARED_10K_LONGHORIZON_22_WEEK_NUMERIC_AUTHORITY_APPROVED`. Resolved the shared 22-week GE→Runway numeric-continuity gap via real numeric traces (temporary, uncommitted, read-only diagnostics against production code, fully reverted — zero residual code changes). Root-caused two compounding issues in `PreparationRunwayNumericMaterializer.Materialize`: Runway's starting evidence is always the raw, unclamped GE exit with no reconciliation against Core's own Week-1 target; the reachability check reuses a 0.001km floating-point sum-reconciliation epsilon (`V1FourDaySessionVolumeAllocationPolicy.ToleranceKm`) for an unrelated product-level question — the same class of mistake `FREQ.6D.10` already fixed once, on a different field. Discovered a previously-unnoticed 4D/24-week long-run edge case (Recovery week's reduced long run still exceeds Core's target by exactly one rounding increment) alongside the already-known 22/23-week weekly-volume failures. Approved a generic, no-new-number rule: clamp Runway's starting weekly volume and long run to Core's own already-computed Week-1 target whenever GE's exit would otherwise exceed it — day-count-neutral, conservative (only reduces, never raises), zero GE/Core/Runway structural change. Evidence/decision only, no production code authored.
 
-`FREQ.6D.16` is scheduled only — not started. The second FREQ.6D.15-disclosed continuation (real-Postgres verification for `LongHorizonRollingCheckpointRuntime` — persisted adaptation/repair) remains a separate, still-unscheduled implementation phase, achievable independently of `FREQ.6D.16`'s decision.
+**Next phase**: an implementation phase applying `FREQ.6D.16`'s approved clamp, re-verifying the full 21-52 week dark matrix at a representative baseline range for both 4D and 5D (not only `FREQ.6D.14`'s forced near-cap workaround), then completing `FREQ.6D.15`'s own disclosed real-Postgres persisted adaptation/repair scope (`LongHorizonRollingCheckpointRuntime`). Not yet scheduled as a Phase ID — no production code, migration, or public activation is authorized until that phase itself executes.
 
 ---
 
@@ -621,12 +621,25 @@ FREQ.6D.15 (DONE, PARTIAL)      → IMPLEMENTATION + REAL DATABASE VERIFICATION 
                                     completed. Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_DARK_COMPLETION_BLOCKED_ON_SHARED_22_
                                     WEEK_NUMERIC_AUTHORITY.
-NEXT (NOT_YET_SCHEDULED)        → two independent continuations: (1) PRODUCT_DECISION/NUMERIC_DECISION
-                                    phase resolving the shared Runway/GE numeric-continuity gap; (2)
-                                    continuation implementation phase extending real-Postgres
-                                    verification to the checkpoint-continuation runtime (adaptation/
-                                    repair). Then real environment / public HTTP verification + public
-                                    activation for Intermediate×5D LongHorizon 21-52.
+FREQ.6D.16 (DONE)               → EVIDENCE + PRODUCT_DECISION + NUMERIC_DECISION: resolved the shared
+                                    22-week gap via real numeric traces (temporary, uncommitted,
+                                    reverted diagnostics -- zero residual code changes). Root cause:
+                                    Runway's starting evidence is the raw, unclamped GE exit with no
+                                    reconciliation against Core's own Week-1 target; the reachability
+                                    check reuses a 0.001km sum-reconciliation epsilon for an unrelated
+                                    product question (same class of mistake as FREQ.6D.10's own
+                                    LongRunShareTolerance fix, different field). Found a previously-
+                                    unnoticed 4D/24wk long-run edge case alongside the known 22/23wk
+                                    failures. Approved: clamp Runway's starting weekly/long-run to
+                                    Core's own Week-1 target whenever GE's exit would exceed it -- no
+                                    new number, day-count-neutral, conservative, zero GE/Core/Runway
+                                    structural change. No production code authored. Classification:
+                                    SHARED_10K_LONGHORIZON_22_WEEK_NUMERIC_AUTHORITY_APPROVED.
+NEXT (NOT_YET_SCHEDULED)        → implementation phase applying FREQ.6D.16's approved clamp, full
+                                    21-52 dark re-verification at a representative baseline range (4D
+                                    + 5D), then FREQ.6D.15's own disclosed persisted adaptation/repair
+                                    completion. Then real environment / public HTTP verification +
+                                    public activation for Intermediate×5D LongHorizon 21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
