@@ -48,10 +48,23 @@ public sealed class LongHorizonDarkExecutionOrchestratorTests
     [Fact]
     public void MissingBaseline_ThrowsInsteadOfInventingADefault()
     {
+        // Phase 10K-FREQ.6D.14: missing readiness now fails closed as the typed
+        // LongHorizonGeMissingReadinessProductIneligibleException (still an
+        // InvalidOperationException, per FREQ.6D.12's approved PRODUCT_INELIGIBLE
+        // decision) instead of a generic, untyped one.
         var descriptors = LongHorizonGeStructuralSelector.Select(4, ReadinessProfile.ConsistencyNeeded);
-        var ex = Assert.Throws<InvalidOperationException>(() =>
+        var ex = Assert.Throws<LongHorizonGeMissingReadinessProductIneligibleException>(() =>
             LongHorizonGeNumericExecutor.Execute(descriptors, new LongHorizonGeEntryBaselineInput(null, null, null)));
-        Assert.Contains("RecentWeeklyVolumeKm", ex.Message);
+        Assert.Equal("LONG_HORIZON_GE_MISSING_READINESS_PRODUCT_INELIGIBLE", ex.Code);
+    }
+
+    [Fact]
+    public void ExplicitZeroBaseline_ThrowsTypedProductIneligible()
+    {
+        var descriptors = LongHorizonGeStructuralSelector.Select(4, ReadinessProfile.ConsistencyNeeded);
+        var ex = Assert.Throws<LongHorizonGeExplicitZeroReadinessProductIneligibleException>(() =>
+            LongHorizonGeNumericExecutor.Execute(descriptors, new LongHorizonGeEntryBaselineInput(0, null, null)));
+        Assert.Equal("LONG_HORIZON_GE_EXPLICIT_ZERO_READINESS_PRODUCT_INELIGIBLE", ex.Code);
     }
 
     [Theory]
