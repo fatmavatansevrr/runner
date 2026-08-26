@@ -63,24 +63,20 @@ Prior phase: `FREQ.6D.4D.5C` — Execution Status `DONE`, Final Classification `
 
 Prior phase: `FREQ.6D.4D.5` (Split E, partial) — Execution Status `DONE (PARTIAL)`, Final Classification `FREQ6D4D_SPLIT_E_PARTIAL_RUNTIME_DISCOVERY_IMPLEMENTED_PUBLIC_ACTIVATION_BLOCKED`. Authored the complete real Intermediate×5D PlanCatalog chain — `RUN_LAYOUT_5D`, `TEN_K__5D__INTERMEDIATE` combination, dual-lane progression, all 8 real production profiles promoted `VALIDATED`, a real CLI-published `1.1.0` release with `ExecutionPrescriptions` present for all 8 profiles — 1,510/1,510 PlanCatalog.Tests. Wired RunningApp's runtime published-bundle discovery end to end (`IPublishedTemplateBundleLoader`/`PublishedTemplateBundleLoader`, threaded through `CatalogPreviewGenerator`'s full constructor chain, DI, `PlanCatalog:PublishedBundleReleaseVersion` config, deployment packaging) — the exact gap Split C disclosed, now closed, though no candidate reaches it in production yet. Attempted public activation of `TEN_K__5D__INTERMEDIATE` for the 8-14 week Core route only (widest activation the user approved); real end-to-end HTTP testing (not static analysis) found `CatalogWeekSkeletonCalendarMaterializer` hardcodes exactly one `KEY_SESSION` slot per week in both its validation and its date-assignment backtracking algorithm — a real 5D week has two (LaneOrdinal 0/1), which would either be rejected outright or, if the count guard were removed, silently collide both slots onto the same calendar date. The routing widening was reverted rather than shipped with a confirmed live 500. Full regression: 3,612/3,613 RuntimeCatalog (1 pre-existing unrelated `Sw09` failure, unrelated to 5D), 1,510/1,510 PlanCatalog.
 
-**Next phase**: `FREQ.6D.13` — **INTERMEDIATE×5D LONGHORIZON ROLLING LINEAGE, JIT DUAL-KEY, EXECUTION CONTEXT & GE IMPLEMENTATION WAVE**. Phase type: **IMPLEMENTATION + DARK INTEGRATION VERIFICATION**. `FREQ.6D.12` closed the last open product/numeric decision — `INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTATION_READY`. `FREQ.6D.13` is the combined implementation wave itself, scoped exactly to:
+Prior phase: `FREQ.6D.13` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_ROLLING_LINEAGE_AND_JIT_DUAL_KEY_IMPLEMENTED_AND_VERIFIED_GE_IMPLEMENTATION_REMAINING`. Implemented and real-PostgreSQL-verified rolling-session lineage persistence (5 new nullable columns, zero 4D delta) and the JIT dual-KEY collision fix (`BuildBoundedCoreSelection` now matches by exact `SlotOrdinal` identity). Discovered and fixed two real gaps blocking any 5D candidate from reaching real Core generation via LongHorizon rolling-activation: `PublishedBundleReleaseVersion` threading (correcting `FREQ.6D.11`'s stale finding that `ExecutionPrescriptionIndex` propagation was entirely missing — it was already present since `FREQ.6D.7`, just unreachable from this one call site) and `IsValidFourDayAvailability`'s hardcoded `==4` gate. Did **not** implement `FREQ.6D.12`'s approved GE 5D structural/numeric policy or the dependent dark 21-52 week verification — deliberately scoped out rather than risk an incomplete change to already-shipped 4D GE logic, disclosed explicitly as remaining work, not a blocker (no architecture/product/numeric-authority contradiction found).
 
-- EF migration for the approved `LongHorizonRollingSessionState` rolling-session lineage (`FREQ.6D.11` §27).
-- `LaneOrdinal` + `SlotOrdinal` persistence.
-- Approved stage/profile lineage (`ProgressionStageKey`, `PrescriptionProfileKey`/`Version`).
-- JIT identity: `(StructuralRole, LaneOrdinal, SlotOrdinal)` (`FREQ.6D.11` §28), replacing the raw-`StructuralRole` grouping that collapses dual-KEY lanes today.
-- Exact `ExecutionPrescriptionIndex` propagation into the shared `TenKPreparationRunwayDarkOrchestrator` (`FREQ.6D.11` §20/§29).
-- 4D-only LongHorizon cardinality/support-gate generalization (`FREQ.6D.11` §7/§60 — 21 lines/14 files, each individually classified, no mechanical `==4` deletion).
-- Approved 5D GE structure: 1 KEY + 3 EASY + 1 LONG, constant, no frequency ramp (`FREQ.6D.12` §34).
+**Next phase**: a continuation implementation phase completing `FREQ.6D.13`'s own disclosed remaining scope:
+
+- GE 5D structural implementation: generalize `LongHorizonGeWeekDescriptor`'s fixed 4-role enum-keyed `Roles` dictionary (`LongHorizonGeStructuralContracts.cs`, `LongHorizonGeStructuralSelector.cs`, `LongHorizonGeNumericExecutor.cs`, `LongHorizonFullNumericOrchestrator.cs`, `LongHorizonStructuralMaterializer.cs`) to the approved 1 KEY + 3 EASY + 1 LONG 5D shape (`FREQ.6D.12` §34).
 - Approved positive-readiness GE numeric behavior (direct volume reuse, existing growth ratios, `FREQ.6D.12` §35-36).
-- Missing/explicit-zero readiness: `PRODUCT_INELIGIBLE` (`FREQ.6D.12` §16/§17/§39) — not a new fallback default.
-- 44.5km target cap (GE plateau ceiling, reusing the existing `FREQ.6C`/`FREQ.6D.10` peak reference, `FREQ.6D.12` §22).
-- 28%/36% long-run authority (reusing the existing `FREQ.6C`/`FREQ.6D.9`/`.10` Intermediate×5D-specific share, `FREQ.6D.12` §26/§37).
-- GE→Runway→Core continuity (existing one-sided upper-bound validator, generalized only for the 5-session week-slot count, `FREQ.6D.12` §25/§38).
-- Dark 21/24/32/52-week verification (`FREQ.6D.12` §49).
+- Missing/explicit-zero readiness: typed `PRODUCT_INELIGIBLE` response (`FREQ.6D.12` §16/§17/§39) — the underlying fail-closed rule already exists; needs a typed result, not a new fallback default.
+- 44.5km target cap and 28%/36% long-run authority wiring (reusing existing `FREQ.6C`/`FREQ.6D.9`/`.10` references, `FREQ.6D.12` §22/§26/§37).
+- Remaining 4D-only LongHorizon gates not reached by `FREQ.6D.13` (`LongHorizonPublicPlanService.cs`, `LongHorizonStructuralMaterializer.cs`'s `RUN_LAYOUT_4D`/`CandidateKey` literals, `FREQ.6D.11` §7/§60).
+- Dark 21/24/32/52-week verification (`FREQ.6D.12` §49), plus a full LongHorizon-rolling-activation-level dual-KEY dark test (the direct Core-orchestrator level is already proven by `FREQ.6D.13`).
+- Session-level persistence round-trip proof for the five new lineage columns on a real 5D plan.
 - Historical 4D zero-delta.
 
-`FREQ.6D.13` is scheduled only — not started. No production code, migration, or public activation is authorized until that phase itself executes.
+Not yet scheduled as a Phase ID (`NEXT_PHASE_NOT_YET_SCHEDULED`) — no production code, migration, or public activation is authorized until that phase itself executes.
 
 ---
 
@@ -588,12 +584,19 @@ FREQ.6D.12 (DONE)                → EVIDENCE + PRODUCT_DECISION + NUMERIC_DECIS
                                     No code touched. Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_GE_PRODUCT_AND_NUMERIC_POLICY_APPROVED /
                                     INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTATION_READY.
-FREQ.6D.13 (SCHEDULED)          → IMPLEMENTATION + DARK INTEGRATION VERIFICATION: the combined LongHorizon
-                                    implementation wave (FREQ.6D.11 Splits A-D: schema+migration, JIT
-                                    generalization, execution-index propagation, gate relaxation -- plus
-                                    FREQ.6D.12's GE structure/numeric policy, dark 21/24/32/52-week
-                                    verification, 4D zero-delta). Scheduled only; not started. Then public
-                                    activation + real PostgreSQL E2E.
+FREQ.6D.13 (DONE, PARTIAL)      → IMPLEMENTATION + DARK INTEGRATION VERIFICATION: implemented and real-
+                                    PostgreSQL-verified rolling-session lineage persistence (5 new nullable
+                                    columns) and the JIT dual-KEY collision fix (SlotOrdinal-exact identity
+                                    replacing StructuralRole-grouped FIFO dequeue). Fixed two real gaps
+                                    (PublishedBundleReleaseVersion threading, IsValidFourDayAvailability's
+                                    hardcoded ==4). GE 5D structural/numeric policy (FREQ.6D.12) and the
+                                    dependent dark 21-52wk verification NOT implemented -- disclosed as
+                                    remaining scope, not a blocker. Classification:
+                                    INTERMEDIATE_5D_LONGHORIZON_ROLLING_LINEAGE_AND_JIT_DUAL_KEY_IMPLEMENTED_
+                                    AND_VERIFIED_GE_IMPLEMENTATION_REMAINING.
+NEXT (NOT_YET_SCHEDULED)        → continuation implementation phase: GE 5D structural/numeric
+                                    implementation, dark 21/24/32/52-week verification, remaining 4D-only
+                                    gates, then public activation + real PostgreSQL E2E.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
