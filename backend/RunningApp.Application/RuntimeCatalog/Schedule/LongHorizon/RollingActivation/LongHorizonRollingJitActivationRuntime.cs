@@ -65,7 +65,7 @@ internal sealed class LongHorizonRollingJitActivationRuntime : ILongHorizonRolli
         }
         stages.Add("WindowSelection");
 
-        if (!IsValidFourDayAvailability(request.CurrentAvailability, request.LongRunDay))
+        if (!IsValidAvailability(request.CurrentAvailability, request.LongRunDay, request.DaysPerWeek))
         {
             stages.Add("AvailabilityValidation");
             return Task.FromResult(Blocked(request, contextVersion, stages,
@@ -463,8 +463,16 @@ internal sealed class LongHorizonRollingJitActivationRuntime : ILongHorizonRolli
         }
     }
 
-    private static bool IsValidFourDayAvailability(IReadOnlyList<DayOfWeek> availability, DayOfWeek longRunDay) =>
-        availability.Distinct().Count() == 4 && availability.Contains(longRunDay);
+    /// <summary>
+    /// Phase 10K-FREQ.6D.13 — generalized from the prior hardcoded
+    /// <c>== 4</c> literal: the required distinct-availability-day count is
+    /// derived from the candidate's own <c>DaysPerWeek</c> (the resolved
+    /// RunLayout cardinality), never a broad "4 or 5" widening. Every
+    /// existing caller that omits the new field defaults to 4, preserving
+    /// exact prior behavior for every historical/live 4D plan.
+    /// </summary>
+    private static bool IsValidAvailability(IReadOnlyList<DayOfWeek> availability, DayOfWeek longRunDay, int daysPerWeek) =>
+        availability.Distinct().Count() == daysPerWeek && availability.Contains(longRunDay);
 
     private static bool HasUnresolvedPaceOrGoal(IReadOnlyList<RuntimeConditionResolutionResult> conditionResults, out LongHorizonReasonCode? reason)
     {

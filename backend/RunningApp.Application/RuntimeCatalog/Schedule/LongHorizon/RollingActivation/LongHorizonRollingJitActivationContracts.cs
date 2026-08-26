@@ -61,6 +61,9 @@ internal sealed record LongHorizonRollingJitActivationRequest
     public required LongHorizonSafetyState SafetyState { get; init; }
     public required IReadOnlyList<RuntimeConditionResolutionResult> ConditionResults { get; init; }
 
+    /// <summary>Phase 10K-FREQ.6D.13 — the candidate's own resolved session cardinality, replacing the prior hardcoded 4-day availability assumption. Defaults to 4 for every existing caller (zero-delta).</summary>
+    public int DaysPerWeek { get; init; } = 4;
+
     // Populated only when the selected window includes any Runway week AND
     // no compatible ExistingRunwayPrescription is supplied (first Runway entry).
     public PreparationRunwayCoreWeekOneNumericTarget? ResolvedCoreWeekOneTarget { get; init; }

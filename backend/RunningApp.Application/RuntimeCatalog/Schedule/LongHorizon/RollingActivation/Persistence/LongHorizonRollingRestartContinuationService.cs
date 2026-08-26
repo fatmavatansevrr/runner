@@ -104,7 +104,8 @@ internal sealed class LongHorizonRollingRestartContinuationService
         DayOfWeek longRunDay,
         string catalogRootPath,
         CancellationToken cancellationToken = default,
-        IReadOnlyDictionary<int, LongHorizonNumericLifecycleState>? lifecycleStatesOverride = null)
+        IReadOnlyDictionary<int, LongHorizonNumericLifecycleState>? lifecycleStatesOverride = null,
+        string? publishedBundleReleaseVersion = null)
     {
         var snapshot = await _repository.LoadRestartSnapshotAsync(planStateId, cancellationToken)
             ?? throw new LongHorizonRollingPersistenceCorruptionException($"No durable state exists for plan {planStateId}.");
@@ -138,6 +139,7 @@ internal sealed class LongHorizonRollingRestartContinuationService
             ExistingRunwayPrescription = state.RunwayPrescription,
             ExistingRunwayCalendarProjection = state.RunwayCalendarProjection,
             CatalogRootPath = catalogRootPath,
+            PublishedBundleReleaseVersion = publishedBundleReleaseVersion,
             Candidate = snapshot.Candidate,
         }, cancellationToken);
 

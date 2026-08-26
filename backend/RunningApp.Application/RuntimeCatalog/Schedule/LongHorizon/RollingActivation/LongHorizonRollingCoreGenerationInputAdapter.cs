@@ -23,7 +23,8 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
         TargetFinishTimeSource? targetFinishTimeSource,
         RecentRaceInput? recentRace,
         IReadOnlyList<DayOfWeek> preferredDays,
-        DayOfWeek longRunDay)
+        DayOfWeek longRunDay,
+        int daysPerWeek = 4)
     {
         if (validatedLoad.ValidationStatus != LongHorizonValidationStatus.Valid
             || validatedLoad.WeeklyVolumeKm is null || validatedLoad.LongRunKm is null)
@@ -40,7 +41,7 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
             Level = RunningBackground.Intermediate,
-            DaysPerWeek = 4,
+            DaysPerWeek = daysPerWeek,
             Unit = DistanceUnit.Km,
             StartDate = startDate,
             RaceDate = raceDate,
@@ -65,7 +66,7 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
             RaceDate = raceDate,
             TargetFinishTimeSeconds = targetFinishTimeSeconds,
             TargetFinishTimeSource = targetFinishTimeSource,
-            DaysPerWeek = 4,
+            DaysPerWeek = daysPerWeek,
             PreferredDays = weekdays,
             LongRunDay = longRunWeekday,
             Level = RunningBackground.Intermediate,
