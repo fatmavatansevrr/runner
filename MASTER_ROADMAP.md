@@ -85,7 +85,11 @@ Prior phase: `FREQ.6D.21` — Execution Status `DONE`, Final Classification `TAR
 
 **COMPLETE.** `TargetFinishTimeSource` persistence: COMPLETE. Intermediate×5D LongHorizon dark implementation and verification: COMPLETE (`INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED`, FREQ.6D.21). Public routing for Intermediate×5D LongHorizon 21-52 remains CLOSED — not publicly activated.
 
-**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the final Intermediate×5D LongHorizon capability phase: real public HTTP/PostgreSQL verification and public activation (widen public routing to Intermediate×5D LongHorizon 21-52, real `GeneratePreview` HTTP, representative 21/22/24/32/52, positive readiness, missing/zero typed `PRODUCT_INELIGIBLE`, real confirmation + PostgreSQL + fresh reload, Home/Calendar/TrainingDay detail, persisted GE→Runway→Core, ProfileBacked Core, unsupported-neighbor closure, 4D zero-delta, 5D Core/Runway zero-delta). Not yet scheduled as a Phase ID.
+**Gate D (PASS: 863bad6)** — pre-activation durability checkpoint before the final Intermediate×5D public-activation phase (a major architecture/capability checkpoint per Hard push gate rule D): remote SHA matched local HEAD, ahead/behind 0/0. 8 completed phase prompts since the prior Gate B (fc34d7e): FREQ.6D.14, .15, .16, .17, .18, .19, .20, .21.
+
+**Next phase**: `FREQ.6D.22` — **INTERMEDIATE×5D LONGHORIZON REAL PUBLIC HTTP/POSTGRESQL VERIFICATION, PUBLIC ACTIVATION & FINAL 5D CAPABILITY CLOSURE**. Phase type: **PUBLIC ACTIVATION + REAL ENVIRONMENT VERIFICATION + FINAL CAPABILITY CLOSURE**. Opens the exact public routing gate for Intermediate×5D LongHorizon 21-52 and proves it through real public HTTP + PostgreSQL. No new product/numeric/schema authority, no 6D/7D work, no Beginner/Advanced activation.
+
+`FREQ.6D.22` is scheduled only — not started.
 
 ---
 
