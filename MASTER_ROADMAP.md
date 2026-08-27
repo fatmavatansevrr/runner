@@ -97,9 +97,13 @@ Prior phase: `FREQ.6D.24` — Execution Status `DONE`, Final Classification `INT
 
 **Blocked on exactly one item.** Structure, support decision, starting-volume, `ResolvedPeakReference`, progression, long-run share, Adaptation N-session state tables, and catalog capacity are all frozen/approved (`FREQ.6D.23`). `PeakVolumeBand`'s exact figure remains `DECISION_REQUIRED` (`FREQ.6D.24`) — confirmed genuinely load-bearing at runtime, not a publication-only gap. Intermediate×6D combined implementation cannot safely begin until this single item closes.
 
-**Next phase**: `FREQ.6D.25` — **INTERMEDIATE×6D 10K PEAK VOLUME BAND TIER-MATCHED EVIDENCE & FINAL PRODUCT/CATALOG DECISION**. Phase type: **EXTERNAL EVIDENCE + PRODUCT DECISION + CATALOG NUMERIC AUTHORITY**. Attempts final closure of the single remaining item with materially stronger, explicitly tier-matched external evidence than `FREQ.6D.24` had.
+Prior phase: `FREQ.6D.25` — Execution Status `DONE`, Final Classification `INTERMEDIATE_6D_PEAK_VOLUME_BAND_AUTHORITY_APPROVED` / `INTERMEDIATE_6D_FULL_IMPLEMENTATION_AUTHORITY_COMPLETE`. Closed the last open Intermediate×6D item with materially stronger evidence than `FREQ.6D.24` had: found a real, structurally-exact (2K+3E+1L) but tier-mismatched ("Advanced") external 6-day 10K plan, and used its peak ceiling (59.55km) cross-checked against Appsel's own real historical Advanced×5D band ceiling (58km) to show the 5D→6D frequency transition is essentially flat (~1.5km delta, not a formula-shaped jump) when the extra day is easy-only — exactly matching Appsel's own frozen structural principle. Approved `PeakVolumeBand=[36,50]km` for Intermediate×6D as an explicit `PRODUCT_DEFAULT_WITH_TIER_MATCHED_EVIDENCE_ENVELOPE` (numerically equal to 5D's band, but for a new, disclosed reason — real cross-tier flatness evidence — not the level-invariance argument `FREQ.6D.24` rejected). Confirmed 44.5 containment, full Core/Runway/LongHorizon representability, GE-cap/band separation, and existing whole-km rounding convention. No production code, catalog edit, migration, or 7D work.
 
-`FREQ.6D.25` is scheduled — in progress.
+## Intermediate×6D: authority status
+
+**COMPLETE.** Structure, support decision, starting-volume, `ResolvedPeakReference`, progression, long-run share, Adaptation N-session state tables, catalog capacity, and `PeakVolumeBand` (`[36,50]km`) are all frozen/approved. **No remaining numeric/product/catalog blocker.** Not yet implemented — Core/Runway/LongHorizon dark verification has not been built.
+
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the next capability is `INTERMEDIATE×6D CORE + RUNWAY + LONGHORIZON COMBINED IMPLEMENTATION & DARK VERIFICATION`, a single combined wave (not split by horizon), not yet scheduled as a Phase ID.
 
 ---
 
