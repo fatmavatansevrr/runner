@@ -240,8 +240,13 @@ internal static class LongHorizonRealCalendarProjectionAdapter
             || projection.PrescriptionId != activation.RunwayPrescription.PrescriptionId
             || projection.StartGlobalWeek != segment.StartGlobalWeek || projection.EndGlobalWeek != segment.EndGlobalWeek)
             throw new LongHorizonCalendarIdentityMismatchException("Existing Runway calendar projection does not match the immutable full prescription and structural range.");
-        if (projection.Sessions.Count != activation.RunwayPrescription.FullRunwayDurationWeeks * 4)
-            throw new LongHorizonMissingDatedSessionException("Full Runway calendar projection must contain four sessions for every full Runway week.");
+        // Phase 10K-FREQ.6D.19 -- derives the expected per-week session count from the
+        // real prescribed week's own OrderedSlots width (5 for the approved 5D Runway
+        // shape, 1K+3E+1L) instead of a hardcoded 4 -- byte-identical for every 4D
+        // caller, whose OrderedSlots width is already 4.
+        var sessionsPerWeek = activation.RunwayPrescription.FullWeekReferences[0].ProductionWeek.OrderedSlots.Count;
+        if (projection.Sessions.Count != activation.RunwayPrescription.FullRunwayDurationWeeks * sessionsPerWeek)
+            throw new LongHorizonMissingDatedSessionException("Full Runway calendar projection must contain the exact expected session count for every full Runway week.");
     }
 
     private static void EnsureExactSelectedSessionSet(IReadOnlyList<ActivatedNumericWeek> weeks,

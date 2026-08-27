@@ -18,8 +18,11 @@ internal static class LongHorizonActivatedCalendarAlignmentValidator
         {
             var sessions = week.SessionPrescriptions ?? throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} has no sessions.");
             var projected = projection.SelectedSessions.Where(s => s.GlobalWeekNumber == week.GlobalWeekNumber).OrderBy(s => s.SessionOrdinal).ToArray();
-            if (sessions.Count != 4 || projected.Length != 4)
-                throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} must map exactly four sessions.");
+            // Phase 10K-FREQ.6D.19 -- the real numeric week's own session count is the
+            // expected count (5 for the approved 5D Runway/Core shape, 4 for 4D),
+            // rather than a hardcoded 4; the two collections must still exactly match.
+            if (sessions.Count == 0 || projected.Length != sessions.Count)
+                throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} must map exactly {sessions.Count} sessions.");
             if (week.CalendarDates is not { } boundary)
                 throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} has no structural boundary.");
 

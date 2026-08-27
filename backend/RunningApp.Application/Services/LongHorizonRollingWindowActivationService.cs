@@ -30,22 +30,42 @@ public sealed class LongHorizonRollingWindowActivationService : ILongHorizonRoll
     private readonly AppDbContext _db;
     private readonly ILogger<LongHorizonRollingWindowActivationService> _logger;
     private readonly ILongHorizonPersistenceFailureInjector _failureInjector;
+    private readonly string? _publishedBundleReleaseVersion;
 
-    public LongHorizonRollingWindowActivationService(AppDbContext db, ILogger<LongHorizonRollingWindowActivationService> logger)
-        : this(db, logger, NoOpLongHorizonPersistenceFailureInjector.Instance)
+    /// <summary>
+    /// Phase 10K-FREQ.6D.19 -- threads the same real, already-configured
+    /// <see cref="RuntimeCatalog.PlanCatalogOptions.PublishedBundleReleaseVersion"/>
+    /// every other real catalog call site already uses (appsettings.json,
+    /// e.g. "1.1.0") into the JIT composition chain below. Without this, a
+    /// real Intermediate x5D LongHorizon plan's Core segment (ProfileBacked
+    /// KEY_SESSION) can never generate: <see cref="Prescription.Execution.PublishedTemplateBundleLoader.TryLoadAsync"/>
+    /// returns null whenever no release version is configured, and a
+    /// ProfileBacked session never falls back to the Legacy path (by design
+    /// -- see <see cref="Prescription.Session.CatalogSessionPrescriptionPlanner"/>).
+    /// 4D LongHorizon Core is Legacy (no profile) and was never affected by
+    /// this gap, which is why it was never previously observed.
+    /// </summary>
+    public LongHorizonRollingWindowActivationService(
+        AppDbContext db, ILogger<LongHorizonRollingWindowActivationService> logger,
+        Microsoft.Extensions.Options.IOptions<RuntimeCatalog.PlanCatalogOptions> catalogOptions)
+        : this(db, logger, NoOpLongHorizonPersistenceFailureInjector.Instance, catalogOptions.Value.PublishedBundleReleaseVersion)
     {
     }
 
     /// <summary>Test-only seam (Part 24): threads the existing Phase 4L.2F
     /// failure-injection contract through to the repository so pre-commit
     /// rollback can be proven against the real production persistence chain,
-    /// without any production code path ever supplying a non-no-op injector.</summary>
+    /// without any production code path ever supplying a non-no-op injector.
+    /// <paramref name="publishedBundleReleaseVersion"/> defaults to null,
+    /// byte-identical to this constructor's pre-FREQ.6D.19 behavior, for
+    /// every existing 4D-only caller of this internal seam.</summary>
     internal LongHorizonRollingWindowActivationService(AppDbContext db, ILogger<LongHorizonRollingWindowActivationService> logger,
-        ILongHorizonPersistenceFailureInjector failureInjector)
+        ILongHorizonPersistenceFailureInjector failureInjector, string? publishedBundleReleaseVersion = null)
     {
         _db = db;
         _logger = logger;
         _failureInjector = failureInjector;
+        _publishedBundleReleaseVersion = publishedBundleReleaseVersion;
     }
 
     public async Task<LongHorizonActivateNextWindowResponse> ActivateNextWindowAsync(
@@ -238,7 +258,7 @@ public sealed class LongHorizonRollingWindowActivationService : ILongHorizonRoll
                     checkpoint.CheckpointDecision,
                     checkpoint.Outcome == LongHorizonRollingCheckpointRuntimeOutcome.NextGeWindowActivated ? checkpoint.NewlyActivatedWeeks : null,
                     aggregate.StartDate, aggregate.RaceDate, currentAvailability, longRunDay, aggregate.CatalogRootPath,
-                    ct, lifecycleStatesOverride: state.LifecycleStates);
+                    ct, lifecycleStatesOverride: state.LifecycleStates, publishedBundleReleaseVersion: _publishedBundleReleaseVersion);
             }
 
             switch (persistResult.Outcome)

@@ -64,6 +64,19 @@ internal sealed record LongHorizonRollingJitActivationRequest
     /// <summary>Phase 10K-FREQ.6D.13 — the candidate's own resolved session cardinality, replacing the prior hardcoded 4-day availability assumption. Defaults to 4 for every existing caller (zero-delta).</summary>
     public int DaysPerWeek { get; init; } = 4;
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.19 -- the same real candidate identity
+    /// <see cref="LongHorizonRollingJitCompositionRequest.Candidate"/> already
+    /// carries, needed so a first-Runway-entry activation can select the
+    /// correct day-count-aware <see cref="PreparationRunwayNumericMaterialization.TenKPreparationRunwayNumericPolicyFactory"/>
+    /// policy (mirroring <see cref="PreparationRunwayOrchestration.TenKPreparationRunwayDarkOrchestrator"/>'s
+    /// own already-fixed FREQ.6D.10 dispatch) instead of always resolving
+    /// VolumeSafetyPolicy.Default. Nullable so <see cref="ActivateRunwayOnlyWindow"/>/
+    /// <see cref="ActivateCoreOnlyWindow"/> continuation windows -- which never
+    /// re-materialize Runway numerics -- are unaffected.
+    /// </summary>
+    public RunningApp.Application.RuntimeCatalog.PlanCatalogCandidateSummary? Candidate { get; init; }
+
     // Populated only when the selected window includes any Runway week AND
     // no compatible ExistingRunwayPrescription is supplied (first Runway entry).
     public PreparationRunwayCoreWeekOneNumericTarget? ResolvedCoreWeekOneTarget { get; init; }

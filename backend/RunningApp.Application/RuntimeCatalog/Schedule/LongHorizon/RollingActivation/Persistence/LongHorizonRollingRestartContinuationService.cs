@@ -1,3 +1,4 @@
+using RunningApp.Application.DTOs.Plan;
 using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.Persistence;
@@ -105,7 +106,23 @@ internal sealed class LongHorizonRollingRestartContinuationService
         string catalogRootPath,
         CancellationToken cancellationToken = default,
         IReadOnlyDictionary<int, LongHorizonNumericLifecycleState>? lifecycleStatesOverride = null,
-        string? publishedBundleReleaseVersion = null)
+        string? publishedBundleReleaseVersion = null,
+        // Phase 10K-FREQ.6D.19 -- surfaced only for real-Postgres dark-verification
+        // callers (matching the same TargetFinishTimeSeconds/TargetFinishTimeSource
+        // convention LongHorizonFullLifecycleTestFixture already uses for 4D dark
+        // testing): a real, already-persisted 5D LongHorizon plan reaching a
+        // GOAL_PACE_TEN_K Core week requires resolved goal-feasibility evidence
+        // (CatalogSessionPrescriptionPlanner) that today's real production caller
+        // (LongHorizonRollingWindowActivationService) has no persisted source for --
+        // TrainingPlan.TargetFinishTimeSeconds exists, but no TargetFinishTimeSource
+        // classification is persisted anywhere for a restarted/rolling plan. Wiring
+        // that correctly is a genuine product decision (how should a restarted plan
+        // reclassify target-time evidence it no longer holds in original form?), not
+        // resolved here -- these parameters default to null, so every real production
+        // call remains byte-identical to before this phase.
+        int? targetFinishTimeSeconds = null,
+        TargetFinishTimeSource? targetFinishTimeSource = null,
+        RecentRaceInput? recentRace = null)
     {
         var snapshot = await _repository.LoadRestartSnapshotAsync(planStateId, cancellationToken)
             ?? throw new LongHorizonRollingPersistenceCorruptionException($"No durable state exists for plan {planStateId}.");
@@ -141,6 +158,9 @@ internal sealed class LongHorizonRollingRestartContinuationService
             CatalogRootPath = catalogRootPath,
             PublishedBundleReleaseVersion = publishedBundleReleaseVersion,
             Candidate = snapshot.Candidate,
+            TargetFinishTimeSeconds = targetFinishTimeSeconds,
+            TargetFinishTimeSource = targetFinishTimeSource,
+            RecentRace = recentRace,
         }, cancellationToken);
 
         if (result.Outcome != LongHorizonRollingJitCompositionOutcome.CompositionAndActivationSucceeded)

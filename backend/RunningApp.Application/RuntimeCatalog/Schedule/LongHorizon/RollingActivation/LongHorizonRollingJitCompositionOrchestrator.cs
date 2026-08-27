@@ -165,6 +165,7 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
                 SafetyState = request.SafetyState,
                 ConditionResults = conditionResults,
                 DaysPerWeek = request.Candidate.DaysPerWeek,
+                Candidate = request.Candidate,
                 ResolvedCoreWeekOneTarget = extractedTarget,
                 RunwayStartingLoadEvidence = runwayStartingEvidence,
                 RunwayStructuralWeeks = runwayStructuralWeeks,

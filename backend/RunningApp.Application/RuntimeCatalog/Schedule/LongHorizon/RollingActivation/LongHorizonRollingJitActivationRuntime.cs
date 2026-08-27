@@ -280,7 +280,14 @@ internal sealed class LongHorizonRollingJitActivationRuntime : ILongHorizonRolli
         };
         LongHorizonCoreTargetLockValidator.Validate(lockedTarget);
 
-        var policy = TenKPreparationRunwayNumericPolicyFactory.Build();
+        // Phase 10K-FREQ.6D.19 -- mirrors TenKPreparationRunwayDarkOrchestrator's own
+        // FREQ.6D.10 fix: the parameterless Build() always resolves VolumeSafetyPolicy.Default
+        // (30%/36% long-run share), which rejects a genuine, approved 5D share (28%/36%) at
+        // the exact floor -- this JIT-path Runway materialization call had never been
+        // updated to the candidate-aware overload the dark orchestrator already uses.
+        var policy = request.Candidate is { } candidate
+            ? TenKPreparationRunwayNumericPolicyFactory.Build(candidate)
+            : TenKPreparationRunwayNumericPolicyFactory.Build();
         var materializationRequest = new PreparationRunwayNumericMaterializationRequest<PreparationRunwayBlockType>(
             MapProfile(request.ReadinessProfile), request.RunwayStructuralWeeks, request.RunwayStartingLoadEvidence,
             request.ResolvedCoreWeekOneTarget, policy, PreparationRunwayQuantityUnit.Kilometers);
