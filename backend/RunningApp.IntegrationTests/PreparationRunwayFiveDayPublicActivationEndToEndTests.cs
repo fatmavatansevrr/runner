@@ -295,11 +295,15 @@ public sealed class PreparationRunwayFiveDayPublicActivationEndToEndTests
     }
 
     // ── §37: unsupported neighbors remain closed ──────────────────────────────
+    // Phase 10K-FREQ.6D.27 subsequently opened the public Intermediate x6D
+    // Preparation Runway gate itself (by product/repository design, not a
+    // regression) -- (ten_k, intermediate, 6) removed from this "unsupported
+    // neighbor" list and covered instead by
+    // Freq6D27IntermediateSixDayPublicActivationTests' own activation proof.
 
     [Theory]
     [InlineData("ten_k", "beginner", 5)]
     [InlineData("ten_k", "advanced", 5)]
-    [InlineData("ten_k", "intermediate", 6)]
     [InlineData("ten_k", "intermediate", 7)]
     public async Task UnsupportedNeighbors_FifteenToTwentyWeeks_StillReturns422(string goalDistance, string level, int daysPerWeek)
     {

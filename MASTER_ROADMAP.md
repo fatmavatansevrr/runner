@@ -28,10 +28,12 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
 | **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
-| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE` (Core, 8-14 weeks; FREQ.6D.4D.5G) and `PUBLICLY_ACTIVE` (Preparation Runway, 15-20 weeks; FREQ.6D.8) for all readiness states including missing/explicit-zero (`FREQ.6D.10`). **Long-Horizon (21-52w) 5D remains `BLOCKED` on implementation only** — its complete dual-KEY lineage/JIT/persistence/execution-context architecture (`FREQ.6D.11`) and its GE-segment product/numeric policy (`FREQ.6D.12`: 1 KEY + 3 EASY + 1 LONG GE structure, target-capped growth to the existing 44.5km peak reference, missing/explicit-zero `PRODUCT_INELIGIBLE`) are both now fully approved — `INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTATION_READY`. No open product or numeric decision remains; the next work is the combined implementation wave itself | not yet opened | not yet opened |
+| **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE`, full horizon (Core/Runway/LongHorizon; `FREQ.6D.22`) — `INTERMEDIATE_5D_FULL_HORIZON_CAPABILITY_COMPLETE` | `PUBLICLY_ACTIVE`, full horizon (Core/Runway/LongHorizon; `FREQ.6D.27`) — `INTERMEDIATE_6D_FULL_HORIZON_CAPABILITY_COMPLETE` | `PRODUCT_NON_SUPPORT` (`FREQ.6D.23` — real calendar-spacing conflict at zero-rest-day cadence plus injury-incidence evidence, final) |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
+
+**`INTERMEDIATE_TEN_K_FREQUENCY_AXIS_COMPLETE`** (as of `FREQ.6D.27`): every Intermediate 10K frequency cell (3D/4D/5D/6D/7D) now carries a final, evidenced classification — 4 `PUBLICLY_ACTIVE`, 1 `PRODUCT_NON_SUPPORT`. This does not imply the 10K matrix as a whole is complete — Beginner and Advanced remain largely unopened at 5D/6D/7D.
 
 ### Current active phase / next phase
 
@@ -109,11 +111,11 @@ Prior phase: `FREQ.6D.26` — Execution Status `DONE`, Final Classification `INT
 
 ## Intermediate×6D: implementation status
 
-**DARK-COMPLETE, PUBLIC-CLOSED.** Core (8–14), Preparation Runway (15–20), and LongHorizon (21–52) all implemented and dark-verified through real PostgreSQL. Public gate remains closed (verified by permanent isolation tests). Numeric/product/catalog authority fully closed since `FREQ.6D.25`.
+**COMPLETE AND PUBLIC.** Core (8–14), Preparation Runway (15–20), and LongHorizon (21–52) are all implemented, dark-verified, and now `PUBLICLY_ACTIVE` (`FREQ.6D.27`). Numeric/product/catalog authority fully closed since `FREQ.6D.25`.
 
-**Next phase**: `FREQ.6D.27` — **INTERMEDIATE×6D REAL PUBLIC HTTP/POSTGRESQL VERIFICATION, PUBLIC ACTIVATION & FINAL 6D CAPABILITY CLOSURE**. Phase type: **PUBLIC ACTIVATION + REAL ENVIRONMENT VERIFICATION + FINAL CAPABILITY CLOSURE**. Opens the exact public routing gate for Intermediate×6D (Core/Runway/LongHorizon) and proves it through real public HTTP + PostgreSQL. No new product/numeric/schema authority, no 7D/Beginner/Advanced activation.
+Prior phase: `FREQ.6D.27` — Execution Status `DONE`, Final Classification `INTERMEDIATE_6D_CORE_RUNWAY_LONGHORIZON_IMPLEMENTED_AND_PUBLICLY_ACTIVATED` / `INTERMEDIATE_6D_FULL_HORIZON_CAPABILITY_COMPLETE`. Opened the real public routing gate via 4 minimal allow-list widenings implementing only already-approved authority. Added 20 new tests proving the full 8-52 week matrix (45/45) through real public HTTP + PostgreSQL. Opening `(Intermediate, 6)` made 5 pre-existing "unsupported neighbor" test rows obsolete; each corrected in place. A full-suite regression discrepancy (3 vs. 2 known failures) was reconciled per explicit user instruction before any closure: the 3rd failure was traced by direct code reading to the same obsolete-assertion class (`Phase4F8_2LivePilotRoutingTests`'s "non-pilot" `DaysPerWeek=6` probe stopped being non-pilot), fixed by advancing the probe to 7, and the full suite re-verified authoritative via TRX at 3948 total / 2 failures (exact durable pre-existing baseline, zero new regressions). This closes the Intermediate×6D arc and the entire Intermediate 10K frequency axis — see the updated support matrix above. `INTERMEDIATE_TEN_K_FREQUENCY_AXIS_COMPLETE`.
 
-`FREQ.6D.27` is scheduled — in progress.
+**Next phase**: not selected by `FREQ.6D.27` (per its own §70). `MASTER_ROADMAP.md`'s own Wave A remaining-work list (§section below) names two open candidates — completing the Advanced level across proven frequencies, and completing Beginner's remaining frequencies. `NEXT_PHASE_NOT_YET_SCHEDULED`.
 
 ---
 

@@ -366,12 +366,15 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
     /// own (Intermediate, 4)/(Intermediate, 5) list) -- LongHorizon's own
     /// eligibility is this same set, never wider (no Beginner/Advanced, no
     /// 3D/6D/7D). No new identity was invented for this gate.
+    /// Phase 10K-FREQ.6D.27 -- widened again to include 6D, the same set
+    /// Preparation Runway's own list was just extended to (still never wider
+    /// -- no 7D, no Beginner/Advanced).
     /// </summary>
     private static void ValidatePilot(RacePlanPreviewCommand command)
     {
         if (command.GoalType != GoalType.Race || command.GoalDistance != GoalDistance.TenK ||
-            command.Level != RunningBackground.Intermediate || command.DaysPerWeek is not (4 or 5))
-            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate/4-or-5-day requests are enabled for Long-Horizon preview.");
+            command.Level != RunningBackground.Intermediate || command.DaysPerWeek is not (4 or 5 or 6))
+            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate/4-5-or-6-day requests are enabled for Long-Horizon preview.");
     }
 
     private static ReadinessProfile ResolveProfile(RacePlanPreviewCommand command)

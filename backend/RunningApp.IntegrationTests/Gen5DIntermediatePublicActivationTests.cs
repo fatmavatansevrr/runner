@@ -131,8 +131,12 @@ public sealed class Gen5DIntermediatePublicActivationTests : IDisposable
         Assert.DoesNotContain("TEN_K__5D__INTERMEDIATE", body);
     }
 
+    // Phase 10K-FREQ.6D.27 subsequently opened the public Intermediate x6D
+    // gate itself (by product/repository design, not a regression) --
+    // (intermediate, 6) removed from this "unsupported neighbor" list and
+    // covered instead by Freq6D27IntermediateSixDayPublicActivationTests'
+    // own activation proof.
     [Theory]
-    [InlineData("intermediate", 6)]
     [InlineData("intermediate", 7)]
     public async Task UnsupportedFrequencyNeighbors_RemainUnactivated(string level, int days)
     {

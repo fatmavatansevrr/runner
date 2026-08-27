@@ -110,7 +110,12 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 3) or
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Intermediate, 5) or
+            (RunningBackground.Intermediate, 6) or
             (RunningBackground.Beginner, 4);
+    // (Intermediate, 6): Phase 10K-FREQ.6D.27 public activation, implementing
+    // the already-approved FREQ.6D.23/6D.25/6D.26 authority. Does not widen
+    // to Beginner/Advanced x6D or Intermediate x7D -- see SixDayCandidateKey's
+    // own doc comment for the full prior dark-implementation history.
     // (Intermediate, 5): fifth activation attempt (Phase 10K-FREQ.6D.4D.5G). The
     // execution-context propagation gap FREQ.6D.4D.5F found (CompressedCore/ExtendedCore
     // never threaded the published-bundle execution index into session prescription,
@@ -138,8 +143,9 @@ public static class V1CatalogPilotIdentityPolicy
         (RunningBackground.Intermediate, 3) => (ThreeDayCandidateKey, ThreeDayCandidateVersion),
         (RunningBackground.Intermediate, 4) => (CandidateKey, CandidateVersion),
         (RunningBackground.Intermediate, 5) => (FiveDayCandidateKey, FiveDayCandidateVersion),
+        (RunningBackground.Intermediate, 6) => (SixDayCandidateKey, SixDayCandidateVersion),
         (RunningBackground.Beginner, 4) => (BeginnerCandidateKey, BeginnerCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D and Beginner 4D Core pilot identities are resolvable.")
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D and Beginner 4D Core pilot identities are resolvable.")
     };
 
     /// <summary>
@@ -163,7 +169,8 @@ public static class V1CatalogPilotIdentityPolicy
     private static bool IsSupportedPreparationRunwayLevelFrequency(RunningBackground level, int daysPerWeek) =>
         (level, daysPerWeek) is
             (RunningBackground.Intermediate, 4) or
-            (RunningBackground.Intermediate, 5);
+            (RunningBackground.Intermediate, 5) or
+            (RunningBackground.Intermediate, 6);
 
     public static bool IsSupportedPreparationRunwayIdentity(
         GoalType goalType,

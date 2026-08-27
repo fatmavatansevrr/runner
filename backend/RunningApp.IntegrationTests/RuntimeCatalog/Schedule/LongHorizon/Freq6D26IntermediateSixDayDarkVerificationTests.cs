@@ -434,17 +434,17 @@ public sealed class Freq6D26FullLifecycleTests
     }
 }
 
-// ── §54-55: Beginner/Advanced isolation and 7D non-support remain closed ──
+// ── §54-55 (as of FREQ.6D.26): Beginner/Advanced isolation and 7D non-support
+// remain closed. Phase 10K-FREQ.6D.27 subsequently opened the public
+// Intermediate x6D gate itself (by product/repository design, not a
+// regression) -- the two assertions that specifically asserted "6D public
+// gate closed" were superseded there and are covered instead by
+// Freq6D27IntermediateSixDayPublicActivationTests' own activation proof.
+// This class now asserts only what remains permanently true post-activation:
+// Beginner/Advanced x6D and Intermediate x7D never gained public routing. ──
 
 public sealed class Freq6D26IsolationTests
 {
-    [Fact]
-    public void PublicIdentityPolicy_DoesNotRecognizeIntermediateSixDay()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Intermediate, 6));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Intermediate, 6));
-    }
-
     [Fact]
     public void PublicIdentityPolicy_DoesNotRecognizeBeginnerOrAdvancedSixDay()
     {
@@ -459,8 +459,8 @@ public sealed class Freq6D26IsolationTests
     }
 
     [Fact]
-    public void PreparationRunwayIdentityPolicy_DoesNotRecognizeSixDay()
+    public void PreparationRunwayIdentityPolicy_DoesNotRecognizeSevenDay()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Intermediate, 6));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Intermediate, 7));
     }
 }

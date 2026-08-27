@@ -283,10 +283,14 @@ public sealed class Freq6D22IntermediateFiveDayLongHorizonPublicActivationTests
     }
 
     // ── §46: unsupported neighbors remain closed ─────────────────────────────
+    // Phase 10K-FREQ.6D.27 subsequently opened the public Intermediate x6D
+    // gate itself (by product/repository design, not a regression) --
+    // (intermediate, 6) removed from this "unsupported neighbor" list and
+    // covered instead by Freq6D27IntermediateSixDayPublicActivationTests'
+    // own activation proof. Intermediate x7D remains genuinely unsupported.
 
     [Theory]
     [InlineData("beginner", 5)]
-    [InlineData("intermediate", 6)]
     [InlineData("intermediate", 7)]
     public async Task UnsupportedNeighbors_RemainClosed_NoFallbackToFourOrFiveDayIdentity(string level, int days)
     {

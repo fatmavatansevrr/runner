@@ -73,10 +73,13 @@ public sealed class Phase4F8_2LivePilotRoutingTests
             // mutation; Advanced remains genuinely unwidened at every
             // frequency and still exercises the same negative-identity path.
             case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Advanced; break;
-            // FREQ.6D.4D.5G widened (Intermediate, 5) to a real, distinct pilot
-            // identity, so it's no longer a valid "make this non-pilot" mutation
-            // (see the Level case's identical note above for Beginner/GEN.4E).
-            case nameof(GeneratePreviewRequest.DaysPerWeek): request.DaysPerWeek = 6; break;
+            // FREQ.6D.4D.5G widened (Intermediate, 5), then FREQ.6D.27 widened
+            // (Intermediate, 6), each to a real, distinct pilot identity in
+            // turn -- so 6 is no longer a valid "make this non-pilot" mutation
+            // either (see the Level case's identical note above for
+            // Beginner/GEN.4E). Intermediate x7D remains genuine
+            // PRODUCT_NON_SUPPORT per FREQ.6D.23, so it's used here instead.
+            case nameof(GeneratePreviewRequest.DaysPerWeek): request.DaysPerWeek = 7; break;
             case nameof(GeneratePreviewRequest.GoalType): request.GoalType = GoalType.Habit; break;
         }
 
