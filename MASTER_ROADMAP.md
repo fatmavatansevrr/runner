@@ -27,13 +27,15 @@ Sourced from `PHASE_LEDGER.md` only (per this roadmap's own rule — never chat 
 
 |               | 3D | 4D | 5D | 6D | 7D |
 |---|---|---|---|---|---|
-| **Beginner** | `PROVEN_NON_SUPPORT` (Core; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | not yet opened | not yet opened | not yet opened |
+| **Beginner** | `BEGINNER_3D_CORE_NON_SUPPORT_FORMALIZED_FINAL` (Core only; GEN.5C) | `PUBLICLY_ACTIVE` (Core; GEN.4E) | `PRODUCT_NON_SUPPORT` (GEN.6 — two-KEY Core eligibility rejected) | `PRODUCT_NON_SUPPORT` (GEN.6 — same as 5D) | `PRODUCT_NON_SUPPORT` (GEN.6 — inherited frequency-global calendar gap) |
 | **Intermediate** | `PUBLICLY_ACTIVE` (Core; GEN.3B) | `PUBLICLY_ACTIVE` (pre-existing/Adaptation V1 baseline) | `PUBLICLY_ACTIVE`, full horizon (Core/Runway/LongHorizon; `FREQ.6D.22`) — `INTERMEDIATE_5D_FULL_HORIZON_CAPABILITY_COMPLETE` | `PUBLICLY_ACTIVE`, full horizon (Core/Runway/LongHorizon; `FREQ.6D.27`) — `INTERMEDIATE_6D_FULL_HORIZON_CAPABILITY_COMPLETE` | `PRODUCT_NON_SUPPORT` (`FREQ.6D.23` — real calendar-spacing conflict at zero-rest-day cadence plus injury-incidence evidence, final) |
 | **Advanced** | not yet opened | not yet opened | not yet opened | not yet opened | not yet opened |
 
 Beginner×3D Runway (15-20wk) is separately confirmed non-representable (FREQ.2) with zero live-cell exposure (FREQ.2A) — this is a Runway-horizon finding layered on top of the Core-level `PROVEN_NON_SUPPORT` result above, not a duplicate claim.
 
 **`INTERMEDIATE_TEN_K_FREQUENCY_AXIS_COMPLETE`** (as of `FREQ.6D.27`): every Intermediate 10K frequency cell (3D/4D/5D/6D/7D) now carries a final, evidenced classification — 4 `PUBLICLY_ACTIVE`, 1 `PRODUCT_NON_SUPPORT`. This does not imply the 10K matrix as a whole is complete — Beginner and Advanced remain largely unopened at 5D/6D/7D.
+
+**`BEGINNER_FREQUENCY_AUTHORITY_COMPLETE`** (as of `GEN.6`): every Beginner 10K frequency cell now carries a final, evidenced classification — 4D `PUBLICLY_ACTIVE`, 3D/5D/6D/7D all non-support (3D for numeric/structural reasons scoped to Core only; 5D/6D because Beginner-level eligibility rejects any RunLayout requiring two structural KEY sessions per week, a decision that cascades to Runway/LongHorizon since both culminate in the same real Core execution; 7D because it inherits the frequency-global calendar week-boundary gap `FREQ.6D.23` found, reinforced by Beginner-specific injury evidence). **Beginner support remains 4D-only.** This is `BEGINNER_FREQUENCY_AUTHORITY_COMPLETE`, not `BEGINNER_PUBLIC_CAPABILITY_COMPLETE` in a new sense — no new frequency was approved, so nothing further requires implementation or activation.
 
 ### Current active phase / next phase
 
@@ -800,10 +802,10 @@ Then (capability milestones, no Phase IDs yet):
 
 ### WAVE A — 10K
 
-- Finish Intermediate 5D.
-- Generalize Intermediate 6D/7D.
-- Complete Advanced Level across proven frequencies.
-- Complete Beginner remaining frequencies.
+- Finish Intermediate 5D. **DONE** (`FREQ.6D.22`).
+- Generalize Intermediate 6D/7D. **DONE** (`FREQ.6D.23`/`FREQ.6D.27`) — 6D public, 7D `PRODUCT_NON_SUPPORT`.
+- Complete Advanced Level across proven frequencies. **OPEN.**
+- Complete Beginner remaining frequencies. **DONE** (`GEN.6`) — 5D/6D/7D all `PRODUCT_NON_SUPPORT`; Beginner remains 4D-only. `BEGINNER_FREQUENCY_AUTHORITY_COMPLETE`.
 - Produce final 10K 15-cell support matrix.
 - Full 10K backend regression.
 - 10K release-readiness closure.
