@@ -89,7 +89,9 @@ Prior phase: `FREQ.6D.22` — Execution Status `DONE`, Final Classification `INT
 
 **Gate D (PASS: 863bad6)** — pre-activation durability checkpoint before the final Intermediate×5D public-activation phase (a major architecture/capability checkpoint per Hard push gate rule D): remote SHA matched local HEAD, ahead/behind 0/0. 8 completed phase prompts since the prior Gate B (fc34d7e): FREQ.6D.14, .15, .16, .17, .18, .19, .20, .21.
 
-**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` pending this closing report's own governance write-up (Intermediate 6D+7D combined product/numeric/Adaptation authority closure — evidence/decision only, no implementation).
+**Next phase**: `FREQ.6D.23` — **INTERMEDIATE 6D + 7D COMBINED PRODUCT / NUMERIC / ADAPTATION AUTHORITY CLOSURE**. Phase type: **EVIDENCE + PRODUCT DECISION + NUMERIC AUTHORITY + REPRESENTABILITY**. Resolves whether Intermediate×6D and ×7D can reuse the generalized 10K architecture without new plan templates. Evidence/decision only — no production code, no migration, no public activation, no catalog authoring.
+
+`FREQ.6D.23` is scheduled — in progress.
 
 ---
 
