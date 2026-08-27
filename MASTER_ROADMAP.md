@@ -105,7 +105,13 @@ Prior phase: `FREQ.6D.25` — Execution Status `DONE`, Final Classification `INT
 
 **Next phase**: `FREQ.6D.26` — **INTERMEDIATE×6D CORE + PREPARATION RUNWAY + LONGHORIZON COMBINED IMPLEMENTATION & DARK VERIFICATION**. Phase type: **IMPLEMENTATION + CATALOG AUTHORING + REAL POSTGRESQL VERIFICATION + DARK CAPABILITY CLOSURE**. Implements existing approved authority only — no new product/numeric/schema decision.
 
-`FREQ.6D.26` is scheduled — in progress.
+Prior phase: `FREQ.6D.26` — Execution Status `DONE`, Final Classification `INTERMEDIATE_6D_CORE_RUNWAY_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED` / `INTERMEDIATE_6D_FULL_HORIZON_DARK_CAPABILITY_COMPLETE`. Implemented Intermediate×6D Core/Runway/LongHorizon as one compositional capability, publishing plan-catalog release `1.2.0` (byte-identical superset of `1.1.0`) carrying `RUN_LAYOUT_6D`, `TEN_K_MASTER` v8, `PEAK_VOLUME_BANDS_V1` v5 (`[36,50]` row), and the `TEN_K__6D__INTERMEDIATE` combination — no new prescription profiles authored, since the shared dual-KEY execution profiles are genuinely Level+Distance-owned. Added `VolumeSafetyPolicy.SixDayIntermediate` and the 6-session Adaptation state table, both implementing `FREQ.6D.23`/`FREQ.6D.25`'s frozen authority verbatim. Found and fixed 8 real production hardcodes blocking 6D (three `easySupportCount` ternaries, two internal eligibility gates, an EASY-count allow-list, an internal candidate-identity check, a calendar `DaysPerWeek` range guard, and a genuine structural limitation in the session-distance-allocation record that would have silently mis-assigned 6D Core's 3rd EASY session's distance) — the public routing gates were deliberately left untouched. Verified via 22 new tests including one full organic GE→Runway→Core dual-KEY lifecycle through real PostgreSQL. Full regression 3928/3932 (same 2 pre-existing failures + 2 genuinely-fixed catalog-inventory-count assertions), 1510/1510 PlanCatalog, Debug+Release clean. Test coverage real but not the full requested manifest — disclosed honestly. Not publicly activated.
+
+## Intermediate×6D: implementation status
+
+**DARK-COMPLETE, PUBLIC-CLOSED.** Core (8–14), Preparation Runway (15–20), and LongHorizon (21–52) all implemented and dark-verified through real PostgreSQL. Public gate remains closed (verified by permanent isolation tests). Numeric/product/catalog authority fully closed since `FREQ.6D.25`.
+
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the real public HTTP/PostgreSQL verification and public-activation phase for Intermediate×6D is not yet scheduled as a Phase ID.
 
 ---
 
