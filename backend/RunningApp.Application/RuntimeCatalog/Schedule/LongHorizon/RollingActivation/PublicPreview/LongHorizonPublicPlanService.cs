@@ -319,6 +319,11 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
         Level = RunningBackground.Intermediate, DaysPerWeek = 4, Unit = snapshot.Command.Unit,
         RaceName = snapshot.Command.RaceName, RaceDate = snapshot.Command.RaceDate,
         TargetFinishTimeSeconds = snapshot.Command.TargetFinishTimeSeconds,
+        // Phase 10K-FREQ.6D.21 -- persists the same already-in-scope provenance
+        // classification RacePlanPreviewCommand already carries, alongside the
+        // seconds value it has always accompanied (FREQ.6D.20's approved
+        // plan-level authority); never recomputed.
+        TargetFinishTimeSource = snapshot.Command.TargetFinishTimeSource,
         StartedAt = DateTime.SpecifyKind(snapshot.Command.StartDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc),
         EstimatedEndDate = DateTime.SpecifyKind(snapshot.Command.RaceDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc),
         CreatedAt = now, UpdatedAt = now, CatalogConfirmedAtUtc = now,

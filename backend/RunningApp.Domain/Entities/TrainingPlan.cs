@@ -17,6 +17,19 @@ public class TrainingPlan
     public string? RaceName { get; set; }
     public DateOnly? RaceDate { get; set; }
     public int? TargetFinishTimeSeconds { get; set; }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.21 — semantic provenance of <see cref="TargetFinishTimeSeconds"/>
+    /// (ProductAverage vs UserDefined), captured verbatim from the confirmed
+    /// preview's own normalized input at the same confirmation boundary that
+    /// already persists the seconds value. Both-null-or-both-present for every
+    /// plan confirmed from this phase forward; historical rows with
+    /// TargetFinishTimeSeconds present and this field null are UNKNOWN_LEGACY
+    /// — permanent, never backfilled, never inferred from the numeric value
+    /// (two different sources can legitimately share the same seconds value).
+    /// See PHASE_10K_FREQ_6D_20_TARGET_FINISH_TIME_SOURCE_PERSISTENCE_AND_RESTART_AUTHORITY_DECISION.md.
+    /// </summary>
+    public TargetFinishTimeSource? TargetFinishTimeSource { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime EstimatedEndDate { get; set; }
     public DateTime? CompletedAt { get; set; }

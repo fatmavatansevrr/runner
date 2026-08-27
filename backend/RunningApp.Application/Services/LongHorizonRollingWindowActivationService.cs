@@ -258,7 +258,13 @@ public sealed class LongHorizonRollingWindowActivationService : ILongHorizonRoll
                     checkpoint.CheckpointDecision,
                     checkpoint.Outcome == LongHorizonRollingCheckpointRuntimeOutcome.NextGeWindowActivated ? checkpoint.NewlyActivatedWeeks : null,
                     aggregate.StartDate, aggregate.RaceDate, currentAvailability, longRunDay, aggregate.CatalogRootPath,
-                    ct, lifecycleStatesOverride: state.LifecycleStates, publishedBundleReleaseVersion: _publishedBundleReleaseVersion);
+                    ct, lifecycleStatesOverride: state.LifecycleStates, publishedBundleReleaseVersion: _publishedBundleReleaseVersion,
+                    // Phase 10K-FREQ.6D.21 -- the canonical plan-level provenance
+                    // (FREQ.6D.20's approved authority), read verbatim from the
+                    // already-loaded TrainingPlan row -- never re-derived, never
+                    // re-queried against today's CanonicalTargetFinishTimePolicy.
+                    targetFinishTimeSeconds: planRow.TargetFinishTimeSeconds,
+                    targetFinishTimeSource: planRow.TargetFinishTimeSource);
             }
 
             switch (persistResult.Outcome)

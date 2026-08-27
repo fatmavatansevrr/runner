@@ -580,6 +580,10 @@ public sealed class CatalogPlanConfirmationService : ICatalogPlanConfirmationSer
             RaceDate = snapshot.NormalizedInput.RaceDate,
             RaceName = snapshot.NormalizedInput.RaceName,
             TargetFinishTimeSeconds = snapshot.NormalizedInput.TargetFinishTimeSeconds,
+            // Phase 10K-FREQ.6D.21 -- persists the same already-in-scope provenance
+            // classification alongside the seconds value it has always accompanied
+            // (FREQ.6D.20's approved plan-level authority); never recomputed.
+            TargetFinishTimeSource = snapshot.NormalizedInput.TargetFinishTimeSource,
             PreferredDays = RunningDay.NormalizeList(WeekdayCsv.ToCsv(snapshot.NormalizedInput.PreferredDays)),
             WeeklyAvailability = snapshot.NormalizedInput.WeeklyAvailability,
             PreferredPace = snapshot.NormalizedInput.PreferredPace,
