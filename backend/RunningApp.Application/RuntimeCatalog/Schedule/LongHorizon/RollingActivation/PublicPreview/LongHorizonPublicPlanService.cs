@@ -149,7 +149,12 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
         }
 
         _logger.LogInformation("Long-Horizon preview requested. User={UserId} Horizon={Horizon}", internalUserId, horizon.AvailableFullWeeks);
-        var candidate = await _candidateGate.LoadForPublicPreviewAsync(CandidateKey, CandidateVersion, ct);
+        // Phase 10K-FREQ.6D.22 -- resolves the exact candidate identity for the
+        // request's own DaysPerWeek via the same canonical dispatch Preparation
+        // Runway already uses, instead of the hardcoded 4D CandidateKey/Version
+        // constants -- no silent 4D fallback for a real 5D request.
+        var (resolvedCandidateKey, resolvedCandidateVersion) = V1CatalogPilotIdentityPolicy.ResolveCandidate(command.Level, command.DaysPerWeek);
+        var candidate = await _candidateGate.LoadForPublicPreviewAsync(resolvedCandidateKey, resolvedCandidateVersion, ct);
         var preferredDays = command.PreferredDays.Select(ToDayOfWeek).ToList();
         var longRunDay = ToDayOfWeek(command.LongRunDay);
         var workoutLoader = new CatalogWorkoutDefinitionLoader(Options.Create(_catalogOptions));
@@ -159,7 +164,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
             Level = RunningBackground.Intermediate,
-            DaysPerWeek = 4,
+            DaysPerWeek = command.DaysPerWeek,
             StartDate = command.StartDate,
             RaceDate = command.RaceDate,
             OnboardingBaseline = new LongHorizonGeEntryBaselineInput(command.RecentWeeklyVolumeKm, command.RecentLongestRunKm, command.RecentRunsPerWeek),
@@ -200,7 +205,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
             State = state,
             StartDate = command.StartDate,
             EstimatedEndDate = command.RaceDate,
-            DaysPerWeek = 4,
+            DaysPerWeek = command.DaysPerWeek,
             PreferredDays = preferredDays,
             LongRunDay = longRunDay,
             ProvenanceSummary = LongHorizonPublicProvenance.GeneratedFromInitialProfile,
@@ -227,7 +232,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
         var snapshotJson = JsonSerializer.Serialize(snapshot, SnapshotJson);
         _db.PlanPreviews.Add(new PlanPreview
         {
-            Id = previewId, InternalUserId = internalUserId, TemplateId = CandidateKey,
+            Id = previewId, InternalUserId = internalUserId, TemplateId = resolvedCandidateKey,
             RequestPayloadJson = requestJson, PreviewPayloadJson = publicJson,
             LongHorizonInitializationSnapshotJson = snapshotJson,
             ScheduleStrategy = PlanScheduleStrategy.RollingLongHorizon.ToString(),
@@ -284,6 +289,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
                 ContextVersion = snapshot.ContextVersion,
                 CatalogRootPath = snapshot.CatalogRootPath,
                 Candidate = candidate,
+                DaysPerWeek = snapshot.Command.DaysPerWeek,
             }, ct);
             _failureInjector.MaybeThrow(LongHorizonConfirmationFailpoint.AfterRollingInitialization);
 
@@ -316,7 +322,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
     {
         Id = Guid.NewGuid(), InternalUserId = userId, Status = TrainingPlanStatus.Active,
         GoalType = GoalType.Race, GoalDistance = GoalDistance.TenK, GoalDistanceKm = 10,
-        Level = RunningBackground.Intermediate, DaysPerWeek = 4, Unit = snapshot.Command.Unit,
+        Level = RunningBackground.Intermediate, DaysPerWeek = snapshot.Command.DaysPerWeek, Unit = snapshot.Command.Unit,
         RaceName = snapshot.Command.RaceName, RaceDate = snapshot.Command.RaceDate,
         TargetFinishTimeSeconds = snapshot.Command.TargetFinishTimeSeconds,
         // Phase 10K-FREQ.6D.21 -- persists the same already-in-scope provenance
@@ -353,11 +359,19 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
         ConfirmedAtUtc = confirmedAt,
     };
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.22 -- widened from Intermediate/4-day-only to the
+    /// same Intermediate 4D/5D identity set Preparation Runway already
+    /// publicly supports (<see cref="V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity"/>'s
+    /// own (Intermediate, 4)/(Intermediate, 5) list) -- LongHorizon's own
+    /// eligibility is this same set, never wider (no Beginner/Advanced, no
+    /// 3D/6D/7D). No new identity was invented for this gate.
+    /// </summary>
     private static void ValidatePilot(RacePlanPreviewCommand command)
     {
         if (command.GoalType != GoalType.Race || command.GoalDistance != GoalDistance.TenK ||
-            command.Level != RunningBackground.Intermediate || command.DaysPerWeek != 4)
-            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate/4-day requests are enabled for Long-Horizon preview.");
+            command.Level != RunningBackground.Intermediate || command.DaysPerWeek is not (4 or 5))
+            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate/4-or-5-day requests are enabled for Long-Horizon preview.");
     }
 
     private static ReadinessProfile ResolveProfile(RacePlanPreviewCommand command)
