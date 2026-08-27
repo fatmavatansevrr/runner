@@ -79,9 +79,13 @@ Prior phase: `FREQ.6D.19` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.20` — Execution Status `DONE`, Final Classification `TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_AUTHORITY_APPROVED`. Traced the full `TargetFinishTime`/`TargetFinishTimeSource` provenance dataflow and found the exact loss point: the value is already available in-memory at plan confirmation (`snapshot.NormalizedInput.TargetFinishTimeSource`) but never copied onto `TrainingPlan`, which has no column for it — a plan-wide gap (identical in the ordinary Core-only/Runway confirm path), only live and blocking for LongHorizon because it alone reconstructs Core generation later from durable state. Confirmed two source classifications (`ProductAverage`/`UserDefined`, the only two existing values) can legitimately share the same numeric target time, so reverse-inference from seconds is unsafe. Approved plan-level persistence (`TrainingPlan`, alongside the existing `TargetFinishTimeSeconds`) over rolling-state duplication, derive-on-restart, or a new wrapper object — one new nullable string column, no new enum, no index, no DB constraint, `SCHEMA_CHANGE_APPROVED`. Froze the confirmation boundary, restart semantics (read verbatim, never re-derive), and historical-plan handling (`UNKNOWN_LEGACY`, permanent, never backfilled). Specified (design only) the write/read boundaries and an 11-step implementation contract. Confirmed frequency- and distance-neutral. No production code, tests, migration, or catalog content authored.
 
-**Next phase**: `FREQ.6D.21` — **10K TARGET-FINISH-TIME SOURCE PLAN-LEVEL PERSISTENCE, LONGHORIZON RESTART/JIT WIRING & FINAL DARK CLOSURE**. Phase type: **IMPLEMENTATION + SCHEMA MIGRATION + REAL POSTGRESQL VERIFICATION**. Implements `FREQ.6D.20`'s approved authority exactly: persist `TargetFinishTimeSource` on `TrainingPlan`, populate at both confirmation write boundaries, thread through `LongHorizonRollingWindowActivationService`/`ContinueJitCompositionAsync`, verify `GOAL_PACE_TEN_K` after real restart, re-run FREQ.6D.19's organic 5D GE→Runway→Core suite and full 21-52 dark regression. No new source classification, no derive-on-restart, no rolling-state duplication, no public activation.
+Prior phase: `FREQ.6D.21` — Execution Status `DONE`, Final Classification `TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_IMPLEMENTED_AND_VERIFIED` / `INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED`. Implemented `FREQ.6D.20`'s approved authority exactly: added `TrainingPlan.TargetFinishTimeSource` (a genuine nullable enum, round-tripping automatically via this repository's own pre-existing global `SnakeCaseEnumConverter` convention), migrated real PostgreSQL with one nullable column and zero backfill, and populated it at both real confirmation write boundaries (ordinary Core/Runway and LongHorizon) from the already-in-scope normalized request — never recomputed. Threaded the persisted value from `LongHorizonRollingWindowActivationService`'s already-loaded `TrainingPlan` row into `ContinueJitCompositionAsync`'s existing parameters — zero new queries, zero rolling-state duplication. Verified via 8 new tests, including the mandatory same-seconds-different-source regression and a real-PostgreSQL proof that a real Intermediate×5D plan reaches organic Core generation with `GOAL_PACE_TEN_K` succeeding for the first time via a `ProductAverage` source read from the persisted plan alone, with `UserDefined`/historical-null sources failing closed identically without reclassification. No new source classification, no derive-on-restart, no rolling-state duplication, no public activation (confirmed the public gate still rejects 5D). Full regression 3894/3896 (same 2 pre-existing failures, +8 new passing). This closes the entire FREQ.6D.18→19→20→21 arc — the accumulated Intermediate×5D LongHorizon dark-verification capability is now complete.
 
-`FREQ.6D.21` is scheduled only — not started.
+## Intermediate×5D LongHorizon: dark implementation status
+
+**COMPLETE.** `TargetFinishTimeSource` persistence: COMPLETE. Intermediate×5D LongHorizon dark implementation and verification: COMPLETE (`INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED`, FREQ.6D.21). Public routing for Intermediate×5D LongHorizon 21-52 remains CLOSED — not publicly activated.
+
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the final Intermediate×5D LongHorizon capability phase: real public HTTP/PostgreSQL verification and public activation (widen public routing to Intermediate×5D LongHorizon 21-52, real `GeneratePreview` HTTP, representative 21/22/24/32/52, positive readiness, missing/zero typed `PRODUCT_INELIGIBLE`, real confirmation + PostgreSQL + fresh reload, Home/Calendar/TrainingDay detail, persisted GE→Runway→Core, ProfileBacked Core, unsupported-neighbor closure, 4D zero-delta, 5D Core/Runway zero-delta). Not yet scheduled as a Phase ID.
 
 ---
 
@@ -720,11 +724,36 @@ FREQ.6D.20 (DONE)               → DOMAIN / PRODUCT AUTHORITY + PERSISTENCE SEM
                                     code, tests, migration, or catalog content authored.
                                     Classification:
                                     TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_AUTHORITY_APPROVED.
-NEXT (NOT_YET_SCHEDULED)        → narrow implementation phase persisting TargetFinishTimeSource on
-                                    TrainingPlan, threading it through LongHorizon restart/JIT, and
-                                    closing INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED.
-                                    Then real environment / public HTTP verification + public
-                                    activation for Intermediate×5D LongHorizon 21-52.
+FREQ.6D.21 (DONE)               → IMPLEMENTATION + SCHEMA MIGRATION + REAL POSTGRESQL VERIFICATION:
+                                    added TrainingPlan.TargetFinishTimeSource (nullable enum, rides
+                                    the repository's existing global SnakeCaseEnumConverter), one
+                                    nullable-column migration with zero backfill applied to real
+                                    Postgres, populated at both confirmation write boundaries, threaded
+                                    from LongHorizonRollingWindowActivationService's already-loaded
+                                    TrainingPlan row into ContinueJitCompositionAsync -- zero new
+                                    queries, zero rolling-state duplication. Verified via 8 new tests
+                                    including the mandatory same-seconds-different-source regression
+                                    and a real-Postgres proof that a real Intermediate x5D plan reaches
+                                    organic Core generation with GOAL_PACE_TEN_K succeeding via a
+                                    ProductAverage source read from the persisted plan alone;
+                                    UserDefined/historical-null sources fail closed identically,
+                                    never reclassified. No new source classification, no derive-on-
+                                    restart, no public activation (public gate confirmed still
+                                    rejects 5D). Full regression 3894/3896 (+8 new passing). Closes
+                                    the entire FREQ.6D.18->19->20->21 arc.
+                                    Classification:
+                                    TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_IMPLEMENTED_AND_
+                                    VERIFIED / INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED.
+
+INTERMEDIATE×5D LONGHORIZON DARK IMPLEMENTATION: COMPLETE (public activation still pending).
+
+NEXT (NOT_YET_SCHEDULED)        → final Intermediate×5D LongHorizon capability phase: real public
+                                    HTTP/PostgreSQL verification and public activation (widen public
+                                    routing to 21-52, real GeneratePreview HTTP, representative
+                                    21/22/24/32/52, positive readiness, missing/zero typed
+                                    PRODUCT_INELIGIBLE, real confirmation + fresh reload, Home/
+                                    Calendar/TrainingDay detail, persisted GE->Runway->Core,
+                                    ProfileBacked Core, unsupported-neighbor closure, 4D/5D zero-delta).
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
