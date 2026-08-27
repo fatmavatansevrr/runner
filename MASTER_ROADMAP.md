@@ -111,7 +111,9 @@ Prior phase: `FREQ.6D.26` — Execution Status `DONE`, Final Classification `INT
 
 **DARK-COMPLETE, PUBLIC-CLOSED.** Core (8–14), Preparation Runway (15–20), and LongHorizon (21–52) all implemented and dark-verified through real PostgreSQL. Public gate remains closed (verified by permanent isolation tests). Numeric/product/catalog authority fully closed since `FREQ.6D.25`.
 
-**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the real public HTTP/PostgreSQL verification and public-activation phase for Intermediate×6D is not yet scheduled as a Phase ID.
+**Next phase**: `FREQ.6D.27` — **INTERMEDIATE×6D REAL PUBLIC HTTP/POSTGRESQL VERIFICATION, PUBLIC ACTIVATION & FINAL 6D CAPABILITY CLOSURE**. Phase type: **PUBLIC ACTIVATION + REAL ENVIRONMENT VERIFICATION + FINAL CAPABILITY CLOSURE**. Opens the exact public routing gate for Intermediate×6D (Core/Runway/LongHorizon) and proves it through real public HTTP + PostgreSQL. No new product/numeric/schema authority, no 7D/Beginner/Advanced activation.
+
+`FREQ.6D.27` is scheduled — in progress.
 
 ---
 
