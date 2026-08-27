@@ -103,7 +103,9 @@ Prior phase: `FREQ.6D.25` — Execution Status `DONE`, Final Classification `INT
 
 **COMPLETE.** Structure, support decision, starting-volume, `ResolvedPeakReference`, progression, long-run share, Adaptation N-session state tables, catalog capacity, and `PeakVolumeBand` (`[36,50]km`) are all frozen/approved. **No remaining numeric/product/catalog blocker.** Not yet implemented — Core/Runway/LongHorizon dark verification has not been built.
 
-**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the next capability is `INTERMEDIATE×6D CORE + RUNWAY + LONGHORIZON COMBINED IMPLEMENTATION & DARK VERIFICATION`, a single combined wave (not split by horizon), not yet scheduled as a Phase ID.
+**Next phase**: `FREQ.6D.26` — **INTERMEDIATE×6D CORE + PREPARATION RUNWAY + LONGHORIZON COMBINED IMPLEMENTATION & DARK VERIFICATION**. Phase type: **IMPLEMENTATION + CATALOG AUTHORING + REAL POSTGRESQL VERIFICATION + DARK CAPABILITY CLOSURE**. Implements existing approved authority only — no new product/numeric/schema decision.
+
+`FREQ.6D.26` is scheduled — in progress.
 
 ---
 
