@@ -75,9 +75,9 @@ Prior phase: `FREQ.6D.17` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.18` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_PERSISTED_ADAPTATION_AND_REPAIR_VERIFIED_FOR_GE_SEGMENT_RUNWAY_CORE_BOUNDARY_SCENARIOS_REMAINING`. Performed the mandatory repair-authority reconnaissance before writing any repair test, discovering two separate adaptation authorities coexist (`LongHorizonRollingCheckpointRuntime`'s coarse Growth/Maintenance dispatch vs. the actual frozen 5-session severity table implemented by `WindowExecutionSummaryBuilder`/`NextWindowLoadDecisionPolicy`, called only from the real `LongHorizonRollingWindowActivationService`). Found and fixed eight real 4D-hardcoding/lineage-drop defects blocking Intermediate×5D LongHorizon persisted adaptation and repair, most significantly `ScheduleRepairPersistenceService.BuildReplacement` never copying `LaneOrdinal`/`SlotOrdinal`/`ProgressionStageKey`/profile lineage onto a repair replacement session (a 4D+5D bug, not 5D-specific). Traced and fixed the deepest root cause: `LongHorizonRollingStateRepository.InitializeStructuralStateAsync` hardcoded `DaysPerWeek = 4` at plan creation — every 5D plan's persisted `DaysPerWeek` silently reverted to 4, causing every reload to rebuild a 4D-shaped structural skeleton regardless of the plan's real shape. Verified 9 new real-PostgreSQL persist→dispose→reload→continue tests: the full 6-row 5-session severity table against real reloaded rows, end-to-end checkpoint-continuation cardinality/lineage survival, and persisted GE KEY repair/repeated-EASY identity preservation. Did **not** attempt GE→Runway/Runway→Core persisted-adaptation scenarios or Core secondary-KEY repair (no real persisted Core session exists in any available fixture). No new numeric constant, schema, catalog content, or identity-model redesign. Full regression 3882/3884 (same 2 pre-existing failures, +9 new passing).
 
-**Next phase**: `FREQ.6D.19` — **INTERMEDIATE×5D LONGHORIZON PERSISTED GE→RUNWAY→CORE BOUNDARY & CORE DUAL-KEY REPAIR CLOSURE**. Phase type: **REAL POSTGRESQL INTEGRATION VERIFICATION + DARK CLOSURE**. Closes the exact lifecycle coverage `FREQ.6D.18` could not reach: persisted GE→Adaptation→fresh-reload→Preparation Runway→fresh-reload→organically-materialized canonical Core→real dual-KEY materialization→secondary-KEY repair→fresh-reload→next-window continuation, obtained entirely through the real production lifecycle (no fabricated Core rows). No new product/numeric decision, no new schema, no GE/Runway/Core structural change, no public activation.
+Prior phase: `FREQ.6D.19` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_GE_RUNWAY_CORE_BOUNDARY_AND_DUAL_KEY_REPAIR_DARK_VERIFIED_TARGET_FINISH_TIME_PRODUCT_DECISION_REMAINING`. Drove a real 21-week Intermediate×5D LongHorizon plan organically (never a fabricated Core row) from persisted GE through persisted Runway into a real, organically-materialized first Core window via the real production chain. Found and fixed five real defects only surfaced by actually reaching Core for a 5D plan for the first time: `LongHorizonRollingWindowActivationService` never threaded the real, already-configured `PublishedBundleReleaseVersion` into JIT composition (fixed via a new `IOptions<PlanCatalogOptions>` constructor overload); `LongHorizonRollingJitActivationRuntime` called the parameterless `TenKPreparationRunwayNumericPolicyFactory.Build()` instead of the candidate-aware overload, rejecting a genuine approved 5D long-run share; `LongHorizonRealCalendarProjectionAdapter`/`LongHorizonActivatedCalendarAlignmentValidator` each hardcoded an expected 4-sessions-per-week count; `ContinueJitCompositionAsync` had no way to supply `TargetFinishTimeSeconds`/`Source` at all (added as optional parameters, default null, byte-identical for every existing caller). Verified organic first Core week (2K+2E+1L, distinct lanes), ProfileBacked lineage survival, real secondary-KEY repair preserving `LaneOrdinal=1`/untouched `LaneOrdinal=0`, and deterministic repair→continuation, all via 4 new real-PostgreSQL tests. Confirmed the requested date-order-reversal scenario is genuinely `NOT_REACHABLE_UNDER_VALID_REPAIR_CONSTRAINTS` (every repair candidate is structurally restricted to strictly-later dates) rather than a gap. Did **not** resolve the one remaining real gap: no `TargetFinishTimeSource` classification is persisted anywhere for a restarted LongHorizon plan, and choosing how to reclassify it is a genuine product decision correctly not made here. No new numeric constant, schema, catalog content, or identity-model redesign. Full regression 3886/3888 (same 2 pre-existing failures, +4 new passing).
 
-`FREQ.6D.19` is scheduled only — not started.
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — a product-decision phase resolving `TargetFinishTimeSource` classification for a restarted/rolling LongHorizon plan reaching a `GOAL_PACE_TEN_K` Core week (the sole remaining item before `INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED` can be honestly claimed), followed by the final public-activation phase (real HTTP/Postgres verification and public routing for Intermediate×5D LongHorizon 21-52) — neither scheduled here.
 
 ---
 
@@ -675,10 +675,35 @@ FREQ.6D.18 (DONE, PARTIAL)      → REAL DATABASE VERIFICATION + DARK INTEGRATIO
                                     Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_PERSISTED_ADAPTATION_AND_REPAIR_
                                     VERIFIED_FOR_GE_SEGMENT_RUNWAY_CORE_BOUNDARY_SCENARIOS_REMAINING.
-NEXT (NOT_YET_SCHEDULED)        → continuation phase completing GE->Runway/Runway->Core persisted-
-                                    adaptation scenarios and Core secondary-KEY (lane1) persisted
-                                    repair. Then real environment / public HTTP verification +
-                                    public activation for Intermediate×5D LongHorizon 21-52.
+FREQ.6D.19 (DONE, PARTIAL)      → REAL POSTGRESQL INTEGRATION VERIFICATION + DARK CLOSURE:
+                                    drove a real 21-week 5D plan organically from persisted GE
+                                    through persisted Runway into a real, organically-materialized
+                                    first Core window (2K+2E+1L, distinct lanes) via the real
+                                    production chain -- never a fabricated Core row. Found and fixed
+                                    five real defects only surfaced by actually reaching Core for 5D:
+                                    PublishedBundleReleaseVersion never threaded into JIT composition;
+                                    LongHorizonRollingJitActivationRuntime called the parameterless
+                                    (always-Default) numeric policy factory instead of the candidate-
+                                    aware overload; two calendar validators each hardcoded an expected
+                                    4-sessions-per-week count; ContinueJitCompositionAsync had no way
+                                    to supply TargetFinishTimeSeconds/Source at all. Verified real
+                                    secondary-KEY repair preserves LaneOrdinal=1 without disturbing
+                                    LaneOrdinal=0, and deterministic repair->continuation. Confirmed
+                                    date-order reversal is NOT_REACHABLE_UNDER_VALID_REPAIR_CONSTRAINTS
+                                    (every repair candidate is structurally later-date-only) rather
+                                    than a gap. Did NOT resolve one remaining real gap: no
+                                    TargetFinishTimeSource classification is persisted anywhere for a
+                                    restarted LongHorizon plan -- a genuine product decision, correctly
+                                    not made here. No new numeric constant, schema, catalog content,
+                                    or identity-model redesign.
+                                    Classification:
+                                    INTERMEDIATE_5D_LONGHORIZON_GE_RUNWAY_CORE_BOUNDARY_AND_DUAL_KEY_
+                                    REPAIR_DARK_VERIFIED_TARGET_FINISH_TIME_PRODUCT_DECISION_REMAINING.
+NEXT (NOT_YET_SCHEDULED)        → product-decision phase resolving TargetFinishTimeSource
+                                    classification for a restarted/rolling LongHorizon plan reaching
+                                    a GOAL_PACE_TEN_K Core week. Then real environment / public HTTP
+                                    verification + public activation for Intermediate×5D LongHorizon
+                                    21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
