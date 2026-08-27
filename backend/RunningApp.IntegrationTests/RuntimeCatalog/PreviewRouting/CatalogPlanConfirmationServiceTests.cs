@@ -60,7 +60,12 @@ public sealed class CatalogPlanConfirmationServiceTests
         string candidateKey = "TEN_K__4D__INTERMEDIATE",
         int candidateVersion = 10,
         string candidateStatus = "DRAFT",
-        GeneratedCatalogPlanPayload? generatedPreviewPlanPayload = null)
+        GeneratedCatalogPlanPayload? generatedPreviewPlanPayload = null,
+        // Phase 10K-FREQ.6D.21 -- optional, default null (byte-identical for every
+        // existing caller of this fixture), so new tests can prove
+        // TargetFinishTimeSource persists alongside TargetFinishTimeSeconds.
+        int? targetFinishTimeSeconds = null,
+        TargetFinishTimeSource? targetFinishTimeSource = null)
     {
         var input = new ResolverInputSnapshot
         {
@@ -70,6 +75,8 @@ public sealed class CatalogPlanConfirmationServiceTests
             Level = RunningBackground.Intermediate,
             DaysPerWeek = 4,
             RaceDate = new DateOnly(2026, 12, 1),
+            TargetFinishTimeSeconds = targetFinishTimeSeconds,
+            TargetFinishTimeSource = targetFinishTimeSource,
             CanonicalDistanceFamily = "TEN_K",
         };
 
@@ -1241,5 +1248,107 @@ public sealed class CatalogPlanConfirmationServiceTests
 
         Assert.Single(ctors);
         Assert.Empty(ctors[0].GetParameters());
+    }
+
+    // ── Phase 10K-FREQ.6D.21: TargetFinishTimeSource plan-level persistence ──
+
+    [Fact]
+    public async Task ConfirmAsync_ProductAverageSource_PersistsSourceAlongsideSeconds()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+
+        var snapshot = BuildValidSnapshot(
+            generatedPreviewPlanPayload: GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan(),
+            targetFinishTimeSeconds: 3480, targetFinishTimeSource: TargetFinishTimeSource.ProductAverage);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+
+        var plan = await ctx.TrainingPlans.SingleAsync();
+        Assert.Equal(3480, plan.TargetFinishTimeSeconds);
+        Assert.Equal(TargetFinishTimeSource.ProductAverage, plan.TargetFinishTimeSource);
+    }
+
+    [Fact]
+    public async Task ConfirmAsync_UserDefinedSource_PersistsSourceAlongsideSeconds()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+
+        var snapshot = BuildValidSnapshot(
+            generatedPreviewPlanPayload: GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan(),
+            targetFinishTimeSeconds: 3480, targetFinishTimeSource: TargetFinishTimeSource.UserDefined);
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+
+        var plan = await ctx.TrainingPlans.SingleAsync();
+        Assert.Equal(3480, plan.TargetFinishTimeSeconds);
+        Assert.Equal(TargetFinishTimeSource.UserDefined, plan.TargetFinishTimeSource);
+    }
+
+    /// <summary>
+    /// The permanent regression FREQ.6D.20/21 require: two otherwise-valid
+    /// confirmed plans with the IDENTICAL numeric TargetFinishTimeSeconds
+    /// must retain their own, independently-correct TargetFinishTimeSource
+    /// after confirmation -- proving source is never derived from the number.
+    /// </summary>
+    [Fact]
+    public async Task ConfirmAsync_SameNumericTarget_DifferentSource_RemainsDistinctAfterConfirmation()
+    {
+        await using var ctxA = NewContext();
+        var svcA = NewService(ctxA);
+        var userA = Guid.NewGuid();
+        var snapshotA = BuildValidSnapshot(
+            generatedPreviewPlanPayload: GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan(),
+            targetFinishTimeSeconds: 3480, targetFinishTimeSource: TargetFinishTimeSource.ProductAverage);
+        var previewA = BuildPreviewRow(userA, snapshotA);
+        ctxA.PlanPreviews.Add(previewA);
+        await ctxA.SaveChangesAsync();
+        await svcA.ConfirmAsync(userA, previewA.Id);
+        var planA = await ctxA.TrainingPlans.SingleAsync();
+
+        await using var ctxB = NewContext();
+        var svcB = NewService(ctxB);
+        var userB = Guid.NewGuid();
+        var snapshotB = BuildValidSnapshot(
+            generatedPreviewPlanPayload: GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan(),
+            targetFinishTimeSeconds: 3480, targetFinishTimeSource: TargetFinishTimeSource.UserDefined);
+        var previewB = BuildPreviewRow(userB, snapshotB);
+        ctxB.PlanPreviews.Add(previewB);
+        await ctxB.SaveChangesAsync();
+        await svcB.ConfirmAsync(userB, previewB.Id);
+        var planB = await ctxB.TrainingPlans.SingleAsync();
+
+        Assert.Equal(planA.TargetFinishTimeSeconds, planB.TargetFinishTimeSeconds);
+        Assert.NotEqual(planA.TargetFinishTimeSource, planB.TargetFinishTimeSource);
+        Assert.Equal(TargetFinishTimeSource.ProductAverage, planA.TargetFinishTimeSource);
+        Assert.Equal(TargetFinishTimeSource.UserDefined, planB.TargetFinishTimeSource);
+    }
+
+    [Fact]
+    public async Task ConfirmAsync_NoTargetTimeRequested_BothSecondsAndSourceRemainNull()
+    {
+        await using var ctx = NewContext();
+        var svc = NewService(ctx);
+        var userId = Guid.NewGuid();
+
+        var snapshot = BuildValidSnapshot(generatedPreviewPlanPayload: GeneratedCatalogPlanPayloadFixtures.ValidTwoWeekPlan());
+        var preview = BuildPreviewRow(userId, snapshot);
+        ctx.PlanPreviews.Add(preview);
+        await ctx.SaveChangesAsync();
+
+        await svc.ConfirmAsync(userId, preview.Id);
+
+        var plan = await ctx.TrainingPlans.SingleAsync();
+        Assert.Null(plan.TargetFinishTimeSeconds);
+        Assert.Null(plan.TargetFinishTimeSource);
     }
 }
