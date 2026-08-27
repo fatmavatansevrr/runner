@@ -40,9 +40,14 @@ internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRoll
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
         LongHorizonGeEntryBaselineInput onboardingBaseline)
     {
-        var isFiveDay = selectedGeneralEnduranceWeeks.Count > 0 && selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count == 3;
-        var policy = isFiveDay ? Prescription.Volume.VolumeSafetyPolicy.FiveDayIntermediate : Prescription.Volume.VolumeSafetyPolicy.Default;
-        return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: isFiveDay);
+        // Phase 10K-FREQ.6D.26 -- generalized off the resolved descriptor's own
+        // easySupportCount (DaysPerWeek = easySupportCount + 2) into
+        // VolumeSafetyPolicy.ForIntermediateDaysPerWeek; applyTargetCap
+        // extended to every frequency whose approved numeric authority uses
+        // target-capped growth (5D and 6D today), not merely 5D.
+        var resolvedDaysPerWeek = (selectedGeneralEnduranceWeeks.Count > 0 ? selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count : 2) + 2;
+        var policy = Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek);
+        return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: resolvedDaysPerWeek is 5 or 6);
     }
 }
 
@@ -154,8 +159,12 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         }
 
         IReadOnlyList<LongHorizonGeWeekNumericResult> numericResults;
+        // Phase 10K-FREQ.6D.26 -- generalized from a DaysPerWeek==5-only binary
+        // ternary to the structural identity every GE/Runway week already
+        // obeys (exactly 1 KEY + 1 LONG, the remainder EASY): easySupportCount
+        // = DaysPerWeek - 2. Byte-identical for every existing caller.
         var selectedDescriptors = LongHorizonGeStructuralSelector
-            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile, request.DaysPerWeek == 5 ? 3 : 2)
+            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile, request.DaysPerWeek - 2)
             .Take(actualWindowSize)
             .ToList();
         try

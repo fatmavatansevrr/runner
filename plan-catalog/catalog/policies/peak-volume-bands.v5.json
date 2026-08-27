@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "schemaVersion": 1,
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 5,
+    "status": "VALIDATED"
+  },
+  "entries": [
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 18, "maximumKm": 24 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 4, "minimumKm": 30, "maximumKm": 42 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 36, "maximumKm": 50 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 6, "minimumKm": 36, "maximumKm": 50 }
+  ]
+}

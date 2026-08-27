@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-18T13:12:48.1625973Z",
+  "generatedAtUtc": "2026-08-27T14:19:38.9285357Z",
   "boundaryAudit": {
     "contractsFiles": [
       "Bundles/PublishedTemplateBundle.cs",
@@ -31,6 +31,7 @@
       "Audit/DomainContentDecision.cs",
       "Audit/PilotDomainContentAudit.cs",
       "Catalog/CatalogSourceSnapshot.cs",
+      "Catalog/PrescriptionProfileClosureResolver.cs",
       "Catalog/WorkoutClosureResolver.cs",
       "Enums/CatalogStatus.cs",
       "Enums/PrescriptionDoseCategory.cs",

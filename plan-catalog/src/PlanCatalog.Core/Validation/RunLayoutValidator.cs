@@ -5,7 +5,11 @@ namespace PlanCatalog.Core.Validation;
 
 public static class RunLayoutValidator
 {
-    private static readonly IReadOnlySet<int> SupportedProductRunsPerWeek = new HashSet<int> { 2, 3, 4, 5 };
+    // Phase 10K-FREQ.6D.26 -- widened to include 6 (Intermediate x6D, approved
+    // FREQ.6D.23/6D.25) alongside the existing 2-5 range. No new product
+    // decision here: 6D's structural/numeric authority was already frozen by
+    // those phases; this is the catalog-side range gate recognizing it.
+    private static readonly IReadOnlySet<int> SupportedProductRunsPerWeek = new HashSet<int> { 2, 3, 4, 5, 6 };
 
     public static ValidationResult Validate(RunLayoutDefinition layout)
     {

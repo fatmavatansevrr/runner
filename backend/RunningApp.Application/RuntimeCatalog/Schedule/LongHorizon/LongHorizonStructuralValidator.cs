@@ -78,12 +78,19 @@ internal static class LongHorizonStructuralValidator
         // Phase 10K-FREQ.6D.14 -- generalized off the candidate's own resolved
         // shape instead of a hardcoded "exactly 4" literal. GE/Runway carry the
         // same role composition as each other (1 KEY + N EASY + 1 LONG); Core's
-        // own approved 5D shape is genuinely different (2 KEY + 2 EASY + 1 LONG,
-        // FREQ.6D.4D Split E), so expected KEY/EASY counts are derived per
-        // segment, not uniformly. Byte-identical for every 4D candidate (the
-        // `isFiveDay` branch never taken).
-        var isFiveDay = skeleton.CandidateKey == LongHorizonStructuralMaterializer.CandidateKeyFiveDay;
-        var expectedSlotCount = isFiveDay ? 5 : 4;
+        // own approved shape is genuinely different (2 KEY + N EASY + 1 LONG),
+        // so expected KEY/EASY counts are derived per segment, not uniformly.
+        // Byte-identical for every 4D candidate.
+        // Phase 10K-FREQ.6D.26 -- widened from a boolean isFiveDay to a
+        // three-way dispatch recognizing 4D/5D/6D by candidate key.
+        var expectedSlotCount = skeleton.CandidateKey switch
+        {
+            LongHorizonStructuralMaterializer.CandidateKeyFiveDay => 5,
+            LongHorizonStructuralMaterializer.CandidateKeySixDay => 6,
+            _ => 4,
+        };
+        var hasDualKeyCore = skeleton.CandidateKey is LongHorizonStructuralMaterializer.CandidateKeyFiveDay
+            or LongHorizonStructuralMaterializer.CandidateKeySixDay;
 
         foreach (var week in skeleton.Weeks)
         {
@@ -96,9 +103,9 @@ internal static class LongHorizonStructuralValidator
                 var keyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "KEY_SESSION");
                 var easyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "EASY_SUPPORT");
                 var longCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "LONG_RUN");
-                var (expectedKey, expectedEasy) = isFiveDay && week.Segment == LongHorizonSegmentType.Core
-                    ? (2, 2)
-                    : isFiveDay ? (1, 3) : (1, 2);
+                var (expectedKey, expectedEasy) = hasDualKeyCore && week.Segment == LongHorizonSegmentType.Core
+                    ? (2, expectedSlotCount - 3)
+                    : (1, expectedSlotCount - 2);
                 if (keyCount != expectedKey || easyCount != expectedEasy || longCount != 1)
                     findings.Add($"Global week {week.GlobalWeekNumber} does not contain exactly {expectedKey} KEY_SESSION, {expectedEasy} EASY_SUPPORT, and 1 LONG_RUN slot.");
                 var indices = week.OrderedWorkoutSlots.Select(s => s.StructuralSlotIndex).ToList();

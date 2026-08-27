@@ -9,7 +9,10 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog;
 
 public sealed class PlanCatalogDeploymentPackagingTests
 {
-    internal const int ExpectedRuntimeCatalogJsonFiles = 97;
+    // Phase 10K-FREQ.6D.26 -- 97 + 5 new Intermediate x6D source documents
+    // (run-layout-6d.v1.json, ten-k-master.v8.json, peak-volume-bands.v5.json,
+    // appsel-race-plan.v6.json, ten-k-6d-intermediate.v1.json) = 102.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 102;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

@@ -75,6 +75,19 @@ public static class V1CatalogPilotIdentityPolicy
     public const int FiveDayCandidateVersion = 1;
 
     /// <summary>
+    /// Phase 10K-FREQ.6D.26 -- the approved, dark-only Intermediate x6D Core
+    /// candidate (FREQ.6D.23/6D.25). Kept here, not consumed by any public
+    /// routing method (<see cref="IsSupportedIdentity"/>/<see cref="ResolveCandidate"/>/
+    /// <see cref="IsSupportedPreparationRunwayIdentity"/> are deliberately
+    /// left untouched -- the public 6D gate remains closed); only referenced
+    /// by <see cref="IsSupportedPreparationRunwayCandidate"/>, an internal
+    /// candidate-identity consistency check the dark Runway
+    /// numeric/calendar/pace machinery already uses for 4D/5D.
+    /// </summary>
+    public const string SixDayCandidateKey = "TEN_K__6D__INTERMEDIATE";
+    public const int SixDayCandidateVersion = 1;
+
+    /// <summary>
     /// GEN.4E — Beginner 4D Core public activation. Per GEN.4A's frozen
     /// vocabulary decision, backend <see cref="RunningBackground.Beginner"/>
     /// is the exact canonical counterpart of the catalog's "NEW" experience
@@ -164,5 +177,6 @@ public static class V1CatalogPilotIdentityPolicy
     public static bool IsSupportedPreparationRunwayCandidate(string candidateKey, int candidateVersion) =>
         (candidateKey, candidateVersion) is
             (CandidateKey, CandidateVersion) or
-            (FiveDayCandidateKey, FiveDayCandidateVersion);
+            (FiveDayCandidateKey, FiveDayCandidateVersion) or
+            (SixDayCandidateKey, SixDayCandidateVersion);
 }

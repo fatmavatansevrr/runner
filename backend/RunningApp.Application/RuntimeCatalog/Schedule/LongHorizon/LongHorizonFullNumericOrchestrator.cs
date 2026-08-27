@@ -53,8 +53,9 @@ internal static class LongHorizonFullNumericOrchestrator
 {
     public const string RunwayEntryContextSourceGeExit = "PrecedingGeneralEnduranceExit";
 
-    /// <summary>Phase 10K-FREQ.6D.14 -- the pinned Process A release whose published bundles carry ProfileBacked execution prescriptions for the real 5D Core Week 1 KEY_SESSION, reusing the exact same version FREQ.6D.13's own dark 5D tests already verify against.</summary>
-    private const string RealPublishedBundleReleaseVersion = "1.1.0";
+    /// <summary>Phase 10K-FREQ.6D.14 -- the pinned Process A release whose published bundles carry ProfileBacked execution prescriptions for the real 5D Core Week 1 KEY_SESSION, reusing the exact same version FREQ.6D.13's own dark 5D tests already verify against.
+    /// Phase 10K-FREQ.6D.26 -- bumped to 1.2.0, a byte-identical superset of 1.1.0 for every pre-existing document, additionally carrying the TEN_K__6D__INTERMEDIATE candidate.</summary>
+    private const string RealPublishedBundleReleaseVersion = "1.2.0";
 
     /// <param name="daysPerWeek">
     /// Phase 10K-FREQ.6D.14 -- the resolved session cardinality. Defaults to
@@ -86,11 +87,11 @@ internal static class LongHorizonFullNumericOrchestrator
         if (decision.PreparationRunwayWeeks != 8) throw new InvalidOperationException("PreparationRunwayWeeks must be exactly 8.");
         if (decision.CoreWeeks != 12) throw new InvalidOperationException("CoreWeeks must be exactly 12.");
 
-        // ── Stage 1: GE (fully reused from Phase 4I.6; Phase 10K-FREQ.6D.14 threads the resolved EASY cardinality and, for 5D, the already-approved FiveDayIntermediate policy + target cap) ──
-        var easySupportCount = daysPerWeek == 5 ? 3 : 2;
-        var geVolumePolicy = daysPerWeek == 5 ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
+        // ── Stage 1: GE (fully reused from Phase 4I.6; Phase 10K-FREQ.6D.14 threads the resolved EASY cardinality and, for 5D/6D, the already-approved policy + target cap; Phase 10K-FREQ.6D.26 generalized the dispatch off DaysPerWeek-2 / VolumeSafetyPolicy.ForIntermediateDaysPerWeek) ──
+        var easySupportCount = daysPerWeek - 2;
+        var geVolumePolicy = VolumeSafetyPolicy.ForIntermediateDaysPerWeek(daysPerWeek);
         var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile, easySupportCount);
-        var geNumeric = LongHorizonGeNumericExecutor.Execute(geDescriptors, geBaseline, geVolumePolicy, applyTargetCap: daysPerWeek == 5);
+        var geNumeric = LongHorizonGeNumericExecutor.Execute(geDescriptors, geBaseline, geVolumePolicy, applyTargetCap: daysPerWeek is 5 or 6);
         var geExit = LongHorizonGeExitState.From(geDescriptors, geNumeric, profile);
 
         // Phase 10K-FREQ.6D.14: real 5D Core Week 1 KEY_SESSION is ProfileBacked

@@ -40,7 +40,11 @@ internal sealed record PreparationRunwayCanonicalWeeklyLayout(
 /// </summary>
 internal static class PreparationRunwayWeeklyShape
 {
-    private static readonly int[] ApprovedEasySupportCounts = [2, 3];
+    // Phase 10K-FREQ.6D.26 -- extends the approved EASY_SUPPORT count set
+    // with 4 (Intermediate x6D Runway: 1 KEY + 4 EASY + 1 LONG, approved
+    // FREQ.6D.23 §9), per this class's own documented convention of explicit
+    // extension rather than silently accepting any count.
+    private static readonly int[] ApprovedEasySupportCounts = [2, 3, 4];
 
     public static bool IsValid(IReadOnlyList<PreparationRunwaySlotRole> roles) =>
         roles.Count(r => r == PreparationRunwaySlotRole.KeySession) == 1 &&

@@ -101,13 +101,18 @@ internal static class LongHorizonRollingInitialActivationInputValidator
                 "Rolling initial activation accepts only the existing eligible 21-52 week GE + 8-week Runway + 12-week Core decision.");
         }
 
+        // Phase 10K-FREQ.6D.26 -- widened from 4-or-5 to include 6 (Intermediate
+        // x6D, approved FREQ.6D.23/6D.25). This is the internal/dark runtime
+        // eligibility gate, distinct from the public routing gate
+        // (V1CatalogPilotIdentityPolicy), which is intentionally left
+        // untouched -- the public 6D gate remains closed.
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5))
+            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5 or 6))
         {
             throw new LongHorizonRollingInitialActivationException(
                 LongHorizonRollingInitialActivationFailureReason.InvalidEligibility,
                 "LONG_HORIZON_ROLLING_INITIAL_ELIGIBILITY_INVALID",
-                "Rolling initial activation is restricted to Race / exact 10K / Intermediate / 4 or 5 days per week.");
+                "Rolling initial activation is restricted to Race / exact 10K / Intermediate / 4, 5, or 6 days per week.");
         }
 
         if (request.StartDate >= request.RaceDate

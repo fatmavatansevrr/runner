@@ -34,7 +34,8 @@ internal static class LongHorizonCheckpointEvidenceAggregator
         // policy's own LongRunHardCapShare (0.36) for 5D evidence, mirroring the
         // same daysPerWeek-derived-from-request pattern already used elsewhere in
         // this runtime; byte-identical for every 4D caller (VolumeSafetyPolicy.Default, 0.40).
-        var policy = daysPerWeek == 5 ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
+        // Phase 10K-FREQ.6D.26 -- generalized via VolumeSafetyPolicy.ForIntermediateDaysPerWeek.
+        var policy = VolumeSafetyPolicy.ForIntermediateDaysPerWeek(daysPerWeek);
         var windowWeeks = Enumerable.Range(previousWindow.StartGlobalWeek, previousWindow.ActualWindowSizeWeeks).ToHashSet();
         var rows = suppliedRows
             .Where(row => windowWeeks.Contains(row.GlobalWeekNumber) && row.TrainingDay.DayType != TrainingDayType.Rest)

@@ -28,16 +28,21 @@ internal static class NextWindowLoadDecisionPolicy
 {
     private const int FiveSessionStructuralWeekSize = 5;
 
+    /// <summary>Phase 10K-FREQ.6D.26 -- the FREQ.6D.23-approved, frozen generalized N-session count-floor + categorical role-gate model, implemented for N=6 (Intermediate x6D: 2 KEY + 3 EASY + 1 LONG).</summary>
+    private const int SixSessionStructuralWeekSize = 6;
+
     public static NextWindowAdaptationResult Evaluate(WindowExecutionSummary summary)
     {
         var loadDecision = DetermineLoadDecision(summary);
         return new NextWindowAdaptationResult(loadDecision, SafetyReviewRequired: summary.HasSafetyFlag);
     }
 
-    private static NextWindowLoadDecision DetermineLoadDecision(WindowExecutionSummary summary) =>
-        summary.ExpectedSessionCount == FiveSessionStructuralWeekSize
-            ? DetermineFiveSessionLoadDecision(summary)
-            : DetermineLegacyLoadDecision(summary);
+    private static NextWindowLoadDecision DetermineLoadDecision(WindowExecutionSummary summary) => summary.ExpectedSessionCount switch
+    {
+        FiveSessionStructuralWeekSize => DetermineFiveSessionLoadDecision(summary),
+        SixSessionStructuralWeekSize => DetermineSixSessionLoadDecision(summary),
+        _ => DetermineLegacyLoadDecision(summary),
+    };
 
     /// <summary>Severity-first (by EffectiveCompletedCount), then role
     /// importance -- the Rev3 fix for the Rev2 bug where role-first
@@ -85,6 +90,68 @@ internal static class NextWindowLoadDecisionPolicy
             _ => throw new AdaptationLineageInvalidException(
                 $"EffectiveCompletedCount {summary.EffectiveCompletedCount} outside the valid 0-5 range for a 5-session structural week."),
         };
+    }
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.26 -- implements the exact `FREQ.6D.23` §6-approved
+    /// generalized N-session model for N=6 (count floor {0,1}=Reduce,
+    /// [2,N-2]=[2,4]=Maintain, N-1=5 role-gated via the already-N-general
+    /// `OnlyEasyMissing`, N=6=Progress). Not extrapolated at implementation
+    /// time -- these are the exact thresholds `FREQ.6D.23`'s own frozen state
+    /// table specifies, reproduced verbatim. Mirrors
+    /// <see cref="DetermineFiveSessionLoadDecision"/>'s dispatch shape exactly
+    /// -- role information is read only inside the count=5 branch.
+    /// </summary>
+    private static NextWindowLoadDecision DetermineSixSessionLoadDecision(WindowExecutionSummary summary)
+    {
+        ValidateSixSessionSummary(summary);
+
+        return summary.EffectiveCompletedCount switch
+        {
+            0 or 1 => NextWindowLoadDecision.Reduce,
+            2 or 3 or 4 => NextWindowLoadDecision.Maintain,
+            5 => OnlyEasyMissing(summary) ? NextWindowLoadDecision.ProgressAsPlanned : NextWindowLoadDecision.Maintain,
+            6 => NextWindowLoadDecision.ProgressAsPlanned,
+            _ => throw new AdaptationLineageInvalidException(
+                $"EffectiveCompletedCount {summary.EffectiveCompletedCount} outside the valid 0-6 range for a 6-session structural week."),
+        };
+    }
+
+    /// <summary>Mirrors <see cref="ValidateFiveSessionSummary"/> exactly, for a 6-session (2 KEY + 3 EASY + 1 LONG) structural week.</summary>
+    private static void ValidateSixSessionSummary(WindowExecutionSummary summary)
+    {
+        var roleSum = summary.KeySessionExpectedCount + (summary.LongRunExpected ? 1 : 0) + summary.EasyExpectedCount;
+        if (roleSum != summary.ExpectedSessionCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"6-session window role-expectation sum (KEY {summary.KeySessionExpectedCount} + LONG {(summary.LongRunExpected ? 1 : 0)} + EASY {summary.EasyExpectedCount} = {roleSum}) " +
+                $"does not equal ExpectedSessionCount {summary.ExpectedSessionCount}.");
+        }
+
+        var roleCompletedSum = summary.KeySessionCompletedCount + (summary.LongRunCompleted ? 1 : 0) + summary.EasyCompletedCount;
+        if (roleCompletedSum != summary.EffectiveCompletedCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"6-session window role-completed sum (KEY {summary.KeySessionCompletedCount} + LONG {(summary.LongRunCompleted ? 1 : 0)} + EASY {summary.EasyCompletedCount} = {roleCompletedSum}) " +
+                $"does not equal EffectiveCompletedCount {summary.EffectiveCompletedCount}.");
+        }
+
+        if (summary.KeySessionCompletedCount < 0 || summary.KeySessionCompletedCount > summary.KeySessionExpectedCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"KeySessionCompletedCount {summary.KeySessionCompletedCount} outside valid [0,{summary.KeySessionExpectedCount}] range.");
+        }
+
+        if (summary.EasyCompletedCount < 0 || summary.EasyCompletedCount > summary.EasyExpectedCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"EasyCompletedCount {summary.EasyCompletedCount} outside valid [0,{summary.EasyExpectedCount}] range.");
+        }
+
+        if (summary.LongRunCompleted && !summary.LongRunExpected)
+        {
+            throw new AdaptationLineageInvalidException("LongRunCompleted is true but LongRunExpected is false.");
+        }
     }
 
     /// <summary>

@@ -151,10 +151,12 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
         // DaysPerWeek -- these are the only real layouts this catalog authors
         // today (FREQ.6D.4D.5B §5: "do not widen implementation beyond what
         // the real root cause requires").
-        if (skeleton.DaysPerWeek is not (3 or 4 or 5))
+        // Phase 10K-FREQ.6D.26: widened to admit 6D (Intermediate x6D, approved
+        // FREQ.6D.23/6D.25) -- the real RUN_LAYOUT_6D catalog layout.
+        if (skeleton.DaysPerWeek is not (3 or 4 or 5 or 6))
         {
             throw new CatalogCalendarRoleStructureInvalidException(
-                $"Core calendar assignment supports resolved 3D/4D/5D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
+                $"Core calendar assignment supports resolved 3D/4D/5D/6D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
         }
 
         foreach (var week in skeleton.Weeks)

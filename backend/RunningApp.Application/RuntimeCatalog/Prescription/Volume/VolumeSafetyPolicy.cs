@@ -133,6 +133,51 @@ public sealed record VolumeSafetyPolicy(
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.26 -- implements the already-approved FREQ.6D.23/6D.25
+    /// Intermediate×6D numeric authority. Every value is byte-identical to
+    /// <see cref="FiveDayIntermediate"/>: FREQ.6D.25 approved reusing 5D's
+    /// exact starting-volume/peak-reference/long-run-share figures for 6D
+    /// (the same real, undifferentiated evidence source spans both 5 and 6
+    /// days), and FREQ.6D.25 separately approved PeakVolumeBand=[36,50]km
+    /// (implemented as a catalog row, not a field here) via a new,
+    /// materially-stronger cross-tier evidence finding -- not because a rule
+    /// mandates equality with 5D. No new numeric constant appears anywhere
+    /// in this record.
+    /// </summary>
+    public static VolumeSafetyPolicy SixDayIntermediate { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 26.0d,
+        ResolvedPeakReference: new(44.5d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.28d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.36d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>
+    /// Phase 10K-FREQ.6D.26 -- centralizes the Intermediate LongHorizon
+    /// GE/Runway daysPerWeek-to-policy dispatch that was previously
+    /// duplicated as an ad-hoc `daysPerWeek == 5 ? FiveDayIntermediate :
+    /// Default` (or `easySupportCount == 3`) ternary at four separate call
+    /// sites. Fail-closed for any Intermediate frequency without an approved
+    /// policy, rather than silently defaulting -- byte-identical selection
+    /// for every existing caller (4D still resolves to <see cref="Default"/>,
+    /// 5D to <see cref="FiveDayIntermediate"/>).
+    /// </summary>
+    public static VolumeSafetyPolicy ForIntermediateDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        4 => Default,
+        5 => FiveDayIntermediate,
+        6 => SixDayIntermediate,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Intermediate VolumeSafetyPolicy exists for this DaysPerWeek."),
+    };
+
     public static VolumeSafetyPolicy BeginnerFourDay { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,
         HardMaxWeeklyIncreaseRatio: 0.08d,

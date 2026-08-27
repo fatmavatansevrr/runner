@@ -224,7 +224,11 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         {
             "LONG_RUN" => allocation.LongRunDistanceKm,
             "KEY_SESSION" => allocation.KeySessionDistancesKm[keySessionOrdinal],
-            "EASY_SUPPORT" => easySupportOrdinal == 0 ? allocation.FirstEasySupportDistanceKm : allocation.SecondEasySupportDistanceKm,
+            // Phase 10K-FREQ.6D.26 -- generalized from a binary
+            // ordinal==0?First:Second ternary (which silently collapsed any
+            // ordinal >= 1 onto Second, wrong for 3+ EASY sessions like 6D
+            // Core's 2K+3E+1L) to indexing the full resolved list.
+            "EASY_SUPPORT" => allocation.EasySupportDistancesKm[easySupportOrdinal],
             _ => throw new CatalogSessionPrescriptionInfeasibleException($"Unsupported structural role '{session.StructuralRole}'.")
         };
 

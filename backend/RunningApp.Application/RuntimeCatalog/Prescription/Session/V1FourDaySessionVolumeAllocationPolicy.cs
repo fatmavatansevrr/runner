@@ -9,12 +9,17 @@ internal sealed record V1FourDayWeekAllocation(
     double LongRunDistanceKm,
     double ResidualVolumeKm,
     IReadOnlyList<double> KeySessionDistancesKm,
-    double FirstEasySupportDistanceKm,
-    double SecondEasySupportDistanceKm,
+    IReadOnlyList<double> EasySupportDistancesKm,
     SessionVolumeAllocationTrace Trace)
 {
     /// <summary>Back-compat accessor for every pre-FREQ.4 (single-KEY) consumer -- unchanged value for a 1-KEY week.</summary>
     public double KeySessionDistanceKm => KeySessionDistancesKm[0];
+
+    /// <summary>Back-compat accessor -- unchanged value for every 2-EASY caller.</summary>
+    public double FirstEasySupportDistanceKm => EasySupportDistancesKm[0];
+
+    /// <summary>Back-compat accessor -- unchanged value for every 2-EASY caller.</summary>
+    public double SecondEasySupportDistanceKm => EasySupportDistancesKm[1];
 
     /// <summary>
     /// Explicit record equality: the compiler-generated version compares
@@ -30,15 +35,14 @@ internal sealed record V1FourDayWeekAllocation(
         LongRunDistanceKm.Equals(other.LongRunDistanceKm) &&
         ResidualVolumeKm.Equals(other.ResidualVolumeKm) &&
         KeySessionDistancesKm.SequenceEqual(other.KeySessionDistancesKm) &&
-        FirstEasySupportDistanceKm.Equals(other.FirstEasySupportDistanceKm) &&
-        SecondEasySupportDistanceKm.Equals(other.SecondEasySupportDistanceKm) &&
+        EasySupportDistancesKm.SequenceEqual(other.EasySupportDistancesKm) &&
         Trace.Equals(other.Trace);
 
     public override int GetHashCode() =>
         HashCode.Combine(
             WeekNumber, PlannedWeeklyVolumeKm, LongRunDistanceKm, ResidualVolumeKm,
-            KeySessionDistancesKm.Aggregate(17, HashCode.Combine), FirstEasySupportDistanceKm,
-            SecondEasySupportDistanceKm, Trace);
+            KeySessionDistancesKm.Aggregate(17, HashCode.Combine),
+            EasySupportDistancesKm.Aggregate(17, HashCode.Combine), Trace);
 }
 
 /// <summary>
@@ -66,11 +70,17 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
         CatalogLongRunWeek longRun,
         IReadOnlyList<BoundCatalogSession> sessions)
     {
+        // Phase 10K-FREQ.6D.26 -- generalized the EASY_SUPPORT count from a
+        // hardcoded ==2 (byte-identical for 4D and 5D Core, which both
+        // happen to have 2 EASY) to the structural identity every session
+        // week already obeys: EASY = total - KEY - LONG. 6D Core has 3 EASY
+        // (2 KEY + 3 EASY + 1 LONG); this was previously unreachable for it.
         var keySessionCount = sessions.Count(s => s.StructuralRole == "KEY_SESSION");
+        var easySessionCount = sessions.Count(s => s.StructuralRole == "EASY_SUPPORT");
         if (keySessionCount < 1 ||
-            sessions.Count(s => s.StructuralRole == "EASY_SUPPORT") != 2 ||
+            easySessionCount < 1 ||
             sessions.Count(s => s.StructuralRole == "LONG_RUN") != 1 ||
-            sessions.Count != keySessionCount + 3)
+            sessions.Count != keySessionCount + easySessionCount + 1)
         {
             throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} does not match the V1 multi-key session shape.");
         }
@@ -79,7 +89,7 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
         try
         {
             distances = FourDaySessionDistanceAllocationPolicy.Allocate(
-                weekly.PlannedWeeklyVolumeKm, longRun.PlannedLongRunDistanceKm, keySessionCount);
+                weekly.PlannedWeeklyVolumeKm, longRun.PlannedLongRunDistanceKm, keySessionCount, easySessionCount);
         }
         catch (CatalogSessionPrescriptionInfeasibleException exception)
         {
@@ -95,8 +105,7 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
             longRun.PlannedLongRunDistanceKm,
             distances.ResidualVolumeKm,
             distances.KeySessionDistancesKm,
-            distances.FirstEasySupportDistanceKm,
-            distances.SecondEasySupportDistanceKm,
+            distances.EasySupportDistancesKm,
             new SessionVolumeAllocationTrace(
                 weekly.WeekNumber,
                 weekly.PlannedWeeklyVolumeKm,

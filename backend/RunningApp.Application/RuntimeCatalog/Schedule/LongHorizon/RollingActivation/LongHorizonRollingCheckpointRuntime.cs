@@ -76,9 +76,12 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
         ValidatedSustainableLoad anchor)
     {
+        // Phase 10K-FREQ.6D.26 -- generalized off the same resolved-descriptor
+        // easySupportCount already used above, inverted (DaysPerWeek =
+        // easySupportCount + 2, the structural identity every GE/Runway week
+        // obeys) into VolumeSafetyPolicy.ForIntermediateDaysPerWeek.
         var easySupportCount = selectedWeeks.Count > 0 ? selectedWeeks[0].EasySupportWorkouts.Count : 2;
-        var isFiveDay = easySupportCount == 3;
-        var policy = isFiveDay ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
+        var policy = VolumeSafetyPolicy.ForIntermediateDaysPerWeek(easySupportCount + 2);
         var weeklyAnchor = anchor.WeeklyVolumeKm!.Value;
         var longRunAnchor = anchor.LongRunKm!.Value;
         return selectedWeeks.Select(week =>
@@ -199,8 +202,14 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
             return Task.FromResult(ValidateResult(Blocked(request, aggregation, evaluation.Decision, nextVersion, boundary, stages)));
         }
 
+        // Phase 10K-FREQ.6D.26 -- generalized from a DaysPerWeek==5-only binary
+        // ternary to the structural identity every GE/Runway week already
+        // obeys (exactly 1 KEY + 1 LONG, the remainder EASY): easySupportCount
+        // = DaysPerWeek - 2. Byte-identical for every existing caller
+        // (4D: 4-2=2, 5D: 5-2=3) -- not a new decision, the same values the
+        // ternary already produced, generalized to the frequency-neutral rule.
         var descriptors = LongHorizonGeStructuralSelector
-            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile, request.DaysPerWeek == 5 ? 3 : 2)
+            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile, request.DaysPerWeek - 2)
             .Skip(nextStart - 1).Take(nextEnd - nextStart + 1).ToList();
         IReadOnlyList<LongHorizonGeWeekNumericResult> numeric;
         try
@@ -387,11 +396,14 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
 
     private static void ValidateInput(LongHorizonRollingCheckpointRequest request)
     {
+        // Phase 10K-FREQ.6D.26 -- widened from 4D-or-5D to include 6D
+        // (Intermediate x6D, approved FREQ.6D.23/6D.25). Internal/dark
+        // checkpoint-runtime eligibility only -- not the public gate.
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5)
+            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5 or 6)
             || request.StructuralRoadmap.TotalWeeks is < 21 or > 52
             || request.ReadinessProfile != request.StructuralRoadmap.Profile)
-            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate/4D-or-5D/21-52 only.");
+            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate/4D-5D-or-6D/21-52 only.");
     }
 
     private static void ValidatePendingBoundary(LongHorizonRollingCheckpointRequest request, (int StartGlobalWeek, int EndGlobalWeek) boundary)

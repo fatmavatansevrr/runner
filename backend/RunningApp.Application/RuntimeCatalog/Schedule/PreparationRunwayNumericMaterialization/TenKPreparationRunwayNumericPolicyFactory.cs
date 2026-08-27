@@ -29,11 +29,17 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
     /// condition.
     /// </summary>
     public static PreparationRunwayNumericPolicy Build(PlanCatalogCandidateSummary candidate) =>
-        candidate.CanonicalDistanceFamily == "TEN_K" && candidate.Level == "INTERMEDIATE" && candidate.DaysPerWeek == 5
-            ? Build(VolumeSafetyPolicy.FiveDayIntermediate,
+        (candidate.CanonicalDistanceFamily, candidate.Level, candidate.DaysPerWeek) switch
+        {
+            ("TEN_K", "INTERMEDIATE", 5) => Build(VolumeSafetyPolicy.FiveDayIntermediate,
                 V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
-                V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm)
-            : Build();
+                V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm),
+            // Phase 10K-FREQ.6D.26 -- FREQ.6D.23/6D.25-approved Intermediate x6D authority, same exact-identity-only dispatch pattern as 5D above.
+            ("TEN_K", "INTERMEDIATE", 6) => Build(VolumeSafetyPolicy.SixDayIntermediate,
+                V1SixDayIntermediateMissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
+                V1SixDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm),
+            _ => Build(),
+        };
 
     private static PreparationRunwayNumericPolicy Build(VolumeSafetyPolicy core, double missingWeeklyVolumeDefaultKm, double explicitZeroWeeklyVolumeDefaultKm)
     {
@@ -55,7 +61,11 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
         // rule. Deriving the tolerance from the policy's own already-
         // approved RoundingIncrementKm and GoldenFixtureStartingVolumeKm
         // (never a new invented number) absorbs exactly that drift.
-        var longRunShareTolerance = ReferenceEquals(core, VolumeSafetyPolicy.FiveDayIntermediate)
+        // Phase 10K-FREQ.6D.26 -- SixDayIntermediate has the identical
+        // zero-nominal-gap shape FiveDayIntermediate does (28% selection with
+        // no separate preferred-minimum), so it needs the same derived
+        // tolerance for the same reason.
+        var longRunShareTolerance = ReferenceEquals(core, VolumeSafetyPolicy.FiveDayIntermediate) || ReferenceEquals(core, VolumeSafetyPolicy.SixDayIntermediate)
             ? core.RoundingIncrementKm / core.GoldenFixtureStartingVolumeKm
             : V1FourDaySessionVolumeAllocationPolicy.ToleranceKm;
         return new PreparationRunwayNumericPolicy(

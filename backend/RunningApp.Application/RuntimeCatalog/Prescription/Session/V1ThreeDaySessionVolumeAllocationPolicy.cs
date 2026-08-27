@@ -49,7 +49,7 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
         if (current[2] / volume > LongHardCap + 0.0001d)
             throw new CatalogSessionPrescriptionInfeasibleException("Reconciled 3D long run exceeds the 42% hard cap.");
 
-        return new V1FourDayWeekAllocation(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), new[] { current[0] }, current[1], 0d,
+        return new V1FourDayWeekAllocation(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), new[] { current[0] }, new[] { current[1] },
             new SessionVolumeAllocationTrace(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), current[0], current[1], 0d, PolicyKey, PolicyVersion));
     }
 

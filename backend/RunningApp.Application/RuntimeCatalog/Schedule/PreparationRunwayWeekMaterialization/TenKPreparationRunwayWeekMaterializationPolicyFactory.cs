@@ -45,7 +45,20 @@ internal static class TenKPreparationRunwayWeekMaterializationPolicyFactory
                 PreparationRunwaySlotRole.EasySupport,
                 PreparationRunwaySlotRole.LongRun,
             ]),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "Only the approved Intermediate 4D/5D Preparation Runway layouts are supported."),
+        // Phase 10K-FREQ.6D.26 -- the approved Intermediate x6D Preparation
+        // Runway shape (1 KEY + 4 EASY + 1 LONG, FREQ.6D.23 §9), same
+        // internal-provenance-only reference pattern 5D already uses.
+        6 => new(
+            new PlanCatalogReference("PREPARATION_RUNWAY_LAYOUT_6D_V1", 1),
+            [
+                PreparationRunwaySlotRole.KeySession,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.LongRun,
+            ]),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "Only the approved Intermediate 4D/5D/6D Preparation Runway layouts are supported."),
     };
 
     public static PreparationRunwaySupportWorkoutPolicy BuildSupportPolicy() => new(

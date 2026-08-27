@@ -43,6 +43,10 @@ internal static class LongHorizonStructuralMaterializer
     public const string CandidateKeyFiveDay = "TEN_K__5D__INTERMEDIATE";
     public const int CandidateVersionFiveDay = 1;
 
+    /// <summary>Phase 10K-FREQ.6D.26 -- the approved Intermediate x6D candidate identity (FREQ.6D.23/6D.25), published as `TEN_K__6D__INTERMEDIATE` v1 in the plan-catalog release.</summary>
+    public const string CandidateKeySixDay = "TEN_K__6D__INTERMEDIATE";
+    public const int CandidateVersionSixDay = 1;
+
     private static readonly IReadOnlyList<string> CoreStageSequence = ["FOUNDATION", "BUILD", "RACE_SPECIFIC", "TAPER"];
 
     private static readonly IReadOnlyList<CatalogStageWeekAllocation> CoreStageAllocations =
@@ -59,6 +63,10 @@ internal static class LongHorizonStructuralMaterializer
     /// <summary>Phase 10K-FREQ.6D.14 -- the approved Intermediate x5D Core run layout (FREQ.6D.4D Split E, real catalog artifact <c>RUN_LAYOUT_5D.v1.json</c>), reused verbatim from the already-public 5D Core route. Slot order is interleaved (KEY, EASY, KEY, EASY, LONG), not grouped.</summary>
     private static readonly PlanCatalogReference CoreRunLayoutFiveDay = new("RUN_LAYOUT_5D", 1);
     private static readonly IReadOnlyList<string> CoreRunLayoutSlotRolesFiveDay = ["KEY_SESSION", "EASY_SUPPORT", "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN"];
+
+    /// <summary>Phase 10K-FREQ.6D.26 -- the approved Intermediate x6D Core run layout (FREQ.6D.23 §9), real catalog artifact <c>RUN_LAYOUT_6D.v1.json</c>. Extends 5D's interleaved shape with one additional EASY_SUPPORT slot.</summary>
+    private static readonly PlanCatalogReference CoreRunLayoutSixDay = new("RUN_LAYOUT_6D", 1);
+    private static readonly IReadOnlyList<string> CoreRunLayoutSlotRolesSixDay = ["KEY_SESSION", "EASY_SUPPORT", "KEY_SESSION", "EASY_SUPPORT", "EASY_SUPPORT", "LONG_RUN"];
 
     /// <summary>Arbitrary, never-surfaced anchor date -- <see cref="CatalogStageToWeekMaterializationContext"/> requires one, but no date field of its result is ever copied into <see cref="LongHorizonGeneratedStructuralSkeleton"/> (Phase 4I.5 explicitly performs no calendar execution).</summary>
     private static readonly DateOnly DiscardedAnchorDate = new(2000, 1, 1);
@@ -80,8 +88,8 @@ internal static class LongHorizonStructuralMaterializer
         if (decision is null) throw new ArgumentNullException(nameof(decision));
         if (workoutLoader is null) throw new ArgumentNullException(nameof(workoutLoader));
         if (string.IsNullOrWhiteSpace(catalogRoot)) throw new ArgumentException("catalogRoot is required.", nameof(catalogRoot));
-        if (daysPerWeek is not (4 or 5))
-            throw new InvalidOperationException($"LongHorizonStructuralMaterializer only recognizes daysPerWeek 4 or 5; received {daysPerWeek}.");
+        if (daysPerWeek is not (4 or 5 or 6))
+            throw new InvalidOperationException($"LongHorizonStructuralMaterializer only recognizes daysPerWeek 4, 5, or 6; received {daysPerWeek}.");
 
         if (decision.HorizonPath != LongHorizonPath.LongHorizonGeneralEnduranceRunwayAndCore)
             throw new InvalidOperationException(
@@ -100,7 +108,7 @@ internal static class LongHorizonStructuralMaterializer
             throw new InvalidOperationException(
                 $"AvailableFullWeeks ({decision.AvailableFullWeeks}) does not equal GE+Runway+Core ({geWeeks}+8+12).");
 
-        var easySupportCount = daysPerWeek == 5 ? 3 : 2;
+        var easySupportCount = daysPerWeek - 2;
         var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile, easySupportCount);
         if (geDescriptors.Count != geWeeks)
             throw new InvalidOperationException($"GE selector returned {geDescriptors.Count} weeks, expected {geWeeks}.");
@@ -131,8 +139,8 @@ internal static class LongHorizonStructuralMaterializer
             PreparationRunwayWeeks: 8,
             CoreWeeks: 12,
             ReadinessProfile: profile,
-            CandidateKey: daysPerWeek == 5 ? CandidateKeyFiveDay : CandidateKey,
-            CandidateVersion: daysPerWeek == 5 ? CandidateVersionFiveDay : CandidateVersion,
+            CandidateKey: ResolveCandidateKey(daysPerWeek),
+            CandidateVersion: ResolveCandidateVersion(daysPerWeek),
             CompositionPolicyId: decision.PolicyId,
             CompositionPolicyVersion: decision.PolicyVersion,
             MaterializerId: MaterializerId,
@@ -146,6 +154,21 @@ internal static class LongHorizonStructuralMaterializer
 
         return skeleton;
     }
+
+    /// <summary>Phase 10K-FREQ.6D.26 -- centralizes the three-way daysPerWeek-to-candidate-identity dispatch previously duplicated as separate `daysPerWeek == 5 ? ... : ...` ternaries.</summary>
+    private static string ResolveCandidateKey(int daysPerWeek) => daysPerWeek switch
+    {
+        5 => CandidateKeyFiveDay,
+        6 => CandidateKeySixDay,
+        _ => CandidateKey,
+    };
+
+    private static int ResolveCandidateVersion(int daysPerWeek) => daysPerWeek switch
+    {
+        5 => CandidateVersionFiveDay,
+        6 => CandidateVersionSixDay,
+        _ => CandidateVersion,
+    };
 
     // ── GE segment ───────────────────────────────────────────────────────
 
@@ -220,8 +243,8 @@ internal static class LongHorizonStructuralMaterializer
         var structural = await PreparationRunwayWeekMaterializer.MaterializeAsync(
             new PreparationRunwayWeekMaterializationRequest<PreparationRunwayBlockType>(
                 allocationProfile.ToString(),
-                daysPerWeek == 5 ? CandidateKeyFiveDay : CandidateKey,
-                daysPerWeek == 5 ? CandidateVersionFiveDay : CandidateVersion,
+                ResolveCandidateKey(daysPerWeek),
+                ResolveCandidateVersion(daysPerWeek),
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyId,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(daysPerWeek),
@@ -273,8 +296,8 @@ internal static class LongHorizonStructuralMaterializer
 
     private static IReadOnlyList<GeneratedCatalogWeekSkeleton> MaterializeCore(int daysPerWeek)
     {
-        var runLayout = daysPerWeek == 5 ? CoreRunLayoutFiveDay : CoreRunLayout;
-        var runLayoutSlotRoles = daysPerWeek == 5 ? CoreRunLayoutSlotRolesFiveDay : CoreRunLayoutSlotRoles;
+        var runLayout = daysPerWeek switch { 5 => CoreRunLayoutFiveDay, 6 => CoreRunLayoutSixDay, _ => CoreRunLayout };
+        var runLayoutSlotRoles = daysPerWeek switch { 5 => CoreRunLayoutSlotRolesFiveDay, 6 => CoreRunLayoutSlotRolesSixDay, _ => CoreRunLayoutSlotRoles };
         var context = new CatalogStageToWeekMaterializationContext
         {
             StartDate = DiscardedAnchorDate,
@@ -282,8 +305,8 @@ internal static class LongHorizonStructuralMaterializer
             PlannedWeekCount = 12,
             DaysPerWeek = daysPerWeek,
             CanonicalDistanceFamily = "TEN_K",
-            CandidateKey = daysPerWeek == 5 ? CandidateKeyFiveDay : CandidateKey,
-            CandidateVersion = daysPerWeek == 5 ? CandidateVersionFiveDay : CandidateVersion,
+            CandidateKey = ResolveCandidateKey(daysPerWeek),
+            CandidateVersion = ResolveCandidateVersion(daysPerWeek),
             DependencyVersions = new Dictionary<string, PlanCatalogReference> { ["layout"] = runLayout },
             SelectedStageSequence = CoreStageSequence,
             StageWeekAllocations = CoreStageAllocations,
