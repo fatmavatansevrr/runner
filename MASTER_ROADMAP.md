@@ -73,9 +73,9 @@ Prior phase: `FREQ.6D.16` — Execution Status `DONE`, Final Classification `SHA
 
 Prior phase: `FREQ.6D.17` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_CORE_ENTRY_CLAMP_IMPLEMENTED_AND_DARK_VERIFIED_PERSISTED_ADAPTATION_REPAIR_REMAINING`. Implemented `FREQ.6D.16`'s approved GE→Runway Core-entry clamp at its single shared owner (`PreparationRunwayNumericMaterializer.Materialize`) — no new numeric constant, conservative by construction. Re-verified via real numeric traces that 4D/22, 4D/23, 5D/22, 5D/23, and the 4D/24 long-run edge all now succeed; mechanically re-ran the full 21-52 week dark matrix at 32/32 success using the same representative baseline every other test already uses (the forced near-cap workaround baseline is no longer required). Did **not** complete real PostgreSQL persisted adaptation or persisted repair verification (`LongHorizonRollingCheckpointRuntime` not touched) — `FREQ.6D.15`'s own disclosed remaining scope, still open, not a blocker.
 
-**Next phase**: `FREQ.6D.18` — **INTERMEDIATE×5D LONGHORIZON PERSISTED ADAPTATION & REPAIR REAL POSTGRESQL DARK-CLOSURE VERIFICATION**. Phase type: **REAL DATABASE VERIFICATION + DARK INTEGRATION CLOSURE**. Completes real PostgreSQL persisted adaptation and persisted repair verification for the Intermediate×5D LongHorizon GE checkpoint-continuation path (`LongHorizonRollingCheckpointRuntime`), reusing `FREQ.6D.15`'s own real-Postgres infrastructure and the already-5D-aware `NextWindowLoadDecisionPolicy`/`ScheduleRepairPersistenceService`. No new product/numeric decision, no new schema, no GE/Runway/Core structural change, no public activation.
+Prior phase: `FREQ.6D.18` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_PERSISTED_ADAPTATION_AND_REPAIR_VERIFIED_FOR_GE_SEGMENT_RUNWAY_CORE_BOUNDARY_SCENARIOS_REMAINING`. Performed the mandatory repair-authority reconnaissance before writing any repair test, discovering two separate adaptation authorities coexist (`LongHorizonRollingCheckpointRuntime`'s coarse Growth/Maintenance dispatch vs. the actual frozen 5-session severity table implemented by `WindowExecutionSummaryBuilder`/`NextWindowLoadDecisionPolicy`, called only from the real `LongHorizonRollingWindowActivationService`). Found and fixed eight real 4D-hardcoding/lineage-drop defects blocking Intermediate×5D LongHorizon persisted adaptation and repair, most significantly `ScheduleRepairPersistenceService.BuildReplacement` never copying `LaneOrdinal`/`SlotOrdinal`/`ProgressionStageKey`/profile lineage onto a repair replacement session (a 4D+5D bug, not 5D-specific). Traced and fixed the deepest root cause: `LongHorizonRollingStateRepository.InitializeStructuralStateAsync` hardcoded `DaysPerWeek = 4` at plan creation — every 5D plan's persisted `DaysPerWeek` silently reverted to 4, causing every reload to rebuild a 4D-shaped structural skeleton regardless of the plan's real shape. Verified 9 new real-PostgreSQL persist→dispose→reload→continue tests: the full 6-row 5-session severity table against real reloaded rows, end-to-end checkpoint-continuation cardinality/lineage survival, and persisted GE KEY repair/repeated-EASY identity preservation. Did **not** attempt GE→Runway/Runway→Core persisted-adaptation scenarios or Core secondary-KEY repair (no real persisted Core session exists in any available fixture). No new numeric constant, schema, catalog content, or identity-model redesign. Full regression 3882/3884 (same 2 pre-existing failures, +9 new passing).
 
-`FREQ.6D.18` is scheduled only — not started.
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — a continuation phase completing the GE→Runway/Runway→Core-after-adaptation persisted scenarios and Core secondary-KEY (lane1) persisted repair, the last remaining dark-verification gap before the final public-activation phase (real HTTP/Postgres verification and public routing) can be scheduled.
 
 ---
 
@@ -653,11 +653,30 @@ FREQ.6D.17 (DONE, PARTIAL)      → IMPLEMENTATION + REAL POSTGRESQL VERIFICATIO
                                     Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_CORE_ENTRY_CLAMP_IMPLEMENTED_AND_DARK_
                                     VERIFIED_PERSISTED_ADAPTATION_REPAIR_REMAINING.
-NEXT (NOT_YET_SCHEDULED)        → implementation phase completing real PostgreSQL persisted
-                                    adaptation/repair verification for the 5D GE checkpoint-
-                                    continuation path. Then real environment / public HTTP
-                                    verification + public activation for Intermediate×5D LongHorizon
-                                    21-52.
+FREQ.6D.18 (DONE, PARTIAL)      → REAL DATABASE VERIFICATION + DARK INTEGRATION CLOSURE:
+                                    reconnaissance found two separate adaptation authorities coexist
+                                    (checkpoint runtime's coarse Growth/Maintenance dispatch vs. the
+                                    real 5-session severity table in NextWindowLoadDecisionPolicy).
+                                    Found and fixed eight real 4D-hardcoding/lineage-drop defects,
+                                    most significantly ScheduleRepairPersistenceService never copying
+                                    LaneOrdinal/SlotOrdinal/ProgressionStageKey onto a repair
+                                    replacement (a 4D+5D bug). Root cause: InitializeStructuralStateAsync
+                                    hardcoded DaysPerWeek=4 at plan creation, so every 5D plan's
+                                    persisted DaysPerWeek silently reverted to 4 and every reload
+                                    rebuilt a 4D-shaped skeleton. Verified 9 new real-Postgres
+                                    persist/reload tests: full 5-session severity table, checkpoint-
+                                    continuation cardinality/lineage, GE KEY + repeated-EASY repair.
+                                    Did NOT attempt GE->Runway/Runway->Core persisted-adaptation
+                                    scenarios or Core secondary-KEY repair (no real persisted Core
+                                    session in any available fixture). No new numeric constant,
+                                    schema, catalog content, or identity-model redesign.
+                                    Classification:
+                                    INTERMEDIATE_5D_LONGHORIZON_PERSISTED_ADAPTATION_AND_REPAIR_
+                                    VERIFIED_FOR_GE_SEGMENT_RUNWAY_CORE_BOUNDARY_SCENARIOS_REMAINING.
+NEXT (NOT_YET_SCHEDULED)        → continuation phase completing GE->Runway/Runway->Core persisted-
+                                    adaptation scenarios and Core secondary-KEY (lane1) persisted
+                                    repair. Then real environment / public HTTP verification +
+                                    public activation for Intermediate×5D LongHorizon 21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
