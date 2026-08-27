@@ -101,6 +101,7 @@ internal static class LongHorizonRollingInitialActivationFiveDayFixture
             ContextVersion = result.ContextVersion!,
             CatalogRootPath = CatalogRoot(),
             Candidate = candidate,
+            DaysPerWeek = 5,
         };
 
         using var db = LongHorizonPersistenceTestFixture.NewContext();
