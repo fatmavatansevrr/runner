@@ -97,7 +97,9 @@ Prior phase: `FREQ.6D.24` — Execution Status `DONE`, Final Classification `INT
 
 **Blocked on exactly one item.** Structure, support decision, starting-volume, `ResolvedPeakReference`, progression, long-run share, Adaptation N-session state tables, and catalog capacity are all frozen/approved (`FREQ.6D.23`). `PeakVolumeBand`'s exact figure remains `DECISION_REQUIRED` (`FREQ.6D.24`) — confirmed genuinely load-bearing at runtime, not a publication-only gap. Intermediate×6D combined implementation cannot safely begin until this single item closes.
 
-**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — a narrowly-scoped product/catalog decision (a proper tier-matched evidence envelope for Intermediate×6D peak volume, mirroring `FREQ.6C`'s own process) is needed before Intermediate×6D's combined implementation wave can be scheduled.
+**Next phase**: `FREQ.6D.25` — **INTERMEDIATE×6D 10K PEAK VOLUME BAND TIER-MATCHED EVIDENCE & FINAL PRODUCT/CATALOG DECISION**. Phase type: **EXTERNAL EVIDENCE + PRODUCT DECISION + CATALOG NUMERIC AUTHORITY**. Attempts final closure of the single remaining item with materially stronger, explicitly tier-matched external evidence than `FREQ.6D.24` had.
+
+`FREQ.6D.25` is scheduled — in progress.
 
 ---
 
