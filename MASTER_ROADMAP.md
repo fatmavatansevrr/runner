@@ -77,9 +77,9 @@ Prior phase: `FREQ.6D.18` — Execution Status `DONE (PARTIAL)`, Final Classific
 
 Prior phase: `FREQ.6D.19` — Execution Status `DONE (PARTIAL)`, Final Classification `INTERMEDIATE_5D_LONGHORIZON_GE_RUNWAY_CORE_BOUNDARY_AND_DUAL_KEY_REPAIR_DARK_VERIFIED_TARGET_FINISH_TIME_PRODUCT_DECISION_REMAINING`. Drove a real 21-week Intermediate×5D LongHorizon plan organically (never a fabricated Core row) from persisted GE through persisted Runway into a real, organically-materialized first Core window via the real production chain. Found and fixed five real defects only surfaced by actually reaching Core for a 5D plan for the first time: `LongHorizonRollingWindowActivationService` never threaded the real, already-configured `PublishedBundleReleaseVersion` into JIT composition (fixed via a new `IOptions<PlanCatalogOptions>` constructor overload); `LongHorizonRollingJitActivationRuntime` called the parameterless `TenKPreparationRunwayNumericPolicyFactory.Build()` instead of the candidate-aware overload, rejecting a genuine approved 5D long-run share; `LongHorizonRealCalendarProjectionAdapter`/`LongHorizonActivatedCalendarAlignmentValidator` each hardcoded an expected 4-sessions-per-week count; `ContinueJitCompositionAsync` had no way to supply `TargetFinishTimeSeconds`/`Source` at all (added as optional parameters, default null, byte-identical for every existing caller). Verified organic first Core week (2K+2E+1L, distinct lanes), ProfileBacked lineage survival, real secondary-KEY repair preserving `LaneOrdinal=1`/untouched `LaneOrdinal=0`, and deterministic repair→continuation, all via 4 new real-PostgreSQL tests. Confirmed the requested date-order-reversal scenario is genuinely `NOT_REACHABLE_UNDER_VALID_REPAIR_CONSTRAINTS` (every repair candidate is structurally restricted to strictly-later dates) rather than a gap. Did **not** resolve the one remaining real gap: no `TargetFinishTimeSource` classification is persisted anywhere for a restarted LongHorizon plan, and choosing how to reclassify it is a genuine product decision correctly not made here. No new numeric constant, schema, catalog content, or identity-model redesign. Full regression 3886/3888 (same 2 pre-existing failures, +4 new passing).
 
-**Next phase**: `FREQ.6D.20` — **10K LONGHORIZON TARGET-FINISH-TIME SOURCE PERSISTENCE & RESTART AUTHORITY DECISION**. Phase type: **DOMAIN / PRODUCT AUTHORITY + PERSISTENCE SEMANTICS DECISION**. Resolves the exact durable authority a confirmed/restarted 10K LongHorizon plan must carry so later JIT Core materialization can reconstruct the same `TargetFinishTimeSource` evidence semantics that existed at original generation — `FREQ.6D.19`'s one disclosed remaining item. No production code, no migration, no routing, no public activation.
+Prior phase: `FREQ.6D.20` — Execution Status `DONE`, Final Classification `TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_AUTHORITY_APPROVED`. Traced the full `TargetFinishTime`/`TargetFinishTimeSource` provenance dataflow and found the exact loss point: the value is already available in-memory at plan confirmation (`snapshot.NormalizedInput.TargetFinishTimeSource`) but never copied onto `TrainingPlan`, which has no column for it — a plan-wide gap (identical in the ordinary Core-only/Runway confirm path), only live and blocking for LongHorizon because it alone reconstructs Core generation later from durable state. Confirmed two source classifications (`ProductAverage`/`UserDefined`, the only two existing values) can legitimately share the same numeric target time, so reverse-inference from seconds is unsafe. Approved plan-level persistence (`TrainingPlan`, alongside the existing `TargetFinishTimeSeconds`) over rolling-state duplication, derive-on-restart, or a new wrapper object — one new nullable string column, no new enum, no index, no DB constraint, `SCHEMA_CHANGE_APPROVED`. Froze the confirmation boundary, restart semantics (read verbatim, never re-derive), and historical-plan handling (`UNKNOWN_LEGACY`, permanent, never backfilled). Specified (design only) the write/read boundaries and an 11-step implementation contract. Confirmed frequency- and distance-neutral. No production code, tests, migration, or catalog content authored.
 
-`FREQ.6D.20` is scheduled only — not started.
+**Next phase**: `NEXT_PHASE_NOT_YET_SCHEDULED` — the narrow implementation phase closing `FREQ.6D.20`'s approved authority: persist `TargetFinishTimeSource` on `TrainingPlan`, populate at both confirmation write boundaries, thread through `LongHorizonRollingWindowActivationService`/`ContinueJitCompositionAsync`, verify `GOAL_PACE_TEN_K` after real restart, re-run FREQ.6D.19's organic 5D GE→Runway→Core suite and full 21-52 dark regression, then close `INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED` — followed only afterward by the final public-activation phase.
 
 ---
 
@@ -701,11 +701,28 @@ FREQ.6D.19 (DONE, PARTIAL)      → REAL POSTGRESQL INTEGRATION VERIFICATION + D
                                     Classification:
                                     INTERMEDIATE_5D_LONGHORIZON_GE_RUNWAY_CORE_BOUNDARY_AND_DUAL_KEY_
                                     REPAIR_DARK_VERIFIED_TARGET_FINISH_TIME_PRODUCT_DECISION_REMAINING.
-NEXT (NOT_YET_SCHEDULED)        → product-decision phase resolving TargetFinishTimeSource
-                                    classification for a restarted/rolling LongHorizon plan reaching
-                                    a GOAL_PACE_TEN_K Core week. Then real environment / public HTTP
-                                    verification + public activation for Intermediate×5D LongHorizon
-                                    21-52.
+FREQ.6D.20 (DONE)               → DOMAIN / PRODUCT AUTHORITY + PERSISTENCE SEMANTICS DECISION:
+                                    traced the full TargetFinishTime/TargetFinishTimeSource
+                                    provenance dataflow -- found the exact loss point at plan
+                                    confirmation (value is in-memory, never copied to TrainingPlan,
+                                    which has no column for it). Plan-wide gap, only live/blocking
+                                    for LongHorizon's restart-from-durable-state path. Confirmed
+                                    ProductAverage/UserDefined (only two values) can share a numeric
+                                    target time, so reverse-inference is unsafe. Approved plan-level
+                                    persistence on TrainingPlan (one new nullable string column, no
+                                    new enum, SCHEMA_CHANGE_APPROVED) over rolling-state duplication
+                                    or derive-on-restart. Froze confirmation boundary, restart
+                                    semantics (read verbatim, never re-derive), and historical
+                                    handling (UNKNOWN_LEGACY, permanent, never backfilled). Specified
+                                    an 11-step implementation contract, design only. No production
+                                    code, tests, migration, or catalog content authored.
+                                    Classification:
+                                    TARGET_FINISH_TIME_SOURCE_PLAN_LEVEL_PERSISTENCE_AUTHORITY_APPROVED.
+NEXT (NOT_YET_SCHEDULED)        → narrow implementation phase persisting TargetFinishTimeSource on
+                                    TrainingPlan, threading it through LongHorizon restart/JIT, and
+                                    closing INTERMEDIATE_5D_LONGHORIZON_IMPLEMENTED_AND_DARK_VERIFIED.
+                                    Then real environment / public HTTP verification + public
+                                    activation for Intermediate×5D LongHorizon 21-52.
                                     FREQ.7 / FREQ.8 (legacy placeholder IDs) remain further out
 ```
 
