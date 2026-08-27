@@ -64,10 +64,21 @@ internal interface ILongHorizonGeMaintenanceWindowMaterializer
 
 internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonGeMaintenanceWindowMaterializer
 {
+    /// <summary>
+    /// Phase 10K-FREQ.6D.18 -- mirrors FREQ.6D.15's
+    /// <see cref="ExistingLongHorizonGeWindowMaterializer"/> fix: derives the
+    /// FREQ.6D.14-approved 5D GE policy (VolumeSafetyPolicy.FiveDayIntermediate)
+    /// and easySupportCount off the selected descriptors' own resolved
+    /// EasySupportWorkouts.Count (3 for 5D) rather than a new parameter or
+    /// DaysPerWeek special case. Byte-identical for every 4D caller (Count == 2).
+    /// </summary>
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
         ValidatedSustainableLoad anchor)
     {
+        var easySupportCount = selectedWeeks.Count > 0 ? selectedWeeks[0].EasySupportWorkouts.Count : 2;
+        var isFiveDay = easySupportCount == 3;
+        var policy = isFiveDay ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
         var weeklyAnchor = anchor.WeeklyVolumeKm!.Value;
         var longRunAnchor = anchor.LongRunKm!.Value;
         return selectedWeeks.Select(week =>
@@ -79,10 +90,10 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
                 if (weeklyAnchor - total < LongHorizonGeNumericExecutor.MinimumRecoveryReductionKm)
                     total = LongHorizonCheckpointEvidenceAggregator.Round(weeklyAnchor - LongHorizonGeNumericExecutor.MinimumRecoveryReductionKm);
             }
-            var selectedLongRun = LongHorizonCheckpointEvidenceAggregator.Round(total * VolumeSafetyPolicy.Default.LongRunSelectionShare);
-            var hardCap = LongHorizonCheckpointEvidenceAggregator.Round(total * VolumeSafetyPolicy.Default.LongRunHardCapShare);
+            var selectedLongRun = LongHorizonCheckpointEvidenceAggregator.Round(total * policy.LongRunSelectionShare);
+            var hardCap = LongHorizonCheckpointEvidenceAggregator.Round(total * policy.LongRunHardCapShare);
             var longRun = Math.Min(longRunAnchor, Math.Min(selectedLongRun, hardCap));
-            var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(total, longRun);
+            var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(total, longRun, easySupportCount: easySupportCount);
             return new LongHorizonGeWeekNumericResult(
                 week.WeekIndex, total, longRun, allocation.KeySessionDistanceKm,
                 allocation.EasySupportDistancesKm);
@@ -125,7 +136,7 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
             aggregation = LongHorizonCheckpointEvidenceAggregator.Aggregate(
                 request.StructuralRoadmap, request.MostRecentlyActivatedWindow, request.TrainingDayEvidence,
                 request.CheckpointDate, request.CurrentAvailability, request.SafetyState,
-                request.PriorValidatedAnchor, nextVersion, checkpointId);
+                request.PriorValidatedAnchor, nextVersion, checkpointId, request.DaysPerWeek);
         }
         catch (LongHorizonCheckpointDecisionInvalidException exception)
         {
@@ -180,7 +191,7 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         ValidatePendingBoundary(request, boundary);
         stages.Add("NextGeWindowSelection");
         var evaluation = LongHorizonCheckpointStateEvaluator.Evaluate(
-            aggregation.Snapshot, aggregation.CurrentValidatedLoad, request.PriorValidatedAnchor, boundary, decisionId);
+            aggregation.Snapshot, aggregation.CurrentValidatedLoad, request.PriorValidatedAnchor, boundary, decisionId, request.DaysPerWeek);
         stages.Add("StateTransition");
 
         if (evaluation.Decision.Outcome == LongHorizonCheckpointOutcome.NumericActivationBlocked)
@@ -189,7 +200,7 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         }
 
         var descriptors = LongHorizonGeStructuralSelector
-            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile)
+            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile, request.DaysPerWeek == 5 ? 3 : 2)
             .Skip(nextStart - 1).Take(nextEnd - nextStart + 1).ToList();
         IReadOnlyList<LongHorizonGeWeekNumericResult> numeric;
         try
@@ -217,7 +228,7 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         IReadOnlyDictionary<string, DayOfWeek> weekdays;
         try
         {
-            weekdays = LongHorizonCalendarAssigner.AssignWeekdays(request.CurrentAvailability, request.LongRunDay);
+            weekdays = LongHorizonCalendarAssigner.AssignWeekdays(request.CurrentAvailability, request.LongRunDay, request.DaysPerWeek);
         }
         catch (InvalidOperationException exception)
         {
@@ -320,18 +331,18 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         var start = LongHorizonCalendarAssigner.WeekStartDate(
             request.MostRecentlyActivatedWindow.Weeks[^1].CalendarDates!.Value.End.AddDays(1),
             structural.GlobalWeekNumber - request.MostRecentlyActivatedWindow.EndGlobalWeek);
+        var easyOccurrence = 0;
         var sessions = structural.OrderedWorkoutSlots.Select(slot =>
         {
             var role = slot.StructuralRole == "EASY_SUPPORT"
-                ? (slot.StructuralSlotIndex <= 2 ? "EASY_SUPPORT_1" : "EASY_SUPPORT_2")
+                ? $"EASY_SUPPORT_{++easyOccurrence}"
                 : slot.StructuralRole;
-            var distance = role switch
+            var distance = slot.StructuralRole switch
             {
                 "KEY_SESSION" => numeric.KeySessionDistanceKm,
-                "EASY_SUPPORT_1" => numeric.FirstEasySupportDistanceKm,
-                "EASY_SUPPORT_2" => numeric.SecondEasySupportDistanceKm,
+                "EASY_SUPPORT" => numeric.EasySupportDistancesKm[easyOccurrence - 1],
                 "LONG_RUN" => numeric.LongRunDistanceKm,
-                _ => throw new ArgumentOutOfRangeException(nameof(role)),
+                _ => throw new ArgumentOutOfRangeException(nameof(slot)),
             };
             return new LongHorizonSessionPrescriptionReference
             {
@@ -341,6 +352,18 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
                 WorkoutVersion = slot.WorkoutVersion,
                 AssignedDate = LongHorizonCalendarAssigner.AssignedDate(start, weekdays[role]),
                 Source = "Phase4K.7 existing GE catalog/numeric/calendar authorities",
+                // Phase 10K-FREQ.6D.18 -- mirrors the FREQ.6D.15 lineage fix already
+                // applied to the initial-activation runtime's own MapActivatedWeek:
+                // GE never carries more than one KEY session, so LaneOrdinal stays
+                // null; SlotOrdinal is the slot's own week-wide positional index
+                // (0-based); GE sessions are always Legacy, so ProfileKey/Version
+                // stay null. Without these, checkpoint-continuation weeks persisted
+                // distinct EASY_SUPPORT slots with identical (null) SlotOrdinal.
+                LaneOrdinal = null,
+                SlotOrdinal = slot.StructuralSlotIndex - 1,
+                ProgressionStageKey = structural.GeStageFamily?.ToString() ?? structural.WeekType,
+                ProfileKey = null,
+                ProfileVersion = null,
             };
         }).ToList();
         return new ActivatedNumericWeek
@@ -365,10 +388,10 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
     private static void ValidateInput(LongHorizonRollingCheckpointRequest request)
     {
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek != 4
+            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5)
             || request.StructuralRoadmap.TotalWeeks is < 21 or > 52
             || request.ReadinessProfile != request.StructuralRoadmap.Profile)
-            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate/4D/21-52 only.");
+            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate/4D-or-5D/21-52 only.");
     }
 
     private static void ValidatePendingBoundary(LongHorizonRollingCheckpointRequest request, (int StartGlobalWeek, int EndGlobalWeek) boundary)

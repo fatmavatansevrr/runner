@@ -51,7 +51,13 @@ internal static class LongHorizonRollingStateReconstructionService
             RaceHorizonPolicy.Decide(plan.StartDate, plan.RaceDate), profile);
 
         var workoutLoader = new CatalogWorkoutDefinitionLoader(Options.Create(new PlanCatalogOptions { CatalogRootPath = catalogRootPath }));
-        var skeleton = await LongHorizonStructuralMaterializer.MaterializeAsync(compositionDecision, catalogRootPath, workoutLoader, cancellationToken);
+        // Phase 10K-FREQ.6D.18 -- MaterializeAsync's daysPerWeek defaults to 4;
+        // omitting plan.DaysPerWeek here silently rebuilt a 4D-shaped structural
+        // skeleton (StructuralWorkoutRoles) on every reload of a real 5D plan,
+        // even though its persisted sessions were genuinely 5D-shaped -- a
+        // reconstruction-only mismatch invisible to every prior FREQ.6D.13/14/15
+        // test because none of them read StructuralWorkoutRoles.Count after reload.
+        var skeleton = await LongHorizonStructuralMaterializer.MaterializeAsync(compositionDecision, catalogRootPath, workoutLoader, cancellationToken, plan.DaysPerWeek);
         var rolesByWeek = skeleton.Weeks.ToDictionary(w => w.GlobalWeekNumber, w => (IReadOnlyList<string>)w.OrderedWorkoutSlots.Select(s => s.StructuralRole).ToList());
 
         var lifecycleStates = new Dictionary<int, LongHorizonNumericLifecycleState>();

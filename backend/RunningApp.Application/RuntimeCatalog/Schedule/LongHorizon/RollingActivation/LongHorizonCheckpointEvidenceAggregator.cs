@@ -27,8 +27,14 @@ internal static class LongHorizonCheckpointEvidenceAggregator
         LongHorizonSafetyState safetyState,
         LongHorizonPriorValidatedAnchor? priorAnchor,
         LongHorizonContextVersion contextVersion,
-        Guid checkpointId)
+        Guid checkpointId,
+        int daysPerWeek = 4)
     {
+        // Phase 10K-FREQ.6D.18 -- selects the already-approved FiveDayIntermediate
+        // policy's own LongRunHardCapShare (0.36) for 5D evidence, mirroring the
+        // same daysPerWeek-derived-from-request pattern already used elsewhere in
+        // this runtime; byte-identical for every 4D caller (VolumeSafetyPolicy.Default, 0.40).
+        var policy = daysPerWeek == 5 ? VolumeSafetyPolicy.FiveDayIntermediate : VolumeSafetyPolicy.Default;
         var windowWeeks = Enumerable.Range(previousWindow.StartGlobalWeek, previousWindow.ActualWindowSizeWeeks).ToHashSet();
         var rows = suppliedRows
             .Where(row => windowWeeks.Contains(row.GlobalWeekNumber) && row.TrainingDay.DayType != TrainingDayType.Rest)
@@ -72,7 +78,7 @@ internal static class LongHorizonCheckpointEvidenceAggregator
         {
             var weekly = Round(usableEvidenceWeeks.Average(week => usableByWeek[week]));
             var longRunMean = Round(completedLongRuns.Average());
-            var longRunCap = Round(weekly * VolumeSafetyPolicy.Default.LongRunHardCapShare);
+            var longRunCap = Round(weekly * policy.LongRunHardCapShare);
             var longRun = Math.Min(longRunMean, longRunCap);
             load = new ValidatedSustainableLoad
             {
@@ -84,8 +90,8 @@ internal static class LongHorizonCheckpointEvidenceAggregator
                 ExcludedRecoveryWeekNumbers = recoveryWeeks.OrderBy(week => week).ToList(),
                 WeeklyLoadSource = LongHorizonEvidenceAuthorityRecord.Create(LongHorizonEvidenceSource.CompletedTrainingHistory, LongHorizonEvidenceAuthorityStatus.Authoritative),
                 LongRunSource = LongHorizonEvidenceAuthorityRecord.Create(LongHorizonEvidenceSource.CompletedTrainingHistory, LongHorizonEvidenceAuthorityStatus.Authoritative),
-                RoundingPolicy = $"VolumeSafetyPolicy.{VolumeSafetyPolicy.Default.RoundingIncrementKm:0.0}km",
-                LongRunCapPolicy = $"VolumeSafetyPolicy.LongRunHardCapShare={VolumeSafetyPolicy.Default.LongRunHardCapShare:0.00}",
+                RoundingPolicy = $"VolumeSafetyPolicy.{policy.RoundingIncrementKm:0.0}km",
+                LongRunCapPolicy = $"VolumeSafetyPolicy.LongRunHardCapShare={policy.LongRunHardCapShare:0.00}",
                 ValidationStatus = LongHorizonValidationStatus.Valid,
                 Provenance = "Completed TrainingDay.ActualDistanceKm only; recovery weeks excluded from weekly mean",
                 ContextVersion = contextVersion,

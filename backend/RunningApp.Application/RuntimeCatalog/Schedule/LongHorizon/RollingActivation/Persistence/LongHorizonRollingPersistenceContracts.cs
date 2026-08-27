@@ -59,6 +59,16 @@ internal sealed record LongHorizonRollingInitializationRequest
     public required string CatalogRootPath { get; init; }
     public required RunningApp.Application.RuntimeCatalog.PlanCatalogCandidateSummary Candidate { get; init; }
 
+    /// <summary>
+    /// Phase 10K-FREQ.6D.18 -- defaults to 4 for every existing (pre-5D) caller,
+    /// byte-identical to the previous hardcoded plan.DaysPerWeek = 4. A 5D
+    /// initial activation must pass 5 here, or the persisted
+    /// LongHorizonRollingPlanState.DaysPerWeek row (read by every later
+    /// checkpoint continuation and by the real LongHorizonRollingWindowActivationService)
+    /// silently reverts to 4 regardless of what was actually activated.
+    /// </summary>
+    public int DaysPerWeek { get; init; } = 4;
+
     /// <summary>Deterministic identity: replaying the same roadmap+window for the same plan anchor must not duplicate rows.</summary>
     public required Guid PlanStateId { get; init; }
 }

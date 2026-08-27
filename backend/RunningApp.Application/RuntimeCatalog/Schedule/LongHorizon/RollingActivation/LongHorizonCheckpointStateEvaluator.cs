@@ -11,7 +11,8 @@ internal static class LongHorizonCheckpointStateEvaluator
         ValidatedSustainableLoad? currentLoad,
         LongHorizonPriorValidatedAnchor? priorAnchor,
         (int StartGlobalWeek, int EndGlobalWeek) nextBoundary,
-        Guid decisionId)
+        Guid decisionId,
+        int daysPerWeek = 4)
     {
         var freshPrior = ValidatePrior(priorAnchor);
         LongHorizonCheckpointOutcome outcome;
@@ -28,7 +29,7 @@ internal static class LongHorizonCheckpointStateEvaluator
             outcome = LongHorizonCheckpointOutcome.NumericActivationBlocked;
             reason = LongHorizonCheckpointReasonCode.CheckpointWindowNotComplete;
         }
-        else if (!snapshot.AllSessionsTerminal && freshPrior is not null && AvailabilityFeasible(snapshot))
+        else if (!snapshot.AllSessionsTerminal && freshPrior is not null && AvailabilityFeasible(snapshot, daysPerWeek))
         {
             outcome = LongHorizonCheckpointOutcome.MaintenanceOnly;
             reason = LongHorizonCheckpointReasonCode.CheckpointWindowNotComplete;
@@ -62,7 +63,7 @@ internal static class LongHorizonCheckpointStateEvaluator
             outcome = LongHorizonCheckpointOutcome.NumericActivationBlocked;
             reason = LongHorizonCheckpointReasonCode.ValidatedLongRunEvidenceUnavailable;
         }
-        else if (!AvailabilityFeasible(snapshot))
+        else if (!AvailabilityFeasible(snapshot, daysPerWeek))
         {
             outcome = LongHorizonCheckpointOutcome.NumericActivationBlocked;
             reason = LongHorizonCheckpointReasonCode.NumericWindowInfeasible;
@@ -111,6 +112,6 @@ internal static class LongHorizonCheckpointStateEvaluator
         return load;
     }
 
-    private static bool AvailabilityFeasible(LongHorizonCheckpointEvidenceSnapshot snapshot) =>
-        snapshot.Availability.Count == 4 && snapshot.Availability.Distinct().Count() == 4;
+    private static bool AvailabilityFeasible(LongHorizonCheckpointEvidenceSnapshot snapshot, int daysPerWeek) =>
+        snapshot.Availability.Count == daysPerWeek && snapshot.Availability.Distinct().Count() == daysPerWeek;
 }

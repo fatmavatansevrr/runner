@@ -59,7 +59,7 @@ internal sealed class LongHorizonRollingStateRepository : ILongHorizonRollingSta
             GoalType = "Race",
             GoalDistance = "TenK",
             Level = "Intermediate",
-            DaysPerWeek = 4,
+            DaysPerWeek = request.DaysPerWeek,
             PreferredDaysCsv = string.Join(",", request.PreferredDays),
             LongRunDay = request.LongRunDay.ToString(),
             CandidateKey = request.Candidate.CandidateKey,

@@ -244,6 +244,17 @@ internal sealed class ScheduleRepairPersistenceService
         PlanningStatus = LongHorizonPersistedSessionPlanningStatus.Active,
         AdaptedFromSessionId = source.Id,
         OutcomeVersion = 0,
+        // Phase 10K-FREQ.6D.18 -- the FREQ.6D.13 canonical identity lineage
+        // (LaneOrdinal, SlotOrdinal, ProgressionStageKey, prescription-profile
+        // key/version) is load-bearing content that identifies WHICH session
+        // this is, exactly like SessionRole/WorkoutKey/DistanceKm above -- a
+        // repair moves a session's date, it never redefines its identity, so
+        // this must be copied verbatim, never recomputed from the new date.
+        LaneOrdinal = source.LaneOrdinal,
+        SlotOrdinal = source.SlotOrdinal,
+        ProgressionStageKey = source.ProgressionStageKey,
+        CatalogPrescriptionProfileKey = source.CatalogPrescriptionProfileKey,
+        CatalogPrescriptionProfileVersion = source.CatalogPrescriptionProfileVersion,
     };
 
     private async Task<int> NextOrdinalAsync(Guid weekStateId, CancellationToken ct)
