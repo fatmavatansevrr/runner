@@ -99,6 +99,26 @@ public static class V1CatalogPilotIdentityPolicy
     public const int BeginnerCandidateVersion = 1;
 
     /// <summary>
+    /// Phase 10K-GEN.9 -- the approved, dark-only Advanced 3D/4D/5D/6D Core
+    /// candidates (GEN.7/GEN.8 authority). Kept here, not consumed by any
+    /// public routing method (<see cref="IsSupportedIdentity"/>/<see cref="ResolveCandidate"/>/
+    /// <see cref="IsSupportedPreparationRunwayIdentity"/> are deliberately
+    /// left untouched -- the public gate remains closed for every Advanced
+    /// frequency); referenced only by dark/internal test and orchestration
+    /// code that resolves a candidate identity directly, mirroring exactly
+    /// how <see cref="SixDayCandidateKey"/> was introduced for Intermediate
+    /// x6D during its own dark-implementation phase (FREQ.6D.26).
+    /// </summary>
+    public const string AdvancedThreeDayCandidateKey = "TEN_K__3D__ADVANCED";
+    public const int AdvancedThreeDayCandidateVersion = 1;
+    public const string AdvancedFourDayCandidateKey = "TEN_K__4D__ADVANCED";
+    public const int AdvancedFourDayCandidateVersion = 1;
+    public const string AdvancedFiveDayCandidateKey = "TEN_K__5D__ADVANCED";
+    public const int AdvancedFiveDayCandidateVersion = 1;
+    public const string AdvancedSixDayCandidateKey = "TEN_K__6D__ADVANCED";
+    public const int AdvancedSixDayCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
     /// pilot recognizes. Deliberately enumerated rather than derived, so a
     /// future cell can never be admitted by accident — the two places above
@@ -181,9 +201,23 @@ public static class V1CatalogPilotIdentityPolicy
         goalDistance == GoalDistance &&
         IsSupportedPreparationRunwayLevelFrequency(level, daysPerWeek);
 
+    /// <summary>
+    /// Phase 10K-GEN.9 -- widened to admit the approved, dark-only Advanced
+    /// 3D/4D/5D/6D candidates (GEN.7/GEN.8 authority), the same internal
+    /// candidate-identity consistency check the dark Runway/LongHorizon
+    /// machinery already used for Intermediate. This is not the public gate
+    /// (<see cref="IsSupportedIdentity"/>/<see cref="IsSupportedPreparationRunwayIdentity"/>
+    /// remain untouched) -- it only governs whether the shared dark
+    /// Preparation Runway orchestrator recognizes an already-resolved
+    /// candidate key/version as internally consistent.
+    /// </summary>
     public static bool IsSupportedPreparationRunwayCandidate(string candidateKey, int candidateVersion) =>
         (candidateKey, candidateVersion) is
             (CandidateKey, CandidateVersion) or
             (FiveDayCandidateKey, FiveDayCandidateVersion) or
-            (SixDayCandidateKey, SixDayCandidateVersion);
+            (SixDayCandidateKey, SixDayCandidateVersion) or
+            (AdvancedThreeDayCandidateKey, AdvancedThreeDayCandidateVersion) or
+            (AdvancedFourDayCandidateKey, AdvancedFourDayCandidateVersion) or
+            (AdvancedFiveDayCandidateKey, AdvancedFiveDayCandidateVersion) or
+            (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion);
 }

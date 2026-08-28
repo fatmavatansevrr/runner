@@ -84,8 +84,12 @@ public sealed class Intermediate5DProductionPrescriptionCatalogTests
         // Intermediate5DProductionPrescriptionProfileSourceTests.cs for that phase's full coverage.
         // This test now documents the historical count at 4C's own commit boundary instead of the
         // real-time catalog state.
+        // UPDATED IN GEN.9: the real, current catalog total is now 16 (the original 8
+        // Intermediate profiles this comment describes, plus 8 new Advanced profiles GEN.9
+        // authored) -- see Intermediate5DProductionPrescriptionProfileSourceTests.cs's own
+        // updated count assertion for that split.
         var snapshot = LoadRealSnapshot();
-        Assert.Equal(8, snapshot.PrescriptionProfiles.Count);
+        Assert.Equal(16, snapshot.PrescriptionProfiles.Count);
     }
 
     // ══════════════════════════════════════════════════════════════════

@@ -286,7 +286,7 @@ public sealed class LongHorizonRollingInitialActivationNoFullUpfrontExecutionTes
 
         public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
             IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-            LongHorizonGeEntryBaselineInput onboardingBaseline)
+            LongHorizonGeEntryBaselineInput onboardingBaseline, RunningBackground level = RunningBackground.Intermediate)
         {
             CallCount++;
             ReceivedWeekIndexes = selectedGeneralEnduranceWeeks.Select(w => w.WeekIndex).ToList();
@@ -384,7 +384,7 @@ public sealed class LongHorizonRollingInitialActivationAtomicityValidatorTests
     {
         public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
             IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-            LongHorizonGeEntryBaselineInput onboardingBaseline) =>
+            LongHorizonGeEntryBaselineInput onboardingBaseline, RunningBackground level = RunningBackground.Intermediate) =>
             throw new InvalidOperationException("Injected week-3 numeric failure.");
     }
 
@@ -392,6 +392,6 @@ public sealed class LongHorizonRollingInitialActivationAtomicityValidatorTests
     {
         public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
             IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-            LongHorizonGeEntryBaselineInput onboardingBaseline) => [];
+            LongHorizonGeEntryBaselineInput onboardingBaseline, RunningBackground level = RunningBackground.Intermediate) => [];
     }
 }

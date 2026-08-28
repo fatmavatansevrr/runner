@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "documentType": "TEMPLATE_COMBINATION",
+    "schemaVersion": 1,
+    "key": "TEN_K__6D__ADVANCED",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "masterTemplate": { "documentType": "PLAN_TEMPLATE", "key": "TEN_K_MASTER", "version": 9 },
+  "layout": { "documentType": "RUN_LAYOUT", "key": "RUN_LAYOUT_6D", "version": 1 },
+  "levelModifier": { "documentType": "LEVEL_MODIFIER", "key": "ADVANCED_MODIFIER", "version": 2 },
+  "rulePack": { "documentType": "RULE_PACK", "key": "APPSEL_RACE_PLAN_V1", "version": 7 }
+}

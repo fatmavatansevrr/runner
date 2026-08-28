@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "documentType": "LEVEL_MODIFIER",
+    "schemaVersion": 2,
+    "key": "ADVANCED_MODIFIER",
+    "version": 2,
+    "status": "VALIDATED"
+  },
+  "experience": "ADVANCED",
+  "eligibleWorkouts": [
+    { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 3 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 5 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 5 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 2 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 3 }
+  ],
+  "progressionModifier": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "key": "ADVANCED_PROGRESSION_MODIFIER_V1",
+    "version": 1
+  }
+}

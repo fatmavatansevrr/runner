@@ -12,7 +12,12 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // Phase 10K-FREQ.6D.26 -- 97 + 5 new Intermediate x6D source documents
     // (run-layout-6d.v1.json, ten-k-master.v8.json, peak-volume-bands.v5.json,
     // appsel-race-plan.v6.json, ten-k-6d-intermediate.v1.json) = 102.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 102;
+    // Phase 10K-GEN.9 -- 102 + 19 new Advanced source documents (8
+    // prescription-profiles, 1 progression-modifier, 2 level-modifiers,
+    // peak-volume-bands.v6.json, appsel-race-plan.v7.json,
+    // ten-k-master.v9.json, ten-k-workout-progression.v7.json, 4
+    // combinations) = 121.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 121;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

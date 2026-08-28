@@ -102,17 +102,21 @@ internal static class LongHorizonRollingInitialActivationInputValidator
         }
 
         // Phase 10K-FREQ.6D.26 -- widened from 4-or-5 to include 6 (Intermediate
-        // x6D, approved FREQ.6D.23/6D.25). This is the internal/dark runtime
-        // eligibility gate, distinct from the public routing gate
-        // (V1CatalogPilotIdentityPolicy), which is intentionally left
-        // untouched -- the public 6D gate remains closed.
-        if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5 or 6))
+        // x6D, approved FREQ.6D.23/6D.25). Phase 10K-GEN.9 -- widened further
+        // to admit Advanced 3D/4D/5D/6D (GEN.7/GEN.8 authority). This is the
+        // internal/dark runtime eligibility gate, distinct from the public
+        // routing gate (V1CatalogPilotIdentityPolicy), which is intentionally
+        // left untouched -- the public gate remains closed for every Advanced
+        // frequency.
+        var levelFrequencyEligible =
+            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Advanced && request.DaysPerWeek is 3 or 4 or 5 or 6);
+        if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible)
         {
             throw new LongHorizonRollingInitialActivationException(
                 LongHorizonRollingInitialActivationFailureReason.InvalidEligibility,
                 "LONG_HORIZON_ROLLING_INITIAL_ELIGIBILITY_INVALID",
-                "Rolling initial activation is restricted to Race / exact 10K / Intermediate / 4, 5, or 6 days per week.");
+                "Rolling initial activation is restricted to Race / exact 10K / Intermediate 4-6 days per week / Advanced 3-6 days per week.");
         }
 
         if (request.StartDate >= request.RaceDate

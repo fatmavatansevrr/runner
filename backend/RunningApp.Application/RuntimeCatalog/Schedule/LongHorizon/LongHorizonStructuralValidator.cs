@@ -83,14 +83,21 @@ internal static class LongHorizonStructuralValidator
         // Byte-identical for every 4D candidate.
         // Phase 10K-FREQ.6D.26 -- widened from a boolean isFiveDay to a
         // three-way dispatch recognizing 4D/5D/6D by candidate key.
+        // Phase 10K-GEN.9 -- widened to recognize the approved Advanced
+        // 3D/4D/5D/6D candidate identities (GEN.7/GEN.8 authority) alongside
+        // Intermediate's. Advanced x3D (a genuinely new daysPerWeek value no
+        // prior Level ever exercised in LongHorizon) resolves to 3.
         var expectedSlotCount = skeleton.CandidateKey switch
         {
-            LongHorizonStructuralMaterializer.CandidateKeyFiveDay => 5,
-            LongHorizonStructuralMaterializer.CandidateKeySixDay => 6,
+            LongHorizonStructuralMaterializer.CandidateKeyAdvancedThreeDay => 3,
+            LongHorizonStructuralMaterializer.CandidateKeyFiveDay or LongHorizonStructuralMaterializer.CandidateKeyAdvancedFiveDay => 5,
+            LongHorizonStructuralMaterializer.CandidateKeySixDay or LongHorizonStructuralMaterializer.CandidateKeyAdvancedSixDay => 6,
             _ => 4,
         };
         var hasDualKeyCore = skeleton.CandidateKey is LongHorizonStructuralMaterializer.CandidateKeyFiveDay
-            or LongHorizonStructuralMaterializer.CandidateKeySixDay;
+            or LongHorizonStructuralMaterializer.CandidateKeySixDay
+            or LongHorizonStructuralMaterializer.CandidateKeyAdvancedFiveDay
+            or LongHorizonStructuralMaterializer.CandidateKeyAdvancedSixDay;
 
         foreach (var week in skeleton.Weeks)
         {

@@ -22,7 +22,8 @@ internal interface ILongHorizonRollingGeWindowMaterializer
 {
     IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-        LongHorizonGeEntryBaselineInput onboardingBaseline);
+        LongHorizonGeEntryBaselineInput onboardingBaseline,
+        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate);
 }
 
 internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRollingGeWindowMaterializer
@@ -35,10 +36,16 @@ internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRoll
     /// LongHorizonGeStructuralSelector.Select this runtime now calls)
     /// rather than adding a new interface parameter or a DaysPerWeek
     /// special case here. Byte-identical for every 4D caller (Count == 2).
+    /// Phase 10K-GEN.9 -- added an optional <paramref name="level"/>
+    /// parameter (defaulted to Intermediate, so every pre-GEN.9 caller is
+    /// byte-for-byte unchanged) to dispatch to the correct Level's
+    /// VolumeSafetyPolicy family, mirroring GEN.7/GEN.8's approved Advanced
+    /// authority.
     /// </summary>
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
-        LongHorizonGeEntryBaselineInput onboardingBaseline)
+        LongHorizonGeEntryBaselineInput onboardingBaseline,
+        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate)
     {
         // Phase 10K-FREQ.6D.26 -- generalized off the resolved descriptor's own
         // easySupportCount (DaysPerWeek = easySupportCount + 2) into
@@ -46,7 +53,9 @@ internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRoll
         // extended to every frequency whose approved numeric authority uses
         // target-capped growth (5D and 6D today), not merely 5D.
         var resolvedDaysPerWeek = (selectedGeneralEnduranceWeeks.Count > 0 ? selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count : 2) + 2;
-        var policy = Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek);
+        var policy = level == RunningApp.Domain.Enums.RunningBackground.Advanced
+            ? Prescription.Volume.VolumeSafetyPolicy.ForAdvancedDaysPerWeek(resolvedDaysPerWeek)
+            : Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek);
         return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: resolvedDaysPerWeek is 5 or 6);
     }
 }
@@ -169,7 +178,7 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
             .ToList();
         try
         {
-            numericResults = _geWindowMaterializer.Materialize(selectedDescriptors, request.OnboardingBaseline);
+            numericResults = _geWindowMaterializer.Materialize(selectedDescriptors, request.OnboardingBaseline, request.Level);
             if (numericResults.Count != actualWindowSize
                 || !numericResults.Select(w => w.WeekIndex).SequenceEqual(Enumerable.Range(1, actualWindowSize)))
             {

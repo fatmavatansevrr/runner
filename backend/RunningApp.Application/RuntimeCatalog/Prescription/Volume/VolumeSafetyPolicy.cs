@@ -178,6 +178,106 @@ public sealed record VolumeSafetyPolicy(
         _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Intermediate VolumeSafetyPolicy exists for this DaysPerWeek."),
     };
 
+    /// <summary>
+    /// Phase 10K-GEN.9 -- implements the already-approved GEN.7/GEN.8 Advanced
+    /// numeric authority. Progression rates, taper factor, and rounding are
+    /// reused verbatim (GEN.7 §9/§26/§27: confirmed Level-and-frequency-
+    /// invariant across every existing policy). Long-run shares reuse the
+    /// frequency-owned figures GEN.7 §6/§27 froze per frequency (identical to
+    /// <see cref="ThreeDayIntermediate"/>'s own shares -- Advanced does not
+    /// get a different long-run policy at 3D). <see cref="ResolvedPeakReference"/>
+    /// is GEN.8's approved 40.0km (band midpoint, ProductDefaultWithEvidenceEnvelope).
+    /// <see cref="GoldenFixtureStartingVolumeKm"/> is a growth-multiplier
+    /// calibration constant this planner's <c>ResolvePeak</c> formula requires
+    /// unconditionally for every non-3D-style policy; Advanced has no
+    /// missing-readiness default to reuse for it (GEN.8 approved
+    /// observed-only, positive-required readiness with no fallback number).
+    /// An initial implementation reused the PeakVolumeBand minimum directly,
+    /// but real dark verification (GEN.9's own dual-KEY LongHorizon lifecycle
+    /// test) found this produces a genuine Runway-progression rounding edge
+    /// case at the low starting values every existing policy avoids (every
+    /// existing GoldenFixtureStartingVolumeKm sits meaningfully below its own
+    /// band minimum, never at it). This implementation instead reuses
+    /// <see cref="ThreeDayIntermediate"/>'s own already-proven
+    /// GoldenFixtureStartingVolumeKm-to-ResolvedPeakReference ratio
+    /// (12/22.5 = 0.5333, a ratio this exact Runway/GE numeric pipeline
+    /// already exercises safely for Intermediate), applied to Advanced's own
+    /// approved peak reference -- reusing an existing deterministic
+    /// cross-axis relationship, not inventing a new number.
+    /// </summary>
+    public static VolumeSafetyPolicy Advanced3D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 21.5d,
+        ResolvedPeakReference: new(40d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.38d,
+        LongRunPreferredMaximumShare: 0.42d,
+        LongRunSelectionShare: 0.40d,
+        LongRunHardCapShare: 0.42d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>Phase 10K-GEN.9 -- see <see cref="Advanced3D"/>'s doc comment for the shared calibration rationale (here reusing <see cref="Default"/>'s own 24/38=0.6316 ratio, its 4D-owned figures, GEN.7 §6/§27). ResolvedPeakReference=45.0km (band [38,52] midpoint, GEN.8).</summary>
+    public static VolumeSafetyPolicy Advanced4D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 28.5d,
+        ResolvedPeakReference: new(45d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.30d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.33d,
+        LongRunHardCapShare: 0.40d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>Phase 10K-GEN.9 -- see <see cref="Advanced3D"/>'s doc comment for the shared calibration rationale (here reusing <see cref="FiveDayIntermediate"/>'s own 26/44.5=0.5843 ratio, its 5D-owned figures, GEN.7 §6/§27). ResolvedPeakReference=50.0km (band [42,58] midpoint, GEN.8).</summary>
+    public static VolumeSafetyPolicy Advanced5D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 29d,
+        ResolvedPeakReference: new(50d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.28d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.36d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>Phase 10K-GEN.9 -- see <see cref="Advanced3D"/>'s doc comment for the shared calibration rationale (here reusing <see cref="SixDayIntermediate"/>'s own 26/44.5=0.5843 ratio, its 6D-owned figures, GEN.7 §6/§27). ResolvedPeakReference=51.0km (band [42,60] midpoint, GEN.8).</summary>
+    public static VolumeSafetyPolicy Advanced6D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 30d,
+        ResolvedPeakReference: new(51d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.28d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.36d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>Phase 10K-GEN.9 -- Advanced counterpart of <see cref="ForIntermediateDaysPerWeek"/>. Fail-closed for 7D (PRODUCT_NON_SUPPORT, GEN.7/GEN.8) and any other value.</summary>
+    public static VolumeSafetyPolicy ForAdvancedDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        3 => Advanced3D,
+        4 => Advanced4D,
+        5 => Advanced5D,
+        6 => Advanced6D,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Advanced VolumeSafetyPolicy exists for this DaysPerWeek."),
+    };
+
     public static VolumeSafetyPolicy BeginnerFourDay { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,
         HardMaxWeeklyIncreaseRatio: 0.08d,

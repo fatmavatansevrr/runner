@@ -27,7 +27,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.BeginnerFourDay).Build(request);
         }
-        if (request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        // Phase 10K-GEN.9 defect fix: this branch was unconditional on Level
+        // (matching any 3D candidate), which would have silently routed a
+        // future Advanced x3D candidate to Intermediate's own 3D numeric
+        // authority instead of falling through to the Advanced dispatch
+        // below. GEN.7 froze Advanced x3D as a distinct, separately-numbered
+        // identity (VolumeSafetyPolicy.Advanced3D) -- restricting this branch
+        // to Intermediate (its only real caller today) is implementation-only
+        // and introduces no new authority.
+        if (request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayIntermediate).Build(request);
         }
@@ -46,6 +54,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             request.Candidate.DaysPerWeek == 6 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.SixDayIntermediate).Build(request);
+        }
+        // Phase 10K-GEN.9 -- GEN.7/GEN.8-approved Advanced 3D/4D/5D/6D
+        // authority, same exact typed combination match as Intermediate
+        // above. Never a broad "Level != Intermediate/Beginner" condition.
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "ADVANCED" &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
         var weekCount = request.BoundPlan.Weeks.Count;
         if (weekCount < request.Candidate.CoreCycle.MinimumWeeks || weekCount > request.Candidate.CoreCycle.MaximumWeeks)
@@ -131,6 +147,16 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 CatalogEvidenceBasis.EvidenceInformed,
                 CatalogDecisionStatus.CanonicalConfirmed,
                 "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md; Doc13 §3 / Golden Fixture v3 weeklyVolumeAnchorKm semantics");
+        }
+
+        // Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority:
+        // Advanced never resolves a starting-volume default. Missing and
+        // explicit-zero both fail closed here, before any per-Level default
+        // resolver runs.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced3D) || ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced4D) ||
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced5D) || ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced6D))
+        {
+            throw new AdvancedMissingOrZeroReadinessProductIneligibleException();
         }
 
         return ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)

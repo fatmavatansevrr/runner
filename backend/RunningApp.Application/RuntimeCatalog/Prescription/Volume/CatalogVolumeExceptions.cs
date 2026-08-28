@@ -83,3 +83,18 @@ internal sealed class BeginnerFourDayCoreProductIneligibleException : CatalogPro
     public BeginnerFourDayCoreProductIneligibleException(double projectedTaperKm)
         : base(Reason, $"PRODUCT_INELIGIBLE: projected Beginner 4D taper volume {projectedTaperKm:0.##}km is below the 9km minimum full-layout volume.") { }
 }
+
+/// <summary>
+/// Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority: both
+/// missing and explicit-zero recent weekly volume are PRODUCT_INELIGIBLE for
+/// every Advanced frequency/horizon (a direct, non-inventive extension of the
+/// already-approved zero-readiness rule to the identical "no positive
+/// evidence" case) -- no starting-volume default is ever resolved for
+/// Advanced, unlike Beginner/Intermediate.
+/// </summary>
+internal sealed class AdvancedMissingOrZeroReadinessProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "ADVANCED_MISSING_OR_ZERO_READINESS_NOT_ELIGIBLE";
+    public AdvancedMissingOrZeroReadinessProductIneligibleException()
+        : base(Reason, "PRODUCT_INELIGIBLE: Advanced requires positive observed recent weekly volume evidence; missing and explicit-zero readiness are not eligible for this product (GEN.8).") { }
+}

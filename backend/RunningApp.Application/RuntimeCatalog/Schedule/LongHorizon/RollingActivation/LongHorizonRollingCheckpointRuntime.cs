@@ -59,7 +59,8 @@ internal interface ILongHorizonGeMaintenanceWindowMaterializer
 {
     IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
-        ValidatedSustainableLoad anchor);
+        ValidatedSustainableLoad anchor,
+        RunningBackground level = RunningBackground.Intermediate);
 }
 
 internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonGeMaintenanceWindowMaterializer
@@ -74,14 +75,20 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
     /// </summary>
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
-        ValidatedSustainableLoad anchor)
+        ValidatedSustainableLoad anchor,
+        RunningBackground level = RunningBackground.Intermediate)
     {
         // Phase 10K-FREQ.6D.26 -- generalized off the same resolved-descriptor
         // easySupportCount already used above, inverted (DaysPerWeek =
         // easySupportCount + 2, the structural identity every GE/Runway week
-        // obeys) into VolumeSafetyPolicy.ForIntermediateDaysPerWeek.
+        // obeys) into VolumeSafetyPolicy.ForIntermediateDaysPerWeek. Phase
+        // 10K-GEN.9 -- added an optional level parameter (defaulted to
+        // Intermediate, byte-identical for every pre-GEN.9 caller) to
+        // dispatch Advanced's own approved VolumeSafetyPolicy family.
         var easySupportCount = selectedWeeks.Count > 0 ? selectedWeeks[0].EasySupportWorkouts.Count : 2;
-        var policy = VolumeSafetyPolicy.ForIntermediateDaysPerWeek(easySupportCount + 2);
+        var policy = level == RunningBackground.Advanced
+            ? VolumeSafetyPolicy.ForAdvancedDaysPerWeek(easySupportCount + 2)
+            : VolumeSafetyPolicy.ForIntermediateDaysPerWeek(easySupportCount + 2);
         var weeklyAnchor = anchor.WeeklyVolumeKm!.Value;
         var longRunAnchor = anchor.LongRunKm!.Value;
         return selectedWeeks.Select(week =>
@@ -216,8 +223,8 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         {
             numeric = evaluation.Decision.Outcome == LongHorizonCheckpointOutcome.GrowthEligible
                 ? _growthMaterializer.Materialize(descriptors, new LongHorizonGeEntryBaselineInput(
-                    evaluation.EffectiveLoad!.WeeklyVolumeKm, evaluation.EffectiveLoad.LongRunKm, null))
-                : _maintenanceMaterializer.Materialize(descriptors, evaluation.EffectiveLoad!);
+                    evaluation.EffectiveLoad!.WeeklyVolumeKm, evaluation.EffectiveLoad.LongRunKm, null), request.Level)
+                : _maintenanceMaterializer.Materialize(descriptors, evaluation.EffectiveLoad!, request.Level);
             if (numeric.Count != descriptors.Count)
                 throw new LongHorizonCheckpointDecisionInvalidException("NUMERIC_WINDOW_INFEASIBLE: bounded materializer returned an incomplete window.");
             stages.Add(evaluation.Decision.Outcome == LongHorizonCheckpointOutcome.GrowthEligible ? "GrowthMaterialization" : "MaintenanceMaterialization");
@@ -397,13 +404,17 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
     private static void ValidateInput(LongHorizonRollingCheckpointRequest request)
     {
         // Phase 10K-FREQ.6D.26 -- widened from 4D-or-5D to include 6D
-        // (Intermediate x6D, approved FREQ.6D.23/6D.25). Internal/dark
-        // checkpoint-runtime eligibility only -- not the public gate.
-        if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK
-            || request.Level != RunningBackground.Intermediate || request.DaysPerWeek is not (4 or 5 or 6)
+        // (Intermediate x6D, approved FREQ.6D.23/6D.25). Phase 10K-GEN.9 --
+        // widened further to admit Advanced 3D/4D/5D/6D (GEN.7/GEN.8
+        // authority). Internal/dark checkpoint-runtime eligibility only --
+        // not the public gate.
+        var levelFrequencyEligible =
+            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Advanced && request.DaysPerWeek is 3 or 4 or 5 or 6);
+        if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible
             || request.StructuralRoadmap.TotalWeeks is < 21 or > 52
             || request.ReadinessProfile != request.StructuralRoadmap.Profile)
-            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate/4D-5D-or-6D/21-52 only.");
+            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate 4D-6D/Advanced 3D-6D/21-52 only.");
     }
 
     private static void ValidatePendingBoundary(LongHorizonRollingCheckpointRequest request, (int StartGlobalWeek, int EndGlobalWeek) boundary)

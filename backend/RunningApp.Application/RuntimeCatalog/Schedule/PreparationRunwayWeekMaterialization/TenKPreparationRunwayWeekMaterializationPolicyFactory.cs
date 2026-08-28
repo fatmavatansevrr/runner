@@ -26,8 +26,16 @@ internal static class TenKPreparationRunwayWeekMaterializationPolicyFactory
     /// dereferenced by the materializer (pure provenance metadata), and the
     /// Core structural authority <c>RUN_LAYOUT_5D</c> is untouched.
     /// </summary>
+    /// <summary>Phase 10K-GEN.9 -- Advanced x3D's own Runway shape (GEN.7 §26/§32: 1 KEY + 1 EASY + 1 LONG). Never reachable before GEN.9 since no prior Level had 3D LongHorizon/Runway support.</summary>
     public static PreparationRunwayCanonicalWeeklyLayout BuildLayout(int daysPerWeek) => daysPerWeek switch
     {
+        3 => new(
+            new PlanCatalogReference("PREPARATION_RUNWAY_LAYOUT_3D_V1", 1),
+            [
+                PreparationRunwaySlotRole.KeySession,
+                PreparationRunwaySlotRole.EasySupport,
+                PreparationRunwaySlotRole.LongRun,
+            ]),
         4 => new(
             new PlanCatalogReference("RUN_LAYOUT_4D", 2),
             [
@@ -58,7 +66,7 @@ internal static class TenKPreparationRunwayWeekMaterializationPolicyFactory
                 PreparationRunwaySlotRole.EasySupport,
                 PreparationRunwaySlotRole.LongRun,
             ]),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "Only the approved Intermediate 4D/5D/6D Preparation Runway layouts are supported."),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "Only the approved Intermediate 4D/5D/6D and Advanced 3D/4D/5D/6D Preparation Runway layouts are supported."),
     };
 
     public static PreparationRunwaySupportWorkoutPolicy BuildSupportPolicy() => new(

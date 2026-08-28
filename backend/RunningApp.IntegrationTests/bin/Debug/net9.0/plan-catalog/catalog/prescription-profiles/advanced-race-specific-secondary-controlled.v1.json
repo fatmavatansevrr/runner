@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PRESCRIPTION_PROFILE",
+    "schemaVersion": 1,
+    "key": "ADVANCED_RACE_SPECIFIC_SECONDARY_CONTROLLED",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 },
+  "doseCategory": "SECONDARY_CONTROLLED",
+  "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+  "components": [
+    {
+      "sequenceOrder": 1,
+      "componentType": "WARM_UP",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 600 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    },
+    {
+      "sequenceOrder": 2,
+      "componentType": "MAIN_SET",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 1500 },
+      "intensityTarget": { "mode": "PACE_BASED", "paceDescriptorKey": "THRESHOLD_SUPPORT_PACE" }
+    },
+    {
+      "sequenceOrder": 3,
+      "componentType": "COOL_DOWN",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 300 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    }
+  ]
+}

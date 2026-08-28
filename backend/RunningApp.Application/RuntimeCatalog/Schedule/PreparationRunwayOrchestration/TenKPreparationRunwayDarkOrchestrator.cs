@@ -333,10 +333,15 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
             request.ConditionResults is null || request.PreviewRequest is null || request.ResolverInput is null ||
             request.PreferredDays is null)
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "Request and all authoritative contexts are required.");
+        // Phase 10K-GEN.9 -- widened from Intermediate-only to also admit the
+        // approved, dark-only Advanced candidates (GEN.7/GEN.8 authority).
+        // IsSupportedPreparationRunwayCandidate above is the real identity
+        // gate; this Level check is a redundant defense-in-depth guard that
+        // must agree with it, not a second independent authority.
         if (!PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(request.Candidate.CandidateKey, request.Candidate.CandidateVersion) ||
-            request.Candidate.CanonicalDistanceFamily != "TEN_K" || request.Candidate.Level != "INTERMEDIATE" ||
+            request.Candidate.CanonicalDistanceFamily != "TEN_K" || request.Candidate.Level is not ("INTERMEDIATE" or "ADVANCED") ||
             request.Candidate.CoreCycle.DefaultWeeks != 12 || request.Candidate.CoreCycle.MaximumWeeks is null)
-            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Intermediate 4D/5D Preparation Runway candidates are supported.");
+            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Intermediate 4D/5D/6D and Advanced 3D/4D/5D/6D Preparation Runway candidates are supported.");
         if (!request.ConditionResults.Any(r => ReferenceEquals(r, request.CoreEntryReadinessResult)))
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "The readiness result must be the same resolved object carried into Core ConditionResults.");
         if (request.PreviewRequest.StartDate != request.StartDate || request.PreviewRequest.RaceDate != request.RaceDate ||

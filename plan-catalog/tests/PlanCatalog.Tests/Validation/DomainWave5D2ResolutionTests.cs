@@ -316,10 +316,15 @@ public sealed class DomainWave5D2ResolutionTests
     [Fact]
     public void ProgressionModifierArtifactsExistOnlyForActivatedIntermediateAndGatedBeginnerLevels()
     {
+        // Phase 10K-GEN.9 legitimately added ADVANCED_PROGRESSION_MODIFIER_V1
+        // (GEN.7/GEN.8-approved Advanced numeric authority) -- widened the
+        // allow-list accordingly; the "exactly one New/Beginner" invariant
+        // this test's own remaining name protects is unaffected.
         var snapshot = LoadSnapshot();
         Assert.All(snapshot.ProgressionModifiers, m =>
-            Assert.Contains(m.Experience, new[] { Contracts.Enums.RunningExperience.Intermediate, Contracts.Enums.RunningExperience.New }));
+            Assert.Contains(m.Experience, new[] { Contracts.Enums.RunningExperience.Intermediate, Contracts.Enums.RunningExperience.New, Contracts.Enums.RunningExperience.Advanced }));
         Assert.Single(snapshot.ProgressionModifiers, m => m.Experience == Contracts.Enums.RunningExperience.New);
+        Assert.Single(snapshot.ProgressionModifiers, m => m.Experience == Contracts.Enums.RunningExperience.Advanced);
     }
 
     // ---------- 19-23: candidate closure / blocker reduction ----------

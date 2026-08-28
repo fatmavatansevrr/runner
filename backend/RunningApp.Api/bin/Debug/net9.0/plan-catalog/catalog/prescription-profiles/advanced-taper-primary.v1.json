@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PRESCRIPTION_PROFILE",
+    "schemaVersion": 1,
+    "key": "ADVANCED_TAPER_PRIMARY",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_TEN_K", "version": 3 },
+  "doseCategory": "PRIMARY",
+  "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+  "components": [
+    {
+      "sequenceOrder": 1,
+      "componentType": "WARM_UP",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 600 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    },
+    {
+      "sequenceOrder": 2,
+      "componentType": "MAIN_SET",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 600 },
+      "intensityTarget": { "mode": "PACE_BASED", "paceDescriptorKey": "GOAL_PACE_TEN_K" }
+    },
+    {
+      "sequenceOrder": 3,
+      "componentType": "COOL_DOWN",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 300 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    }
+  ]
+}

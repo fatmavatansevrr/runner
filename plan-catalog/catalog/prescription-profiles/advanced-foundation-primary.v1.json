@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PRESCRIPTION_PROFILE",
+    "schemaVersion": 1,
+    "key": "ADVANCED_FOUNDATION_PRIMARY",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "workoutDefinitionRef": { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 3 },
+  "doseCategory": "PRIMARY",
+  "distanceAccountingMode": "ESTIMATED_SESSION_TOTAL",
+  "components": [
+    {
+      "sequenceOrder": 1,
+      "componentType": "WARM_UP",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 600 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    },
+    {
+      "sequenceOrder": 2,
+      "componentType": "MAIN_SET",
+      "structureMode": "REPEATED",
+      "workQuantity": { "durationSeconds": 30, "repetitionCount": 6 },
+      "recoveryQuantity": { "durationSeconds": 90, "mode": "JOG" },
+      "recoveryPlacement": "BETWEEN_REPETITIONS",
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "CONTROLLED_AEROBIC_POWER_INTRO" }
+    },
+    {
+      "sequenceOrder": 3,
+      "componentType": "COOL_DOWN",
+      "structureMode": "CONTINUOUS",
+      "workQuantity": { "durationSeconds": 300 },
+      "intensityTarget": { "mode": "EFFORT_BASED", "effortDescriptorKey": "EASY" }
+    }
+  ]
+}

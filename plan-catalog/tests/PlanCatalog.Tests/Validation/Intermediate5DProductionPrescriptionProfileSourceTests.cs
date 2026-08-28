@@ -66,17 +66,26 @@ public sealed class Intermediate5DProductionPrescriptionProfileSourceTests
     [Fact]
     public void RealCatalog_HasExactlyEightProductionPrescriptionProfiles()
     {
+        // Phase 10K-GEN.9 widened the real catalog to 16: the original 8
+        // Intermediate x5D dual-KEY profiles this test named, plus 8 new
+        // Advanced (Level-owned, shared by x5D/x6D) profiles GEN.9 authored.
+        // Both sets are real; the "eight" in this test's name refers to the
+        // Intermediate set specifically, not the whole catalog anymore.
         var snapshot = LoadRealSnapshot();
-        Assert.Equal(8, snapshot.PrescriptionProfiles.Count);
+        Assert.Equal(16, snapshot.PrescriptionProfiles.Count);
+        Assert.Equal(8, snapshot.PrescriptionProfiles.Count(p => p.Metadata.Key.StartsWith("INTERMEDIATE_")));
+        Assert.Equal(8, snapshot.PrescriptionProfiles.Count(p => p.Metadata.Key.StartsWith("ADVANCED_")));
     }
 
     [Fact]
     public void AllEightProfileIdentities_AreDistinct()
     {
+        // Phase 10K-GEN.9: see RealCatalog_HasExactlyEightProductionPrescriptionProfiles's
+        // own comment -- 16 total, all distinct.
         var snapshot = LoadRealSnapshot();
         var identities = snapshot.PrescriptionProfiles.Select(p => (p.Metadata.Key, p.Metadata.Version)).ToList();
         Assert.Equal(identities.Count, identities.Distinct().Count());
-        Assert.Equal(8, identities.Distinct().Count());
+        Assert.Equal(16, identities.Distinct().Count());
     }
 
     [Theory]
@@ -453,8 +462,12 @@ public sealed class Intermediate5DProductionPrescriptionProfileSourceTests
     [Fact]
     public void LegacyCatalog_ExecutionPrescriptionsRemainNull_DespiteRealProfilesNowExisting()
     {
+        // Phase 10K-GEN.9 widened the real catalog to 16 (8 Intermediate +
+        // 8 Advanced) -- see RealCatalog_HasExactlyEightProductionPrescriptionProfiles's
+        // own updated comment. This test's own remaining assertions (legacy
+        // assembly still yields null ExecutionPrescriptions) are unaffected.
         var stamped = LoadStampedSnapshot();
-        Assert.Equal(8, stamped.PrescriptionProfiles.Count);
+        Assert.Equal(16, stamped.PrescriptionProfiles.Count);
 
         var assembler = new CatalogBundleAssembler(new SystemTextJsonCanonicalSerializer(), new Sha256ContentHasher());
         var legacy = assembler.Assemble(stamped, "TEN_K__4D__INTERMEDIATE", 10);

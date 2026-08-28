@@ -44,7 +44,10 @@ internal static class PreparationRunwayWeeklyShape
     // with 4 (Intermediate x6D Runway: 1 KEY + 4 EASY + 1 LONG, approved
     // FREQ.6D.23 §9), per this class's own documented convention of explicit
     // extension rather than silently accepting any count.
-    private static readonly int[] ApprovedEasySupportCounts = [2, 3, 4];
+    // Phase 10K-GEN.9 -- extends further with 1 (Advanced x3D Runway: 1 KEY +
+    // 1 EASY + 1 LONG, approved GEN.7 §26/§32) -- the same explicit-extension
+    // convention, not a silent widening.
+    private static readonly int[] ApprovedEasySupportCounts = [1, 2, 3, 4];
 
     public static bool IsValid(IReadOnlyList<PreparationRunwaySlotRole> roles) =>
         roles.Count(r => r == PreparationRunwaySlotRole.KeySession) == 1 &&

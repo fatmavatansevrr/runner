@@ -38,6 +38,18 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
             ("TEN_K", "INTERMEDIATE", 6) => Build(VolumeSafetyPolicy.SixDayIntermediate,
                 V1SixDayIntermediateMissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
                 V1SixDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm),
+            // Phase 10K-GEN.9 -- GEN.7/GEN.8-approved Advanced 3D/4D/5D/6D
+            // authority, same exact-identity-only dispatch pattern. Advanced
+            // never resolves a missing/zero starting-volume default (GEN.8:
+            // both are PRODUCT_INELIGIBLE) -- the two default-km parameters
+            // here are dead values for Advanced call sites (the Core-level
+            // planner fails closed before this factory's Runway-numeric
+            // fields are ever read for a missing/zero Advanced request), kept
+            // only because this record requires them structurally.
+            ("TEN_K", "ADVANCED", 3) => Build(VolumeSafetyPolicy.Advanced3D, 0d, 0d),
+            ("TEN_K", "ADVANCED", 4) => Build(VolumeSafetyPolicy.Advanced4D, 0d, 0d),
+            ("TEN_K", "ADVANCED", 5) => Build(VolumeSafetyPolicy.Advanced5D, 0d, 0d),
+            ("TEN_K", "ADVANCED", 6) => Build(VolumeSafetyPolicy.Advanced6D, 0d, 0d),
             _ => Build(),
         };
 
@@ -65,7 +77,12 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
         // zero-nominal-gap shape FiveDayIntermediate does (28% selection with
         // no separate preferred-minimum), so it needs the same derived
         // tolerance for the same reason.
+        // Phase 10K-GEN.9 -- Advanced5D/6D have the identical zero-nominal-gap
+        // shape (LongRunSelectionShare == LongRunPreferredMinimumShare ==
+        // 0.28, GEN.7 §27) FiveDayIntermediate/SixDayIntermediate already
+        // do, so they need the same derived tolerance for the same reason.
         var longRunShareTolerance = ReferenceEquals(core, VolumeSafetyPolicy.FiveDayIntermediate) || ReferenceEquals(core, VolumeSafetyPolicy.SixDayIntermediate)
+            || ReferenceEquals(core, VolumeSafetyPolicy.Advanced5D) || ReferenceEquals(core, VolumeSafetyPolicy.Advanced6D)
             ? core.RoundingIncrementKm / core.GoldenFixtureStartingVolumeKm
             : V1FourDaySessionVolumeAllocationPolicy.ToleranceKm;
         return new PreparationRunwayNumericPolicy(

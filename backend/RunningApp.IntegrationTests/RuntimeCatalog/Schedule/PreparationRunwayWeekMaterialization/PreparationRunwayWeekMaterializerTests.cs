@@ -183,12 +183,20 @@ public sealed class PreparationRunwayWeekMaterializerTests
     [Fact]
     public async Task NonCanonicalFourRoleLayout_IsRejected()
     {
+        // Phase 10K-GEN.9: [KEY, EASY, LONG] (1 EASY_SUPPORT) was this test's
+        // original "non-canonical" example, but GEN.7/GEN.9 legitimately
+        // approved and dark-activated exactly this shape for Advanced x3D
+        // Runway (1K+1E+1L) -- see PreparationRunwayWeeklyShape's own widened
+        // ApprovedEasySupportCounts. Replaced with a shape that remains
+        // genuinely non-canonical (zero EASY_SUPPORT slots), preserving this
+        // test's real intent (reject cardinality violations) rather than
+        // weakening it.
         var (request, _) = await BuildRealRequestAsync(PreparationRunwayAllocationProfile.ConsistencyNeeded, 3);
         request = request with
         {
             CanonicalWeeklyLayout = request.CanonicalWeeklyLayout with
             {
-                OrderedRoles = [PreparationRunwaySlotRole.KeySession, PreparationRunwaySlotRole.EasySupport, PreparationRunwaySlotRole.LongRun],
+                OrderedRoles = [PreparationRunwaySlotRole.KeySession, PreparationRunwaySlotRole.LongRun],
             },
         };
         await AssertFailure(request, PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation);
