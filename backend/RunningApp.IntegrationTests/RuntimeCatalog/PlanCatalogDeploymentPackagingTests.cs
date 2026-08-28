@@ -103,7 +103,9 @@ public sealed class PlanCatalogDeploymentPackagingTests
         // Phase 10K-FREQ.6D.4D Split E: exactly one pinned published-bundle release folder is
         // additionally packaged (see PlanCatalogOptions.PublishedBundleReleaseVersion), never the
         // whole artifacts/ tree (other releases, docs, tests remain excluded).
-        Assert.Contains("plan-catalog\\artifacts\\appsel-plan-catalog\\1.1.0\\bundles\\**\\*.json", project);
+        // Phase 10K-GEN.10 defect fix: bumped from the stale 1.1.0 pin to 1.3.0,
+        // matching the real configured PublishedBundleReleaseVersion.
+        Assert.Contains("plan-catalog\\artifacts\\appsel-plan-catalog\\1.3.0\\bundles\\**\\*.json", project);
         Assert.DoesNotContain("plan-catalog\\docs", project);
         Assert.DoesNotContain("plan-catalog\\tests", project);
     }

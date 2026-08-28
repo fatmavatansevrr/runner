@@ -58,7 +58,7 @@ internal sealed class LongHorizonRollingStateRepository : ILongHorizonRollingSta
             RaceDate = roadmap.RaceDate,
             GoalType = "Race",
             GoalDistance = "TenK",
-            Level = "Intermediate",
+            Level = request.Level.ToString(),
             DaysPerWeek = request.DaysPerWeek,
             PreferredDaysCsv = string.Join(",", request.PreferredDays),
             LongRunDay = request.LongRunDay.ToString(),

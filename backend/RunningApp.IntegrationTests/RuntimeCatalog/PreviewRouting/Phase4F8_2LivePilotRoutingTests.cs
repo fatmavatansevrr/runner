@@ -70,9 +70,11 @@ public sealed class Phase4F8_2LivePilotRoutingTests
             case nameof(GeneratePreviewRequest.GoalDistance): request.GoalDistance = GoalDistance.FiveK; break;
             // GEN.4E deliberately widened (Beginner, 4) to a real, distinct
             // pilot identity, so it's no longer a valid "make this non-pilot"
-            // mutation; Advanced remains genuinely unwidened at every
-            // frequency and still exercises the same negative-identity path.
-            case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Advanced; break;
+            // mutation; GEN.10 subsequently widened Advanced too (3D/4D/5D/6D),
+            // so it's no longer valid here either -- Experienced remains
+            // genuinely unwidened at every frequency and still exercises the
+            // same negative-identity path.
+            case nameof(GeneratePreviewRequest.Level): request.Level = RunningBackground.Experienced; break;
             // FREQ.6D.4D.5G widened (Intermediate, 5), then FREQ.6D.27 widened
             // (Intermediate, 6), each to a real, distinct pilot identity in
             // turn -- so 6 is no longer a valid "make this non-pilot" mutation

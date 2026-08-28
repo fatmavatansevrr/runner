@@ -344,14 +344,21 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
             return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Intermediate 4D/5D/6D and Advanced 3D/4D/5D/6D Preparation Runway candidates are supported.");
         if (!request.ConditionResults.Any(r => ReferenceEquals(r, request.CoreEntryReadinessResult)))
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "The readiness result must be the same resolved object carried into Core ConditionResults.");
+        // Phase 10K-GEN.10 defect fix: this compared PreviewRequest/ResolverInput.Level
+        // against a hardcoded RunningBackground.Intermediate, even though
+        // request.Candidate.Level (checked above) already admits "ADVANCED" --
+        // silently rejecting every real Advanced Runway request as
+        // InvalidOrchestrationRequest. Compare against the candidate's own
+        // resolved Level instead of a hardcoded constant.
+        var expectedLevel = request.Candidate.Level == "ADVANCED" ? RunningBackground.Advanced : RunningBackground.Intermediate;
         if (request.PreviewRequest.StartDate != request.StartDate || request.PreviewRequest.RaceDate != request.RaceDate ||
             request.ResolverInput.StartDate != request.StartDate || request.ResolverInput.RaceDate != request.RaceDate ||
             request.ResolverInput.CanonicalDistanceFamily != request.Candidate.CanonicalDistanceFamily ||
             request.ResolverInput.RequestedTargetDistanceKm != 10d ||
             request.PreviewRequest.DaysPerWeek != request.Candidate.DaysPerWeek ||
             request.ResolverInput.DaysPerWeek != request.Candidate.DaysPerWeek ||
-            request.PreviewRequest.Level != RunningBackground.Intermediate ||
-            request.ResolverInput.Level != RunningBackground.Intermediate ||
+            request.PreviewRequest.Level != expectedLevel ||
+            request.ResolverInput.Level != expectedLevel ||
             !SharedInputAuthorityMatches(request))
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "Preview, resolver, candidate, and orchestration date/distance contexts must be value-identical.");
         if (request.Unit != PreparationRunwayQuantityUnit.Kilometers)

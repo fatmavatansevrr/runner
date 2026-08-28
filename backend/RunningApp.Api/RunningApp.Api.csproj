@@ -31,9 +31,17 @@
     <!-- Phase 10K-FREQ.6D.4D Split E: package the pinned published-bundle release
          (see PlanCatalogOptions.PublishedBundleReleaseVersion) as a sibling of the
          catalog/ tree above, matching PublishedTemplateBundleLoader's sibling-root
-         resolution so packaged/deployed builds can discover it too. -->
-    <Content Include="..\..\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\**\*.json"
-             Link="plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\%(RecursiveDir)%(Filename)%(Extension)"
+         resolution so packaged/deployed builds can discover it too.
+         Phase 10K-GEN.10 defect fix: this was still pinned at 1.1.0, never bumped
+         alongside appsettings.json's PublishedBundleReleaseVersion at FREQ.6D.26
+         (1.2.0, added TEN_K__6D__INTERMEDIATE) or GEN.10 itself (1.3.0, added the
+         four ADVANCED_* candidates). Every real packaged/published build has
+         been silently missing 6D Intermediate's execution-profile bundle since
+         FREQ.6D.26, and would have shipped with Advanced entirely non-functional
+         (ProfileBacked sessions fail closed with no bundle file present). Bumped
+         to match the real configured release. -->
+    <Content Include="..\..\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\**\*.json"
+             Link="plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

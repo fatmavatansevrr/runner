@@ -163,7 +163,13 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
             CompositionDecision = composition,
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.Intermediate,
+            // Phase 10K-GEN.10 defect fix: this was hardcoded to Intermediate
+            // regardless of the real request Level, which would have
+            // silently misclassified every Advanced LongHorizon request
+            // (and, for Advanced x3D specifically, been rejected outright by
+            // LongHorizonRollingInitialActivationContracts's own eligibility
+            // gate, since (Intermediate, 3) is not an approved combination).
+            Level = command.Level,
             DaysPerWeek = command.DaysPerWeek,
             StartDate = command.StartDate,
             RaceDate = command.RaceDate,
@@ -290,6 +296,7 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
                 CatalogRootPath = snapshot.CatalogRootPath,
                 Candidate = candidate,
                 DaysPerWeek = snapshot.Command.DaysPerWeek,
+                Level = snapshot.Command.Level,
             }, ct);
             _failureInjector.MaybeThrow(LongHorizonConfirmationFailpoint.AfterRollingInitialization);
 
@@ -322,7 +329,10 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
     {
         Id = Guid.NewGuid(), InternalUserId = userId, Status = TrainingPlanStatus.Active,
         GoalType = GoalType.Race, GoalDistance = GoalDistance.TenK, GoalDistanceKm = 10,
-        Level = RunningBackground.Intermediate, DaysPerWeek = snapshot.Command.DaysPerWeek, Unit = snapshot.Command.Unit,
+        // Phase 10K-GEN.10 defect fix: this was hardcoded to Intermediate
+        // regardless of the real request Level -- every confirmed Advanced
+        // LongHorizon plan would have silently persisted as Level=Intermediate.
+        Level = snapshot.Command.Level, DaysPerWeek = snapshot.Command.DaysPerWeek, Unit = snapshot.Command.Unit,
         RaceName = snapshot.Command.RaceName, RaceDate = snapshot.Command.RaceDate,
         TargetFinishTimeSeconds = snapshot.Command.TargetFinishTimeSeconds,
         // Phase 10K-FREQ.6D.21 -- persists the same already-in-scope provenance
@@ -372,9 +382,16 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
     /// </summary>
     private static void ValidatePilot(RacePlanPreviewCommand command)
     {
-        if (command.GoalType != GoalType.Race || command.GoalDistance != GoalDistance.TenK ||
-            command.Level != RunningBackground.Intermediate || command.DaysPerWeek is not (4 or 5 or 6))
-            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate/4-5-or-6-day requests are enabled for Long-Horizon preview.");
+        // Phase 10K-GEN.10 -- widened to admit the approved Advanced
+        // 3D/4D/5D/6D public identities (GEN.7/GEN.8 authority, GEN.9 dark
+        // implementation) alongside Intermediate's existing 4/5/6. Advanced
+        // x7D remains unreachable (PRODUCT_NON_SUPPORT, GEN.7); Advanced x2D
+        // remains unreachable (OUT_OF_V1, never designed).
+        var levelFrequencyEligible =
+            (command.Level == RunningBackground.Intermediate && command.DaysPerWeek is 4 or 5 or 6) ||
+            (command.Level == RunningBackground.Advanced && command.DaysPerWeek is 3 or 4 or 5 or 6);
+        if (command.GoalType != GoalType.Race || command.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible)
+            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate 4-5-or-6-day or Advanced 3-4-5-or-6-day requests are enabled for Long-Horizon preview.");
     }
 
     private static ReadinessProfile ResolveProfile(RacePlanPreviewCommand command)

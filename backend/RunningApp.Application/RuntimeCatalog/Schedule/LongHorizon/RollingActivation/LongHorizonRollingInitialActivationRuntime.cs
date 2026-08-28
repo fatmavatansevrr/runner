@@ -94,12 +94,24 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         LongHorizonGeneratedStructuralSkeleton skeleton;
         try
         {
+            // Phase 10K-GEN.10 defect fix: this never threaded request.Level
+            // through to MaterializeAsync, which defaults to Intermediate.
+            // For Advanced x3D (no Intermediate x3D equivalent) that produced
+            // a hard structural-validation failure (CandidateKey resolved to
+            // the 4D Intermediate identity, whose expected GE slot count is 4,
+            // against a real 3-slot skeleton) -- surfacing this defect.
+            // For Advanced x4D/5D/6D the mismatch was silent: the skeleton's
+            // own CandidateKey was silently written as the Intermediate
+            // identity even though the request was genuinely Advanced,
+            // because those day counts share the same GE slot cardinality
+            // with their Intermediate counterparts.
             skeleton = await LongHorizonStructuralMaterializer.MaterializeAsync(
                 request.CompositionDecision,
                 request.CatalogRoot,
                 request.WorkoutLoader,
                 cancellationToken,
-                request.DaysPerWeek);
+                request.DaysPerWeek,
+                request.Level);
         }
         catch (Exception exception) when (exception is PlanCatalogLoadException or JsonException or InvalidOperationException or IOException)
         {

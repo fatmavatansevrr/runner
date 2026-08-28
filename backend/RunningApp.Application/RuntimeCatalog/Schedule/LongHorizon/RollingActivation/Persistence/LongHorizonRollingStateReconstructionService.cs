@@ -57,7 +57,14 @@ internal static class LongHorizonRollingStateReconstructionService
         // even though its persisted sessions were genuinely 5D-shaped -- a
         // reconstruction-only mismatch invisible to every prior FREQ.6D.13/14/15
         // test because none of them read StructuralWorkoutRoles.Count after reload.
-        var skeleton = await LongHorizonStructuralMaterializer.MaterializeAsync(compositionDecision, catalogRootPath, workoutLoader, cancellationToken, plan.DaysPerWeek);
+        // Phase 10K-GEN.10 defect fix: the same gap existed for Level --
+        // MaterializeAsync's level parameter defaults to Intermediate, so
+        // reloading a persisted Advanced plan silently rebuilt an
+        // Intermediate-shaped skeleton identity (CandidateKey) on every
+        // reconstruction. plan.Level is the same durably-stored authority
+        // already used to reload every other Level-dependent aspect of the plan.
+        var reconstructedLevel = Enum.Parse<RunningBackground>(plan.Level, ignoreCase: true);
+        var skeleton = await LongHorizonStructuralMaterializer.MaterializeAsync(compositionDecision, catalogRootPath, workoutLoader, cancellationToken, plan.DaysPerWeek, reconstructedLevel);
         var rolesByWeek = skeleton.Weeks.ToDictionary(w => w.GlobalWeekNumber, w => (IReadOnlyList<string>)w.OrderedWorkoutSlots.Select(s => s.StructuralRole).ToList());
 
         var lifecycleStates = new Dictionary<int, LongHorizonNumericLifecycleState>();

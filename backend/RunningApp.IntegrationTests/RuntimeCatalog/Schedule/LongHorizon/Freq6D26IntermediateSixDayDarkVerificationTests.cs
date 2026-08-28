@@ -440,16 +440,20 @@ public sealed class Freq6D26FullLifecycleTests
 // regression) -- the two assertions that specifically asserted "6D public
 // gate closed" were superseded there and are covered instead by
 // Freq6D27IntermediateSixDayPublicActivationTests' own activation proof.
+// Phase 10K-GEN.10 subsequently opened the public Advanced x6D gate itself
+// too (by product/repository design, not a regression) -- Advanced x6D
+// removed from this "still closed" assertion and covered instead by
+// Gen9AdvancedIsolationTests.PublicIdentityPolicy_RecognizesAdvancedActivatedFrequencies
+// and Gen10AdvancedCombinedPublicActivationTests' own activation proof.
 // This class now asserts only what remains permanently true post-activation:
-// Beginner/Advanced x6D and Intermediate x7D never gained public routing. ──
+// Beginner x6D and Intermediate x7D never gained public routing. ──
 
 public sealed class Freq6D26IsolationTests
 {
     [Fact]
-    public void PublicIdentityPolicy_DoesNotRecognizeBeginnerOrAdvancedSixDay()
+    public void PublicIdentityPolicy_DoesNotRecognizeBeginnerSixDay()
     {
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 6));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, 6));
     }
 
     [Fact]

@@ -99,8 +99,11 @@ public sealed class PublishedCatalogNonDevelopmentEndToEndTests :
         Assert.Contains("PACE_SOURCE_TARGET_TIME_NO_INDEPENDENT_EVIDENCE", error.ToJsonString());
         await AssertNoPlanGraphPersistenceAsync(_enabledFactory, baseline);
 
+        // Phase 10K-GEN.10 widened Advanced x4D to a real, distinct pilot
+        // identity, so it's no longer a valid "unsupported Level" mutation
+        // here; Experienced remains genuinely unwidened at every frequency.
         var unsupported = await _enabledClient.PostRawAsync(
-            "/api/v1/plans/generate-preview/race", Request(start, 12, level: "advanced"));
+            "/api/v1/plans/generate-preview/race", Request(start, 12, level: "experienced"));
         Assert.NotEqual(HttpStatusCode.OK, unsupported.StatusCode);
         await AssertNoPlanGraphPersistenceAsync(_enabledFactory, baseline);
     }

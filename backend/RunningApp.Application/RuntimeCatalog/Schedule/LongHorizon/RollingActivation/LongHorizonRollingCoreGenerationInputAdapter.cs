@@ -24,7 +24,15 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
         RecentRaceInput? recentRace,
         IReadOnlyList<DayOfWeek> preferredDays,
         DayOfWeek longRunDay,
-        int daysPerWeek = 4)
+        int daysPerWeek = 4,
+        // Phase 10K-GEN.10 defect fix: this both hardcoded Level to
+        // Intermediate below regardless of the real plan's Level, causing
+        // the real Runway orchestrator's own request-identity check
+        // (candidate.Level vs PreviewRequest/ResolverInput.Level) to reject
+        // every Advanced rolling GE->Runway boundary handoff as
+        // InvalidOrchestrationRequest -- surfacing as an opaque
+        // JitEvidenceConflictUnresolved Block on activate-next-window.
+        RunningBackground level = RunningBackground.Intermediate)
     {
         if (validatedLoad.ValidationStatus != LongHorizonValidationStatus.Valid
             || validatedLoad.WeeklyVolumeKm is null || validatedLoad.LongRunKm is null)
@@ -40,7 +48,7 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
         {
             GoalType = GoalType.Race,
             GoalDistance = GoalDistance.TenK,
-            Level = RunningBackground.Intermediate,
+            Level = level,
             DaysPerWeek = daysPerWeek,
             Unit = DistanceUnit.Km,
             StartDate = startDate,
@@ -69,7 +77,7 @@ internal static class LongHorizonRollingCoreGenerationInputAdapter
             DaysPerWeek = daysPerWeek,
             PreferredDays = weekdays,
             LongRunDay = longRunWeekday,
-            Level = RunningBackground.Intermediate,
+            Level = level,
             RecentWeeklyVolumeKm = validatedLoad.WeeklyVolumeKm,
             RecentLongestRunKm = validatedLoad.LongRunKm,
             RecentRunsPerWeek = exactCompletedFrequency,

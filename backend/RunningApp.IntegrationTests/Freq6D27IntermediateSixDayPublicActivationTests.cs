@@ -299,10 +299,13 @@ public sealed class Freq6D27IntermediateSixDayPublicActivationTests
     }
 
     // ── §43-51: unsupported neighbors remain closed; no nearest-match routing ──
+    // Phase 10K-GEN.10 subsequently opened the public Advanced x6D LongHorizon
+    // gate itself (by product/repository design, not a regression) --
+    // (advanced, 6) removed from this "unsupported neighbor" list and covered
+    // instead by Gen10AdvancedCombinedPublicActivationTests' own activation proof.
 
     [Theory]
     [InlineData("beginner", 6)]
-    [InlineData("advanced", 6)]
     [InlineData("intermediate", 7)]
     public async Task UnsupportedNeighbors_RemainClosed_NoFallbackToFiveOrSixDayIdentity(string level, int days)
     {

@@ -97,6 +97,10 @@ public sealed class Gen4DBeginnerFourDayCoreTests
         // exact enumerated allow-list (V1CatalogPilotIdentityPolicy), not a
         // derived/inferred rule, so accidental admission of a new cell would
         // fail this test immediately.
+        // Phase 10K-GEN.10 subsequently widened Advanced x4D too (a real,
+        // distinct pilot identity of its own) -- that cell is now asserted
+        // True below instead of False; Experienced x4D (never widened by any
+        // phase) replaces it as the still-closed negative check.
         var candidate = await DynamicCoreVolumeAndLongRunOrchestratorTests.RealBeginnerFourDayCandidateAsync();
         Assert.Equal("NEW", candidate.Level);
         Assert.Equal(4, candidate.DaysPerWeek);
@@ -104,8 +108,10 @@ public sealed class Gen4DBeginnerFourDayCoreTests
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 4));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, 4));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+            GoalType.Race, GoalDistance.TenK, RunningBackground.Experienced, 4));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 5));
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(

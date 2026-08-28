@@ -581,10 +581,6 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\progression-modifiers\intermediate-progression-modifier.v3.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\templates\ten-k-master.v7.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\workout-progressions\ten-k-workout-progression.v6.json
-C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\TEN_K__3D__INTERMEDIATE.v1.json
-C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\TEN_K__4D__BEGINNER.v1.json
-C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\TEN_K__4D__INTERMEDIATE.v4.json
-C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.1.0\bundles\TEN_K__5D__INTERMEDIATE.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\combinations\ten-k-6d-intermediate.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\layouts\run-layout-6d.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\policies\peak-volume-bands.v5.json
@@ -609,3 +605,12 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\rule-packs\appsel-race-plan.v7.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\templates\ten-k-master.v9.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\catalog\workout-progressions\ten-k-workout-progression.v7.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__3D__ADVANCED.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__3D__INTERMEDIATE.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__4D__ADVANCED.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__4D__BEGINNER.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__4D__INTERMEDIATE.v4.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__5D__ADVANCED.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__5D__INTERMEDIATE.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__6D__ADVANCED.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.IntegrationTests\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__6D__INTERMEDIATE.v1.json

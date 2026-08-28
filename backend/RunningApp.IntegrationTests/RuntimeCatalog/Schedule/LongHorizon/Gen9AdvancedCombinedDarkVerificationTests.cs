@@ -439,7 +439,12 @@ public sealed class Gen9AdvancedFiveDayFullLifecycleTests
     }
 }
 
-// ── Isolation: public gate closed, Intermediate/Beginner/Experienced unaffected ──
+// ── Isolation: public gate closed for Advanced 2D/7D; Intermediate/Beginner/Experienced unaffected ──
+// Phase 10K-GEN.10 -- Advanced 3D/4D/5D/6D are now legitimately, publicly
+// activated (see Gen10AdvancedCombinedPublicActivationTests). This class's
+// own former blanket "Advanced is unsupported at every frequency" assertion
+// is corrected to reflect that: only 2D (OUT_OF_V1, never designed) and 7D
+// (PRODUCT_NON_SUPPORT, GEN.7) remain closed by construction.
 
 public sealed class Gen9AdvancedIsolationTests
 {
@@ -448,8 +453,19 @@ public sealed class Gen9AdvancedIsolationTests
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
+    public void PublicIdentityPolicy_RecognizesAdvancedActivatedFrequencies(int daysPerWeek)
+    {
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, daysPerWeek));
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, daysPerWeek));
+        var (key, version) = V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Advanced, daysPerWeek);
+        Assert.Equal($"TEN_K__{daysPerWeek}D__ADVANCED", key);
+        Assert.Equal(1, version);
+    }
+
+    [Theory]
+    [InlineData(2)]
     [InlineData(7)]
-    public void PublicIdentityPolicy_DoesNotRecognizeAdvancedAnyFrequency(int daysPerWeek)
+    public void PublicIdentityPolicy_DoesNotRecognizeAdvancedOutOfScopeFrequencies(int daysPerWeek)
     {
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, daysPerWeek));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, daysPerWeek));

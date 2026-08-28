@@ -131,11 +131,20 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Intermediate, 5) or
             (RunningBackground.Intermediate, 6) or
-            (RunningBackground.Beginner, 4);
+            (RunningBackground.Beginner, 4) or
+            (RunningBackground.Advanced, 3) or
+            (RunningBackground.Advanced, 4) or
+            (RunningBackground.Advanced, 5) or
+            (RunningBackground.Advanced, 6);
     // (Intermediate, 6): Phase 10K-FREQ.6D.27 public activation, implementing
     // the already-approved FREQ.6D.23/6D.25/6D.26 authority. Does not widen
     // to Beginner/Advanced x6D or Intermediate x7D -- see SixDayCandidateKey's
     // own doc comment for the full prior dark-implementation history.
+    // (Advanced, 3/4/5/6): Phase 10K-GEN.10 public activation, implementing
+    // the already-approved GEN.7/GEN.8 authority and the GEN.9 dark
+    // implementation. Does not widen to Advanced x7D (PRODUCT_NON_SUPPORT,
+    // GEN.7) or Advanced x2D (OUT_OF_V1, never designed) -- both remain
+    // unreachable through this allow-list by construction.
     // (Intermediate, 5): fifth activation attempt (Phase 10K-FREQ.6D.4D.5G). The
     // execution-context propagation gap FREQ.6D.4D.5F found (CompressedCore/ExtendedCore
     // never threaded the published-bundle execution index into session prescription,
@@ -165,7 +174,11 @@ public static class V1CatalogPilotIdentityPolicy
         (RunningBackground.Intermediate, 5) => (FiveDayCandidateKey, FiveDayCandidateVersion),
         (RunningBackground.Intermediate, 6) => (SixDayCandidateKey, SixDayCandidateVersion),
         (RunningBackground.Beginner, 4) => (BeginnerCandidateKey, BeginnerCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D and Beginner 4D Core pilot identities are resolvable.")
+        (RunningBackground.Advanced, 3) => (AdvancedThreeDayCandidateKey, AdvancedThreeDayCandidateVersion),
+        (RunningBackground.Advanced, 4) => (AdvancedFourDayCandidateKey, AdvancedFourDayCandidateVersion),
+        (RunningBackground.Advanced, 5) => (AdvancedFiveDayCandidateKey, AdvancedFiveDayCandidateVersion),
+        (RunningBackground.Advanced, 6) => (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D, and Advanced 3D/4D/5D/6D Core pilot identities are resolvable.")
     };
 
     /// <summary>
@@ -190,7 +203,14 @@ public static class V1CatalogPilotIdentityPolicy
         (level, daysPerWeek) is
             (RunningBackground.Intermediate, 4) or
             (RunningBackground.Intermediate, 5) or
-            (RunningBackground.Intermediate, 6);
+            (RunningBackground.Intermediate, 6) or
+            // Phase 10K-GEN.10 -- Advanced Runway is approved for all four
+            // supported frequencies including 3D (GEN.7 §17: unlike
+            // Intermediate x3D, Advanced x3D Runway/LongHorizon was approved).
+            (RunningBackground.Advanced, 3) or
+            (RunningBackground.Advanced, 4) or
+            (RunningBackground.Advanced, 5) or
+            (RunningBackground.Advanced, 6);
 
     public static bool IsSupportedPreparationRunwayIdentity(
         GoalType goalType,

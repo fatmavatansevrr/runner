@@ -148,7 +148,6 @@ public sealed class RunningBackgroundV2Tests
     }
 
     [Theory]
-    [InlineData(RunningBackground.Advanced)]
     [InlineData(RunningBackground.Experienced)]
     public void UnwidenedNonIntermediateLevels_AreNotSilentlyCoercedToIntermediate(RunningBackground level)
     {
@@ -158,7 +157,9 @@ public sealed class RunningBackgroundV2Tests
         // covered separately below: GEN.4E deliberately widened Beginner at
         // 4D (not silently coerced to Intermediate -- routed to its own
         // TEN_K__4D__BEGINNER candidate), so it is no longer a member of
-        // this "remains unsupported" set.
+        // this "remains unsupported" set. GEN.10 subsequently widened
+        // Advanced at 4D too (routed to its own TEN_K__4D__ADVANCED
+        // candidate), so it was removed from this set as well.
         var isSupported = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, level, 4);
 

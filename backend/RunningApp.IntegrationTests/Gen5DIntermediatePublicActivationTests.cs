@@ -109,10 +109,13 @@ public sealed class Gen5DIntermediatePublicActivationTests : IDisposable
     }
 
     // ── §44: unsupported neighbors remain closed ────────────────────────────
+    // Phase 10K-GEN.10 subsequently opened the public Advanced x5D gate
+    // itself (by product/repository design, not a regression) -- (advanced,
+    // 5) removed from this "unsupported neighbor" list and covered instead
+    // by Gen10AdvancedCombinedPublicActivationTests' own activation proof.
 
     [Theory]
     [InlineData("beginner", 5)]
-    [InlineData("advanced", 5)]
     public async Task UnsupportedNeighborCells_RemainUnactivated(string level, int days)
     {
         await ResetAsync();

@@ -69,6 +69,16 @@ internal sealed record LongHorizonRollingInitializationRequest
     /// </summary>
     public int DaysPerWeek { get; init; } = 4;
 
+    /// <summary>
+    /// Phase 10K-GEN.10 defect fix: defaults to Intermediate, byte-identical
+    /// to the previous hardcoded plan.Level = "Intermediate", for every
+    /// existing caller. A real Advanced confirmation must pass Advanced here,
+    /// or the persisted LongHorizonRollingPlanState.Level row (read by every
+    /// later checkpoint continuation/reconstruction) silently reverts to
+    /// Intermediate regardless of what was actually confirmed.
+    /// </summary>
+    public RunningApp.Domain.Enums.RunningBackground Level { get; init; } = RunningApp.Domain.Enums.RunningBackground.Intermediate;
+
     /// <summary>Deterministic identity: replaying the same roadmap+window for the same plan anchor must not duplicate rows.</summary>
     public required Guid PlanStateId { get; init; }
 }

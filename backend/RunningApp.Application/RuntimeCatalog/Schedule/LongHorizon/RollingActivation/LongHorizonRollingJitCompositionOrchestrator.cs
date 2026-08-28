@@ -4,6 +4,7 @@ using RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivati
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunway;
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayNumericMaterialization;
 using RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayOrchestration;
+using RunningApp.Domain.Enums;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -65,10 +66,11 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
             var coreSegment = request.StructuralRoadmap.Segments.Single(s => s.SegmentType == LongHorizonStructuralSegmentType.Core);
             var runwayStartDate = request.PlanStartDate.AddDays((runwaySegment.StartGlobalWeek - 1) * 7);
 
+            var jitLevel = request.Candidate.Level == "ADVANCED" ? RunningBackground.Advanced : RunningBackground.Intermediate;
             var (previewRequest, resolverInput) = LongHorizonRollingCoreGenerationInputAdapter.Build(
                 request.ValidatedLoad, request.ExactCompletedFrequency, runwayStartDate, request.RaceDate,
                 request.TargetFinishTimeSeconds, request.TargetFinishTimeSource, request.RecentRace,
-                request.PreferredDays, request.LongRunDay, request.Candidate.DaysPerWeek);
+                request.PreferredDays, request.LongRunDay, request.Candidate.DaysPerWeek, jitLevel);
             stages.Add("RollingCoreInputMapping");
 
             // Part 2: real, unmodified condition resolution -- the same four
