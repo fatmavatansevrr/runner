@@ -116,6 +116,22 @@ public sealed class PlanCatalogCandidateSummary
     /// </summary>
     public required IReadOnlyList<PlanCatalogPhaseAllocation> PhaseAllocations { get; init; }
 
-    /// <summary>Slot roles declared by the layout (e.g. KEY_SESSION, EASY_SUPPORT, LONG_RUN).</summary>
+    /// <summary>Slot roles declared by the layout (e.g. KEY_SESSION, EASY_SUPPORT, LONG_RUN). For a repeating-pattern layout (<see cref="WeeklyPatternRoles"/> non-null), this is Pattern[0] (Pattern A) — kept populated so every pre-GEN.12 consumer that only reads this field keeps working unchanged.</summary>
     public required IReadOnlyList<string> SlotRoles { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.12 — the layout's optional repeating multi-week
+    /// structural pattern (e.g. RUN_LAYOUT_2D's Model B: Pattern A =
+    /// [KEY_SESSION, LONG_RUN], Pattern B = [EASY_SUPPORT, LONG_RUN]).
+    /// <see langword="null"/> for every layout that declares only a single
+    /// fixed weekly <c>slots[]</c> array (every 3D-7D layout as of this
+    /// phase) — additive and optional by construction, so no existing
+    /// consumer needs to change. When non-null, each entry's role count
+    /// must equal <see cref="DaysPerWeek"/>, and <see cref="PatternPeriodWeeks"/>
+    /// is also non-null and equal to this list's count.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>>? WeeklyPatternRoles { get; init; }
+
+    /// <summary>Phase 10K-GEN.12 — the repeating period, in weeks, of <see cref="WeeklyPatternRoles"/>. Null iff <see cref="WeeklyPatternRoles"/> is null.</summary>
+    public int? PatternPeriodWeeks { get; init; }
 }

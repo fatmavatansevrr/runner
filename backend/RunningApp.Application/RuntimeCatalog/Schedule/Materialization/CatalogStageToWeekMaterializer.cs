@@ -69,6 +69,23 @@ public sealed class CatalogStageToWeekMaterializationContext
     /// materializer, which has no catalog-loader dependency.
     /// </summary>
     public required IReadOnlyList<string> RunLayoutSlotRoles { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.12 — the layout's optional repeating multi-week
+    /// pattern, verbatim from <see cref="Materialization.CatalogRunLayoutSlots.WeeklyPatternRoles"/>.
+    /// Null for every existing (non-repeating) layout — when null, every
+    /// week uses <see cref="RunLayoutSlotRoles"/> unchanged (byte-identical
+    /// to pre-GEN.12 behavior). When non-null, each non-TAPER week's roles
+    /// are selected by <c>Pattern[(weekNumber-1) % PatternPeriodWeeks]</c>
+    /// (a frozen global week-ordinal sequence, GEN.11 §1/§11 — never reset
+    /// at a stage boundary); a TAPER-stage week always uses Pattern[0]
+    /// (Pattern A) regardless of where the alternation would otherwise
+    /// land, per GEN.11 §5's structural taper override.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>>? RunLayoutWeeklyPatternRoles { get; init; }
+
+    /// <summary>Phase 10K-GEN.12 — verbatim from <see cref="Materialization.CatalogRunLayoutSlots.PatternPeriodWeeks"/>. Null iff <see cref="RunLayoutWeeklyPatternRoles"/> is null.</summary>
+    public int? PatternPeriodWeeks { get; init; }
 }
 
 /// <summary>Wraps a successfully materialized skeleton. <see cref="ICatalogStageToWeekMaterializer.Materialize"/> never returns a failure variant — every failure is a thrown, typed exception (see <c>CatalogStageToWeekMaterializationExceptions.cs</c>), never a partial or swallowed-error result.</summary>
@@ -106,6 +123,7 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
         ValidateStageSequence(context.SelectedStageSequence);
         ValidateStageAllocation(context.SelectedStageSequence, context.StageWeekAllocations, context.PlannedWeekCount);
         ValidateRunLayout(context.RunLayoutSlotRoles, context.DaysPerWeek);
+        ValidateWeeklyPatternRoles(context.RunLayoutWeeklyPatternRoles, context.PatternPeriodWeeks, context.DaysPerWeek);
 
         var weeks = BuildWeeks(context);
 
@@ -242,6 +260,32 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
         }
     }
 
+    /// <summary>Phase 10K-GEN.12 — when present, every pattern entry's role count must exactly equal DaysPerWeek, same discipline as <see cref="ValidateRunLayout"/> above. No-op for every pre-GEN.12 (null) layout.</summary>
+    private static void ValidateWeeklyPatternRoles(
+        IReadOnlyList<IReadOnlyList<string>>? patterns, int? patternPeriodWeeks, int daysPerWeek)
+    {
+        if (patterns is null)
+        {
+            return;
+        }
+
+        if (patternPeriodWeeks != patterns.Count)
+        {
+            throw new CatalogRunLayoutInvalidException(
+                $"PatternPeriodWeeks ({patternPeriodWeeks}) must equal RunLayoutWeeklyPatternRoles.Count ({patterns.Count}).");
+        }
+
+        foreach (var pattern in patterns)
+        {
+            if (pattern.Count != daysPerWeek || pattern.Any(string.IsNullOrWhiteSpace))
+            {
+                throw new CatalogRunLayoutInvalidException(
+                    $"Every entry in RunLayoutWeeklyPatternRoles must have exactly DaysPerWeek ({daysPerWeek}) " +
+                    "non-blank roles.");
+            }
+        }
+    }
+
     /// <summary>Decision 1 (week dates) + Decision 2 (stage assignment) + Decision 3 (stage-relative indexing) + Decision 4/5 (structural slots, no rest slots).</summary>
     private static IReadOnlyList<GeneratedCatalogWeekSkeleton> BuildWeeks(CatalogStageToWeekMaterializationContext context)
     {
@@ -257,7 +301,7 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
                 var weekStart = context.StartDate.AddDays((weekNumber - 1) * 7);
                 var weekEnd = weekStart.AddDays(6);
 
-                var slots = BuildSessionSlots(context, allocation.StageKey);
+                var slots = BuildSessionSlots(context, allocation.StageKey, weekNumber);
 
                 if (slots.Count != context.DaysPerWeek)
                 {
@@ -298,14 +342,15 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
     /// structural role string is carried through.
     /// </summary>
     private static IReadOnlyList<GeneratedCatalogSessionSlotSkeleton> BuildSessionSlots(
-        CatalogStageToWeekMaterializationContext context, string stageKey)
+        CatalogStageToWeekMaterializationContext context, string stageKey, int weekNumber)
     {
-        var slots = new List<GeneratedCatalogSessionSlotSkeleton>(context.RunLayoutSlotRoles.Count);
+        var weekRoles = ResolveWeekRoles(context, stageKey, weekNumber);
+        var slots = new List<GeneratedCatalogSessionSlotSkeleton>(weekRoles.Count);
         var roleOccurrenceCounts = new Dictionary<string, int>();
 
-        for (var i = 0; i < context.RunLayoutSlotRoles.Count; i++)
+        for (var i = 0; i < weekRoles.Count; i++)
         {
-            var role = context.RunLayoutSlotRoles[i];
+            var role = weekRoles[i];
             roleOccurrenceCounts.TryGetValue(role, out var priorCount);
             var occurrenceIndex = priorCount + 1;
             roleOccurrenceCounts[role] = occurrenceIndex;
@@ -324,5 +369,31 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
         }
 
         return slots;
+    }
+
+    /// <summary>
+    /// Phase 10K-GEN.12 — when the candidate has no repeating pattern
+    /// (<see cref="CatalogStageToWeekMaterializationContext.RunLayoutWeeklyPatternRoles"/>
+    /// null, true for every pre-GEN.12 layout), returns <c>RunLayoutSlotRoles</c>
+    /// unchanged — byte-identical to every existing behavior. Otherwise
+    /// selects by the frozen global week-ordinal sequence (GEN.11 §1/§11:
+    /// never reset at a stage boundary), except a TAPER-stage week always
+    /// uses Pattern[0] (GEN.11 §5's structural taper override).
+    /// </summary>
+    private static IReadOnlyList<string> ResolveWeekRoles(
+        CatalogStageToWeekMaterializationContext context, string stageKey, int weekNumber)
+    {
+        if (context.RunLayoutWeeklyPatternRoles is not { } patterns)
+        {
+            return context.RunLayoutSlotRoles;
+        }
+
+        if (stageKey == "TAPER")
+        {
+            return patterns[0];
+        }
+
+        var patternIndex = (weekNumber - 1) % context.PatternPeriodWeeks!.Value;
+        return patterns[patternIndex];
     }
 }

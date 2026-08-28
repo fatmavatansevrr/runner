@@ -172,6 +172,7 @@ public sealed record VolumeSafetyPolicy(
     /// </summary>
     public static VolumeSafetyPolicy ForIntermediateDaysPerWeek(int daysPerWeek) => daysPerWeek switch
     {
+        2 => Intermediate2D,
         4 => Default,
         5 => FiveDayIntermediate,
         6 => SixDayIntermediate,
@@ -276,6 +277,82 @@ public sealed record VolumeSafetyPolicy(
         5 => Advanced5D,
         6 => Advanced6D,
         _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Advanced VolumeSafetyPolicy exists for this DaysPerWeek."),
+    };
+
+    /// <summary>
+    /// Phase 10K-GEN.12 -- implements the already-approved GEN.11 2D numeric
+    /// authority for Beginner. PeakVolumeBand=[16,22]km (band midpoint
+    /// reference=19.0, ProductDefaultWithEvidenceEnvelope; catalog row).
+    /// GoldenFixtureStartingVolumeKm reuses <see cref="BeginnerFourDay"/>'s
+    /// own already-proven 12/21=0.5714 ratio applied to 19.0 (GEN.11's own
+    /// methodology, mirroring GEN.9's Advanced-policy precedent) =
+    /// 10.857, rounded to the 0.5km catalog increment = 11.0. Long-run
+    /// shares (55% preferred/selection, 60% hard cap) are frequency-owned
+    /// (GEN.11 §8, same on Pattern A/B, same at both Levels) -- not the
+    /// Beginner-owned 30/36/33/40 shares <see cref="BeginnerFourDay"/> uses.
+    /// GEN.11 explicitly decided missing/zero readiness is
+    /// <see cref="TwoDayMissingOrZeroReadinessProductIneligibleException"/>
+    /// for 2D at both levels -- <see cref="GoldenFixtureStartingVolumeKm"/>
+    /// here is the growth-ratio calibration constant only, never a real
+    /// request's actual starting point (mirroring the Advanced policies'
+    /// own established rationale for why this field is still required even
+    /// with no missing-readiness default).
+    /// </summary>
+    public static VolumeSafetyPolicy Beginner2D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.0d,
+        GoldenFixtureStartingVolumeKm: 11.0d,
+        ResolvedPeakReference: new(19.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.55d,
+        LongRunPreferredMaximumShare: 0.60d,
+        LongRunSelectionShare: 0.55d,
+        LongRunHardCapShare: 0.60d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>
+    /// Phase 10K-GEN.12 -- implements the already-approved GEN.11 2D numeric
+    /// authority for Intermediate. PeakVolumeBand=[20,30]km (band midpoint
+    /// reference=25.0, ProductDefaultWithEvidenceEnvelope; catalog row).
+    /// GoldenFixtureStartingVolumeKm reuses <see cref="ThreeDayIntermediate"/>'s
+    /// own already-proven 12/22.5=0.5333 ratio (the nearest existing
+    /// lower-frequency Intermediate policy) applied to 25.0 = 13.33,
+    /// rounded to the 0.5km catalog increment = 13.5. Long-run shares are
+    /// the same frequency-owned 55%/60% figure as Beginner2D (GEN.11 §8:
+    /// not Level-owned). Missing/zero readiness is
+    /// <see cref="TwoDayMissingOrZeroReadinessProductIneligibleException"/>,
+    /// same rationale as Beginner2D above.
+    /// </summary>
+    public static VolumeSafetyPolicy Intermediate2D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.0d,
+        GoldenFixtureStartingVolumeKm: 13.5d,
+        ResolvedPeakReference: new(25.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.55d,
+        LongRunPreferredMaximumShare: 0.60d,
+        LongRunSelectionShare: 0.55d,
+        LongRunHardCapShare: 0.60d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>
+    /// Phase 10K-GEN.12 -- centralizes the Beginner daysPerWeek-to-policy
+    /// dispatch (previously only 4D existed, with no dispatch function of
+    /// its own). Fail-closed for any Beginner frequency without an approved
+    /// policy -- byte-identical selection for every existing caller (4D
+    /// still resolves to <see cref="BeginnerFourDay"/>).
+    /// </summary>
+    public static VolumeSafetyPolicy ForBeginnerDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        2 => Beginner2D,
+        4 => BeginnerFourDay,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Beginner VolumeSafetyPolicy exists for this DaysPerWeek."),
     };
 
     public static VolumeSafetyPolicy BeginnerFourDay { get; } = new(

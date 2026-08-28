@@ -120,6 +120,8 @@ internal sealed class CatalogStageToWeekContextFactory : ICatalogStageToWeekCont
             StageWeekAllocations = stageWeekAllocations,
             RunLayout = runLayout.Layout,
             RunLayoutSlotRoles = runLayout.StructuralRoles,
+            RunLayoutWeeklyPatternRoles = runLayout.WeeklyPatternRoles,
+            PatternPeriodWeeks = runLayout.PatternPeriodWeeks,
         };
     }
 }

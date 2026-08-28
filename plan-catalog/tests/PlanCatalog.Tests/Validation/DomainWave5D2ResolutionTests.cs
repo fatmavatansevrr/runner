@@ -300,13 +300,19 @@ public sealed class DomainWave5D2ResolutionTests
 
         foreach (var x in reachingCombinations)
         {
-            Assert.Contains(x.Combination.Metadata.Key, new[] { "TEN_K__3D__INTERMEDIATE", "TEN_K__4D__INTERMEDIATE" });
+            // Phase 10K-GEN.12: TEN_K__2D__INTERMEDIATE legitimately reaches this
+            // same artifact via INTERMEDIATE_MODIFIER v6, reusing the exact same
+            // known-good (progression v5 / levelModifier v6) pairing
+            // TEN_K__3D__INTERMEDIATE already uses -- 2D is single-KEY, has zero
+            // new prescription content of its own, so this is real reuse, not a
+            // new artifact-family owner.
+            Assert.Contains(x.Combination.Metadata.Key, new[] { "TEN_K__2D__INTERMEDIATE", "TEN_K__3D__INTERMEDIATE", "TEN_K__4D__INTERMEDIATE" });
 
             var master = snapshot.PlanTemplates.Single(m => m.Metadata.Key == x.Combination.MasterTemplate.Key && m.Metadata.Version == x.Combination.MasterTemplate.Version);
             var layout = snapshot.RunLayouts.Single(l => l.Metadata.Key == x.Combination.Layout.Key && l.Metadata.Version == x.Combination.Layout.Version);
 
             Assert.Equal(Contracts.Enums.DistanceFamily.TenK, master.DistanceFamily);
-            Assert.Contains(layout.RunsPerWeek, new[] { 3, 4 });
+            Assert.Contains(layout.RunsPerWeek, new[] { 2, 3, 4 });
             Assert.Equal(Contracts.Enums.RunningExperience.Intermediate, x.LevelModifier!.Experience);
         }
     }

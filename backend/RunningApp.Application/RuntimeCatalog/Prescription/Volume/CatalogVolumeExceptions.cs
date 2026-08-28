@@ -98,3 +98,20 @@ internal sealed class AdvancedMissingOrZeroReadinessProductIneligibleException :
     public AdvancedMissingOrZeroReadinessProductIneligibleException()
         : base(Reason, "PRODUCT_INELIGIBLE: Advanced requires positive observed recent weekly volume evidence; missing and explicit-zero readiness are not eligible for this product (GEN.8).") { }
 }
+
+/// <summary>
+/// Phase 10K-GEN.12 -- GEN.11's frozen 2D readiness authority: both missing
+/// and explicit-zero recent weekly volume are PRODUCT_INELIGIBLE for 2D at
+/// BOTH Beginner and Intermediate (frequency-owned, not Level-specific) --
+/// no starting-volume default is ever resolved for 2D, matching Advanced's
+/// own pattern rather than the other Beginner/Intermediate policies'
+/// defaults, because 2D concentrates weekly volume into only two, larger
+/// sessions and no genuine zero-running 2D race-plan start was found in
+/// GEN.11's evidence review.
+/// </summary>
+internal sealed class TwoDayMissingOrZeroReadinessProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "TWO_DAY_MISSING_OR_ZERO_READINESS_NOT_ELIGIBLE";
+    public TwoDayMissingOrZeroReadinessProductIneligibleException()
+        : base(Reason, "PRODUCT_INELIGIBLE: 2D requires positive observed recent weekly volume evidence; missing and explicit-zero readiness are not eligible for this product (GEN.11).") { }
+}

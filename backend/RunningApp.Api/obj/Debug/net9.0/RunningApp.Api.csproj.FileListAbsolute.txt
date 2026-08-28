@@ -282,3 +282,9 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catal
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__5D__INTERMEDIATE.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__6D__ADVANCED.v1.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\TEN_K__6D__INTERMEDIATE.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\combinations\ten-k-2d-beginner.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\combinations\ten-k-2d-intermediate.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\layouts\run-layout-2d.v1.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\policies\peak-volume-bands.v7.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\rule-packs\appsel-race-plan.v8.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Debug\net9.0\plan-catalog\catalog\templates\ten-k-master.v11.json

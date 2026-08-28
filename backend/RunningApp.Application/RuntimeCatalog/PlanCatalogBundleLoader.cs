@@ -78,6 +78,7 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
             var slotRoles = layout.RootElement.TryGetProperty("slots", out var slotsEl) && slotsEl.ValueKind == JsonValueKind.Array
                 ? slotsEl.EnumerateArray().Select(s => RequireString(s, "role", "layouts", layoutRef)).ToList()
                 : throw new PlanCatalogLoadException($"'slots' is missing on layouts/{layoutRef.Key} v{layoutRef.Version}.");
+            var (weeklyPatternRoles, patternPeriodWeeks) = ReadWeeklyPatterns(layout, layoutRef);
 
             var experience = RequireString(levelModifier, "experience", "level-modifiers", levelModifierRef);
             var progressionModifierRef = ReadReference(levelModifier, "progressionModifier");
@@ -116,6 +117,8 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
                 PhaseKeys = phaseKeys,
                 PhaseAllocations = phaseAllocations,
                 SlotRoles = slotRoles,
+                WeeklyPatternRoles = weeklyPatternRoles,
+                PatternPeriodWeeks = patternPeriodWeeks,
             };
 
             _logger.LogInformation(
@@ -219,6 +222,42 @@ public sealed class PlanCatalogBundleLoader : IPlanCatalogBundleLoader
         }
 
         return allocations;
+    }
+
+    /// <summary>
+    /// Phase 10K-GEN.12 — optional repeating multi-week structural pattern
+    /// (e.g. RUN_LAYOUT_2D's <c>patterns</c>/<c>patternPeriodWeeks</c>).
+    /// Absent for every existing layout (returns (null, null), the same
+    /// values every pre-GEN.12 candidate already has) — additive parsing
+    /// only, never required.
+    /// </summary>
+    private static (IReadOnlyList<IReadOnlyList<string>>? Patterns, int? PeriodWeeks) ReadWeeklyPatterns(
+        JsonDocument layout, PlanCatalogReference owner)
+    {
+        if (!layout.RootElement.TryGetProperty("patterns", out var patternsEl) || patternsEl.ValueKind != JsonValueKind.Array)
+        {
+            return (null, null);
+        }
+
+        var patterns = patternsEl.EnumerateArray()
+            .Select(pattern => (IReadOnlyList<string>)pattern.EnumerateArray()
+                .Select(s => RequireString(s, "role", "layouts", owner))
+                .ToList())
+            .ToList();
+
+        if (patterns.Count == 0)
+        {
+            throw new PlanCatalogLoadException($"'patterns' on layouts/{owner.Key} v{owner.Version} must not be empty when present.");
+        }
+
+        var periodWeeks = RequireInt(layout, "patternPeriodWeeks", "layouts", owner);
+        if (periodWeeks != patterns.Count)
+        {
+            throw new PlanCatalogLoadException(
+                $"'patternPeriodWeeks' ({periodWeeks}) on layouts/{owner.Key} v{owner.Version} must equal 'patterns'.length ({patterns.Count}).");
+        }
+
+        return (patterns, periodWeeks);
     }
 
     private static List<PlanCatalogReference> ReadEligibleWorkouts(JsonDocument levelModifier, PlanCatalogReference owner)

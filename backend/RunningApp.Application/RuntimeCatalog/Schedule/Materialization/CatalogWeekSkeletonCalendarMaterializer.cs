@@ -153,10 +153,12 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
         // the real root cause requires").
         // Phase 10K-FREQ.6D.26: widened to admit 6D (Intermediate x6D, approved
         // FREQ.6D.23/6D.25) -- the real RUN_LAYOUT_6D catalog layout.
-        if (skeleton.DaysPerWeek is not (3 or 4 or 5 or 6))
+        // Phase 10K-GEN.12: widened to admit 2D (Beginner/Intermediate,
+        // approved GEN.11) -- the real RUN_LAYOUT_2D catalog layout.
+        if (skeleton.DaysPerWeek is not (2 or 3 or 4 or 5 or 6))
         {
             throw new CatalogCalendarRoleStructureInvalidException(
-                $"Core calendar assignment supports resolved 3D/4D/5D/6D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
+                $"Core calendar assignment supports resolved 2D/3D/4D/5D/6D layouts, but the source skeleton declares {skeleton.DaysPerWeek}.");
         }
 
         foreach (var week in skeleton.Weeks)
@@ -188,11 +190,19 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             // validator (DatedGeneratedCatalogPlanSkeletonValidator). For
             // keyCount == 1 this reduces exactly to the pre-5B formula
             // (DaysPerWeek - 1 - 1 == DaysPerWeek - 2).
+            // Phase 10K-GEN.12: further generalized to admit keyCount == 0 --
+            // RUN_LAYOUT_2D's Model B Pattern-B week (EASY_SUPPORT+LONG_RUN,
+            // GEN.11 §1) genuinely has zero KEY_SESSION slots. The formula
+            // below already computes the correct EASY_SUPPORT count for
+            // keyCount == 0 (DaysPerWeek - 1); only the previous "at least
+            // one KEY_SESSION every week" floor is removed -- every other
+            // shape invariant (EASY_SUPPORT/LONG_RUN cardinality, total count)
+            // is unchanged and still fully enforced.
             var expectedEasy = skeleton.DaysPerWeek - keyCount - 1;
-            if (keyCount < 1 || easyCount != expectedEasy || longCount != 1 || keyCount + easyCount + longCount != skeleton.DaysPerWeek)
+            if (keyCount < 0 || easyCount != expectedEasy || longCount != 1 || keyCount + easyCount + longCount != skeleton.DaysPerWeek)
             {
                 throw new CatalogCalendarRoleStructureInvalidException(
-                    $"Week {week.WeekNumber} does not match resolved RunLayout cardinality: expected KEY_SESSION>=1, " +
+                    $"Week {week.WeekNumber} does not match resolved RunLayout cardinality: expected KEY_SESSION>=0, " +
                     $"EASY_SUPPORT={expectedEasy}, LONG_RUN=1; found KEY_SESSION={keyCount}, EASY_SUPPORT={easyCount}, LONG_RUN={longCount}.");
             }
 
@@ -297,7 +307,19 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
     /// </summary>
     private static IEnumerable<IReadOnlyList<DateOnly>> Combinations(IReadOnlyList<DateOnly> items, int k)
     {
-        if (k <= 0 || k > items.Count)
+        // Phase 10K-GEN.12: k == 0 is a real, reachable case as of RUN_LAYOUT_2D's
+        // Model B Pattern-B week (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION slots,
+        // GEN.11 §1) -- the previous "k <= 0 -> yield break" guard silently
+        // treated "zero key sessions to place" as "no valid assignment exists",
+        // rather than the one, trivially-valid empty combination it actually is.
+        // Every existing caller with k >= 1 is unaffected.
+        if (k == 0)
+        {
+            yield return [];
+            yield break;
+        }
+
+        if (k < 0 || k > items.Count)
         {
             yield break;
         }

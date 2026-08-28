@@ -158,9 +158,14 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
             // Intermediate 5D layout with 2 KEY_SESSION slots). For
             // keyCount == 1 this reduces exactly to the pre-FREQ.4 formula
             // (preferredDays.Count - 1 - 1 == preferredDays.Count - 2).
+            // Phase 10K-GEN.12: further generalized to admit keyCount == 0 --
+            // RUN_LAYOUT_2D's Model B Pattern-B week (EASY_SUPPORT+LONG_RUN,
+            // GEN.11 §1) genuinely has zero KEY_SESSION slots; the formula
+            // already computes the correct EASY_SUPPORT count for keyCount
+            // == 0. Every other role-count invariant is unchanged.
             var roleCounts = week.SessionSlots.GroupBy(s => s.StructuralRole).ToDictionary(g => g.Key, g => g.Count());
             var keyCount = roleCounts.GetValueOrDefault("KEY_SESSION");
-            if (keyCount < 1 ||
+            if (keyCount < 0 ||
                 roleCounts.GetValueOrDefault("EASY_SUPPORT") != preferredDays.Count - keyCount - 1 ||
                 roleCounts.GetValueOrDefault("LONG_RUN") != 1)
             {

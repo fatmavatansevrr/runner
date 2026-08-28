@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "documentType": "RUN_LAYOUT",
+    "schemaVersion": 2,
+    "key": "RUN_LAYOUT_2D",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "runsPerWeek": 2,
+  "slots": [
+    { "role": "KEY_SESSION" },
+    { "role": "LONG_RUN" }
+  ],
+  "patternPeriodWeeks": 2,
+  "patterns": [
+    [
+      { "role": "KEY_SESSION" },
+      { "role": "LONG_RUN" }
+    ],
+    [
+      { "role": "EASY_SUPPORT" },
+      { "role": "LONG_RUN" }
+    ]
+  ]
+}

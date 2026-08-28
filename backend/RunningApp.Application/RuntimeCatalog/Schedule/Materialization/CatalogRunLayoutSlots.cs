@@ -6,8 +6,14 @@ internal sealed class CatalogRunLayoutSlots
     /// <summary>Exact (key, version) identity of the source run-layout document.</summary>
     public required PlanCatalogReference Layout { get; init; }
 
-    /// <summary>Ordered structural role sequence, e.g. <c>["KEY_SESSION","EASY_SUPPORT","EASY_SUPPORT","LONG_RUN"]</c>.</summary>
+    /// <summary>Ordered structural role sequence, e.g. <c>["KEY_SESSION","EASY_SUPPORT","EASY_SUPPORT","LONG_RUN"]</c>. Pattern A for a repeating-pattern layout.</summary>
     public required IReadOnlyList<string> StructuralRoles { get; init; }
+
+    /// <summary>Phase 10K-GEN.12 — the layout's optional repeating pattern, verbatim from <see cref="PlanCatalogCandidateSummary.WeeklyPatternRoles"/>. Null for every existing (non-repeating) layout.</summary>
+    public IReadOnlyList<IReadOnlyList<string>>? WeeklyPatternRoles { get; init; }
+
+    /// <summary>Phase 10K-GEN.12 — verbatim from <see cref="PlanCatalogCandidateSummary.PatternPeriodWeeks"/>. Null iff <see cref="WeeklyPatternRoles"/> is null.</summary>
+    public int? PatternPeriodWeeks { get; init; }
 }
 
 /// <summary>
@@ -68,6 +74,8 @@ internal sealed class CatalogRunLayoutResolver : ICatalogRunLayoutResolver
         {
             Layout = candidate.Layout,
             StructuralRoles = roles,
+            WeeklyPatternRoles = candidate.WeeklyPatternRoles,
+            PatternPeriodWeeks = candidate.PatternPeriodWeeks,
         };
     }
 }

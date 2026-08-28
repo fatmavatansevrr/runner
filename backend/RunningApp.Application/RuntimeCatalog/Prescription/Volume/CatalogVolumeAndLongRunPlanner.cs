@@ -27,6 +27,21 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.BeginnerFourDay).Build(request);
         }
+        // Phase 10K-GEN.12 -- GEN.11-approved 2D authority, same exact typed
+        // combination match as every other branch here. Never a broad
+        // "DaysPerWeek == 2" condition without also pinning CanonicalDistanceFamily
+        // and Level, so a future non-TenK or non-Beginner/Intermediate 2D
+        // candidate can never silently inherit this authority.
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "NEW" &&
+            request.Candidate.DaysPerWeek == 2 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.Beginner2D).Build(request);
+        }
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "INTERMEDIATE" &&
+            request.Candidate.DaysPerWeek == 2 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.Intermediate2D).Build(request);
+        }
         // Phase 10K-GEN.9 defect fix: this branch was unconditional on Level
         // (matching any 3D candidate), which would have silently routed a
         // future Advanced x3D candidate to Intermediate's own 3D numeric
@@ -157,6 +172,13 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced5D) || ReferenceEquals(_policy, VolumeSafetyPolicy.Advanced6D))
         {
             throw new AdvancedMissingOrZeroReadinessProductIneligibleException();
+        }
+
+        // Phase 10K-GEN.12 -- GEN.11's frozen 2D readiness authority: no
+        // starting-volume default is ever resolved for 2D at either level.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.Beginner2D) || ReferenceEquals(_policy, VolumeSafetyPolicy.Intermediate2D))
+        {
+            throw new TwoDayMissingOrZeroReadinessProductIneligibleException();
         }
 
         return ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)

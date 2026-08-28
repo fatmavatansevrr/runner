@@ -161,6 +161,8 @@ internal sealed class DynamicCoreWeekSkeletonOrchestrator : IDynamicCoreWeekSkel
             StageWeekAllocations = stageWeekAllocations,
             RunLayout = runLayout.Layout,
             RunLayoutSlotRoles = runLayout.StructuralRoles,
+            RunLayoutWeeklyPatternRoles = runLayout.WeeklyPatternRoles,
+            PatternPeriodWeeks = runLayout.PatternPeriodWeeks,
         };
 
         // Step 4: delegate to the existing, unmodified Phase 4F.2 materializer.
