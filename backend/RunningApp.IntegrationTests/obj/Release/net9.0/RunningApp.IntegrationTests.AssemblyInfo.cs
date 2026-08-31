@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RunningApp.IntegrationTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+46cabda66c15b50b6f58210f4fa1ea69efaa5c93")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e400a4585d2fb39732a75bdb7aab894da529130f")]
 [assembly: System.Reflection.AssemblyProductAttribute("RunningApp.IntegrationTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RunningApp.IntegrationTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

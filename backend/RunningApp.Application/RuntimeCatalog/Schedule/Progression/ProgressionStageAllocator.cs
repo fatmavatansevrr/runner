@@ -228,7 +228,35 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             .OrderBy(a => a.EffectiveStage.RelativeOrder)
             .ToList();
 
-        var availableWeeks = phaseWeeks.Count;
+        // Phase 10K-GEN.17: a lane's real capacity is the count of weeks that structurally
+        // carry a slot for THIS lane, not phaseWeeks.Count. A week is eligible for lane N
+        // iff it has more than N KEY_SESSION-role slots (0-based occurrence-ordinal), the
+        // exact same "structural ordinal N binds to LaneOrdinal N" rule CatalogWorkoutBinder
+        // already applies (see CatalogWorkoutBinder's own structuralOrdinalByRole comment) —
+        // reusing the SAME per-week SessionSlots.StructuralRole data
+        // CatalogStageToWeekMaterializer.ResolveWeekRoles already resolved (including 2D's
+        // Model B pattern via GEN.12's WeeklyPatternRoles), not a second, independently
+        // re-derived pattern-resolution mechanism. For every pre-GEN.12 frequency, every
+        // lane's role is structurally present in 100% of a phase's weeks (GEN.13 §2 confirmed
+        // this by direct inspection of every existing progression document), so
+        // eligibleWeeks is always identical, in the same order, to phaseWeeks — this is
+        // byte-identical to pre-GEN.17 behavior for every already-shipped candidate.
+        //
+        // A week with an EMPTY SessionSlots list (no structural data supplied at all -- e.g. a
+        // synthetic skeleton built directly for an allocator-only unit test, never routed
+        // through the real materializer) is a genuinely different case from a week with real,
+        // non-empty SessionSlots that simply has zero KEY_SESSION-role entries (2D's real
+        // Pattern-B week). The former carries no information to filter on and must remain
+        // eligible (preserving the pre-GEN.17 "every phaseWeeks week is available" default for
+        // every caller that never populates structural slot data); only the latter is a real,
+        // structurally-absent lane.
+        var eligibleWeeks = phaseWeeks
+            .Where(w => w.SessionSlots.Count == 0
+                || w.SessionSlots.Count(s => s.StructuralRole == ScheduledProgressionWeek.KeySessionStructuralRole) > laneOrdinal)
+            .OrderBy(w => w.WeekNumber)
+            .ToList();
+
+        var availableWeeks = eligibleWeeks.Count;
         var totalMinimum = activeStages.Sum(a => a.MinimumExposures);
 
         var compressionAction = ProgressionPhaseCompressionAction.NotRequired;
@@ -255,7 +283,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             var finalCount = active.FinalAllocatedExposures ?? active.MinimumExposures;
             for (var i = 0; i < finalCount; i++)
             {
-                var week = phaseWeeks[weekIndex];
+                var week = eligibleWeeks[weekIndex];
                 var isFallback = active.ContributingRequestedKeys.Count > 1 || active.ContributingRequestedKeys[0] != active.EffectiveStage.ProgressionStageKey;
 
                 var allocationReason = active.AllocationReasons.Count > i

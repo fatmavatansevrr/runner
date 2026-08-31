@@ -32,11 +32,28 @@ public sealed class GeneratedCatalogStageScheduleValidator : IGeneratedCatalogSt
         // covers the full skeleton (coordinated shared phase timeline, §8/§22) — checked per
         // lane rather than against the raw total, which degenerates to the original
         // single-lane check when only LaneOrdinal 0 exists.
+        //
+        // Phase 10K-GEN.17: "the full skeleton" for a lane means the skeleton weeks that
+        // structurally carry a slot for THAT lane, not skeleton.Weeks.Count unconditionally —
+        // the same "structural ordinal N binds to LaneOrdinal N" rule ProgressionStageAllocator
+        // and CatalogWorkoutBinder both already apply (a week's Nth-occurring KEY_SESSION slot
+        // is lane N). For every pre-GEN.12 frequency every lane's role is present in 100% of a
+        // phase's weeks (GEN.13 §2), so eligibleWeekCount is always identical to
+        // skeleton.Weeks.Count — byte-identical to pre-GEN.17 behavior for every already-shipped
+        // candidate.
+        // A week with an empty SessionSlots list carries no structural information to filter
+        // on (e.g. a synthetic skeleton built directly for an allocator/validator unit test) --
+        // it remains eligible, matching ProgressionStageAllocator's own identical fallback.
         foreach (var laneGroup in schedule.Weeks.GroupBy(w => w.LaneOrdinal))
         {
-            if (laneGroup.Count() != skeleton.Weeks.Count)
+            var laneOrdinal = laneGroup.Key;
+            var eligibleWeekCount = skeleton.Weeks.Count(w =>
+                w.SessionSlots.Count == 0
+                || w.SessionSlots.Count(s => s.StructuralRole == ScheduledProgressionWeek.KeySessionStructuralRole) > laneOrdinal);
+
+            if (laneGroup.Count() != eligibleWeekCount)
             {
-                errors.Add($"Lane {laneGroup.Key}: total week count mismatch: schedule has {laneGroup.Count()}, skeleton has {skeleton.Weeks.Count}.");
+                errors.Add($"Lane {laneOrdinal}: total week count mismatch: schedule has {laneGroup.Count()}, eligible skeleton weeks has {eligibleWeekCount}.");
             }
         }
 

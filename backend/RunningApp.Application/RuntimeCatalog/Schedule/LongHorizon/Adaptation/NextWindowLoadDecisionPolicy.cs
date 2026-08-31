@@ -31,6 +31,20 @@ internal static class NextWindowLoadDecisionPolicy
     /// <summary>Phase 10K-FREQ.6D.26 -- the FREQ.6D.23-approved, frozen generalized N-session count-floor + categorical role-gate model, implemented for N=6 (Intermediate x6D: 2 KEY + 3 EASY + 1 LONG).</summary>
     private const int SixSessionStructuralWeekSize = 6;
 
+    /// <summary>
+    /// Phase 10K-GEN.11/GEN.17 -- the GEN.11 §9-frozen 2-session dispatch arm
+    /// for 2D (Beginner x2D / Intermediate x2D: 1 KEY_SESSION-or-EASY_SUPPORT
+    /// role-alternating slot + 1 LONG_RUN per structural week). GEN.11
+    /// explicitly froze this as its OWN 3-outcome table (2/2 Progress, 1/2
+    /// Maintain, 0/2 Reduce) -- a deliberate divergence from the generalized
+    /// N&gt;=5 count-floor + role-gate model above, not an extrapolation of it
+    /// (a 2-session week has no "N-1 role-gated" middle case to generalize
+    /// into; GEN.11 §9 gives the full 3-row table directly). Dispatched on
+    /// <see cref="WindowExecutionSummary.ExpectedSessionCount"/> exactly like
+    /// every other arm, so no other structural week size's behavior changes.
+    /// </summary>
+    private const int TwoSessionStructuralWeekSize = 2;
+
     public static NextWindowAdaptationResult Evaluate(WindowExecutionSummary summary)
     {
         var loadDecision = DetermineLoadDecision(summary);
@@ -39,10 +53,59 @@ internal static class NextWindowLoadDecisionPolicy
 
     private static NextWindowLoadDecision DetermineLoadDecision(WindowExecutionSummary summary) => summary.ExpectedSessionCount switch
     {
+        TwoSessionStructuralWeekSize => DetermineTwoSessionLoadDecision(summary),
         FiveSessionStructuralWeekSize => DetermineFiveSessionLoadDecision(summary),
         SixSessionStructuralWeekSize => DetermineSixSessionLoadDecision(summary),
         _ => DetermineLegacyLoadDecision(summary),
     };
+
+    /// <summary>
+    /// GEN.11 §9's frozen 2-session arm, verbatim: 2/2 -> ProgressAsPlanned,
+    /// 1/2 -> Maintain, 0/2 -> Reduce. No role-gated middle case (unlike the
+    /// N&gt;=5 model) -- GEN.11 deliberately did not generalize the N&gt;=5 table
+    /// down to N=2, since a 2-session week's single non-LONG_RUN slot
+    /// alternates KEY_SESSION/EASY_SUPPORT by calendar week (Model B), so
+    /// there is no stable "KEY vs EASY" role split within one window to gate
+    /// on the way the N&gt;=5 model's own N-1 case does.
+    /// </summary>
+    private static NextWindowLoadDecision DetermineTwoSessionLoadDecision(WindowExecutionSummary summary)
+    {
+        ValidateTwoSessionSummary(summary);
+
+        return summary.EffectiveCompletedCount switch
+        {
+            0 => NextWindowLoadDecision.Reduce,
+            1 => NextWindowLoadDecision.Maintain,
+            2 => NextWindowLoadDecision.ProgressAsPlanned,
+            _ => throw new AdaptationLineageInvalidException(
+                $"EffectiveCompletedCount {summary.EffectiveCompletedCount} outside the valid 0-2 range for a 2-session structural week."),
+        };
+    }
+
+    /// <summary>Mirrors <see cref="ValidateFiveSessionSummary"/>'s fail-closed precondition checks, adapted to a 2-session (1 role-alternating slot + 1 LONG_RUN) structural week.</summary>
+    private static void ValidateTwoSessionSummary(WindowExecutionSummary summary)
+    {
+        var roleSum = summary.KeySessionExpectedCount + (summary.LongRunExpected ? 1 : 0) + summary.EasyExpectedCount;
+        if (roleSum != summary.ExpectedSessionCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"2-session window role-expectation sum (KEY {summary.KeySessionExpectedCount} + LONG {(summary.LongRunExpected ? 1 : 0)} + EASY {summary.EasyExpectedCount} = {roleSum}) " +
+                $"does not equal ExpectedSessionCount {summary.ExpectedSessionCount}.");
+        }
+
+        var roleCompletedSum = summary.KeySessionCompletedCount + (summary.LongRunCompleted ? 1 : 0) + summary.EasyCompletedCount;
+        if (roleCompletedSum != summary.EffectiveCompletedCount)
+        {
+            throw new AdaptationLineageInvalidException(
+                $"2-session window role-completed sum (KEY {summary.KeySessionCompletedCount} + LONG {(summary.LongRunCompleted ? 1 : 0)} + EASY {summary.EasyCompletedCount} = {roleCompletedSum}) " +
+                $"does not equal EffectiveCompletedCount {summary.EffectiveCompletedCount}.");
+        }
+
+        if (summary.LongRunCompleted && !summary.LongRunExpected)
+        {
+            throw new AdaptationLineageInvalidException("LongRunCompleted is true but LongRunExpected is false.");
+        }
+    }
 
     /// <summary>Severity-first (by EffectiveCompletedCount), then role
     /// importance -- the Rev3 fix for the Rev2 bug where role-first

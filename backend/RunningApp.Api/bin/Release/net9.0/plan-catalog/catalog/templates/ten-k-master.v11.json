@@ -61,8 +61,8 @@
   ],
   "workoutProgression": {
     "documentType": "WORKOUT_PROGRESSION",
-    "key": "TEN_K_WORKOUT_PROGRESSION_V1",
-    "version": 5
+    "key": "TEN_K_WORKOUT_PROGRESSION_2D_V1",
+    "version": 1
   },
   "requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"]
 }

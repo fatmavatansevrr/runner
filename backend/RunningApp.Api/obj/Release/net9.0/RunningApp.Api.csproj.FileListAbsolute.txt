@@ -288,3 +288,4 @@ C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Release\net9.0\plan-cat
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Release\net9.0\plan-catalog\catalog\policies\peak-volume-bands.v7.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Release\net9.0\plan-catalog\catalog\rule-packs\appsel-race-plan.v8.json
 C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Release\net9.0\plan-catalog\catalog\templates\ten-k-master.v11.json
+C:\Users\vatan\Desktop\runner\backend\RunningApp.Api\bin\Release\net9.0\plan-catalog\catalog\workout-progressions\ten-k-workout-progression-2d.v1.json

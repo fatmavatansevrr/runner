@@ -18,12 +18,18 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // ten-k-master.v9.json, ten-k-workout-progression.v7.json, 4
     // combinations) = 121.
     // Phase 10K-GEN.12 -- 121 + 6 new 2D source documents
-    // (run-layout-2d.v1.json, ten-k-master.v10.json,
+    // (run-layout-2d.v1.json, ten-k-master.v11.json,
     // peak-volume-bands.v7.json, appsel-race-plan.v8.json, 2
     // combinations) = 127. Zero new workout/progression-modifier content
     // (2D is single-KEY, reuses existing Level-agnostic workout
     // definitions verbatim, per GEN.11 §11).
-    internal const int ExpectedRuntimeCatalogJsonFiles = 127;
+    // Phase 10K-GEN.17 -- 127 + 1 new 2D-specific workout-progression
+    // document (ten-k-workout-progression-2d.v1.json, GEN.14's halved
+    // exposure content) = 128. ten-k-master.v11.json's own
+    // workoutProgression reference was repointed at this new document
+    // in place (no new master-template version needed -- v11 is
+    // referenced by no combination other than the two 2D ones).
+    internal const int ExpectedRuntimeCatalogJsonFiles = 128;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
