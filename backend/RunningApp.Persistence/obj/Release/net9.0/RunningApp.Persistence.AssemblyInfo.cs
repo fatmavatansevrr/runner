@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RunningApp.Persistence")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e400a4585d2fb39732a75bdb7aab894da529130f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0bc1a41e8234d8222b9de39195c55033a6b1cb75")]
 [assembly: System.Reflection.AssemblyProductAttribute("RunningApp.Persistence")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RunningApp.Persistence")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
