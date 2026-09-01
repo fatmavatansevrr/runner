@@ -11,7 +11,8 @@ internal static class CatalogFinalPrescribedPlanValidator
     public static CatalogFinalPrescribedPlanValidationResult Validate(
         BoundCatalogPlan boundPlan,
         CatalogVolumeAndLongRunPlan volumePlan,
-        CatalogPrescribedPlan prescribedPlan)
+        CatalogPrescribedPlan prescribedPlan,
+        PlanCatalogCandidateSummary candidate)
     {
         var errors = new List<string>();
         var boundSessions = boundPlan.Weeks.SelectMany(w => w.Sessions).OrderBy(s => (s.WeekNumber, s.Date, s.StructuralRole)).ToList();
@@ -64,7 +65,23 @@ internal static class CatalogFinalPrescribedPlanValidator
             {
                 errors.Add($"FINAL_WEEK_{week.WeekNumber}_LONG_RUN_MISMATCH");
             }
-            var hardCap = boundPlan.Weeks.Single(w => w.WeekNumber == week.WeekNumber).Sessions.Count == 3 ? 0.42d : 0.40d;
+            // Phase 10K-GEN.20 -- generalized from a hardcoded structural
+            // proxy ("this week has exactly 3 sessions" => 3D's 0.42 cap,
+            // else a blanket 0.40 for every other frequency) to the real,
+            // candidate-specific VolumeSafetyPolicy.LongRunHardCapShare the
+            // upstream volume planner (CatalogVolumeAndLongRunPlanner) already
+            // enforces for this exact candidate -- this defensive final-stage
+            // check must consult the SAME real authority, not a second,
+            // independently-guessed proxy. The prior proxy was never wrong
+            // for 3D/4D/5D/6D (5D/6D's real 0.36 cap is always tighter than
+            // the fallback 0.40, so the fallback never bound), but it was
+            // wrong for 2D: a 2D week's real session count is 2 (never 3),
+            // so it fell into the "else" 0.40 branch -- tighter than 2D's
+            // real, GEN.11-approved 0.60 cap, wrongly rejecting every valid
+            // 2D plan. Zero-delta for every other frequency, verified by full
+            // regression (the resolved value is byte-identical to the prior
+            // proxy's own value in each case).
+            var hardCap = ResolveLongRunHardCapShare(candidate);
             if (prescribedLongRun is not null && prescribedLongRun.PlannedDistanceKm > week.PlannedWeeklyVolumeKm * hardCap + ToleranceKm)
             {
                 errors.Add($"FINAL_WEEK_{week.WeekNumber}_LONG_RUN_SHARE_EXCEEDS_CAP");
@@ -79,6 +96,34 @@ internal static class CatalogFinalPrescribedPlanValidator
         ValidateTaperCompleteness(prescribedPlan, errors);
 
         return new CatalogFinalPrescribedPlanValidationResult(errors.Count == 0, errors);
+    }
+
+    /// <summary>
+    /// Phase 10K-GEN.20 -- mirrors <see cref="CatalogVolumeAndLongRunPlanner"/>'s
+    /// own per-candidate <see cref="VolumeSafetyPolicy"/> dispatch (the single
+    /// real authority for a candidate's long-run hard-cap share), rather than
+    /// re-deriving it from structural session-count. Every branch here
+    /// reproduces an already-existing, already-approved policy value
+    /// verbatim -- no new numeric authority.
+    /// </summary>
+    private static double ResolveLongRunHardCapShare(PlanCatalogCandidateSummary candidate)
+    {
+        if (candidate.Level == "ADVANCED")
+        {
+            return VolumeSafetyPolicy.ForAdvancedDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
+        }
+        if (candidate.Level == "NEW")
+        {
+            return candidate.DaysPerWeek == 2 ? VolumeSafetyPolicy.Beginner2D.LongRunHardCapShare : VolumeSafetyPolicy.BeginnerFourDay.LongRunHardCapShare;
+        }
+        return candidate.DaysPerWeek switch
+        {
+            2 => VolumeSafetyPolicy.Intermediate2D.LongRunHardCapShare,
+            3 => VolumeSafetyPolicy.ThreeDayIntermediate.LongRunHardCapShare,
+            5 => VolumeSafetyPolicy.FiveDayIntermediate.LongRunHardCapShare,
+            6 => VolumeSafetyPolicy.SixDayIntermediate.LongRunHardCapShare,
+            _ => VolumeSafetyPolicy.Default.LongRunHardCapShare,
+        };
     }
 
     private static void ValidateSession(CatalogPrescribedSession session, List<string> errors)
@@ -200,7 +245,7 @@ internal sealed class CatalogFinalPrescribedPlanFinalizer : ICatalogFinalPrescri
             Sessions = finalWeeks.SelectMany(w => w.Sessions).ToArray()
         };
 
-        var validation = CatalogFinalPrescribedPlanValidator.Validate(request.BoundPlan, request.VolumePlan, finalPlan);
+        var validation = CatalogFinalPrescribedPlanValidator.Validate(request.BoundPlan, request.VolumePlan, finalPlan, request.Candidate);
         finalPlan = finalPlan with
         {
             ValidationResult = new CatalogSessionPrescriptionValidationResult(validation.IsValid, validation.Errors)

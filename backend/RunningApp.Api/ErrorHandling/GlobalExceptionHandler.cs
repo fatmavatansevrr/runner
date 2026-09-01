@@ -86,6 +86,13 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             CatalogLivePilotActivationDisabledException      => (StatusCodes.Status409Conflict, "CATALOG_LIVE_PILOT_ACTIVATION_DISABLED"),
             CatalogLivePilotRequestUnsupportedException      => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_PILOT_REQUEST_UNSUPPORTED"),
             CatalogLivePilotGenerationInfeasibleException    => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_PILOT_GENERATION_INFEASIBLE"),
+            // Phase 10K-GEN.20: 2-day-per-week Core at exactly 8 or 9 weeks --
+            // GEN.18's own formal, final non-support classification, distinct
+            // from the generic "unsupported cycle length"/"generation
+            // infeasible" codes above so a client can distinguish this known,
+            // permanently non-representable boundary from a routing miss or a
+            // readiness-input problem.
+            CatalogTwoDayCoreEightOrNineWeekNonSupportedException => (StatusCodes.Status422UnprocessableEntity, "TWO_DAY_CORE_EIGHT_OR_NINE_WEEK_NON_SUPPORT_FORMALIZED_FINAL"),
             CatalogLiveFallbackNotPermittedException         => (StatusCodes.Status422UnprocessableEntity, "CATALOG_LIVE_FALLBACK_NOT_PERMITTED"),
             CatalogLiveRouteDecisionInvalidException         => (StatusCodes.Status500InternalServerError, "CATALOG_LIVE_ROUTE_DECISION_INVALID"),
             CatalogPreviewOwnershipMismatchException         => (StatusCodes.Status403Forbidden, "CATALOG_PREVIEW_OWNERSHIP_MISMATCH"),

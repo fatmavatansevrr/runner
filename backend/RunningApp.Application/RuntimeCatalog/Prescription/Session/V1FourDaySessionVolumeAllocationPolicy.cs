@@ -77,8 +77,16 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
         // (2 KEY + 3 EASY + 1 LONG); this was previously unreachable for it.
         var keySessionCount = sessions.Count(s => s.StructuralRole == "KEY_SESSION");
         var easySessionCount = sessions.Count(s => s.StructuralRole == "EASY_SUPPORT");
-        if (keySessionCount < 1 ||
-            easySessionCount < 1 ||
+        // Phase 10K-GEN.20 -- generalized from "keySessionCount<1 ||
+        // easySessionCount<1" (which unconditionally required BOTH roles
+        // present) to "at least one of the two non-LONG_RUN roles present" --
+        // 2D's real Model B week (GEN.11 §1) has exactly one non-LONG_RUN
+        // session, either KEY_SESSION alone (Pattern A) or EASY_SUPPORT alone
+        // (Pattern B), never both. Every existing 3D+ caller always has
+        // both counts >=1, so this is a zero-delta no-op for them (verified
+        // by full regression) -- see FourDaySessionDistanceAllocationPolicy's
+        // own identical generalization, which this guard feeds into.
+        if ((keySessionCount + easySessionCount) < 1 ||
             sessions.Count(s => s.StructuralRole == "LONG_RUN") != 1 ||
             sessions.Count != keySessionCount + easySessionCount + 1)
         {
@@ -99,6 +107,24 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
             throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} {detail}");
         }
 
+        // Phase 10K-GEN.20 -- the legacy back-compat trace fields below
+        // (KeySessionDistanceKm/FirstEasySupportDistanceKm/SecondEasySupportDistanceKm)
+        // index [0]/[1] unconditionally; for 2D's real Pattern A/B weeks one
+        // of KeySessionDistancesKm/EasySupportDistancesKm is now genuinely
+        // empty (see FourDaySessionDistanceAllocationPolicy's own GEN.20
+        // generalization), which would throw IndexOutOfRangeException on the
+        // unconditional accessor. 0.0 is used as the diagnostic-only "no
+        // such session this week" trace value -- this trace record is
+        // display/diagnostic provenance only (SessionPrescriptionDecisionTrace
+        // reads allocation.ResidualVolumeKm and the real per-session distance
+        // via allocation.KeySessionDistancesKm[ordinal]/EasySupportDistancesKm[ordinal]
+        // directly, never through this trace), so this cannot silently
+        // misprescribe a real session distance. Every pre-GEN.20 shape always
+        // has >=1 KEY and >=2 EASY, so this is a zero-delta no-op there.
+        var traceKeyDistance = distances.KeySessionDistancesKm.Count > 0 ? distances.KeySessionDistancesKm[0] : 0d;
+        var traceFirstEasy = distances.EasySupportDistancesKm.Count > 0 ? distances.EasySupportDistancesKm[0] : 0d;
+        var traceSecondEasy = distances.EasySupportDistancesKm.Count > 1 ? distances.EasySupportDistancesKm[1] : 0d;
+
         return new V1FourDayWeekAllocation(
             weekly.WeekNumber,
             weekly.PlannedWeeklyVolumeKm,
@@ -111,9 +137,9 @@ internal static class V1FourDaySessionVolumeAllocationPolicy
                 weekly.PlannedWeeklyVolumeKm,
                 longRun.PlannedLongRunDistanceKm,
                 distances.ResidualVolumeKm,
-                distances.KeySessionDistanceKm,
-                distances.FirstEasySupportDistanceKm,
-                distances.SecondEasySupportDistanceKm,
+                traceKeyDistance,
+                traceFirstEasy,
+                traceSecondEasy,
                 PolicyKey,
                 PolicyVersion));
     }

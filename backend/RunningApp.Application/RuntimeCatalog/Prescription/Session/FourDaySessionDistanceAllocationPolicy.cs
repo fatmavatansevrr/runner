@@ -61,13 +61,31 @@ internal static class FourDaySessionDistanceAllocationPolicy
 {
     public static FourDaySessionDistanceAllocation Allocate(double weeklyVolumeKm, double longRunDistanceKm, int keySessionCount = 1, int easySupportCount = 2)
     {
-        if (keySessionCount < 1)
+        // Phase 10K-GEN.20 -- generalized the prior unconditional "at least
+        // one KEY_SESSION AND at least one EASY_SUPPORT" pair of guards to
+        // permit either role's count to independently be zero, as long as at
+        // least one non-LONG_RUN session exists overall. This is the sixth
+        // real instance of this engagement's recurring "assumed every week
+        // has >=1 of structural role X" defect family (GEN.12 found 3,
+        // GEN.17 found 1 more, GEN.19 found 2 more in Runway/LongHorizon) --
+        // here surfacing in the session-distance-allocation layer, which
+        // GEN.12/GEN.17/GEN.18/GEN.19's own dark verification never reached
+        // (their coverage stopped at binding/volume/long-run planning, one
+        // layer upstream of real per-session distance allocation). 2D's real
+        // Model B week (GEN.11 §1) always has exactly ONE non-LONG_RUN
+        // session -- either a KEY_SESSION (Pattern A, keySessionCount=1,
+        // easySupportCount=0) or an EASY_SUPPORT (Pattern B, keySessionCount=0,
+        // easySupportCount=1) -- never both, never neither. Every existing
+        // caller (3D+ frequencies) always supplies keySessionCount>=1 AND
+        // easySupportCount>=1 simultaneously, so this generalization is a
+        // zero-delta no-op for all of them, verified by full regression.
+        if (keySessionCount < 0 || easySupportCount < 0)
         {
-            throw new CatalogSessionPrescriptionInfeasibleException("V1 multi-key allocation requires at least one KEY_SESSION instance.");
+            throw new CatalogSessionPrescriptionInfeasibleException("V1 multi-key allocation requires non-negative KEY_SESSION/EASY_SUPPORT counts.");
         }
-        if (easySupportCount < 1)
+        if (keySessionCount == 0 && easySupportCount == 0)
         {
-            throw new CatalogSessionPrescriptionInfeasibleException("V1 multi-key allocation requires at least one EASY_SUPPORT instance.");
+            throw new CatalogSessionPrescriptionInfeasibleException("V1 multi-key allocation requires at least one KEY_SESSION or EASY_SUPPORT instance.");
         }
 
         var residual = V1FourDaySessionVolumeAllocationPolicy.Round(weeklyVolumeKm - longRunDistanceKm);
@@ -79,17 +97,37 @@ internal static class FourDaySessionDistanceAllocationPolicy
                 $"Residual volume {residual:0.##}km cannot support V1 key/easy minimums.");
         }
 
-        var keyTotal = V1FourDaySessionVolumeAllocationPolicy.Round(Math.Max(
-            keySessionCount * V1FourDaySessionVolumeAllocationPolicy.MinimumKeySessionDistanceKm, residual * 0.50d));
-        var easyResidual = V1FourDaySessionVolumeAllocationPolicy.Round(residual - keyTotal);
-        if (easyResidual < easySupportCount * V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm)
+        double keyTotal;
+        double easyResidual;
+        if (keySessionCount == 0)
         {
-            easyResidual = easySupportCount * V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm;
-            keyTotal = V1FourDaySessionVolumeAllocationPolicy.Round(residual - easyResidual);
+            // No KEY_SESSION this week (2D Pattern B) -- the entire residual
+            // belongs to EASY_SUPPORT. Not the general Max(...)/rebalance
+            // logic below, which assumes both roles compete for share.
+            keyTotal = 0d;
+            easyResidual = residual;
+        }
+        else if (easySupportCount == 0)
+        {
+            // No EASY_SUPPORT this week (2D Pattern A) -- the entire residual
+            // belongs to KEY_SESSION.
+            keyTotal = residual;
+            easyResidual = 0d;
+        }
+        else
+        {
+            keyTotal = V1FourDaySessionVolumeAllocationPolicy.Round(Math.Max(
+                keySessionCount * V1FourDaySessionVolumeAllocationPolicy.MinimumKeySessionDistanceKm, residual * 0.50d));
+            easyResidual = V1FourDaySessionVolumeAllocationPolicy.Round(residual - keyTotal);
+            if (easyResidual < easySupportCount * V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm)
+            {
+                easyResidual = easySupportCount * V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm;
+                keyTotal = V1FourDaySessionVolumeAllocationPolicy.Round(residual - easyResidual);
+            }
         }
 
         var easyShares = SplitEvenly(easyResidual, easySupportCount).ToArray();
-        if (easyShares[^1] < V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm)
+        if (easySupportCount > 0 && easyShares[^1] < V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm)
         {
             easyShares[^1] = V1FourDaySessionVolumeAllocationPolicy.MinimumEasySupportDistanceKm;
             if (easySupportCount > 1)
@@ -104,7 +142,18 @@ internal static class FourDaySessionDistanceAllocationPolicy
         var delta = V1FourDaySessionVolumeAllocationPolicy.Round(weeklyVolumeKm - total);
         if (Math.Abs(delta) > V1FourDaySessionVolumeAllocationPolicy.ToleranceKm)
         {
-            easyShares[^1] = V1FourDaySessionVolumeAllocationPolicy.Round(easyShares[^1] + delta);
+            // When no EASY_SUPPORT session exists this week (2D Pattern A),
+            // there is no easyShares[^1] slot to absorb the rounding
+            // remainder into -- fold it into keyTotal instead, the only
+            // non-LONG_RUN share that exists.
+            if (easySupportCount > 0)
+            {
+                easyShares[^1] = V1FourDaySessionVolumeAllocationPolicy.Round(easyShares[^1] + delta);
+            }
+            else
+            {
+                keyTotal = V1FourDaySessionVolumeAllocationPolicy.Round(keyTotal + delta);
+            }
         }
 
         var keyDistances = SplitEvenly(keyTotal, keySessionCount);
@@ -126,6 +175,11 @@ internal static class FourDaySessionDistanceAllocationPolicy
     /// </summary>
     private static IReadOnlyList<double> SplitEvenly(double total, int count)
     {
+        // Phase 10K-GEN.20: count==0 is a real, reachable shape for 2D (the
+        // role absent this week) -- returns an empty list rather than
+        // dividing by zero. Unreachable for every pre-GEN.20 caller (all
+        // supply count>=1).
+        if (count == 0) return [];
         if (count == 1) return [total];
         var baseShare = V1FourDaySessionVolumeAllocationPolicy.Round(total / count);
         var shares = new double[count];

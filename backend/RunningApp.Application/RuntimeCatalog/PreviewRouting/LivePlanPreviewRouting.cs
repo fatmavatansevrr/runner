@@ -55,6 +55,7 @@ internal enum LivePlanPreviewRoute
     CatalogRequestUnsupported,
     CatalogCoreLengthNotImplemented,
     CatalogGenerationInfeasible,
+    CatalogTwoDayCoreEightOrNineWeekFormallyNonSupported,
     RequestInvalid
 }
 
@@ -68,6 +69,7 @@ internal enum LivePlanPreviewRouteReason
     UnsupportedCycleLength,
     CoreLengthRecognizedButNotImplemented,
     KnownInfeasibleEightWeekExplicitZero,
+    TwoDayCoreEightOrNineWeekNonSupportFormalizedFinal,
     RequestInvalid
 }
 
@@ -168,6 +170,31 @@ internal static class V1LiveCatalogPilotRoutingPolicy
                 RunningApp.Application.Common.RaceHorizonClassification.CoreLengthRecognizedButNotImplemented)
         {
             return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.CatalogCoreLengthNotImplemented, LivePlanPreviewRouteReason.CoreLengthRecognizedButNotImplemented, false);
+        }
+
+        // Phase 10K-GEN.20 -- 2D Core's own formally-final non-support
+        // boundary (GEN.18, TWO_D_CORE_EIGHT_AND_NINE_WEEK_NON_SUPPORT_FORMALIZED_FINAL).
+        // Unlike the Intermediate-4D-specific explicit-zero-readiness check
+        // immediately below (which only rejects one particular readiness
+        // input at week 8), 2D's own 8/9-week gap is a real, deterministic,
+        // readiness-independent capacity shortfall (TEN_K_MASTER's RACE_SPECIFIC
+        // phase-week bound colliding with GEN.16's halved exposure minimums,
+        // per GEN.17 §6/GEN.18 §1.1) that fails identically for EVERY readiness
+        // input at both levels -- so this check is deliberately unconditional
+        // on readiness, and deliberately placed BEFORE the real generation
+        // pipeline would otherwise be reached (that pipeline's own internal
+        // ProgressionPhaseCapacityInsufficientException is real and correct,
+        // but surfaces publicly only as an opaque, generically-worded 500 --
+        // this short-circuit instead returns a precise, GEN.18-citing typed
+        // rejection). Both candidates' real CoreCycle.MinimumWeeks is 8 (the
+        // shared TEN_K_MASTER v11 template, unrelated to 2D specifically), so
+        // 8/9-week 2D requests would otherwise pass the withinSupportedCycle
+        // check above and reach real generation undetected.
+        if (cycleLength is 8 or 9 &&
+            request.DaysPerWeek == 2 &&
+            (request.Level == RunningBackground.Beginner || request.Level == RunningBackground.Intermediate))
+        {
+            return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.CatalogTwoDayCoreEightOrNineWeekFormallyNonSupported, LivePlanPreviewRouteReason.TwoDayCoreEightOrNineWeekNonSupportFormalizedFinal, false);
         }
 
         // Existing readiness-specific fail-closed rule for the activated
@@ -412,6 +439,12 @@ public sealed class LivePlanPreviewRoutingService : IGenerationRouteDecider
                     "The requested race-plan horizon is recognized, but this exact core length is not yet implemented safely."),
             LivePlanPreviewRoute.CatalogGenerationInfeasible =>
                 throw new CatalogLivePilotGenerationInfeasibleException("Catalog pilot request is a known generation-infeasible readiness/cycle combination."),
+            LivePlanPreviewRoute.CatalogTwoDayCoreEightOrNineWeekFormallyNonSupported =>
+                throw new CatalogTwoDayCoreEightOrNineWeekNonSupportedException(
+                    $"2-day-per-week TEN_K Core plans are formally, permanently non-representable at {decision.CycleLengthWeeks} weeks " +
+                    "(TWO_D_CORE_EIGHT_AND_NINE_WEEK_NON_SUPPORT_FORMALIZED_FINAL, Phase 10K-GEN.18). The supported 2-day-per-week Core " +
+                    "range is exactly 10-14 weeks. This is not a temporary or readiness-dependent restriction -- it is a final, evidenced " +
+                    "non-representability determination that applies identically to Beginner and Intermediate at both 8 and 9 weeks."),
             _ => throw new CatalogLiveRouteDecisionInvalidException("Unsupported live catalog route decision.")
         };
     }
@@ -452,4 +485,20 @@ public sealed class CatalogLiveRouteDecisionInvalidException : CatalogLiveRoutin
 public sealed class CatalogLiveFallbackNotPermittedException : CatalogLiveRoutingException
 {
     public CatalogLiveFallbackNotPermittedException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Phase 10K-GEN.20 -- thrown for a 2-day-per-week TEN_K Core request at
+/// exactly 8 or 9 weeks, citing GEN.18's formal, final
+/// TWO_D_CORE_EIGHT_AND_NINE_WEEK_NON_SUPPORT_FORMALIZED_FINAL classification.
+/// Deliberately a distinct type from <see cref="CatalogLivePilotRequestUnsupportedException"/>
+/// (generic "unsupported cycle length") and from <see cref="CatalogLivePilotGenerationInfeasibleException"/>
+/// (readiness-specific): this is neither -- it is a known, permanently
+/// non-representable structural capacity gap, independent of readiness, that
+/// this repository's own governance record (GEN.18) already closed as final,
+/// not a routing miss or a request-input problem.
+/// </summary>
+public sealed class CatalogTwoDayCoreEightOrNineWeekNonSupportedException : CatalogLiveRoutingException
+{
+    public CatalogTwoDayCoreEightOrNineWeekNonSupportedException(string message) : base(message) { }
 }
