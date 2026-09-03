@@ -346,14 +346,55 @@ public sealed record VolumeSafetyPolicy(
     /// dispatch (previously only 4D existed, with no dispatch function of
     /// its own). Fail-closed for any Beginner frequency without an approved
     /// policy -- byte-identical selection for every existing caller (4D
-    /// still resolves to <see cref="BeginnerFourDay"/>).
+    /// still resolves to <see cref="BeginnerFourDay"/>). GEN.23 adds 3D.
     /// </summary>
     public static VolumeSafetyPolicy ForBeginnerDaysPerWeek(int daysPerWeek) => daysPerWeek switch
     {
         2 => Beginner2D,
+        3 => ThreeDayBeginner,
         4 => BeginnerFourDay,
         _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved Beginner VolumeSafetyPolicy exists for this DaysPerWeek."),
     };
+
+    /// <summary>
+    /// Phase 10K-GEN.23 -- implements the frozen Option-1 authority approved
+    /// on GEN.21's DOMAIN_DECISION_REQUIRED escalation (Phase K). Growth
+    /// mechanics (7%/8%/2.0km, matching <see cref="ThreeDayIntermediate"/>'s
+    /// own 3D-owned, Level-blind progression figures per GEN.2B.1/GEN.2B.3 --
+    /// no Level effect established or introduced here) and normal-week
+    /// long-run shares (38/42/40/42, same reasoning) are reused verbatim,
+    /// unchanged from <see cref="ThreeDayIntermediate"/> -- required so the
+    /// unchanged normal-week LONG floor (5.0km, <see cref="Session.V1ThreeDaySessionVolumeAllocationPolicy.MinimumLongKm"/>)
+    /// remains satisfiable at Beginner's own (lower) starting volumes,
+    /// verified this phase. <see cref="GoldenFixtureStartingVolumeKm"/>/<see cref="ResolvedPeakReference"/>
+    /// are unused by this planner's 3D sequential-growth branch (mirrors
+    /// <see cref="ThreeDayIntermediate"/>'s own established pattern) but are
+    /// still populated for audit/decision-trace consistency: 12.0/9.5
+    /// (GEN.4C.4's Beginner missing/explicit-zero starting-volume defaults,
+    /// reused verbatim per GEN.5's own prior reuse for this exact candidate)
+    /// and 17.0 (GEN.5A.2's frozen Beginner×3D PeakVolumeBand reference
+    /// point). The TAPER week's long-run share is NOT this record's own
+    /// field -- see <see cref="V1BeginnerThreeDayTaperLongRunSharePolicy"/>,
+    /// a narrow, taper-only override this phase found is required (real
+    /// arithmetic check, not assumed) so the new 3.0km taper-specific LONG
+    /// floor is reachable without silently violating the unchanged 5.0km
+    /// normal-week floor at low starting volumes -- the two floors need two
+    /// different long-run share regimes, not one.
+    /// </summary>
+    public static VolumeSafetyPolicy ThreeDayBeginner { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.0d,
+        GoldenFixtureStartingVolumeKm: 12d,
+        ResolvedPeakReference: new(17d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 10,
+        TaperVolumeMultiplier: 0.53d,
+        LongRunPreferredMinimumShare: 0.38d,
+        LongRunPreferredMaximumShare: 0.42d,
+        LongRunSelectionShare: 0.40d,
+        LongRunHardCapShare: 0.42d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "3d_round_nearest_0.5km_then_reconcile_and_revalidate");
 
     public static VolumeSafetyPolicy BeginnerFourDay { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,

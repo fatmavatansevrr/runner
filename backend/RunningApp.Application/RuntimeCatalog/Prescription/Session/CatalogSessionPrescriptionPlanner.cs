@@ -27,8 +27,14 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             var weekly = weeklyByNumber[boundWeek.WeekNumber];
             var longRun = longRunByNumber[boundWeek.WeekNumber];
             var isThreeDay = request.Candidate.DaysPerWeek == 3;
+            // Phase 10K-GEN.23 -- Beginner x3D's TAPER week uses its own,
+            // lower, taper-specific KEY/EASY/LONG minima triple (GEN.21's
+            // frozen Option-1 authority). Every other combination (any
+            // non-taper week, any Intermediate x3D week including its own
+            // taper) is unaffected -- both conditions must hold.
+            var useBeginnerThreeDayTaperMinima = isThreeDay && weekly.IsTaperWeek && request.Candidate.Level == "NEW";
             var allocation = isThreeDay
-                ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions)
+                ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions, useBeginnerThreeDayTaperMinima)
                 : V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
             var easyOrdinal = 0;
             var weekSessions = new List<CatalogPrescribedSession>();

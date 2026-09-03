@@ -54,6 +54,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayIntermediate).Build(request);
         }
+        // Phase 10K-GEN.23 -- implements GEN.21's frozen Option-1 authority
+        // (Phase K decision). Exact typed combination match only, mirroring
+        // every other branch here -- never a broad "DaysPerWeek == 3"
+        // condition, so this can never silently swallow a future
+        // Advanced x3D candidate.
+        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayBeginner).Build(request);
+        }
         // Phase 10K-FREQ.6D.10: exact typed combination match only (CanonicalDistanceFamily +
         // Level + DaysPerWeek) -- never a broad "DaysPerWeek >= 5" or "Level != Beginner" condition,
         // so a future Beginner x5D/Advanced x5D candidate can never silently inherit this
@@ -103,7 +112,19 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         if (request.Candidate.DaysPerWeek == 3)
         {
             var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
-            if (projectedTaper < 12d)
+            // Phase 10K-GEN.23 -- GEN.21's frozen Option-1 authority: Beginner
+            // gets its own, lower, taper-specific floor (8.5km, the new
+            // 3.0+2.5+3.0 minima triple) instead of the Intermediate/
+            // normal-week 12.0km floor. Intermediate's own gate is byte-
+            // identical to before this phase.
+            if (request.Candidate.Level == "NEW")
+            {
+                if (projectedTaper < V1BeginnerThreeDayVolumeEligibilityPolicy.MinimumFullLayoutTaperWeeklyVolumeKm)
+                {
+                    throw new BeginnerThreeDayCoreProductIneligibleException(projectedTaper);
+                }
+            }
+            else if (projectedTaper < 12d)
             {
                 throw new ThreeDayCoreProductIneligibleException(projectedTaper);
             }
@@ -181,21 +202,38 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             throw new TwoDayMissingOrZeroReadinessProductIneligibleException();
         }
 
+        // Phase 10K-GEN.23 -- Beginner x3D reuses Beginner x4D's own missing/
+        // explicit-zero starting-volume defaults (12.0/9.5km) verbatim, the
+        // same reuse GEN.5 already applied by hand to derive its own
+        // matrices; no new Beginner x3D-specific starting-volume number is
+        // introduced.
         return ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)
             ? V1ThreeDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
-            : ReferenceEquals(_policy, VolumeSafetyPolicy.BeginnerFourDay)
+            : ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayBeginner)
                 ? V1BeginnerFourDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
-                : ReferenceEquals(_policy, VolumeSafetyPolicy.FiveDayIntermediate)
-                    ? V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.Resolve(readiness)
-                    : ReferenceEquals(_policy, VolumeSafetyPolicy.SixDayIntermediate)
-                        ? V1SixDayIntermediateMissingReadinessStartingVolumePolicy.Resolve(readiness)
-                        : V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
+                : ReferenceEquals(_policy, VolumeSafetyPolicy.BeginnerFourDay)
+                    ? V1BeginnerFourDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
+                    : ReferenceEquals(_policy, VolumeSafetyPolicy.FiveDayIntermediate)
+                        ? V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.Resolve(readiness)
+                        : ReferenceEquals(_policy, VolumeSafetyPolicy.SixDayIntermediate)
+                            ? V1SixDayIntermediateMissingReadinessStartingVolumePolicy.Resolve(readiness)
+                            : V1MissingReadinessStartingVolumePolicy.Resolve(readiness);
     }
+
+    /// <summary>
+    /// Phase 10K-GEN.23 -- generalized from a single <c>ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)</c>
+    /// check to also admit <see cref="VolumeSafetyPolicy.ThreeDayBeginner"/>,
+    /// which reuses this exact sequential-growth mechanism unmodified (same
+    /// 7%/8%/2.0km growth mechanics, GEN.2B.1/GEN.2B.3, no Level effect).
+    /// Byte-identical behavior for every existing ThreeDayIntermediate caller.
+    /// </summary>
+    private static bool IsThreeDaySequentialGrowthPolicy(VolumeSafetyPolicy policy) =>
+        ReferenceEquals(policy, VolumeSafetyPolicy.ThreeDayIntermediate) || ReferenceEquals(policy, VolumeSafetyPolicy.ThreeDayBeginner);
 
     private ReachablePeakDecision ResolvePeak(double startingVolumeKm, CatalogVolumeBounds bounds, BoundCatalogPlan boundPlan)
     {
         var nonTaperWeeks = boundPlan.Weeks.Count(w => w.PhaseKey != "TAPER");
-        if (ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+        if (IsThreeDaySequentialGrowthPolicy(_policy))
         {
             var threeDayReachable = startingVolumeKm;
             for (var i = 1; i < nonTaperWeeks; i++)
@@ -210,10 +248,13 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             }
             var threeDayClassification = threeDayReachable < bounds.MinimumKm ? PeakBandClassification.BelowTypicalPeakButValid :
                 threeDayReachable >= bounds.MaximumKm ? PeakBandClassification.UpperBoundConstrained : PeakBandClassification.WithinTypicalPeakBand;
+            var threeDayProvenance = ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayBeginner)
+                ? "TEN_K/NEW/3D GEN.23 sequential preferred growth (reuses GEN.2B.2's 3D mechanism unmodified); peak band is not mandatory."
+                : "TEN_K/INTERMEDIATE/3D GEN.2B.2 sequential preferred growth; peak band is not mandatory.";
             return new ReachablePeakDecision(startingVolumeKm, threeDayReachable, threeDayReachable, threeDayClassification,
                 _policy.PreferredMaxWeeklyIncreaseRatio, _policy.HardMaxWeeklyIncreaseRatio, _policy.AbsoluteWeeklyIncrementCapKm,
                 CatalogEvidenceBasis.EvidenceInformed, CatalogDecisionStatus.ExplicitProductDefault,
-                "TEN_K/INTERMEDIATE/3D GEN.2B.2 sequential preferred growth; peak band is not mandatory.");
+                threeDayProvenance);
         }
         var transitions = Math.Max(0, nonTaperWeeks - 1);
         // Provenance is audit metadata only. Numeric planning deliberately consumes Value
@@ -315,7 +356,7 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             }
             else
             {
-                if (ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+                if (IsThreeDaySequentialGrowthPolicy(_policy))
                 {
                     var reference = previous ?? starting.SelectedStartingVolumeKm;
                     unclamped = Math.Min(reference + Math.Min(reference * _policy.PreferredMaxWeeklyIncreaseRatio, _policy.AbsoluteWeeklyIncrementCapKm), peak.SelectedPeakKm);
@@ -335,7 +376,7 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             var selected = isTaper
                 ? Math.Min(Round(unclamped), peak.SelectedPeakKm)
                 : Round(Clamp(unclamped, Math.Min(starting.SelectedStartingVolumeKm, peak.SelectedPeakKm), peak.SelectedPeakKm));
-            if (!isTaper && previous is > 0 && ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate))
+            if (!isTaper && previous is > 0 && IsThreeDaySequentialGrowthPolicy(_policy))
             {
                 while ((selected - previous.Value) / previous.Value > _policy.HardMaxWeeklyIncreaseRatio ||
                        selected - previous.Value > _policy.AbsoluteWeeklyIncrementCapKm)
@@ -429,13 +470,24 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             var lowConfidence = readiness.LongestRun.State == PrescriptionInputState.Inconsistent;
             var weeklyVolume = week.PlannedWeeklyVolumeKm;
-            var lower = Round(weeklyVolume * share.PreferredMinimumShare);
-            var upper = Round(weeklyVolume * share.PreferredMaximumShare);
-            var hardCap = Round(weeklyVolume * share.HardCapShare);
-            var target = Round(weeklyVolume * share.SelectionShare);
+            // Phase 10K-GEN.23 -- narrow, taper-only long-run-share override
+            // for Beginner x3D (see V1BeginnerThreeDayTaperLongRunSharePolicy's
+            // own doc comment for the full arithmetic verification of why
+            // this differs from the normal-week share used every other
+            // week). Every other candidate/week is unaffected -- both
+            // conditions must hold.
+            var useBeginnerThreeDayTaperShare = week.IsTaperWeek && ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayBeginner);
+            var preferredMinShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.PreferredMinimumShare : share.PreferredMinimumShare;
+            var preferredMaxShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.PreferredMaximumShare : share.PreferredMaximumShare;
+            var selectionShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.SelectionShare : share.SelectionShare;
+            var hardCapShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.HardCapShare : share.HardCapShare;
+            var lower = Round(weeklyVolume * preferredMinShare);
+            var upper = Round(weeklyVolume * preferredMaxShare);
+            var hardCap = Round(weeklyVolume * hardCapShare);
+            var target = Round(weeklyVolume * selectionShare);
             var unclamped = target;
             var clamp = CatalogVolumeClamp.None;
-            var reason = "weekly_volume_derived_long_run_share";
+            var reason = useBeginnerThreeDayTaperShare ? "beginner_three_day_taper_specific_long_run_share_override_gen23" : "weekly_volume_derived_long_run_share";
             var authority = CatalogNumericRuleAuthority.TechnicalDeterministicRule;
 
             if (week.WeekNumber == weekly.Weeks[0].WeekNumber &&

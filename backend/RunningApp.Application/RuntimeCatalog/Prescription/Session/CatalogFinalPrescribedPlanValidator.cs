@@ -114,7 +114,26 @@ internal static class CatalogFinalPrescribedPlanValidator
         }
         if (candidate.Level == "NEW")
         {
-            return candidate.DaysPerWeek == 2 ? VolumeSafetyPolicy.Beginner2D.LongRunHardCapShare : VolumeSafetyPolicy.BeginnerFourDay.LongRunHardCapShare;
+            // Phase 10K-GEN.23 -- recurring-defect-family fix (the same
+            // "structural-session-count proxy instead of the real
+            // per-candidate VolumeSafetyPolicy" shape GEN.10/GEN.12/GEN.17
+            // (x2)/GEN.19/GEN.20 already found and fixed): before this
+            // phase, every Beginner DaysPerWeek other than 2 silently fell
+            // into the BeginnerFourDay branch. That was never wrong before
+            // now (4D was the only other admitted Beginner frequency), but
+            // it would have been the identical wrong-cap defect GEN.20 §101
+            // describes for 2D the moment Beginner x3D existed. Adds an
+            // explicit 3D branch (VolumeSafetyPolicy.ThreeDayBeginner's own
+            // 0.42 cap, matching ThreeDayIntermediate's normal-week cap
+            // exactly -- required so the unchanged 5.0km normal-week LONG
+            // floor stays satisfiable) BEFORE it could ever be silently
+            // exercised. Byte-identical for 2D/4D.
+            return candidate.DaysPerWeek switch
+            {
+                2 => VolumeSafetyPolicy.Beginner2D.LongRunHardCapShare,
+                3 => VolumeSafetyPolicy.ThreeDayBeginner.LongRunHardCapShare,
+                _ => VolumeSafetyPolicy.BeginnerFourDay.LongRunHardCapShare,
+            };
         }
         return candidate.DaysPerWeek switch
         {

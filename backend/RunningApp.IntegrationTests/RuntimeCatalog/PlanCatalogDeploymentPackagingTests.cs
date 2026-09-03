@@ -29,7 +29,10 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // workoutProgression reference was repointed at this new document
     // in place (no new master-template version needed -- v11 is
     // referenced by no combination other than the two 2D ones).
-    internal const int ExpectedRuntimeCatalogJsonFiles = 128;
+    // Phase 10K-GEN.23 -- +3 (peak-volume-bands.v8.json, appsel-race-plan.v9.json,
+    // combinations/ten-k-3d-beginner.v1.json), advancing the exact count per
+    // this engagement's own GEN.10/GEN.17 precedent (never weaken the check).
+    internal const int ExpectedRuntimeCatalogJsonFiles = 131;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

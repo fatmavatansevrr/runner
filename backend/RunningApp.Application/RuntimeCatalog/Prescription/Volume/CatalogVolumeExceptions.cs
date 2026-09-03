@@ -85,6 +85,20 @@ internal sealed class BeginnerFourDayCoreProductIneligibleException : CatalogPro
 }
 
 /// <summary>
+/// Phase 10K-GEN.23 -- implements GEN.21's frozen Option-1 authority: a
+/// distinct, LOWER (8.5km) taper-specific floor for Beginner×3D, separate
+/// from the unchanged 12.0km Intermediate×3D/normal-week floor
+/// (<see cref="ThreeDayCoreProductIneligibleException"/>, still used
+/// unmodified for Intermediate). See <see cref="V1BeginnerThreeDayVolumeEligibilityPolicy"/>.
+/// </summary>
+internal sealed class BeginnerThreeDayCoreProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "BEGINNER_THREE_DAY_CORE_TAPER_VOLUME_BELOW_MINIMUM_FULL_LAYOUT";
+    public BeginnerThreeDayCoreProductIneligibleException(double projectedTaperKm)
+        : base(Reason, $"PRODUCT_INELIGIBLE: projected Beginner 3D taper volume {projectedTaperKm:0.##}km is below the 8.5km minimum full-layout taper volume.") { }
+}
+
+/// <summary>
 /// Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority: both
 /// missing and explicit-zero recent weekly volume are PRODUCT_INELIGIBLE for
 /// every Advanced frequency/horizon (a direct, non-inventive extension of the
