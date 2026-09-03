@@ -4,6 +4,7 @@
 **Phase type**: IMPLEMENTATION (activation) + DEFECT-FAMILY SEARCH + REAL HTTP/POSTGRESQL VERIFICATION
 **Execution status**: DONE
 **Final classification**: `BEGINNER_3D_CORE_PUBLICLY_ACTIVE_MISSING_AND_POSITIVE_OBSERVED_READINESS`
+**Governance commit**: `f3c3677` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 
 ---
 
