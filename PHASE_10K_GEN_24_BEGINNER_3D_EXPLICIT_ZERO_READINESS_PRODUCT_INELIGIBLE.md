@@ -2,7 +2,7 @@
 
 **Implementation + defect-family search + dark verification. Resolves `GEN.23`'s own disclosed gap (§5/§9 of that report) via a direct user decision message, whose exact text is the spec for this phase. Implements the same mechanism class `GEN.9` already established for Advanced's missing/zero readiness (`PRODUCT_INELIGIBLE` via a typed exception) for a different Level/Frequency cell — not a new mechanism.**
 
-**Governance commit**: `PENDING` (implementation + ledger row; backfilled self-referentially per this engagement's established two-commit pattern).
+**Governance commit**: `c57d774` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 
 ---
 
