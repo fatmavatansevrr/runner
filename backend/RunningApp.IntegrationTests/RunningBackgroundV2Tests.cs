@@ -177,16 +177,24 @@ public sealed class RunningBackgroundV2Tests
     }
 
     [Fact]
-    public void BeginnerLevel_ReachesItsOwnPilotMapping_AtFourDaysOnly()
+    public void BeginnerLevel_ReachesItsOwnPilotMapping_AtFourAndThreeDays()
     {
         // GEN.4E: Beginner is now a genuinely-widened, distinct pilot
         // identity at 4D -- resolves to its own candidate, never Intermediate's.
+        // Phase 10K-GEN.25 subsequently widened Beginner x3D too (8-14
+        // weeks, missing/positive-observed readiness only) -- the prior
+        // "AtFourDaysOnly" negative assertion is now obsolete
+        // (OBSOLETE_PRE_ACTIVATION_ASSERTION, matching GEN.10 section 6's
+        // own established correction discipline) and is flipped to a
+        // second positive check, resolving to its own distinct candidate.
         Assert.True(RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 4));
-        Assert.False(RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
-        var resolved = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Beginner, 4);
-        Assert.Equal("TEN_K__4D__BEGINNER", resolved.CandidateKey);
+        var resolvedFourDay = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Beginner, 4);
+        Assert.Equal("TEN_K__4D__BEGINNER", resolvedFourDay.CandidateKey);
+        var resolvedThreeDay = RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.ResolveCandidate(RunningBackground.Beginner, 3);
+        Assert.Equal("TEN_K__3D__BEGINNER", resolvedThreeDay.CandidateKey);
     }
 
     private static AppDbContext NewPostgresContext() =>

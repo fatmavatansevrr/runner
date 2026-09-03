@@ -155,8 +155,13 @@ public sealed class Gen3BThreeDayPublicActivationTests : IClassFixture<Published
         Assert.DoesNotContain("TEN_K__4D__INTERMEDIATE", body);
     }
 
+    // Phase 10K-GEN.25 widened Beginner x3D (8-14 weeks, missing/positive-
+    // observed readiness only) -- ("beginner", 3) is removed from this
+    // still-unsupported-combination theory (OBSOLETE_PRE_ACTIVATION_ASSERTION,
+    // matching GEN.10 section 6's own established correction discipline);
+    // the remaining two rows are unaffected, still-genuinely-unsupported
+    // combinations.
     [Theory]
-    [InlineData("beginner", 3)]
     [InlineData("advanced", 3)]
     [InlineData("intermediate", 5)]
     public async Task WrongCombination_NeverNearestMatches(string level, int days)

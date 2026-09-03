@@ -160,9 +160,17 @@ public sealed class Gen24BeginnerThreeDayExplicitZeroIneligibilityTests
     // ── Public gate remains untouched — dark-only, exactly like GEN.23. ──
 
     [Fact]
-    public void PublicGate_RemainsClosed_BeginnerThreeDayNotWidened()
+    public void PublicGate_WidenedByGen25_BeginnerThreeDayNowPubliclyRoutable()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // Phase 10K-GEN.25 subsequently opened the public HTTP routing gate
+        // for Beginner x3D Core (8-14 weeks, missing/positive-observed
+        // readiness only) -- this assertion is flipped from GEN.24's own
+        // "gate remains closed" finding, which was accurate at the time
+        // this test was written (dark-only implementation, GEN.23/GEN.24's
+        // own scope). Classified OBSOLETE_PRE_ACTIVATION_ASSERTION, not a
+        // regression, matching GEN.10 section 6's own established
+        // correction discipline.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
         // Neighboring identities remain unaffected.
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(

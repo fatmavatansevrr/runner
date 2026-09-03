@@ -247,11 +247,26 @@ public sealed class Gen23BeginnerThreeDayCoreTests
     // ── Identity remains internally gated (no public/allow-list widening) ──
 
     [Fact]
-    public async Task Candidate_RemainsInternallyGated_NotPubliclyRoutable()
+    public async Task Candidate_IsNowPubliclyRoutable_AsOfGen25()
     {
+        // Phase 10K-GEN.25 opened the public HTTP routing gate for
+        // Beginner x3D Core (8-14 weeks, missing/positive-observed
+        // readiness only) -- this assertion is flipped from this same
+        // phase's own "remains internally gated" finding, which was
+        // accurate at the time this test was written (dark-only
+        // implementation, this phase's own scope). Classified
+        // OBSOLETE_PRE_ACTIVATION_ASSERTION, not a regression, matching
+        // GEN.10 section 6's own established correction discipline. The
+        // underlying catalog document's own metadata.status is unchanged
+        // (still "VALIDATED", not "PUBLISHED") -- activation did not
+        // require a catalog-status change, since the Development-only
+        // LocalCatalogAcceptance override already treats every pilot
+        // candidate's route decision as effectively published (the same
+        // mechanism TEN_K__4D__BEGINNER v1, itself still "VALIDATED", has
+        // always relied on).
         var candidate = await RealBeginnerThreeDayCandidateAsync();
         Assert.Equal("VALIDATED", candidate.CandidateStatus);
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
         // Every previously-widened cell remains unaffected.
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(

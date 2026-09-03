@@ -101,12 +101,17 @@ public sealed class Gen4DBeginnerFourDayCoreTests
         // distinct pilot identity of its own) -- that cell is now asserted
         // True below instead of False; Experienced x4D (never widened by any
         // phase) replaces it as the still-closed negative check.
+        // Phase 10K-GEN.25 subsequently widened Beginner x3D too (8-14
+        // weeks, missing/positive-observed readiness only) -- that cell is
+        // now asserted True below instead of False; Beginner x5D (never
+        // widened, GEN.6/GEN.22 PRODUCT_NON_SUPPORT) remains the still-closed
+        // negative check just below it.
         var candidate = await DynamicCoreVolumeAndLongRunOrchestratorTests.RealBeginnerFourDayCandidateAsync();
         Assert.Equal("NEW", candidate.Level);
         Assert.Equal(4, candidate.DaysPerWeek);
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 4));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Beginner, 3));
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.TenK, RunningBackground.Advanced, 4));

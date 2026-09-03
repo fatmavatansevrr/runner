@@ -141,6 +141,34 @@ public static class V1CatalogPilotIdentityPolicy
     public const int TwoDayIntermediateCandidateVersion = 1;
 
     /// <summary>
+    /// Phase 10K-GEN.21/GEN.23/GEN.24 -- the approved, dark-verified
+    /// Beginner x3D Core candidate (GEN.21's diagnosed taper-minimum lever;
+    /// GEN.23's implemented taper-specific 3.0/2.5/3.0km minima triple,
+    /// representable for missing/positive-observed readiness at every
+    /// governed Core horizon 8-14 weeks; GEN.24's explicit-zero-readiness
+    /// PRODUCT_INELIGIBLE decision). Consumed by
+    /// <see cref="IsSupportedIdentity"/>/<see cref="ResolveCandidate"/> as of
+    /// Phase 10K-GEN.25 public activation -- Core only, exactly 8-14 weeks
+    /// (the candidate's own TEN_K_MASTER-inherited CoreCycle bounds, no
+    /// dedicated horizon-exclusion check needed: unlike 2D, GEN.23 proved
+    /// every one of 8-14 weeks representable for missing/positive-observed
+    /// readiness, so there is no narrower non-supported sub-range to gate).
+    /// Explicit-zero readiness at any horizon is rejected downstream, inside
+    /// the real generation pipeline itself, by GEN.24's
+    /// <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Volume.BeginnerThreeDayExplicitZeroReadinessProductIneligibleException"/>
+    /// (translated to a typed HTTP 422 by <c>CatalogPreviewGenerator</c>'s
+    /// existing generic <c>CatalogProductIneligibleException</c> catch --
+    /// GEN.25 adds no new dispatch or exception mapping for this). Deliberately
+    /// NOT added to <see cref="IsSupportedPreparationRunwayLevelFrequency"/>
+    /// or <see cref="IsSupportedPreparationRunwayCandidate"/> -- Beginner x3D
+    /// Preparation Runway/LongHorizon were never designed or approved by any
+    /// prior phase, so no public or internal-dark path may treat this
+    /// candidate as Runway/LongHorizon eligible.
+    /// </summary>
+    public const string ThreeDayBeginnerCandidateKey = "TEN_K__3D__BEGINNER";
+    public const int ThreeDayBeginnerCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
     /// pilot recognizes. Deliberately enumerated rather than derived, so a
     /// future cell can never be admitted by accident — the two places above
@@ -159,7 +187,20 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Advanced, 5) or
             (RunningBackground.Advanced, 6) or
             (RunningBackground.Beginner, 2) or
-            (RunningBackground.Intermediate, 2);
+            (RunningBackground.Intermediate, 2) or
+            (RunningBackground.Beginner, 3);
+    // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the
+    // already-approved GEN.21/GEN.23/GEN.24 authority -- Core only, exactly
+    // 8-14 weeks, missing-readiness and positive-observed-readiness only.
+    // Explicit-zero readiness fails closed at every horizon via GEN.24's
+    // typed BeginnerThreeDayExplicitZeroReadinessProductIneligibleException,
+    // surfaced through CatalogPreviewGenerator's existing generic
+    // CatalogProductIneligibleException catch -- no new routing check is
+    // needed here (unlike 2D's GEN.18 8/9-week gap, GEN.23 proved every one
+    // of 8-14 weeks representable for missing/positive-observed readiness).
+    // Preparation Runway/LongHorizon deliberately NOT widened for Beginner
+    // x3D (never designed/approved) -- see IsSupportedPreparationRunwayLevelFrequency,
+    // untouched by this phase.
     // (Beginner, 2) / (Intermediate, 2): Phase 10K-GEN.20 public activation,
     // implementing the already-approved GEN.11/GEN.14/GEN.16 authority and
     // the GEN.12/GEN.17 dark implementation, Core only, 10-14 weeks (GEN.18's
@@ -217,7 +258,8 @@ public static class V1CatalogPilotIdentityPolicy
         (RunningBackground.Advanced, 6) => (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion),
         (RunningBackground.Beginner, 2) => (TwoDayBeginnerCandidateKey, TwoDayBeginnerCandidateVersion),
         (RunningBackground.Intermediate, 2) => (TwoDayIntermediateCandidateKey, TwoDayIntermediateCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D, Intermediate 2D, and Advanced 3D/4D/5D/6D Core pilot identities are resolvable.")
+        (RunningBackground.Beginner, 3) => (ThreeDayBeginnerCandidateKey, ThreeDayBeginnerCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D Core pilot identities are resolvable.")
     };
 
     /// <summary>
