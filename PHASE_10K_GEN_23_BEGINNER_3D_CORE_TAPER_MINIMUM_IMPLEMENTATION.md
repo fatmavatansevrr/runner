@@ -2,6 +2,8 @@
 
 **Implementation + defect discovery/fix + dark verification. Implements the frozen Option-1 authority the user approved directly on `GEN.21`'s `DOMAIN_DECISION_REQUIRED` escalation (Phase K). No public HTTP routing gate opened — Beginner×3D Core remains internally gated, matching `GEN.4D`'s own "Core implementation stays `INTERNALLY_GATED`, public activation is a separate future phase" precedent (`GEN.4D` → `GEN.4E`).**
 
+**Governance commit**: `397b2f6` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
+
 ---
 
 ## 0. Precondition verification
