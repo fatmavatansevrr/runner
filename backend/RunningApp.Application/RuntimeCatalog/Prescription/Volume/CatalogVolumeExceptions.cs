@@ -114,6 +114,27 @@ internal sealed class AdvancedMissingOrZeroReadinessProductIneligibleException :
 }
 
 /// <summary>
+/// Phase 10K-GEN.24 -- user decision resolving GEN.23's disclosed gap
+/// (§5 of that report): Beginner×3D remains SUPPORTED (missing and
+/// positive-observed readiness are unaffected and still resolve via
+/// <see cref="V1BeginnerFourDayMissingReadinessStartingVolumePolicy"/>'s
+/// 12.0km missing-readiness default). Only explicit-zero readiness is
+/// PRODUCT_INELIGIBLE for Beginner×3D -- a request-level readiness
+/// rejection, mirroring <see cref="AdvancedMissingOrZeroReadinessProductIneligibleException"/>'s
+/// mechanism class exactly (GEN.9), not a frequency-level non-support
+/// reclassification. This is deliberately NOT a fix that raises the
+/// reused 9.5km explicit-zero starting default -- no numeric value was
+/// changed anywhere; a genuinely zero-base Beginner×3D request is
+/// formally rejected, not silently defaulted or patched around.
+/// </summary>
+internal sealed class BeginnerThreeDayExplicitZeroReadinessProductIneligibleException : CatalogProductIneligibleException
+{
+    public const string Reason = "BEGINNER_THREE_DAY_EXPLICIT_ZERO_READINESS_NOT_ELIGIBLE";
+    public BeginnerThreeDayExplicitZeroReadinessProductIneligibleException()
+        : base(Reason, "PRODUCT_INELIGIBLE: Beginner×3D requires either missing or positive observed recent weekly volume evidence; explicit-zero readiness is not eligible for this product (GEN.24).") { }
+}
+
+/// <summary>
 /// Phase 10K-GEN.12 -- GEN.11's frozen 2D readiness authority: both missing
 /// and explicit-zero recent weekly volume are PRODUCT_INELIGIBLE for 2D at
 /// BOTH Beginner and Intermediate (frequency-owned, not Level-specific) --

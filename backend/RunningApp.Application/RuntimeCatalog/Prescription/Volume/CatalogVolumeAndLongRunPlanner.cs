@@ -202,11 +202,28 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             throw new TwoDayMissingOrZeroReadinessProductIneligibleException();
         }
 
+        // Phase 10K-GEN.24 -- user decision resolving GEN.23's own disclosed
+        // gap: Beginner x3D remains SUPPORTED; only explicit-zero readiness
+        // is PRODUCT_INELIGIBLE (mirroring GEN.9's Advanced
+        // missing-or-zero pattern's mechanism class, but narrower -- only
+        // the explicit-zero request shape is rejected here, not missing).
+        // Missing readiness falls through unchanged to the same
+        // V1BeginnerFourDayMissingReadinessStartingVolumePolicy reuse
+        // GEN.23 already established below (12.0km default, unaffected).
+        // No numeric value changed anywhere by this check.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayBeginner) &&
+            readiness.WeeklyVolume.State == PrescriptionInputState.Available && reported == 0)
+        {
+            throw new BeginnerThreeDayExplicitZeroReadinessProductIneligibleException();
+        }
+
         // Phase 10K-GEN.23 -- Beginner x3D reuses Beginner x4D's own missing/
         // explicit-zero starting-volume defaults (12.0/9.5km) verbatim, the
         // same reuse GEN.5 already applied by hand to derive its own
         // matrices; no new Beginner x3D-specific starting-volume number is
-        // introduced.
+        // introduced. (GEN.24: the explicit-zero branch is now unreachable
+        // for ThreeDayBeginner specifically, intercepted above; missing
+        // still reaches this dispatch unchanged.)
         return ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayIntermediate)
             ? V1ThreeDayMissingReadinessStartingVolumePolicy.Resolve(readiness)
             : ReferenceEquals(_policy, VolumeSafetyPolicy.ThreeDayBeginner)

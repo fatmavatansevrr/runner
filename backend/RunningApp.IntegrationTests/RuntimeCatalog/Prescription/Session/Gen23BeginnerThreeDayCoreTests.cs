@@ -181,17 +181,15 @@ public sealed class Gen23BeginnerThreeDayCoreTests
     // own binding case and its comfortable-headroom counter-case) are FULLY
     // representable at every governed Core horizon (8-14). ExplicitZero
     // (9.5km start, also reused verbatim from Beginner×4D per GEN.5's own
-    // established reuse pattern) is NOT representable at ANY horizon 8-14 —
-    // a genuine, separate gap this phase discovered and discloses rather
-    // than papering over: 9.5km is below the UNCHANGED 12.0km normal-week
-    // 3D floor, so week 1 itself (always exactly the starting volume,
-    // independent of horizon or the new taper minima) is infeasible before
-    // the taper mechanism this phase implements is ever reached. This is a
-    // starting-volume-policy gap for Beginner×3D's explicit-zero readiness
-    // state specifically — a different, undecided authority from GEN.21's
-    // frozen taper-minima decision — and per this phase's explicit
-    // instruction is reported here as a new finding, not "fixed" by
-    // inventing a new Beginner×3D-specific explicit-zero starting default.
+    // established reuse pattern) was, AT THE TIME THIS PHASE (GEN.23) WAS
+    // WRITTEN, not representable at any horizon 8-14 — a genuine, separate
+    // gap this phase discovered and disclosed rather than papered over.
+    // GEN.24 (a direct user decision on that disclosed gap) has since
+    // formally closed it as PRODUCT_INELIGIBLE — see
+    // ExplicitZero_AllHorizons_FailsClosed_TypedReadinessIneligibilityException_GEN24
+    // below and Gen24BeginnerThreeDayExplicitZeroIneligibilityTests.cs for
+    // the current, correct behavior. No starting-volume default was raised
+    // or invented to achieve this.
 
     public static IEnumerable<object[]> RepresentableHorizonsByReadiness()
     {
@@ -281,64 +279,45 @@ public sealed class Gen23BeginnerThreeDayCoreTests
         Assert.True(taperVolume >= 12.0d - 0.001d);
     }
 
-    // ── Disclosed finding: ExplicitZero is NOT representable at any Core
-    //    horizon -- a separate, out-of-scope starting-volume-policy gap,
-    //    not a defect in this phase's own taper-minima implementation. ──
+    // ── SUPERSEDED BY GEN.24 ─────────────────────────────────────────────
+    //
+    // At the time this phase (GEN.23) was written, ExplicitZero was NOT
+    // representable at any Core horizon, for two distinct raw-exception
+    // reasons depending on horizon (weeks 8-11 failed the taper-eligibility
+    // gate; weeks 12-14 failed the unchanged 12.0km normal-week Week-1
+    // floor via a raw, untyped CatalogSessionPrescriptionInfeasibleException).
+    // This was disclosed honestly as a genuine, separate, undecided
+    // starting-volume-policy gap -- explicitly not "fixed" by this phase.
+    //
+    // GEN.24 (a direct user decision on that disclosed gap) formally
+    // resolved it: explicit-zero readiness for Beginner×3D is now
+    // PRODUCT_INELIGIBLE by an explicit, typed, request-level rejection
+    // (BeginnerThreeDayExplicitZeroReadinessProductIneligibleException,
+    // mirroring GEN.9's Advanced missing/zero mechanism class) thrown at
+    // readiness-resolution time, BEFORE either the taper gate or the
+    // per-week session floor is ever reached -- uniformly, at all 7
+    // horizons, replacing both of the two previously-disclosed raw failure
+    // shapes below with one clean, correctly-classified rejection. No
+    // starting-volume default was raised or invented to achieve this; see
+    // Gen24BeginnerThreeDayExplicitZeroIneligibilityTests.cs for GEN.24's
+    // own full verification.
 
-    /// <summary>
-    /// Real-pipeline finding, not assumed: at every governed Core horizon
-    /// (8-14), Beginner×3D's explicit-zero readiness state is
-    /// PRODUCT_INELIGIBLE. Two distinct, both-honest failure shapes occur
-    /// depending on horizon, both confirmed here rather than assumed to be
-    /// a single uniform shape:
-    /// - Weeks 8-11: growth from the 9.5km explicit-zero start never
-    ///   reaches the 16.0km pre-taper threshold this phase's own binding
-    ///   case requires, so <see cref="CatalogVolumeAndLongRunPlanner"/>'s
-    ///   taper-eligibility gate fires FIRST (before any session-level
-    ///   check), throwing the clean, typed <see cref="BeginnerThreeDayCoreProductIneligibleException"/>.
-    /// - Weeks 12-14: growth over more non-taper weeks DOES clear the
-    ///   taper gate, but week 1 itself is always exactly the 9.5km starting
-    ///   value (independent of horizon) -- below the UNCHANGED 12.0km
-    ///   normal-week 3D floor (<see cref="V1ThreeDaySessionVolumeAllocationPolicy.MinimumKeyKm"/>+<see cref="V1ThreeDaySessionVolumeAllocationPolicy.MinimumEasyKm"/>+<see cref="V1ThreeDaySessionVolumeAllocationPolicy.MinimumLongKm"/>=12.0),
-    ///   which this phase's own explicit constraints forbid altering. This
-    ///   surfaces as a raw, untyped <see cref="CatalogSessionPrescriptionInfeasibleException"/>
-    ///   (via <see cref="DynamicCoreSessionPrescriptionFailedException"/>),
-    ///   NOT the typed product-ineligibility exception -- disclosed here as
-    ///   a real, pre-existing architectural characteristic (the same
-    ///   generic per-week session floor already applies identically to
-    ///   Intermediate×3D; this phase did not introduce it), not something
-    ///   fixed in this phase.
-    /// This gap is NOT closed by inventing a new Beginner×3D-specific
-    /// explicit-zero starting default -- that would be a fresh product/
-    /// numeric decision GEN.21's frozen taper-minima authority did not
-    /// make and this phase has no standing to make unilaterally.
-    /// </summary>
     [Theory]
     [InlineData(8)]
     [InlineData(9)]
     [InlineData(10)]
     [InlineData(11)]
-    public async Task ExplicitZero_ShortHorizons_FailsTaperGate_TypedException(int weeks)
+    [InlineData(12)]
+    [InlineData(13)]
+    [InlineData(14)]
+    public async Task ExplicitZero_AllHorizons_FailsClosed_TypedReadinessIneligibilityException_GEN24(int weeks)
     {
         var candidate = await RealBeginnerThreeDayCandidateAsync();
         var wrapper = await Assert.ThrowsAsync<DynamicCoreVolumeAndLongRunFailedException>(
             () => BuildAsync(candidate, weeks, ReadinessState.ExplicitZero));
-        var ineligible = Assert.IsType<BeginnerThreeDayCoreProductIneligibleException>(wrapper.InnerException);
+        var ineligible = Assert.IsType<BeginnerThreeDayExplicitZeroReadinessProductIneligibleException>(wrapper.InnerException);
         Assert.IsAssignableFrom<CatalogProductIneligibleException>(ineligible);
-        Assert.Equal(BeginnerThreeDayCoreProductIneligibleException.Reason, ineligible.Code);
-    }
-
-    [Theory]
-    [InlineData(12)]
-    [InlineData(13)]
-    [InlineData(14)]
-    public async Task ExplicitZero_LongerHorizons_FailsWeekOneNormalFloor_PreExistingGenericException(int weeks)
-    {
-        var candidate = await RealBeginnerThreeDayCandidateAsync();
-        var wrapper = await Assert.ThrowsAsync<DynamicCoreSessionPrescriptionFailedException>(
-            () => BuildAsync(candidate, weeks, ReadinessState.ExplicitZero));
-        Assert.IsType<CatalogSessionPrescriptionInfeasibleException>(wrapper.InnerException);
-        Assert.Contains("12km 3D direct-prescription floor", wrapper.InnerException!.Message);
+        Assert.Equal(BeginnerThreeDayExplicitZeroReadinessProductIneligibleException.Reason, ineligible.Code);
     }
 
     // ── Ineligibility, for readiness states that ARE representable, is never
