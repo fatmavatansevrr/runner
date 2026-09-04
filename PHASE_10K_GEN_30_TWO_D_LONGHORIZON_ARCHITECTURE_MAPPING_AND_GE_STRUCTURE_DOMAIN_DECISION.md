@@ -170,4 +170,4 @@ Not scheduled as a Phase ID here. Two sequenced next steps: (1) a decision phase
 
 ## 10. Governance
 
-`PHASE_LEDGER.md` row appended (`GEN.30`, commit SHA `PENDING`, backfilled in a follow-up commit per this engagement's two-commit self-referential-SHA pattern). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item (§15, Wave A, item 1) updated to record this phase's mapping and the one disclosed decision gap, superseding its prior "may now begin" framing with the specific blocking item. Two-commit pattern followed. Normal push only — no force, no force-with-lease.
+`PHASE_LEDGER.md` row appended (`GEN.30`, commit SHA `93a6d48`, backfilled in this follow-up commit per this engagement's two-commit self-referential-SHA pattern). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item (§15, Wave A, item 1) updated to record this phase's mapping and the one disclosed decision gap, superseding its prior "may now begin" framing with the specific blocking item. Two-commit pattern followed. Normal push only — no force, no force-with-lease.
