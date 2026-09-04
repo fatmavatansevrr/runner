@@ -197,7 +197,7 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
                     allocation.Allocations,
                     bindings.Select(b => new PreparationRunwayMaterializationBlockBinding<PreparationRunwayBlockType>(
                         b.BlockType, b.Binding, b.ProgressionId, b.ProgressionVersion, b.OrderedProgressionStepNumbers)).ToArray(),
-                    TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
+                    TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(request.Candidate.DaysPerWeek),
                     TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy()),
                 _workoutLoader, ct);
             if (!structural.IsSuccess || structural.Weeks is null)

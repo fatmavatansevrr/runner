@@ -62,13 +62,15 @@ internal static class PreparationRunwayWeekMaterializer
                     return Failure<TKey>(PreparationRunwayWeekMaterializationFailureCode.AnchorRoleIncompatible,
                         $"Block '{allocation.BlockKey}' progression step {progressionStep} maps its single anchor to a repeated support role.", trace);
 
+                var weekRoles = ResolveWeekRoles(request.CanonicalWeeklyLayout, runwayWeekNumber);
+
                 var slots = new List<PreparationRunwayMaterializedWorkoutSlot<TKey>>(4);
                 var roleOrdinals = new Dictionary<PreparationRunwaySlotRole, int>();
                 var anchorUseCount = 0;
 
-                for (var slotIndex = 0; slotIndex < request.CanonicalWeeklyLayout.OrderedRoles.Count; slotIndex++)
+                for (var slotIndex = 0; slotIndex < weekRoles.Count; slotIndex++)
                 {
-                    var slotRole = request.CanonicalWeeklyLayout.OrderedRoles[slotIndex];
+                    var slotRole = weekRoles[slotIndex];
                     roleOrdinals.TryGetValue(slotRole, out var priorRoleCount);
                     var roleOrdinal = priorRoleCount + 1;
                     roleOrdinals[slotRole] = roleOrdinal;
@@ -168,10 +170,30 @@ internal static class PreparationRunwayWeekMaterializer
 
         var layout = request.CanonicalWeeklyLayout;
         if (layout.SourceLayout is null || layout.OrderedRoles is null ||
-            string.IsNullOrWhiteSpace(layout.SourceLayout.Key) || layout.SourceLayout.Version < 1 ||
-            !PreparationRunwayWeeklyShape.IsValid(layout.OrderedRoles))
+            string.IsNullOrWhiteSpace(layout.SourceLayout.Key) || layout.SourceLayout.Version < 1)
+            return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
+                "Canonical weekly layout must declare a source layout and ordered roles.");
+
+        // Phase 10K-GEN.27 -- when a repeating pattern is present (2D Model
+        // B), every pattern entry must independently satisfy the 2D shape;
+        // OrderedRoles itself (retained only as Pattern[0]/provenance for
+        // pre-GEN.27 consumers) is not re-validated against the >=1-EASY
+        // shape it deliberately no longer matches. When absent, byte-identical
+        // to pre-GEN.27 behavior.
+        if (layout.WeeklyPatternRoles is { } patterns)
+        {
+            if (layout.PatternPeriodWeeks != patterns.Count || patterns.Count == 0)
+                return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
+                    "PatternPeriodWeeks must equal WeeklyPatternRoles.Count.");
+            if (patterns.Any(p => !PreparationRunwayWeeklyShape.IsValidTwoDayModelB(p)))
+                return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
+                    "Every WeeklyPatternRoles entry must satisfy the 2D Model B shape (exactly one LONG_RUN, exactly one of KEY_SESSION/EASY_SUPPORT).");
+        }
+        else if (!PreparationRunwayWeeklyShape.IsValid(layout.OrderedRoles))
+        {
             return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
                 "Canonical weekly layout must be exactly one KEY_SESSION, one LONG_RUN, and one or more EASY_SUPPORT slots.");
+        }
 
         var support = request.SupportWorkoutPolicy;
         if (string.IsNullOrWhiteSpace(support.PolicyId) || support.PolicyVersion < 1 ||
@@ -323,11 +345,32 @@ internal static class PreparationRunwayWeekMaterializer
         IReadOnlyList<PreparationRunwayMaterializedWorkoutSlot<TKey>> slots,
         int runwayWeekNumber) where TKey : notnull
     {
-        if (!PreparationRunwayWeeklyShape.IsValid(slots.Select(s => s.SlotRole).ToArray()) ||
+        var roles = slots.Select(s => s.SlotRole).ToArray();
+        if ((!PreparationRunwayWeeklyShape.IsValid(roles) && !PreparationRunwayWeeklyShape.IsValidTwoDayModelB(roles)) ||
             slots.Select(s => s.SlotOrdinal).Distinct().Count() != slots.Count)
             return (PreparationRunwayWeekMaterializationFailureCode.WeekRoleCardinalityViolation,
-                $"Runway week {runwayWeekNumber} does not contain exactly 1 KEY_SESSION, 1 LONG_RUN, and one or more EASY_SUPPORT slots.");
+                $"Runway week {runwayWeekNumber} does not contain a valid structural shape (either the standard 1 KEY_SESSION/1 LONG_RUN/>=1 EASY_SUPPORT shape, or the 2D Model B 1 LONG_RUN + exactly one of KEY_SESSION/EASY_SUPPORT shape).");
         return null;
+    }
+
+    /// <summary>
+    /// Phase 10K-GEN.27 — when the layout has no repeating pattern (every
+    /// pre-GEN.27, non-2D layout), returns <c>OrderedRoles</c> unchanged,
+    /// byte-identical to pre-GEN.27 behavior. Otherwise selects by the
+    /// frozen global week-ordinal sequence (GEN.11 §1/§11, GEN.26 Q1):
+    /// <c>Pattern[(runwayWeekNumber-1) % PatternPeriodWeeks]</c>. Runway has
+    /// no TAPER stage of its own (GEN.11 §5's taper override applies only to
+    /// Core), so unlike Core's own <c>ResolveWeekRoles</c>, there is no
+    /// stage-key override branch here.
+    /// </summary>
+    private static IReadOnlyList<PreparationRunwaySlotRole> ResolveWeekRoles(
+        PreparationRunwayCanonicalWeeklyLayout layout, int runwayWeekNumber)
+    {
+        if (layout.WeeklyPatternRoles is not { } patterns)
+            return layout.OrderedRoles;
+
+        var patternIndex = (runwayWeekNumber - 1) % layout.PatternPeriodWeeks!.Value;
+        return patterns[patternIndex];
     }
 
     private static bool ValidReference(PreparationRunwayWorkoutReference reference) =>

@@ -365,7 +365,7 @@ public sealed class PreparationRunwayWeekMaterializerTests
             TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(4),
             allocationResult.Allocations!,
             bindings,
-            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
+            TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(4),
             TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy());
         return (request, allocationResult.Allocations!);
     }

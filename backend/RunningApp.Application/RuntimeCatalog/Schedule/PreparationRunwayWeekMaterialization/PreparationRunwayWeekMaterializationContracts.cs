@@ -23,7 +23,26 @@ internal enum PreparationRunwayWorkoutSlotSource
 
 internal sealed record PreparationRunwayCanonicalWeeklyLayout(
     PlanCatalogReference SourceLayout,
-    IReadOnlyList<PreparationRunwaySlotRole> OrderedRoles);
+    IReadOnlyList<PreparationRunwaySlotRole> OrderedRoles,
+    /// <summary>
+    /// Phase 10K-GEN.27 — the layout's optional repeating multi-week
+    /// pattern, the Preparation-Runway-side analog of
+    /// <c>CatalogRunLayoutSlots.WeeklyPatternRoles</c> (GEN.12, Core's own
+    /// repeating-pattern fix). Null for every pre-GEN.27 (non-2D) layout —
+    /// when null, every week uses <see cref="OrderedRoles"/> unchanged,
+    /// byte-identical to pre-GEN.27 behavior. When non-null, a given
+    /// Runway week's roles are selected by
+    /// <c>Pattern[(runwayWeekNumber-1) % PatternPeriodWeeks]</c> — the same
+    /// frozen global week-ordinal convention GEN.11 §1/§11 established and
+    /// GEN.26 Q1 confirmed reuses the existing <c>GlobalWeekNumber</c>
+    /// mechanism (for a standalone 15-20wk Runway product with no preceding
+    /// GE segment, the Runway materializer's own contiguous
+    /// <c>runwayWeekNumber</c>, starting at 1, already *is* the global
+    /// ordinal — no separate offset is threaded here).
+    /// </summary>
+    IReadOnlyList<IReadOnlyList<PreparationRunwaySlotRole>>? WeeklyPatternRoles = null,
+    /// <summary>Phase 10K-GEN.27 — verbatim companion to <see cref="WeeklyPatternRoles"/>. Null iff it is null.</summary>
+    int? PatternPeriodWeeks = null);
 
 /// <summary>
 /// Phase 10K-FREQ.6D.7 — the single, shared definition of a structurally
@@ -54,6 +73,23 @@ internal static class PreparationRunwayWeeklyShape
         roles.Count(r => r == PreparationRunwaySlotRole.LongRun) == 1 &&
         roles.Count(r => r == PreparationRunwaySlotRole.EasySupport) == roles.Count - 2 &&
         ApprovedEasySupportCounts.Contains(roles.Count(r => r == PreparationRunwaySlotRole.EasySupport));
+
+    /// <summary>
+    /// Phase 10K-GEN.27 — 2D's own Model B shape (GEN.11 §1, GEN.26 Q2
+    /// Hypothesis (a)): exactly one <see cref="PreparationRunwaySlotRole.LongRun"/>,
+    /// and exactly one of {<see cref="PreparationRunwaySlotRole.KeySession"/>,
+    /// <see cref="PreparationRunwaySlotRole.EasySupport"/>} (never both,
+    /// never neither) making up the remaining single slot. This is a
+    /// distinct, explicitly-named shape — never silently merged into
+    /// <see cref="IsValid"/>'s own "always exactly 1 KEY + >=1 EASY"
+    /// invariant, which 2D's Pattern B (0 KEY) and Pattern A (0 EASY) weeks
+    /// each genuinely violate by design.
+    /// </summary>
+    public static bool IsValidTwoDayModelB(IReadOnlyList<PreparationRunwaySlotRole> roles) =>
+        roles.Count == 2 &&
+        roles.Count(r => r == PreparationRunwaySlotRole.LongRun) == 1 &&
+        roles.Count(r => r == PreparationRunwaySlotRole.KeySession) +
+        roles.Count(r => r == PreparationRunwaySlotRole.EasySupport) == 1;
 }
 
 /// <summary>

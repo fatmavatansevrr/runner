@@ -280,7 +280,7 @@ internal static class LongHorizonStructuralMaterializer
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(daysPerWeek),
                 allocationResult.Allocations,
                 bindings,
-                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
+                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(daysPerWeek),
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy()),
             workoutLoader, ct);
 

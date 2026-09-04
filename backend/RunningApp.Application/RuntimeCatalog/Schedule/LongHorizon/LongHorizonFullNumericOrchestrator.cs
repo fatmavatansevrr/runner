@@ -264,7 +264,7 @@ internal static class LongHorizonFullNumericOrchestrator
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.AllocationPolicyVersion,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildLayout(candidate.DaysPerWeek),
                 allocationResult.Allocations, bindings,
-                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(),
+                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(candidate.DaysPerWeek),
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy()),
             workoutLoader, ct);
 
