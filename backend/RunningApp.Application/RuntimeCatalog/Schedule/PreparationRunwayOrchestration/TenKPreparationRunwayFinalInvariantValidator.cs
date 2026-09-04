@@ -51,8 +51,18 @@ internal sealed class TenKPreparationRunwayFinalInvariantValidator : ITenKPrepar
                                   bindings.Count(b => b.BlockType == a.BlockKey) == 1);
         if (!allocationExact) findings.Add("ALLOCATION_OR_POSITIVE_BLOCK_CLOSURE_MISMATCH");
 
+        // Phase 10K-GEN.29 -- same "not every caller shape considered"
+        // defect family found repeated instances of elsewhere this phase:
+        // this final cross-component invariant check previously consulted
+        // only PreparationRunwayWeeklyShape.IsValid, which would mark every
+        // real 2D Model B week STRUCTURAL_WEEK_OR_ROLE_CARDINALITY_MISMATCH.
+        // Zero-delta for every pre-GEN.29 (non-2D) week.
         var structuralExact = structuralWeeks.Count == runwayWeeks &&
-                              structuralWeeks.All(w => PreparationRunwayWeeklyShape.IsValid(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray()));
+                              structuralWeeks.All(w =>
+                              {
+                                  var roles = w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray();
+                                  return PreparationRunwayWeeklyShape.IsValid(roles) || PreparationRunwayWeeklyShape.IsValidTwoDayModelB(roles);
+                              });
         if (!structuralExact) findings.Add("STRUCTURAL_WEEK_OR_ROLE_CARDINALITY_MISMATCH");
 
         var numericExact = numeric.IsSuccess && numeric.ContinuityAnalysis?.IsWithinTolerance == true &&

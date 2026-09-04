@@ -36,10 +36,17 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog.Schedule.PreparationRunwayW
 /// specifically, and fails <see cref="PreparationRunwayWeekMaterializer"/>'s
 /// own family-compatibility check when forced onto LONG_RUN.
 /// <see cref="TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies"/>
-/// therefore throws for <c>daysPerWeek == 2</c> rather than returning a
-/// plausible-looking-but-wrong policy -- this is the real, newly-confirmed
-/// (not merely theorized) architecture question left for a dedicated design
-/// phase: see this phase's own governance report. This file does NOT
+/// (at the time this file was written) therefore threw for
+/// <c>daysPerWeek == 2</c> rather than returning a plausible-looking-but-
+/// wrong policy -- the real, newly-confirmed (not merely theorized)
+/// architecture question this left open was resolved by GEN.28 §9
+/// (Candidate C) and implemented by GEN.29 (role-conditioned Pattern-A/
+/// Pattern-B content selection inside <see cref="PreparationRunwayWeekMaterializer"/>
+/// itself); <c>BuildBlockRolePolicies(2)</c> no longer throws (see this
+/// class's own updated test below), and <c>Gen29TwoDayRunwayBlockRoleReconciliationTests</c>
+/// covers the resolved behavior end-to-end. This file's own GeneralEndurance-
+/// only scenario is preserved unchanged since GeneralEndurance had zero
+/// reconciliation conflict to begin with (GEN.28 §3). This file does NOT
 /// exercise <c>TenKPreparationRunwayNumericPolicyFactory</c>, the
 /// Preparation Runway calendar composer, real PostgreSQL persistence, or
 /// the combined Runway+Core plan orchestrator -- all confirmed still
@@ -104,18 +111,26 @@ public sealed class Gen27TwoDayPreparationRunwayDarkVerificationTests
     }
 
     [Fact]
-    public void TwoDayBlockRolePolicies_ThrowsRatherThanSilentlyMisplacingRealAnchorContent()
+    public void TwoDayBlockRolePolicies_NoLongerThrows_GEN29ResolvedTheReconciliation()
     {
-        // Regression guard for this phase's own empirically-discovered gap
-        // (see this file's class-level doc comment and the phase report):
-        // forcing every progression step's anchor onto LONG_RUN for 2D was
-        // attempted, found to break real QUALITY/EASY-family anchor content
-        // for Consistency/AerobicStrength/PreSpecificTransition, and
-        // deliberately left as an explicit throw rather than a
-        // plausible-looking-but-wrong default.
-        var ex = Assert.Throws<NotSupportedException>(
-            () => TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(2));
-        Assert.Contains("LONG_RUN", ex.Message);
+        // Phase 10K-GEN.29 superseded this guard: GEN.28 §9 (Candidate C) and
+        // this phase's frozen AerobicStrength governing decision resolved the
+        // anchor/content-family reconciliation this test used to guard as an
+        // open gap. BuildBlockRolePolicies(2) now returns the same,
+        // frequency-independent block-role policy set every other frequency
+        // already uses -- the real fix lives in
+        // PreparationRunwayWeekMaterializer's role-conditioned Pattern-A/
+        // Pattern-B content selection, not in this policy. See
+        // Gen29TwoDayRunwayBlockRoleReconciliationTests for the full,
+        // GEN.28 §15-required test contract covering the actual resolution.
+        var policies = TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(2);
+        var fourDayPolicies = TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(4);
+        Assert.Equal(fourDayPolicies.Count, policies.Count);
+        foreach (var block in fourDayPolicies)
+        {
+            var twoDay = policies.Single(p => p.BlockKey == block.BlockKey);
+            Assert.Equal(block.AnchorRoleByProgressionStep, twoDay.AnchorRoleByProgressionStep);
+        }
     }
 
     [Fact]

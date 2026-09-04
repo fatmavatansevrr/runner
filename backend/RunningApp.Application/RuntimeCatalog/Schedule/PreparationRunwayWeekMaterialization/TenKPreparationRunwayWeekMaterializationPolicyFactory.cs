@@ -112,47 +112,27 @@ internal static class TenKPreparationRunwayWeekMaterializationPolicyFactory
     /// pre-GEN.27 parameterless overload (verified: literal dictionary
     /// values unchanged).
     ///
-    /// 2D (<c>daysPerWeek == 2</c>) deliberately throws rather than returning
-    /// a policy — this phase attempted, then empirically disproved via a
-    /// real dark-verification test against the real block-progression
-    /// catalog (<c>Gen27TwoDayPreparationRunwayDarkVerificationTests</c>),
-    /// the hypothesis that every progression step's anchor could uniformly
-    /// map to <see cref="PreparationRunwaySlotRole.LongRun"/> (reasoning:
-    /// 2D's Pattern B weeks have no KEY_SESSION slot to anchor onto, and
-    /// LONG_RUN exists in every week regardless of pattern letter). The real
-    /// catalog content disproves this: <c>TEN_K_CONSISTENCY_PROGRESSION</c>
-    /// step 1's anchor and <c>TEN_K_AEROBIC_STRENGTH_PROGRESSION</c>'s
-    /// anchors are real EASY/QUALITY-family workouts (e.g. the literally
-    /// Runway-owned-controlled-intensity <c>AEROBIC_STRENGTH_CONTROLLED_INTRO</c>)
-    /// authored to occupy the KEY_SESSION role specifically — forcing them
-    /// onto LONG_RUN fails <c>PreparationRunwayWeekMaterializer</c>'s own
-    /// family-compatibility check (LONG_RUN role requires LONG_RUN family).
-    /// Redirecting that same content to the KEY_SESSION slot instead does
-    /// not resolve it either: those blocks' anchor-bearing progression steps
-    /// have no guarantee of landing on a Pattern A (global-odd) week, and a
-    /// Pattern B week has no KEY_SESSION slot at all to place them in. This
-    /// is a genuine, now empirically-confirmed architecture question this
-    /// phase has no standing to invent unilaterally (does the block/calendar
-    /// allocation need to be constrained so quality-anchor-bearing weeks
-    /// always land on Pattern A; does the family-compatibility rule need a
-    /// product-approved exception; or does 2D need its own block-role model
-    /// entirely) — matching the exact STOP discipline <see cref="GEN_19_STOP_PRECEDENT"/>
-    /// documents. Left as a hard, documented throw rather than a
-    /// plausible-looking-but-wrong silent default.
+    /// Phase 10K-GEN.29 — the block-relative <c>AnchorRoleByProgressionStep</c>
+    /// mapping below (which progression step anchors which structural role)
+    /// was never actually frequency-dependent; it is purely a function of a
+    /// block's own progression shape. GEN.27's <c>daysPerWeek == 2</c> throw
+    /// stood only because, before GEN.28/GEN.29, there was no reconciliation
+    /// for what happens when a block-local week's fixed anchor role (e.g.
+    /// KeySession) is not present in a given week's *resolved* A/B pattern
+    /// shape (a Pattern B week has no KEY_SESSION slot). GEN.28 §9 (Candidate
+    /// C) and this phase's frozen governing decision close that gap with
+    /// role-conditioned content selection inside
+    /// <see cref="PreparationRunwayWeekMaterialization.PreparationRunwayWeekMaterializer"/>
+    /// itself (redirecting to a catalog-declared EASY_SUPPORT-role
+    /// alternate when the fixed anchor role is absent from the week's
+    /// resolved shape) — not by varying this policy. This method therefore
+    /// no longer branches on <c>daysPerWeek</c> at all: the same block-role
+    /// policy set is correct for every frequency including 2D, and
+    /// <paramref name="daysPerWeek"/> is retained only for call-site/
+    /// provenance-signature compatibility.
     /// </summary>
-    private const string GEN_19_STOP_PRECEDENT =
-        "See PHASE_10K_GEN_19_2D_PREPARATION_RUNWAY_LONGHORIZON_ARCHITECTURE_GAP_CONFIRMATION.md §2 and " +
-        "PHASE_10K_GEN_27_TWO_D_PREPARATION_RUNWAY_REPEATING_PATTERN_IMPLEMENTATION.md for the full disclosure.";
-
     public static IReadOnlyList<PreparationRunwayBlockWeekRolePolicy<PreparationRunwayBlockType>> BuildBlockRolePolicies(int daysPerWeek) =>
-        daysPerWeek == 2
-            ? throw new NotSupportedException(
-                "2D Preparation Runway block-role anchor policy is not yet defined: forcing every progression " +
-                "step's anchor onto LONG_RUN was attempted and empirically disproved (real QUALITY/EASY-family " +
-                "block-progression anchor content is incompatible with the LONG_RUN role, and re-targeting it to " +
-                "KEY_SESSION does not resolve it either, since KEY_SESSION does not exist on every week under " +
-                "2D's own frozen A/B pattern). " + GEN_19_STOP_PRECEDENT)
-            : [
+            [
                 new(PreparationRunwayBlockType.Consistency, 1, BlockRolePolicyId, BlockRolePolicyVersion, new Dictionary<int, PreparationRunwaySlotRole>
                 {
                     [1] = PreparationRunwaySlotRole.KeySession,

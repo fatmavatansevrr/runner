@@ -128,12 +128,16 @@ public static class V1CatalogPilotIdentityPolicy
     /// Phase 10K-GEN.20 public activation -- Core only, restricted to 10-14
     /// weeks by <c>V1LiveCatalogPilotRoutingPolicy</c>'s own explicit 8/9-week
     /// fail-closed check (<see cref="RunningApp.Application.RuntimeCatalog.PreviewRouting.V1LiveCatalogPilotRoutingPolicy"/>).
-    /// Deliberately NOT added to <see cref="IsSupportedPreparationRunwayLevelFrequency"/>
-    /// or <see cref="IsSupportedPreparationRunwayCandidate"/> -- Preparation
-    /// Runway and LongHorizon remain architecturally unimplemented for 2D
-    /// (GEN.19's confirmed repeating-pattern architecture gap), so no public
-    /// or internal-dark path may treat a 2D candidate as Runway/LongHorizon
-    /// eligible.
+    /// Phase 10K-GEN.29 -- <see cref="IsSupportedPreparationRunwayCandidate"/>
+    /// now recognizes both of these keys (GEN.27/GEN.28's repeating-pattern
+    /// mechanism and block-role reconciliation, implemented this phase),
+    /// but that is the internal dark-consistency check only.
+    /// <see cref="IsSupportedPreparationRunwayLevelFrequency"/> (and
+    /// therefore <see cref="IsSupportedPreparationRunwayIdentity"/>, the
+    /// real public gate) is deliberately still NOT widened -- 2D Preparation
+    /// Runway remains dark-only pending its own dedicated public-activation
+    /// phase; LongHorizon for 2D remains additionally gated on GEN.28 §13's
+    /// five-item start condition, not yet met.
     /// </summary>
     public const string TwoDayBeginnerCandidateKey = "TEN_K__2D__BEGINNER";
     public const int TwoDayBeginnerCandidateVersion = 1;
@@ -311,6 +315,17 @@ public static class V1CatalogPilotIdentityPolicy
     /// remain untouched) -- it only governs whether the shared dark
     /// Preparation Runway orchestrator recognizes an already-resolved
     /// candidate key/version as internally consistent.
+    ///
+    /// Phase 10K-GEN.29 -- widened again to admit the 2D Beginner/
+    /// Intermediate candidates (<see cref="TwoDayBeginnerCandidateKey"/>/
+    /// <see cref="TwoDayIntermediateCandidateKey"/>), implementing the
+    /// GEN.28 §9/§14 approved block-role reconciliation mechanism plus this
+    /// phase's frozen AerobicStrength content decision. Still not the public
+    /// gate -- <see cref="IsSupportedPreparationRunwayLevelFrequency"/>/
+    /// <see cref="IsSupportedPreparationRunwayIdentity"/> are deliberately
+    /// left untouched, so no public routing path treats a 2D candidate as
+    /// Runway-eligible; only the dark orchestrator's own internal identity
+    /// check changes.
     /// </summary>
     public static bool IsSupportedPreparationRunwayCandidate(string candidateKey, int candidateVersion) =>
         (candidateKey, candidateVersion) is
@@ -320,5 +335,7 @@ public static class V1CatalogPilotIdentityPolicy
             (AdvancedThreeDayCandidateKey, AdvancedThreeDayCandidateVersion) or
             (AdvancedFourDayCandidateKey, AdvancedFourDayCandidateVersion) or
             (AdvancedFiveDayCandidateKey, AdvancedFiveDayCandidateVersion) or
-            (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion);
+            (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion) or
+            (TwoDayBeginnerCandidateKey, TwoDayBeginnerCandidateVersion) or
+            (TwoDayIntermediateCandidateKey, TwoDayIntermediateCandidateVersion);
 }

@@ -33,15 +33,33 @@ internal static class PreparationRunwayCoreWeekOneTargetAdapter
         }
 
         var keySessionCount = firstPrescribedWeek.Sessions.Count(s => s.StructuralRole == "KEY_SESSION");
+        // Phase 10K-GEN.29 -- this previously relied on Allocate's default
+        // easySupportCount=2 rather than reading the real Core Week 1
+        // EASY_SUPPORT count, then unconditionally emitted exactly two
+        // EasySupport slot targets (FirstEasySupportDistanceKm/
+        // SecondEasySupportDistanceKm) regardless of how many EASY_SUPPORT
+        // sessions the real week actually has. Every pre-GEN.29 frequency's
+        // real Core Week 1 happens to have exactly 2 EASY_SUPPORT sessions,
+        // so this was a coincidentally-correct hardcode, not a verified
+        // invariant -- exactly the "not every caller shape considered"
+        // family GEN.10/GEN.20/GEN.27/GEN.28 already found repeated
+        // instances of. 2D's real Core Week 1 (RUN_LAYOUT_2D: 1 KEY + 1
+        // LONG) has zero EASY_SUPPORT sessions. Reading the real count and
+        // emitting exactly that many EasySupport targets generalizes this
+        // the same way KeySessionCount was already generalized (FREQ.6D.7)
+        // -- byte-identical for every pre-GEN.29 caller (always 2 there).
+        var easySupportCount = firstPrescribedWeek.Sessions.Count(s => s.StructuralRole == "EASY_SUPPORT");
         var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(
-            weekly.PlannedWeeklyVolumeKm, longRun.PlannedLongRunDistanceKm, keySessionCount);
-        var slots = new List<PreparationRunwayCoreWeekOneSlotTarget>(allocation.KeySessionDistancesKm.Count + 3);
+            weekly.PlannedWeeklyVolumeKm, longRun.PlannedLongRunDistanceKm, keySessionCount, easySupportCount);
+        var slots = new List<PreparationRunwayCoreWeekOneSlotTarget>(allocation.KeySessionDistancesKm.Count + allocation.EasySupportDistancesKm.Count + 1);
         for (var i = 0; i < allocation.KeySessionDistancesKm.Count; i++)
         {
             slots.Add(new PreparationRunwayCoreWeekOneSlotTarget(PreparationRunwaySlotRole.KeySession, i + 1, allocation.KeySessionDistancesKm[i]));
         }
-        slots.Add(new PreparationRunwayCoreWeekOneSlotTarget(PreparationRunwaySlotRole.EasySupport, 1, allocation.FirstEasySupportDistanceKm));
-        slots.Add(new PreparationRunwayCoreWeekOneSlotTarget(PreparationRunwaySlotRole.EasySupport, 2, allocation.SecondEasySupportDistanceKm));
+        for (var i = 0; i < allocation.EasySupportDistancesKm.Count; i++)
+        {
+            slots.Add(new PreparationRunwayCoreWeekOneSlotTarget(PreparationRunwaySlotRole.EasySupport, i + 1, allocation.EasySupportDistancesKm[i]));
+        }
         slots.Add(new PreparationRunwayCoreWeekOneSlotTarget(PreparationRunwaySlotRole.LongRun, 1, allocation.LongRunDistanceKm));
 
         return new PreparationRunwayCoreWeekOneNumericTarget(

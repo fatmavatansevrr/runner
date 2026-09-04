@@ -338,10 +338,29 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
         // IsSupportedPreparationRunwayCandidate above is the real identity
         // gate; this Level check is a redundant defense-in-depth guard that
         // must agree with it, not a second independent authority.
+        //
+        // Phase 10K-GEN.29 -- GEN.11 §4 already froze Preparation Runway
+        // (15-20wk) as SUPPORTED for both levels (Beginner and Intermediate
+        // identically); GEN.28 §10 reconfirmed this gate's unconditional
+        // `Level is not (...)` exclusion of Beginner was a pure
+        // implementation defect (the gate simply never accounted for
+        // Beginner as a valid caller shape), not a missing product decision.
+        // Widened narrowly: Beginner ("NEW", the catalog's own experience
+        // label, GEN.4A) is admitted only when DaysPerWeek==2 -- Beginner
+        // x3D/x4D Preparation Runway/LongHorizon were never designed or
+        // approved by any prior phase (see V1CatalogPilotIdentityPolicy's
+        // TwoDayBeginnerCandidateKey/ThreeDayBeginnerCandidateKey doc
+        // comments) and must remain excluded here.
+        var levelSupported = request.Candidate.Level switch
+        {
+            "INTERMEDIATE" or "ADVANCED" => true,
+            "NEW" => request.Candidate.DaysPerWeek == 2,
+            _ => false,
+        };
         if (!PreviewRouting.V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayCandidate(request.Candidate.CandidateKey, request.Candidate.CandidateVersion) ||
-            request.Candidate.CanonicalDistanceFamily != "TEN_K" || request.Candidate.Level is not ("INTERMEDIATE" or "ADVANCED") ||
+            request.Candidate.CanonicalDistanceFamily != "TEN_K" || !levelSupported ||
             request.Candidate.CoreCycle.DefaultWeeks != 12 || request.Candidate.CoreCycle.MaximumWeeks is null)
-            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Intermediate 4D/5D/6D and Advanced 3D/4D/5D/6D Preparation Runway candidates are supported.");
+            return (TenKPreparationRunwayOrchestrationFailureCode.CandidateNotSupported, "Only the approved TEN_K Beginner/Intermediate 2D, Intermediate 4D/5D/6D, and Advanced 3D/4D/5D/6D Preparation Runway candidates are supported.");
         if (!request.ConditionResults.Any(r => ReferenceEquals(r, request.CoreEntryReadinessResult)))
             return (TenKPreparationRunwayOrchestrationFailureCode.InvalidOrchestrationRequest, "The readiness result must be the same resolved object carried into Core ConditionResults.");
         // Phase 10K-GEN.10 defect fix: this compared PreviewRequest/ResolverInput.Level
@@ -350,7 +369,19 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
         // silently rejecting every real Advanced Runway request as
         // InvalidOrchestrationRequest. Compare against the candidate's own
         // resolved Level instead of a hardcoded constant.
-        var expectedLevel = request.Candidate.Level == "ADVANCED" ? RunningBackground.Advanced : RunningBackground.Intermediate;
+        // Phase 10K-GEN.29 -- same defect family, now for "NEW" (Beginner):
+        // this two-way ternary had no branch for Beginner at all, so it
+        // would have silently mismatched every real Beginner x2D Runway
+        // request against a hardcoded Intermediate expectation the moment
+        // the admission gate above was widened. GEN.4A's frozen vocabulary
+        // decision is the exact translation authority: catalog "NEW" <->
+        // backend RunningBackground.Beginner.
+        var expectedLevel = request.Candidate.Level switch
+        {
+            "ADVANCED" => RunningBackground.Advanced,
+            "NEW" => RunningBackground.Beginner,
+            _ => RunningBackground.Intermediate,
+        };
         if (request.PreviewRequest.StartDate != request.StartDate || request.PreviewRequest.RaceDate != request.RaceDate ||
             request.ResolverInput.StartDate != request.StartDate || request.ResolverInput.RaceDate != request.RaceDate ||
             request.ResolverInput.CanonicalDistanceFamily != request.Candidate.CanonicalDistanceFamily ||

@@ -13,7 +13,8 @@
       "stepOrder": 1,
       "stepKey": "PRE_SPECIFIC_TRANSITION_STEP_1",
       "workoutCandidates": [
-        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5 }
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5 },
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5, "role": "EASY_SUPPORT" }
       ]
     }
   ]

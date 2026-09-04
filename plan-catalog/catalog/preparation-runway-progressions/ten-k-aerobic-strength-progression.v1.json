@@ -13,14 +13,16 @@
       "stepOrder": 1,
       "stepKey": "AEROBIC_STRENGTH_STEP_1_INTRO",
       "workoutCandidates": [
-        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 1 }
+        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_INTRO", "version": 1 },
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5, "role": "EASY_SUPPORT" }
       ]
     },
     {
       "stepOrder": 2,
       "stepKey": "AEROBIC_STRENGTH_STEP_2_PROGRESSED",
       "workoutCandidates": [
-        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_PROGRESSED", "version": 1 }
+        { "documentType": "WORKOUT_DEFINITION", "key": "AEROBIC_STRENGTH_CONTROLLED_PROGRESSED", "version": 1 },
+        { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 5, "role": "EASY_SUPPORT" }
       ]
     }
   ]

@@ -109,14 +109,26 @@ internal static class PreparationRunwayNumericMaterializer
                         $"Week {weeks[index].RunwayWeekNumber} long-run share {share:P2} is outside the approved range.", trace);
                 }
 
-                // Runway itself always has exactly one KEY_SESSION (FREQ.6D.6: dual KEY begins
-                // only at real Core Week 1); the EASY_SUPPORT count is read from the real
-                // materialized layout width so it generalizes to any approved Runway shape.
+                // Runway itself always has exactly one KEY_SESSION for every
+                // pre-GEN.29 shape (FREQ.6D.6: dual KEY begins only at real
+                // Core Week 1); the EASY_SUPPORT count is read from the real
+                // materialized layout width so it generalizes to any approved
+                // Runway shape. Phase 10K-GEN.29 -- this call previously never
+                // passed keySessionCount, always defaulting to 1 even on a 2D
+                // Pattern-B week (which has zero KEY_SESSION slots): the
+                // allocator would then silently reserve volume for a KEY
+                // session that no slot in the week actually has, producing a
+                // rounded-slot-sum shortfall against the weekly total (the
+                // very next invariant check below). Reading keySessionCount
+                // from the real materialized week, exactly like
+                // easySupportCount already does, fixes this -- byte-identical
+                // for every pre-GEN.29 shape (always exactly 1 there).
+                var keySessionCount = weeks[index].OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.KeySession);
                 var easySupportCount = weeks[index].OrderedWorkoutSlots.Count(s => s.SlotRole == PreparationRunwaySlotRole.EasySupport);
                 FourDaySessionDistanceAllocation allocation;
                 try
                 {
-                    allocation = FourDaySessionDistanceAllocationPolicy.Allocate(weekly, longRun, easySupportCount: easySupportCount);
+                    allocation = FourDaySessionDistanceAllocationPolicy.Allocate(weekly, longRun, keySessionCount: keySessionCount, easySupportCount: easySupportCount);
                 }
                 catch (CatalogSessionPrescriptionInfeasibleException exception)
                 {
@@ -194,9 +206,21 @@ internal static class PreparationRunwayNumericMaterializer
         if (request.MaterializedWeeks.Count is < 3 or > 8)
             return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Runway must contain 3..8 full weeks.");
         var ordered = request.MaterializedWeeks.OrderBy(w => w.RunwayWeekNumber).ToArray();
+        // Phase 10K-GEN.29 -- this shape check previously consulted only
+        // PreparationRunwayWeeklyShape.IsValid (the standard 1 KEY + 1 LONG +
+        // N EASY shape), rejecting every real 2D Model B week (GEN.11 §1:
+        // exactly 1 LONG_RUN + exactly one of {KEY_SESSION, EASY_SUPPORT}) --
+        // the same "not every caller shape considered" defect family
+        // GEN.10/GEN.20/GEN.27/GEN.28 already found repeated instances of,
+        // here in the numeric-materialization layer specifically. Mirrors
+        // PreparationRunwayWeekMaterializer.ValidateWeekCardinality's own
+        // already-correct dual-shape check exactly. Zero-delta for every
+        // pre-GEN.29 (non-2D) week: IsValid alone already accepted them, and
+        // IsValidTwoDayModelB never matches a >2-slot week.
         if (!ordered.Select(w => w.RunwayWeekNumber).SequenceEqual(Enumerable.Range(1, ordered.Length)) ||
-            ordered.Any(w => !PreparationRunwayWeeklyShape.IsValid(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray())))
-            return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Structural weeks must be contiguous, canonical-shape (1 KEY + 1 LONG + N EASY) weeks.");
+            ordered.Any(w => !PreparationRunwayWeeklyShape.IsValid(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray()) &&
+                              !PreparationRunwayWeeklyShape.IsValidTwoDayModelB(w.OrderedWorkoutSlots.Select(s => s.SlotRole).ToArray())))
+            return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "Structural weeks must be contiguous, canonical-shape (1 KEY + 1 LONG + N EASY, or the 2D Model B 1 LONG + exactly one of KEY/EASY) weeks.");
         if (!string.Equals(ordered[^1].BlockType?.ToString(), "PreSpecificTransition", StringComparison.Ordinal))
             return (PreparationRunwayNumericMaterializationFailureCode.InvalidNumericMaterializationRequest, "The terminal week must be PreSpecificTransition.");
         var target = request.CoreWeekOneTarget;

@@ -74,6 +74,8 @@ internal static class PreparationRunwayBlockWorkoutBindingEngine
                 return Failure<TKey>(PreparationRunwayWorkoutBindingFailureCode.InvalidProgressionOrder, $"Step number {step.StepNumber} must be positive.", trace);
             if (string.IsNullOrWhiteSpace(step.WorkoutId) || step.WorkoutVersion < 1)
                 return Failure<TKey>(PreparationRunwayWorkoutBindingFailureCode.InvalidProgressionOrder, $"Step {step.StepNumber} has an invalid workout reference.", trace);
+            if (step.PatternBEasySupportReference is { } alt && (string.IsNullOrWhiteSpace(alt.WorkoutId) || alt.WorkoutVersion < 1))
+                return Failure<TKey>(PreparationRunwayWorkoutBindingFailureCode.InvalidProgressionOrder, $"Step {step.StepNumber} has an invalid Pattern-B alternate workout reference.", trace);
         }
 
         var stepNumbers = definition.OrderedSteps.Select(s => s.StepNumber).ToArray();
@@ -102,8 +104,14 @@ internal static class PreparationRunwayBlockWorkoutBindingEngine
                 $"AllocatedWeeks={request.AllocatedWeeks} exceeds the progression's own capacity of {canonicalSteps.Length} step(s).", trace);
 
         // ── Step 5: select exact prefix ───────────────────────────────────
-        var selected = canonicalSteps.Take(request.AllocatedWeeks)
+        var prefixSteps = canonicalSteps.Take(request.AllocatedWeeks).ToArray();
+        var selected = prefixSteps
             .Select(s => new PreparationRunwayWorkoutReference(s.WorkoutId, s.WorkoutVersion))
+            .ToArray();
+        // Phase 10K-GEN.29 -- index-aligned with `selected`; null where the
+        // step declares no role-conditioned Pattern-B alternate.
+        var selectedAlternates = prefixSteps
+            .Select(s => s.PatternBEasySupportReference)
             .ToArray();
 
         // ── Step 7 (final invariant validation; Step 6 -- catalog-aware
@@ -115,7 +123,7 @@ internal static class PreparationRunwayBlockWorkoutBindingEngine
 
         trace.Add($"Selected: {string.Join(",", selected.Select(r => $"{r.WorkoutId}v{r.WorkoutVersion}"))}");
         return PreparationRunwayBlockWorkoutBindingResult<TKey>.Success(
-            new PreparationRunwayBlockWorkoutBinding<TKey>(request.BlockKey, request.AllocatedWeeks, selected), trace);
+            new PreparationRunwayBlockWorkoutBinding<TKey>(request.BlockKey, request.AllocatedWeeks, selected, selectedAlternates), trace);
     }
 
     private static PreparationRunwayBlockWorkoutBindingResult<TKey> Failure<TKey>(
@@ -126,11 +134,18 @@ internal static class PreparationRunwayBlockWorkoutBindingEngine
     }
 }
 
-/// <summary>A single ordered progression step: which whole workout document to use.</summary>
+/// <summary>
+/// A single ordered progression step: which whole workout document to use.
+/// <see cref="PatternBEasySupportReference"/> (Phase 10K-GEN.29) is the
+/// optional, role-conditioned Pattern-B alternate content (GEN.28 §9
+/// Candidate C) — null for every step that declares only a single,
+/// untagged catalog candidate (byte-identical to pre-GEN.29 behavior).
+/// </summary>
 internal sealed record PreparationRunwayBlockProgressionStep(
     int StepNumber,
     string WorkoutId,
-    int WorkoutVersion);
+    int WorkoutVersion,
+    PreparationRunwayWorkoutReference? PatternBEasySupportReference = null);
 
 /// <summary>
 /// A canonical, ordered progression mapping for one block. Generic over an
@@ -156,11 +171,19 @@ internal sealed record PreparationRunwayBlockWorkoutBindingRequest<TKey>(
 /// <summary>One resolved workout reference (key + version) -- not a full workout document.</summary>
 internal sealed record PreparationRunwayWorkoutReference(string WorkoutId, int WorkoutVersion);
 
-/// <summary>Successful binding output. OrderedWorkoutReferences.Count always equals AllocatedWeeks.</summary>
+/// <summary>
+/// Successful binding output. OrderedWorkoutReferences.Count always equals
+/// AllocatedWeeks. <see cref="OrderedPatternBEasySupportReferences"/>
+/// (Phase 10K-GEN.29), when present, is index-aligned with
+/// <see cref="OrderedWorkoutReferences"/> and carries each step's optional
+/// role-conditioned Pattern-B alternate (null entries where a step declares
+/// none) — null as a whole for every pre-GEN.29 caller (byte-identical).
+/// </summary>
 internal sealed record PreparationRunwayBlockWorkoutBinding<TKey>(
     TKey BlockKey,
     int AllocatedWeeks,
-    IReadOnlyList<PreparationRunwayWorkoutReference> OrderedWorkoutReferences) where TKey : notnull;
+    IReadOnlyList<PreparationRunwayWorkoutReference> OrderedWorkoutReferences,
+    IReadOnlyList<PreparationRunwayWorkoutReference?>? OrderedPatternBEasySupportReferences = null) where TKey : notnull;
 
 internal enum PreparationRunwayWorkoutBindingFailureCode
 {

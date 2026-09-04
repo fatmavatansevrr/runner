@@ -224,7 +224,20 @@ internal sealed class PreparationRunwayCalendarComposer
             return (PreparationRunwayCalendarCompositionFailureCode.SegmentOrderInvalid, "Final runway week must be PreSpecificTransition.");
         foreach (var week in runwayWeeks)
         {
-            if (!PreparationRunwayWeeklyShape.IsValid(week.OrderedSlots.Select(s => s.StructuralSlot.SlotRole).ToArray()) ||
+            // Phase 10K-GEN.29 -- this shape check previously consulted only
+            // PreparationRunwayWeeklyShape.IsValid, rejecting every real 2D
+            // Model B week (exactly 1 LONG_RUN + exactly one of
+            // KEY_SESSION/EASY_SUPPORT) at the calendar-composition stage --
+            // the same "not every caller shape considered" defect family
+            // already found repeated instances of elsewhere in this phase
+            // (PreparationRunwayNumericMaterializer.ValidateRequest,
+            // PreparationRunwayCoreWeekOnePaceAdapter,
+            // PreparationRunwayCoreWeekOneTargetAdapter). Mirrors
+            // PreparationRunwayWeekMaterializer.ValidateWeekCardinality's own
+            // already-correct dual-shape check. Zero-delta for every
+            // pre-GEN.29 (non-2D) week.
+            var roles = week.OrderedSlots.Select(s => s.StructuralSlot.SlotRole).ToArray();
+            if ((!PreparationRunwayWeeklyShape.IsValid(roles) && !PreparationRunwayWeeklyShape.IsValidTwoDayModelB(roles)) ||
                 Math.Abs(week.OrderedSlots.Sum(s => s.PlannedDistanceKm) - week.PlannedWeeklyVolumeKm) > 0.001d ||
                 Math.Abs(week.OrderedSlots.Single(s => s.StructuralSlot.SlotRole == PreparationRunwaySlotRole.LongRun).PlannedDistanceKm - week.PlannedLongRunDistanceKm) > 0.001d)
                 return (PreparationRunwayCalendarCompositionFailureCode.NumericPrescriptionChanged, "Numeric runway totals or slot quantities are inconsistent.");

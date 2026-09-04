@@ -64,6 +64,37 @@ internal static class PreparationRunwayWeekMaterializer
 
                 var weekRoles = ResolveWeekRoles(request.CanonicalWeeklyLayout, runwayWeekNumber);
 
+                // Phase 10K-GEN.29 -- role-conditioned Pattern-A/Pattern-B
+                // content selection (GEN.28 §9 Candidate C, the frozen
+                // AerobicStrength decision). For every pre-GEN.29 (non-2D)
+                // layout, `weekRoles` is the fixed OrderedRoles set, which
+                // always contains `anchorRole` (KeySession or LongRun) by
+                // construction -- this branch is unreachable there, byte-
+                // identical behavior. For 2D, a block-local week's own fixed
+                // anchor role (e.g. KeySession for Consistency/AerobicStrength/
+                // PreSpecificTransition step 1) may not exist in this
+                // specific week's resolved A/B shape (a Pattern-B week has no
+                // KeySession slot) -- when that happens, redirect to the
+                // progression step's own explicit, catalog-declared
+                // EASY_SUPPORT-role alternate rather than forcing the
+                // original KEY-anchored content onto an incompatible role.
+                var effectiveAnchorRole = anchorRole;
+                var effectiveAnchor = anchor;
+                if (!weekRoles.Contains(anchorRole))
+                {
+                    var alternates = bindingInput.Binding.OrderedPatternBEasySupportReferences;
+                    var alternate = alternates is not null && blockWeekOrdinal - 1 < alternates.Count
+                        ? alternates[blockWeekOrdinal - 1]
+                        : null;
+                    if (alternate is null || !weekRoles.Contains(PreparationRunwaySlotRole.EasySupport))
+                        return Failure<TKey>(PreparationRunwayWeekMaterializationFailureCode.AnchorRoleIncompatible,
+                            $"Block '{allocation.BlockKey}' progression step {progressionStep} anchors to role '{anchorRole}', which is not " +
+                            $"present in runway week {runwayWeekNumber}'s resolved weekly shape, and no role-conditioned Pattern-B " +
+                            "EASY_SUPPORT alternate is declared for this step.", trace);
+                    effectiveAnchorRole = PreparationRunwaySlotRole.EasySupport;
+                    effectiveAnchor = alternate;
+                }
+
                 var slots = new List<PreparationRunwayMaterializedWorkoutSlot<TKey>>(4);
                 var roleOrdinals = new Dictionary<PreparationRunwaySlotRole, int>();
                 var anchorUseCount = 0;
@@ -75,9 +106,9 @@ internal static class PreparationRunwayWeekMaterializer
                     var roleOrdinal = priorRoleCount + 1;
                     roleOrdinals[slotRole] = roleOrdinal;
 
-                    var isAnchor = slotRole == anchorRole && anchorUseCount == 0;
+                    var isAnchor = slotRole == effectiveAnchorRole && anchorUseCount == 0;
                     var reference = isAnchor
-                        ? anchor
+                        ? effectiveAnchor
                         : SupportReferenceFor(slotRole, request.SupportWorkoutPolicy);
 
                     var referenceFailure = await ValidateReferenceForRoleAsync(

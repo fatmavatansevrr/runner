@@ -42,6 +42,24 @@ internal static class PreparationRunwayBlockProgressionCatalogReader
         return new PreparationRunwayBlockProgressionDefinition<string>(key, version, blockType, steps);
     }
 
+    /// <summary>
+    /// Phase 10K-GEN.29 — <c>workoutCandidates</c> is, and has always been,
+    /// schema-plural (GEN.28 §7's own finding); this reader previously
+    /// hard-selected only the first element (<c>.First()</c>), silently
+    /// ignoring any further entry. Now reads the full array: the primary
+    /// candidate is the first entry carrying no <c>"role"</c> tag (or,
+    /// absent one, the first entry outright — preserving byte-identical
+    /// selection for every pre-GEN.29 progression document, all of which
+    /// declare a single, untagged candidate); an optional second entry
+    /// tagged <c>"role": "EASY_SUPPORT"</c> is captured separately as
+    /// <see cref="PreparationRunwayBlockProgressionStep.PatternBEasySupportReference"/>
+    /// — the explicit, role-conditioned Pattern-B content GEN.28 §9
+    /// (Candidate C) approved for 2D's Consistency/PreSpecificTransition
+    /// (mechanical reuse of the block's own existing EASY_STANDARD content)
+    /// and, per the GEN.29 governing decision, AerobicStrength (EASY_STANDARD,
+    /// no new content authored). No other role tag is recognized — an
+    /// unexpected value fails closed rather than being silently ignored.
+    /// </summary>
     private static PreparationRunwayBlockProgressionStep ReadStep(JsonElement stepEl, string owningKey, int owningVersion)
     {
         var stepOrder = RequireInt(stepEl, "stepOrder", owningKey, owningVersion);
@@ -51,11 +69,48 @@ internal static class PreparationRunwayBlockProgressionCatalogReader
             throw new PlanCatalogLoadException($"Step {stepOrder} has no workoutCandidates on preparation-runway-progressions/{owningKey} v{owningVersion}.");
         }
 
-        var firstCandidate = candidatesEl.EnumerateArray().First();
-        var workoutId = RequireString(firstCandidate, "key", owningKey, owningVersion);
-        var workoutVersion = RequireInt(firstCandidate, "version", owningKey, owningVersion);
+        var candidates = candidatesEl.EnumerateArray().ToArray();
+        JsonElement? untaggedCandidate = null;
+        foreach (var candidate in candidates)
+        {
+            if (!TryReadRole(candidate, out _))
+            {
+                untaggedCandidate = candidate;
+                break;
+            }
+        }
+        var primaryCandidate = untaggedCandidate ?? candidates[0];
+        var workoutId = RequireString(primaryCandidate, "key", owningKey, owningVersion);
+        var workoutVersion = RequireInt(primaryCandidate, "version", owningKey, owningVersion);
 
-        return new PreparationRunwayBlockProgressionStep(stepOrder, workoutId, workoutVersion);
+        PreparationRunwayWorkoutReference? patternBEasySupportReference = null;
+        foreach (var candidate in candidates)
+        {
+            if (!TryReadRole(candidate, out var role))
+                continue;
+
+            if (role != "EASY_SUPPORT")
+                throw new PlanCatalogLoadException(
+                    $"Step {stepOrder} on preparation-runway-progressions/{owningKey} v{owningVersion} declares an unrecognized workoutCandidates role '{role}' (only 'EASY_SUPPORT' is supported).");
+
+            patternBEasySupportReference = new PreparationRunwayWorkoutReference(
+                RequireString(candidate, "key", owningKey, owningVersion),
+                RequireInt(candidate, "version", owningKey, owningVersion));
+        }
+
+        return new PreparationRunwayBlockProgressionStep(stepOrder, workoutId, workoutVersion, patternBEasySupportReference);
+    }
+
+    private static bool TryReadRole(JsonElement candidateEl, out string role)
+    {
+        if (candidateEl.TryGetProperty("role", out var roleEl) && roleEl.ValueKind == JsonValueKind.String)
+        {
+            role = roleEl.GetString()!;
+            return true;
+        }
+
+        role = string.Empty;
+        return false;
     }
 
     private static string RequireString(JsonElement element, string propertyName, string owningKey, int owningVersion)

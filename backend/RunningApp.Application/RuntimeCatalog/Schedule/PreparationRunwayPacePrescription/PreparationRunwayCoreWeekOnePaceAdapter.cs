@@ -12,8 +12,19 @@ internal static class PreparationRunwayCoreWeekOnePaceAdapter
         var keyCount = first?.Sessions.Count(s => s.StructuralRole == "KEY_SESSION") ?? 0;
         var easyCount = first?.Sessions.Count(s => s.StructuralRole == "EASY_SUPPORT") ?? 0;
         var longCount = first?.Sessions.Count(s => s.StructuralRole == "LONG_RUN") ?? 0;
+        // Phase 10K-GEN.29 -- this floor (`easyCount < 1`) was disclosed as
+        // still open but unreachable for 2D by GEN.27 §1's own recurring-
+        // defect-family search ("no 2D Runway->Core continuity path exists
+        // yet at the numeric/pace layer"). GEN.29 makes that path real: 2D
+        // Core Week 1 (RUN_LAYOUT_2D) is exactly 1 KEY_SESSION + 1 LONG_RUN,
+        // zero EASY_SUPPORT -- the same "not every caller shape considered"
+        // family GEN.10/GEN.20/GEN.27/GEN.28 already found repeated
+        // instances of. Removed the unconditional easyCount>=1 requirement;
+        // KEY_SESSION (>=1) and exactly one LONG_RUN remain required for
+        // every frequency including 2D. Zero-delta for every pre-GEN.29
+        // frequency, all of which always have easyCount>=1 already.
         if (first is null || keyCount < 1 || longCount != 1 || easyCount != first.Sessions.Count - keyCount - longCount ||
-            easyCount < 1 || first.PhaseKey != "FOUNDATION")
+            first.PhaseKey != "FOUNDATION")
             throw new InvalidOperationException("Authoritative Core Foundation Week 1 pace target is unavailable.");
 
         var roleOrdinals = new Dictionary<PreparationRunwaySlotRole, int>();

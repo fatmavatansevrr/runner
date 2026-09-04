@@ -31,6 +31,22 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
     public static PreparationRunwayNumericPolicy Build(PlanCatalogCandidateSummary candidate) =>
         (candidate.CanonicalDistanceFamily, candidate.Level, candidate.DaysPerWeek) switch
         {
+            // Phase 10K-GEN.29 -- GEN.28 §11's disclosed
+            // AUTHORITY_COMPLETE_IMPLEMENTATION_MISSING gap: the frozen
+            // GEN.11 §6 numeric authority (VolumeSafetyPolicy.Beginner2D/
+            // Intermediate2D -- 55%/60% long-run share, peak-volume-band-
+            // derived growth calibration) already existed; only this
+            // dispatch branch was missing. Mirrors the Advanced dispatch
+            // pattern immediately below: GEN.11/GEN.12 froze that 2D never
+            // resolves a missing/explicit-zero starting-volume default at
+            // either level (CatalogVolumeAndLongRunPlanner throws
+            // TwoDayMissingOrZeroReadinessProductIneligibleException before
+            // any Runway-numeric default is read), so the two default-km
+            // parameters here are dead values for 2D call sites, kept only
+            // because this record requires them structurally -- same
+            // rationale as the Advanced rows, no new number invented.
+            ("TEN_K", "NEW", 2) => Build(VolumeSafetyPolicy.Beginner2D, 0d, 0d),
+            ("TEN_K", "INTERMEDIATE", 2) => Build(VolumeSafetyPolicy.Intermediate2D, 0d, 0d),
             ("TEN_K", "INTERMEDIATE", 5) => Build(VolumeSafetyPolicy.FiveDayIntermediate,
                 V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.MissingWeeklyVolumeDefaultKm,
                 V1FiveDayIntermediateMissingReadinessStartingVolumePolicy.ExplicitZeroWeeklyVolumeDefaultKm),
@@ -81,8 +97,18 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
         // shape (LongRunSelectionShare == LongRunPreferredMinimumShare ==
         // 0.28, GEN.7 §27) FiveDayIntermediate/SixDayIntermediate already
         // do, so they need the same derived tolerance for the same reason.
+        // Phase 10K-GEN.29 -- Beginner2D/Intermediate2D have the identical
+        // zero-nominal-gap shape (LongRunSelectionShare == LongRunPreferredMinimumShare
+        // == 0.55, GEN.11 §6/§8) the four policies above already do -- found
+        // via real dark end-to-end verification of this phase's own new 2D
+        // dispatch branch (a real Week 1 long-run share landed ~1.4
+        // percentage points off the exact 55% floor purely from independent
+        // 0.5km rounding of weekly volume and long run, correctly rejected
+        // by the tight default tolerance and only fixable by applying this
+        // already-established, already-approved rule -- not a new number).
         var longRunShareTolerance = ReferenceEquals(core, VolumeSafetyPolicy.FiveDayIntermediate) || ReferenceEquals(core, VolumeSafetyPolicy.SixDayIntermediate)
             || ReferenceEquals(core, VolumeSafetyPolicy.Advanced5D) || ReferenceEquals(core, VolumeSafetyPolicy.Advanced6D)
+            || ReferenceEquals(core, VolumeSafetyPolicy.Beginner2D) || ReferenceEquals(core, VolumeSafetyPolicy.Intermediate2D)
             ? core.RoundingIncrementKm / core.GoldenFixtureStartingVolumeKm
             : V1FourDaySessionVolumeAllocationPolicy.ToleranceKm;
         return new PreparationRunwayNumericPolicy(
