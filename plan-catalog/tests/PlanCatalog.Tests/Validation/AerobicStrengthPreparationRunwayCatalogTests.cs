@@ -307,9 +307,20 @@ public sealed class AerobicStrengthPreparationRunwayCatalogTests
             .Select(c => (Key: c!["key"]!.GetValue<string>(), Version: c["version"]!.GetValue<int>()))
             .ToArray();
 
+        // Phase 10K-GEN.29 -- this previously hardcoded a binary Intro/Progressed
+        // ternary, written when only those two candidate keys ever appeared
+        // per step. GEN.29 legitimately added a third candidate key
+        // (EASY_STANDARD, GEN.28 §9 Candidate C's role-conditioned Pattern-B
+        // alternate), which the ternary mapped to the wrong file. Replaced
+        // with the real, general catalog filename convention every workout
+        // document in this repository already follows (confirmed against
+        // aerobic-strength-controlled-intro/-progressed and easy-standard's
+        // own real filenames): lowercase-kebab-case key + ".v{version}.json"
+        // -- not special-cased per key, so it generalizes to any future
+        // legitimate candidate key too, not just the one this phase added.
         foreach (var (key, version) in candidates)
         {
-            var expectedFile = key == IntroKey ? "aerobic-strength-controlled-intro.v1.json" : "aerobic-strength-controlled-progressed.v1.json";
+            var expectedFile = $"{key.ToLowerInvariant().Replace('_', '-')}.v{version}.json";
             var workoutJson = JsonNode.Parse(File.ReadAllText(Path.Combine(CatalogDirectory(), "workouts", expectedFile)))!;
             Assert.Equal(key, workoutJson["metadata"]!["key"]!.GetValue<string>());
             Assert.Equal(version, workoutJson["metadata"]!["version"]!.GetValue<int>());
