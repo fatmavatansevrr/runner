@@ -15,6 +15,29 @@ namespace RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon;
 /// <c>TD-BACKEND-001</c>). Performs no date, volume, pace, or calendar
 /// computation.
 /// </summary>
+/// <summary>
+/// Phase 10K-GEN.32 (GEN.31 §3.4 items 1-3) -- centralizes the
+/// daysPerWeek-to-GE-cardinality derivation every LongHorizon call site
+/// otherwise duplicates as <c>daysPerWeek - 2</c> (the "exactly 1 KEY + 1
+/// LONG, remainder EASY" identity every pre-GEN.32 constant-KEY-every-week
+/// frequency obeys). That identity does not hold for 2D (GEN.11 §1's
+/// alternating Model B week has no week with both a KEY_SESSION and an
+/// EASY_SUPPORT slot simultaneously) -- <c>daysPerWeek - 2 == 0</c> for 2D,
+/// which both violates <see cref="LongHorizonGeStructuralSelector.Select"/>'s
+/// own "at least one EASY_SUPPORT" precondition and is not the correct
+/// Pattern-B cardinality (1) regardless. This resolver is the single place
+/// that distinguishes the two cases; every pre-GEN.32 caller's own
+/// <c>daysPerWeek - 2</c> literal is byte-for-byte reproduced for every
+/// daysPerWeek != 2.
+/// </summary>
+internal static class LongHorizonGeCardinality
+{
+    public static (int EasySupportCount, bool AlternatingKeyEasy) Resolve(int daysPerWeek) =>
+        daysPerWeek == 2
+            ? (EasySupportCount: 1, AlternatingKeyEasy: true)
+            : (EasySupportCount: daysPerWeek - 2, AlternatingKeyEasy: false);
+}
+
 internal static class LongHorizonGeStructuralSelector
 {
     public const string CatalogSourceId = "TEN_K_LONG_HORIZON_GE_STAGE_FAMILIES";
@@ -72,14 +95,33 @@ internal static class LongHorizonGeStructuralSelector
     };
 
     /// <param name="easySupportCount">
-    /// Phase 10K-FREQ.6D.14 -- number of EASY_SUPPORT sessions per full GE
-    /// week (2 for every existing 4D caller via the default parameter,
-    /// exactly reproducing pre-FREQ.6D.14 output; 3 for the FREQ.6D.12-
-    /// approved Intermediate x5D shape). Reuses the same EASY_STANDARD
-    /// catalog content already approved for EasySupportA/B -- no new
-    /// content, no new WorkoutDefinition.
+    /// Phase 10K-FREQ.6D.14 -- number of EASY_SUPPORT sessions on a week that
+    /// carries EASY_SUPPORT at all (2 for every existing 4D caller via the
+    /// default parameter, exactly reproducing pre-FREQ.6D.14 output; 3 for
+    /// the FREQ.6D.12-approved Intermediate x5D shape; 1 for 2D's own
+    /// Pattern-B week, GEN.11 §1). Reuses the same EASY_STANDARD catalog
+    /// content already approved for EasySupportA/B -- no new content, no new
+    /// WorkoutDefinition.
     /// </param>
-    public static IReadOnlyList<LongHorizonGeWeekDescriptor> Select(int geWeeks, ReadinessProfile profile, int easySupportCount = 2)
+    /// <param name="alternatingKeyEasy">
+    /// Phase 10K-GEN.32 (GEN.31 §1/§3.4 item 1) -- when true, emits the
+    /// Option-A 2D alternating sequence approved by GEN.31 §1: odd
+    /// <see cref="LongHorizonGeWeekDescriptor.WeekIndex"/> (GE is always the
+    /// plan's first segment, so WeekIndex here already equals
+    /// GlobalWeekNumber -- GEN.30 §3.4/§4.2) is Pattern A
+    /// (KEY_SESSION + LONG_RUN, easySupportCount for that week forced to 0);
+    /// even WeekIndex is Pattern B (EASY_SUPPORT + LONG_RUN,
+    /// <paramref name="easySupportCount"/> EASY_SUPPORT sessions, no
+    /// KEY_SESSION), mirroring the identical odd/even convention
+    /// <c>TenKPreparationRunwayWeekMaterializationPolicyFactory</c>'s own
+    /// <c>TwoDayModelBPattern</c> already established for Runway/Core.
+    /// Defaults to false, reproducing every pre-GEN.32 (4D/5D/6D
+    /// constant-every-week-KEY) caller byte-for-byte -- no existing call
+    /// site passes this parameter, so this is a zero-delta addition by
+    /// construction.
+    /// </param>
+    public static IReadOnlyList<LongHorizonGeWeekDescriptor> Select(
+        int geWeeks, ReadinessProfile profile, int easySupportCount = 2, bool alternatingKeyEasy = false)
     {
         if (geWeeks is < 1 or > 32)
             throw new ArgumentOutOfRangeException(nameof(geWeeks), geWeeks, "GE week count must be 1..32.");
@@ -87,11 +129,11 @@ internal static class LongHorizonGeStructuralSelector
             throw new ArgumentOutOfRangeException(nameof(easySupportCount), easySupportCount, "GE requires at least one EASY_SUPPORT session.");
 
         return Classify(geWeeks) == GeneralEnduranceDurationClassification.ShortExtension
-            ? SelectShortExtension(geWeeks, profile, easySupportCount)
-            : SelectFullPhase(geWeeks, profile, easySupportCount);
+            ? SelectShortExtension(geWeeks, profile, easySupportCount, alternatingKeyEasy)
+            : SelectFullPhase(geWeeks, profile, easySupportCount, alternatingKeyEasy);
     }
 
-    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectShortExtension(int geWeeks, ReadinessProfile profile, int easySupportCount)
+    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectShortExtension(int geWeeks, ReadinessProfile profile, int easySupportCount, bool alternatingKeyEasy)
     {
         var plan = geWeeks switch
         {
@@ -125,12 +167,13 @@ internal static class LongHorizonGeStructuralSelector
                 isRecoveryWeek: false,
                 isTerminalAlignment: isTerminal,
                 profile: profile,
-                easySupportCount: easySupportCount));
+                easySupportCount: easySupportCount,
+                alternatingKeyEasy: alternatingKeyEasy));
         }
         return result;
     }
 
-    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectFullPhase(int geWeeks, ReadinessProfile profile, int easySupportCount)
+    private static IReadOnlyList<LongHorizonGeWeekDescriptor> SelectFullPhase(int geWeeks, ReadinessProfile profile, int easySupportCount, bool alternatingKeyEasy)
     {
         var fullMesocycles = geWeeks / 4;
         var remainder = geWeeks % 4;
@@ -158,7 +201,8 @@ internal static class LongHorizonGeStructuralSelector
                     isRecoveryWeek: false,
                     isTerminalAlignment: false,
                     profile: profile,
-                    easySupportCount: easySupportCount));
+                    easySupportCount: easySupportCount,
+                    alternatingKeyEasy: alternatingKeyEasy));
             }
 
             result.Add(BuildDescriptor(
@@ -171,7 +215,8 @@ internal static class LongHorizonGeStructuralSelector
                 isRecoveryWeek: true,
                 isTerminalAlignment: false,
                 profile: profile,
-                easySupportCount: easySupportCount));
+                easySupportCount: easySupportCount,
+                alternatingKeyEasy: alternatingKeyEasy));
         }
 
         var remainderPlan = remainder switch
@@ -204,7 +249,8 @@ internal static class LongHorizonGeStructuralSelector
                 isRecoveryWeek: false,
                 isTerminalAlignment: true,
                 profile: profile,
-                easySupportCount: easySupportCount));
+                easySupportCount: easySupportCount,
+                alternatingKeyEasy: alternatingKeyEasy));
         }
 
         return result;
@@ -227,9 +273,28 @@ internal static class LongHorizonGeStructuralSelector
         bool isRecoveryWeek,
         bool isTerminalAlignment,
         ReadinessProfile profile,
-        int easySupportCount)
+        int easySupportCount,
+        bool alternatingKeyEasy = false)
     {
-        var easySupportWorkouts = Enumerable.Range(0, easySupportCount)
+        // Phase 10K-GEN.32 (GEN.31 §1/§3.4 item 1) -- Option A: every GE week
+        // is Pattern A (KEY_SESSION + LONG_RUN) or Pattern B (EASY_SUPPORT +
+        // LONG_RUN), alternating by the week's own global ordinal. GE is
+        // always the plan's first segment (GEN.30 §3.4), so `weekIndex` here
+        // already *is* GlobalWeekNumber -- no externally-supplied offset is
+        // needed at this layer (contrast Runway, which needs one; see the
+        // GE->Runway continuity item). Odd weekIndex = Pattern A (hasKeySession,
+        // zero EASY_SUPPORT this week); even weekIndex = Pattern B (zero
+        // KEY_SESSION, `easySupportCount` EASY_SUPPORT sessions) -- the same
+        // odd/even convention already established for Runway/Core
+        // (TenKPreparationRunwayWeekMaterializationPolicyFactory's
+        // TwoDayModelBPattern). Recovery weeks are not exempted: GEN.31 §1
+        // says "every GE week" alternates, with no stage/recovery carve-out.
+        // Defaults to false (hasKeySession=true, easySupportCount unchanged),
+        // reproducing every pre-GEN.32 caller byte-for-byte.
+        var hasKeySession = !alternatingKeyEasy || weekIndex % 2 == 1;
+        var effectiveEasySupportCount = alternatingKeyEasy && hasKeySession ? 0 : easySupportCount;
+
+        var easySupportWorkouts = Enumerable.Range(0, effectiveEasySupportCount)
             .Select(_ => ResolveWorkout(stageFamily, "EASY_SUPPORT", profile))
             .ToList();
 
@@ -247,7 +312,8 @@ internal static class LongHorizonGeStructuralSelector
             EasySupportWorkouts: easySupportWorkouts,
             LongRunWorkout: ResolveWorkout(stageFamily, "LONG_RUN", profile),
             CatalogSourceId: CatalogSourceId,
-            CatalogSourceVersion: CatalogSourceVersion);
+            CatalogSourceVersion: CatalogSourceVersion,
+            HasKeySession: hasKeySession);
     }
 
     private static LongHorizonGeWorkoutReference ResolveWorkout(LongHorizonGeStageFamily stageFamily, string role, ReadinessProfile profile)

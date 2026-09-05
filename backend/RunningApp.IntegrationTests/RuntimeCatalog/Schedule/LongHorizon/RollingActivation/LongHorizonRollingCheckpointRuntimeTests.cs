@@ -356,7 +356,7 @@ public sealed class LongHorizonCheckpointGrowthNextWindowTests
     {
         private readonly ExistingLongHorizonGeWindowMaterializer _inner = new();
         public IReadOnlyList<int> Received { get; private set; } = [];
-        public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(IReadOnlyList<LongHorizonGeWeekDescriptor> weeks, LongHorizonGeEntryBaselineInput baseline, RunningBackground level = RunningBackground.Intermediate)
+        public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(IReadOnlyList<LongHorizonGeWeekDescriptor> weeks, LongHorizonGeEntryBaselineInput baseline, RunningBackground level = RunningBackground.Intermediate, int? daysPerWeek = null)
         { Received = weeks.Select(w => w.WeekIndex).ToList(); return _inner.Materialize(weeks, baseline); }
     }
 }
@@ -475,7 +475,7 @@ public sealed class LongHorizonCheckpointAtomicityVersioningTests
 
     private sealed class ThrowingGrowthMaterializer : ILongHorizonRollingGeWindowMaterializer
     {
-        public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(IReadOnlyList<LongHorizonGeWeekDescriptor> weeks, LongHorizonGeEntryBaselineInput baseline, RunningBackground level = RunningBackground.Intermediate) =>
+        public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(IReadOnlyList<LongHorizonGeWeekDescriptor> weeks, LongHorizonGeEntryBaselineInput baseline, RunningBackground level = RunningBackground.Intermediate, int? daysPerWeek = null) =>
             throw new InvalidOperationException("Injected selected-week failure");
     }
 }

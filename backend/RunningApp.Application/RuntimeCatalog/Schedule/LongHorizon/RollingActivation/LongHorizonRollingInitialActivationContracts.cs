@@ -108,6 +108,18 @@ internal static class LongHorizonRollingInitialActivationInputValidator
         // routing gate (V1CatalogPilotIdentityPolicy), which is intentionally
         // left untouched -- the public gate remains closed for every Advanced
         // frequency.
+        //
+        // Phase 10K-GEN.32 -- NOT widened to admit 2D this phase. GEN.32's own
+        // investigation (PHASE_10K_GEN_32 §3.3) found that opening this gate
+        // alone would let 2D traffic reach at least three unfixed downstream
+        // defects (the Level-dispatch branch below/in ExistingLongHorizonGeWindowMaterializer
+        // has no Beginner case and would silently apply Intermediate's numeric
+        // policy to Beginner; LongHorizonStructuralValidator's per-skeleton
+        // uniform expectedKey/expectedEasy shape does not yet recognize 2D's
+        // per-week alternation; LongHorizonGeMaintenanceWindowMaterializer's
+        // checkpoint-path Allocate call does not yet honor a week's own
+        // HasKeySession flag) -- left closed deliberately rather than shipping
+        // a gate that is open but not yet safe to exercise.
         var levelFrequencyEligible =
             (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 4 or 5 or 6) ||
             (request.Level == RunningBackground.Advanced && request.DaysPerWeek is 3 or 4 or 5 or 6);

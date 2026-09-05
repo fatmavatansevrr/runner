@@ -23,7 +23,8 @@ internal interface ILongHorizonRollingGeWindowMaterializer
     IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
         LongHorizonGeEntryBaselineInput onboardingBaseline,
-        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate);
+        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate,
+        int? daysPerWeek = null);
 }
 
 internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRollingGeWindowMaterializer
@@ -45,18 +46,28 @@ internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRoll
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedGeneralEnduranceWeeks,
         LongHorizonGeEntryBaselineInput onboardingBaseline,
-        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate)
+        RunningApp.Domain.Enums.RunningBackground level = RunningApp.Domain.Enums.RunningBackground.Intermediate,
+        int? daysPerWeek = null)
     {
         // Phase 10K-FREQ.6D.26 -- generalized off the resolved descriptor's own
         // easySupportCount (DaysPerWeek = easySupportCount + 2) into
         // VolumeSafetyPolicy.ForIntermediateDaysPerWeek; applyTargetCap
         // extended to every frequency whose approved numeric authority uses
         // target-capped growth (5D and 6D today), not merely 5D.
-        var resolvedDaysPerWeek = (selectedGeneralEnduranceWeeks.Count > 0 ? selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count : 2) + 2;
+        //
+        // Phase 10K-GEN.32 (GEN.31 §3.4 items 2-3) -- the EasySupportWorkouts.Count-
+        // based inference above is unreliable for 2D: its own Pattern A/B weeks
+        // have EasySupportWorkouts.Count 0 or 1 depending on which week happens
+        // to be selectedGeneralEnduranceWeeks[0], not a constant. The optional
+        // `daysPerWeek` parameter lets the real caller (which always knows its
+        // own candidate's DaysPerWeek) supply the true value directly; every
+        // pre-GEN.32 caller (no argument passed) keeps the exact prior
+        // inference, byte-for-byte.
+        var resolvedDaysPerWeek = daysPerWeek ?? ((selectedGeneralEnduranceWeeks.Count > 0 ? selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count : 2) + 2);
         var policy = level == RunningApp.Domain.Enums.RunningBackground.Advanced
             ? Prescription.Volume.VolumeSafetyPolicy.ForAdvancedDaysPerWeek(resolvedDaysPerWeek)
             : Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek);
-        return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: resolvedDaysPerWeek is 5 or 6);
+        return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: resolvedDaysPerWeek is 2 or 5 or 6);
     }
 }
 
@@ -184,13 +195,19 @@ internal sealed class LongHorizonRollingInitialActivationRuntime : ILongHorizonR
         // ternary to the structural identity every GE/Runway week already
         // obeys (exactly 1 KEY + 1 LONG, the remainder EASY): easySupportCount
         // = DaysPerWeek - 2. Byte-identical for every existing caller.
+        // Phase 10K-GEN.32 (GEN.31 §3.4 item 3) -- 2D (DaysPerWeek==2) resolves
+        // via LongHorizonGeCardinality to easySupportCount=1/alternatingKeyEasy=true
+        // (GEN.31 §1's Option A), instead of the DaysPerWeek-2==0 identity that
+        // would otherwise both violate Select's own precondition and be the
+        // wrong Pattern-B cardinality. Byte-identical for every other DaysPerWeek.
+        var (geEasySupportCount, geAlternating) = LongHorizonGeCardinality.Resolve(request.DaysPerWeek);
         var selectedDescriptors = LongHorizonGeStructuralSelector
-            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile, request.DaysPerWeek - 2)
+            .Select(skeleton.GeneralEnduranceWeeks, skeleton.ReadinessProfile, geEasySupportCount, geAlternating)
             .Take(actualWindowSize)
             .ToList();
         try
         {
-            numericResults = _geWindowMaterializer.Materialize(selectedDescriptors, request.OnboardingBaseline, request.Level);
+            numericResults = _geWindowMaterializer.Materialize(selectedDescriptors, request.OnboardingBaseline, request.Level, request.DaysPerWeek);
             if (numericResults.Count != actualWindowSize
                 || !numericResults.Select(w => w.WeekIndex).SequenceEqual(Enumerable.Range(1, actualWindowSize)))
             {

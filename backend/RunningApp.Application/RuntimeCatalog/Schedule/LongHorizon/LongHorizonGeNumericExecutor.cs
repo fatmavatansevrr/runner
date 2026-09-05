@@ -193,12 +193,25 @@ internal static class LongHorizonGeNumericExecutor
                 ? ResolveRecoveryLongRun(totalVolume, previousLongRun!.Value, effectivePolicy)
                 : ResolveDevelopmentLongRun(totalVolume, previousWeekVolume is null ? baseline.RecentLongestRunKm : null, effectivePolicy);
 
+            // Phase 10K-GEN.32 (GEN.31 §1/§3.4 item 2) -- generalized from the
+            // fixed keySessionCount:1 (byte-identical for every pre-GEN.32
+            // 4D/5D/6D week, all of which have week.HasKeySession==true via
+            // the descriptor's own default) to week.HasKeySession's own
+            // 0/1 value, admitting 2D's Pattern-B week (HasKeySession=false)
+            // with zero new allocation logic -- FourDaySessionDistanceAllocationPolicy.Allocate
+            // already supports keySessionCount==0 (Phase 10K-GEN.20).
             var distribution = FourDaySessionDistanceAllocationPolicy.Allocate(
-                totalVolume, longRun, keySessionCount: 1, easySupportCount: week.EasySupportWorkouts.Count);
+                totalVolume, longRun,
+                keySessionCount: week.HasKeySession ? 1 : 0,
+                easySupportCount: week.EasySupportWorkouts.Count);
+
+            var keySessionDistanceKm = distribution.KeySessionDistancesKm.Count > 0
+                ? distribution.KeySessionDistanceKm
+                : 0d;
 
             results.Add(new LongHorizonGeWeekNumericResult(
                 week.WeekIndex, totalVolume, longRun,
-                distribution.KeySessionDistanceKm, distribution.EasySupportDistancesKm));
+                keySessionDistanceKm, distribution.EasySupportDistancesKm));
 
             if (!week.IsRecoveryWeek)
                 priorPeakVolume = Math.Max(priorPeakVolume, totalVolume);

@@ -73,8 +73,26 @@ internal sealed record LongHorizonGeWeekDescriptor(
     IReadOnlyList<LongHorizonGeWorkoutReference> EasySupportWorkouts,
     LongHorizonGeWorkoutReference LongRunWorkout,
     string CatalogSourceId,
-    int CatalogSourceVersion)
+    int CatalogSourceVersion,
+    bool HasKeySession = true)
 {
+    /// <summary>
+    /// Phase 10K-GEN.32 -- Option-A 2D alternating-week flag (GEN.31 §1/§3.4
+    /// item 1): true for every pre-GEN.32 (4D/5D/6D constant-KEY) week via
+    /// the default parameter, byte-identical to pre-GEN.32 behavior. False
+    /// only for a 2D Pattern-B week (the alternating-selector opt-in path,
+    /// <see cref="LongHorizonGeStructuralSelector.Select"/>'s
+    /// <c>alternatingKeyEasy</c> parameter), in which case
+    /// <see cref="KeySessionWorkout"/> is still resolved for provenance
+    /// symmetry but must not be treated as an occupied KEY_SESSION slot by
+    /// any downstream consumer -- mirroring the existing, already-approved
+    /// "reference exists but role is absent this week" shape
+    /// <see cref="EasySupportWorkouts"/>'s own list-length-zero convention
+    /// already established for EASY_SUPPORT (FREQ.6D.14).
+    /// </summary>
+    public bool HasEasySupport => EasySupportWorkouts.Count > 0;
+
+
     /// <summary>The segment-type constant every GE descriptor/week carries -- distinct from <c>PreparationRunwayBlockType.GeneralEndurance</c> (Phase 4I.1/4I.2/4I.4/4I.5 governance).</summary>
     public const string LongHorizonGeneralEnduranceSegmentType = "LONG_HORIZON_GENERAL_ENDURANCE";
 }
