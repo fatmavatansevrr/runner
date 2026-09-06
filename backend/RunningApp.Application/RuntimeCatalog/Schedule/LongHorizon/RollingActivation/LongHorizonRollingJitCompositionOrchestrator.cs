@@ -66,7 +66,25 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
             var coreSegment = request.StructuralRoadmap.Segments.Single(s => s.SegmentType == LongHorizonStructuralSegmentType.Core);
             var runwayStartDate = request.PlanStartDate.AddDays((runwaySegment.StartGlobalWeek - 1) * 7);
 
-            var jitLevel = request.Candidate.Level == "ADVANCED" ? RunningBackground.Advanced : RunningBackground.Intermediate;
+            // Phase 10K-GEN.35 defect fix: this two-way ternary had no branch for
+            // Beginner ("NEW"), the identical defect family GEN.10 fixed once for
+            // Advanced and GEN.29 fixed once for TenKPreparationRunwayDarkOrchestrator's
+            // own expectedLevel derivation -- but this call site, one layer further up
+            // in the JIT composition orchestrator itself, was never updated. Every real
+            // Beginner x2D GE->Runway/Core JIT composition call silently built its
+            // PreviewRequest/ResolverInput with Level=Intermediate while
+            // request.Candidate.Level=="NEW" (Beginner), tripping the orchestrator's own
+            // request-identity check (candidate.Level vs PreviewRequest/ResolverInput.Level)
+            // and surfacing as an opaque JitEvidenceConflictUnresolved Block -- found via
+            // this phase's own real end-to-end dark verification, the first time any
+            // Beginner x2D LongHorizon request ever reached this call site (GEN.34 opened
+            // the admission gate but never reached the published-bundle-gated JIT boundary).
+            var jitLevel = request.Candidate.Level switch
+            {
+                "ADVANCED" => RunningBackground.Advanced,
+                "NEW" => RunningBackground.Beginner,
+                _ => RunningBackground.Intermediate,
+            };
             var (previewRequest, resolverInput) = LongHorizonRollingCoreGenerationInputAdapter.Build(
                 request.ValidatedLoad, request.ExactCompletedFrequency, runwayStartDate, request.RaceDate,
                 request.TargetFinishTimeSeconds, request.TargetFinishTimeSource, request.RecentRace,
@@ -118,10 +136,20 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
                     CatalogRootPath = request.CatalogRootPath,
                     PublishedBundleReleaseVersion = request.PublishedBundleReleaseVersion,
                 });
+                // Phase 10K-GEN.35 -- threads the GE segment's own real length so this real
+                // Runway/Core content generator's Pattern-A/B selection continues the same
+                // global odd/even parity GE itself established (GEN.31's frozen Option A decision),
+                // instead of always restarting local week 1 at Pattern A (correct only when
+                // GeneralEnduranceWeeks happens to be even) -- mirrors
+                // PreparationRunwayWeekMaterializationRequest.StartGlobalWeek's own convention
+                // exactly (GEN.33). Byte-identical for every non-2D layout (this value is ignored
+                // unless a repeating WeeklyPatternRoles pattern exists).
+                var runwayStartGlobalWeek = request.StructuralRoadmap.GeneralEnduranceWeeks + 1;
                 var compositionRequest = new TenKPreparationRunwayDarkOrchestrationRequest(
                     request.Candidate, runwayStartDate, request.RaceDate, request.CheckpointDate,
                     request.PreferredDays, request.LongRunDay, coreEntryReadiness, conditionResults,
-                    previewRequest, resolverInput, PreparationRunwayQuantityUnit.Kilometers);
+                    previewRequest, resolverInput, PreparationRunwayQuantityUnit.Kilometers,
+                    RunwayStartGlobalWeek: runwayStartGlobalWeek);
                 stages.Add("RealCoreRunwayCompositionRequestBuilt");
 
                 realComposition = await orchestrator.OrchestrateAsync(compositionRequest, cancellationToken);

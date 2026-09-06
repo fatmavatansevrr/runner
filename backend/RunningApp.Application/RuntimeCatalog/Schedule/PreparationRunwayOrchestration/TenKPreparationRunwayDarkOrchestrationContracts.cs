@@ -33,7 +33,20 @@ internal sealed record TenKPreparationRunwayDarkOrchestrationRequest(
     // Null preserves this record's original, pre-4G.6B.1 behavior (internal
     // computation) for every existing dark-orchestrator-level test/call site
     // that does not supply one.
-    CoreHorizonDecision? HorizonDecision = null);
+    CoreHorizonDecision? HorizonDecision = null,
+    // Phase 10K-GEN.35 -- threads GEN.33's own PreparationRunwayWeekMaterializationRequest.StartGlobalWeek
+    // (see that field's doc comment) through this orchestrator's own real Runway-generation call site
+    // (Stage 7, PreparationRunwayWeekMaterializer.MaterializeAsync), which never received it: GEN.33 wired
+    // StartGlobalWeek only into LongHorizonStructuralMaterializer.MaterializeRunwayAsync (the dark structural-
+    // skeleton builder), not into this separate, real production Runway/Core content generator that
+    // LongHorizonRollingJitCompositionOrchestrator invokes at the actual GE->Runway JIT boundary -- a second,
+    // previously-unreached call site to the same materializer, missed by that phase because no LongHorizon
+    // request had ever reached the real JIT boundary before this phase's own end-to-end verification. Left
+    // at the default (1) for standalone (non-LongHorizon) Runway generation -- byte-identical for every
+    // existing caller (public preview routing, GEN.27/28/29's own dark verification, all of which never
+    // supply this parameter). A LongHorizon caller whose preceding GE segment has odd length supplies
+    // GeWeeks+1, exactly mirroring GEN.33's own convention.
+    int RunwayStartGlobalWeek = 1);
 
 internal enum TenKPreparationRunwayOrchestrationStage
 {

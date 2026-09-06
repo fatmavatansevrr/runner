@@ -120,7 +120,9 @@ public sealed class PlanCatalogDeploymentPackagingTests
         // whole artifacts/ tree (other releases, docs, tests remain excluded).
         // Phase 10K-GEN.10 defect fix: bumped from the stale 1.1.0 pin to 1.3.0,
         // matching the real configured PublishedBundleReleaseVersion.
-        Assert.Contains("plan-catalog\\artifacts\\appsel-plan-catalog\\1.3.0\\bundles\\**\\*.json", project);
+        // Phase 10K-GEN.35: bumped again to 1.4.0 alongside the 2D LongHorizon bundle
+        // publication, matching appsettings.json's own bump.
+        Assert.Contains("plan-catalog\\artifacts\\appsel-plan-catalog\\1.4.0\\bundles\\**\\*.json", project);
         Assert.DoesNotContain("plan-catalog\\docs", project);
         Assert.DoesNotContain("plan-catalog\\tests", project);
     }

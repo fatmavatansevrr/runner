@@ -39,9 +39,15 @@
          been silently missing 6D Intermediate's execution-profile bundle since
          FREQ.6D.26, and would have shipped with Advanced entirely non-functional
          (ProfileBacked sessions fail closed with no bundle file present). Bumped
-         to match the real configured release. -->
-    <Content Include="..\..\plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\**\*.json"
-             Link="plan-catalog\artifacts\appsel-plan-catalog\1.3.0\bundles\%(RecursiveDir)%(Filename)%(Extension)"
+         to match the real configured release.
+         Phase 10K-GEN.35: bumped again to 1.4.0 (2D LongHorizon bundle publication,
+         additive over 1.3.0 — adds TEN_K__2D__BEGINNER/TEN_K__2D__INTERMEDIATE plus,
+         as a mechanical side effect of the whole-snapshot publish design, the
+         already-approved-but-never-bundled TEN_K__3D__BEGINNER from GEN.23-25),
+         matching appsettings.json's own bump, to avoid recreating the identical
+         stale-pin defect GEN.10 found and fixed once already. -->
+    <Content Include="..\..\plan-catalog\artifacts\appsel-plan-catalog\1.4.0\bundles\**\*.json"
+             Link="plan-catalog\artifacts\appsel-plan-catalog\1.4.0\bundles\%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
