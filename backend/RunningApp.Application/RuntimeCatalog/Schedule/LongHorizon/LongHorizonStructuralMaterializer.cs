@@ -135,7 +135,7 @@ internal static class LongHorizonStructuralMaterializer
         if (geDescriptors.Count != geWeeks)
             throw new InvalidOperationException($"GE selector returned {geDescriptors.Count} weeks, expected {geWeeks}.");
 
-        var runwayWeeks = await MaterializeRunwayAsync(profile, catalogRoot, workoutLoader, daysPerWeek, level, ct);
+        var runwayWeeks = await MaterializeRunwayAsync(profile, catalogRoot, workoutLoader, daysPerWeek, level, geWeeks, ct);
         if (runwayWeeks.Count != 8)
             throw new InvalidOperationException($"Preparation Runway materializer returned {runwayWeeks.Count} weeks, expected 8.");
 
@@ -204,11 +204,20 @@ internal static class LongHorizonStructuralMaterializer
 
     private static LongHorizonStructuralWeek BuildGeWeek(LongHorizonGeWeekDescriptor ge, int globalWeekNumber)
     {
-        var slots = new List<LongHorizonStructuralWorkoutSlot>(2 + ge.EasySupportWorkouts.Count)
-        {
-            BuildGeSlot(1, "KEY_SESSION", ge.KeySessionWorkout),
-        };
-        var index = 2;
+        // Phase 10K-GEN.33 (GEN.32 §5 item 2) -- only emit a KEY_SESSION slot
+        // when this descriptor's own HasKeySession is true. Every pre-GEN.33
+        // (non-alternating) descriptor has HasKeySession=true via its own
+        // default, so a KEY_SESSION slot is still emitted unconditionally for
+        // every existing 4D/5D/6D week -- byte-identical. An alternating
+        // Option-A (GEN.31 §1) Pattern-B descriptor (HasKeySession=false)
+        // previously still received a spurious KEY_SESSION slot here
+        // regardless of its own resolved shape -- a real, previously
+        // undisclosed defect this fix closes alongside item 2's own
+        // validator generalization (both consume the same signal).
+        var slots = new List<LongHorizonStructuralWorkoutSlot>(2 + ge.EasySupportWorkouts.Count);
+        var index = 1;
+        if (ge.HasKeySession)
+            slots.Add(BuildGeSlot(index++, "KEY_SESSION", ge.KeySessionWorkout));
         foreach (var easy in ge.EasySupportWorkouts)
             slots.Add(BuildGeSlot(index++, "EASY_SUPPORT", easy));
         slots.Add(BuildGeSlot(index, "LONG_RUN", ge.LongRunWorkout));
@@ -226,7 +235,8 @@ internal static class LongHorizonStructuralMaterializer
             MesocyclePosition: ge.MesocyclePosition,
             IsRecoveryWeek: ge.IsRecoveryWeek,
             IsTerminalAlignment: ge.IsTerminalAlignment,
-            OrderedWorkoutSlots: slots);
+            OrderedWorkoutSlots: slots,
+            HasKeySession: ge.HasKeySession);
     }
 
     private static LongHorizonStructuralWorkoutSlot BuildGeSlot(int index, string role, LongHorizonGeWorkoutReference reference) =>
@@ -235,7 +245,7 @@ internal static class LongHorizonStructuralMaterializer
     // ── Preparation Runway segment (reuses the existing, unchanged materializer) ──
 
     private static async Task<IReadOnlyList<PreparationRunwayMaterializedWeek<PreparationRunwayBlockType>>> MaterializeRunwayAsync(
-        ReadinessProfile profile, string catalogRoot, ICatalogWorkoutDefinitionLoader workoutLoader, int daysPerWeek, RunningBackground level, CancellationToken ct)
+        ReadinessProfile profile, string catalogRoot, ICatalogWorkoutDefinitionLoader workoutLoader, int daysPerWeek, RunningBackground level, int geWeeks, CancellationToken ct)
     {
         var allocationProfile = profile == ReadinessProfile.ConsistencyNeeded
             ? PreparationRunwayAllocationProfile.ConsistencyNeeded
@@ -281,7 +291,15 @@ internal static class LongHorizonStructuralMaterializer
                 allocationResult.Allocations,
                 bindings,
                 TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildBlockRolePolicies(daysPerWeek),
-                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy()),
+                TenKPreparationRunwayWeekMaterializationPolicyFactory.BuildSupportPolicy(),
+                // Phase 10K-GEN.33 (GEN.32 §5 item 4) -- GE is always the
+                // plan's first segment (GEN.30 §3.4), so Runway's own local
+                // week 1 is plan-global week geWeeks+1. Threading this
+                // through lets Runway's own repeating-pattern selection
+                // (2D only; every other layout ignores this value) continue
+                // the same odd/even global parity GE itself just ended on,
+                // instead of always restarting local week 1 at Pattern A.
+                StartGlobalWeek: geWeeks + 1),
             workoutLoader, ct);
 
         if (!structural.IsSuccess || structural.Weeks is null)

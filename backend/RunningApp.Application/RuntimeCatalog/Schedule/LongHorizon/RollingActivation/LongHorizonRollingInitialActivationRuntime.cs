@@ -64,9 +64,20 @@ internal sealed class ExistingLongHorizonGeWindowMaterializer : ILongHorizonRoll
         // pre-GEN.32 caller (no argument passed) keeps the exact prior
         // inference, byte-for-byte.
         var resolvedDaysPerWeek = daysPerWeek ?? ((selectedGeneralEnduranceWeeks.Count > 0 ? selectedGeneralEnduranceWeeks[0].EasySupportWorkouts.Count : 2) + 2);
-        var policy = level == RunningApp.Domain.Enums.RunningBackground.Advanced
-            ? Prescription.Volume.VolumeSafetyPolicy.ForAdvancedDaysPerWeek(resolvedDaysPerWeek)
-            : Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek);
+        // Phase 10K-GEN.33 (GEN.32 §5 item 1) -- adds the missing Beginner
+        // branch. Pre-GEN.33 this two-way ternary silently applied
+        // Intermediate's own VolumeSafetyPolicy family to any non-Advanced
+        // level, including Beginner -- unreachable before this phase because
+        // no prior Level dispatch here ever needed to distinguish Beginner
+        // from Intermediate (LongHorizon never admitted Beginner until 2D).
+        // Byte-identical for every pre-GEN.33 caller (Advanced and
+        // Intermediate are both handled exactly as before).
+        var policy = level switch
+        {
+            RunningApp.Domain.Enums.RunningBackground.Advanced => Prescription.Volume.VolumeSafetyPolicy.ForAdvancedDaysPerWeek(resolvedDaysPerWeek),
+            RunningApp.Domain.Enums.RunningBackground.Beginner => Prescription.Volume.VolumeSafetyPolicy.ForBeginnerDaysPerWeek(resolvedDaysPerWeek),
+            _ => Prescription.Volume.VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek),
+        };
         return LongHorizonGeNumericExecutor.Execute(selectedGeneralEnduranceWeeks, onboardingBaseline, policy, applyTargetCap: resolvedDaysPerWeek is 2 or 5 or 6);
     }
 }

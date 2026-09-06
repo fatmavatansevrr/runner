@@ -60,7 +60,8 @@ internal interface ILongHorizonGeMaintenanceWindowMaterializer
     IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
         ValidatedSustainableLoad anchor,
-        RunningBackground level = RunningBackground.Intermediate);
+        RunningBackground level = RunningBackground.Intermediate,
+        int? daysPerWeek = null);
 }
 
 internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonGeMaintenanceWindowMaterializer
@@ -76,7 +77,8 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
     public IReadOnlyList<LongHorizonGeWeekNumericResult> Materialize(
         IReadOnlyList<LongHorizonGeWeekDescriptor> selectedWeeks,
         ValidatedSustainableLoad anchor,
-        RunningBackground level = RunningBackground.Intermediate)
+        RunningBackground level = RunningBackground.Intermediate,
+        int? daysPerWeek = null)
     {
         // Phase 10K-FREQ.6D.26 -- generalized off the same resolved-descriptor
         // easySupportCount already used above, inverted (DaysPerWeek =
@@ -85,10 +87,24 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
         // 10K-GEN.9 -- added an optional level parameter (defaulted to
         // Intermediate, byte-identical for every pre-GEN.9 caller) to
         // dispatch Advanced's own approved VolumeSafetyPolicy family.
-        var easySupportCount = selectedWeeks.Count > 0 ? selectedWeeks[0].EasySupportWorkouts.Count : 2;
-        var policy = level == RunningBackground.Advanced
-            ? VolumeSafetyPolicy.ForAdvancedDaysPerWeek(easySupportCount + 2)
-            : VolumeSafetyPolicy.ForIntermediateDaysPerWeek(easySupportCount + 2);
+        //
+        // Phase 10K-GEN.33 (GEN.32 §5 items 1 and 3):
+        // (a) adds the missing Beginner branch (identical rationale to the
+        //     initial-activation runtime's own ExistingLongHorizonGeWindowMaterializer
+        //     fix -- this checkpoint-path materializer had the same gap).
+        // (b) accepts an optional explicit daysPerWeek (mirroring the growth
+        //     materializer's own GEN.32 fix): selectedWeeks[0].EasySupportWorkouts.Count
+        //     is unreliable for 2D's alternating shape (0 or 1 depending on
+        //     which week happens to be first), so the real caller's own known
+        //     DaysPerWeek is preferred when supplied; every pre-GEN.33 caller
+        //     (no argument) keeps the exact prior inference, byte-for-byte.
+        var resolvedDaysPerWeek = daysPerWeek ?? ((selectedWeeks.Count > 0 ? selectedWeeks[0].EasySupportWorkouts.Count : 2) + 2);
+        var policy = level switch
+        {
+            RunningBackground.Advanced => VolumeSafetyPolicy.ForAdvancedDaysPerWeek(resolvedDaysPerWeek),
+            RunningBackground.Beginner => VolumeSafetyPolicy.ForBeginnerDaysPerWeek(resolvedDaysPerWeek),
+            _ => VolumeSafetyPolicy.ForIntermediateDaysPerWeek(resolvedDaysPerWeek),
+        };
         var weeklyAnchor = anchor.WeeklyVolumeKm!.Value;
         var longRunAnchor = anchor.LongRunKm!.Value;
         return selectedWeeks.Select(week =>
@@ -103,9 +119,26 @@ internal sealed class LongHorizonGeMaintenanceWindowMaterializer : ILongHorizonG
             var selectedLongRun = LongHorizonCheckpointEvidenceAggregator.Round(total * policy.LongRunSelectionShare);
             var hardCap = LongHorizonCheckpointEvidenceAggregator.Round(total * policy.LongRunHardCapShare);
             var longRun = Math.Min(longRunAnchor, Math.Min(selectedLongRun, hardCap));
-            var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(total, longRun, easySupportCount: easySupportCount);
+            // Phase 10K-GEN.33 (GEN.32 §5 item 3) -- the checkpoint-path
+            // sibling of GEN.32's own item-2 fix to LongHorizonGeNumericExecutor.
+            // Previously called Allocate with an implicit keySessionCount
+            // default of 1 and a single easySupportCount value derived once
+            // from selectedWeeks[0], applied uniformly to every week in this
+            // window -- silently wrong for a 2D Pattern-B week (which has no
+            // KEY_SESSION and whose own EasySupportWorkouts.Count may differ
+            // from selectedWeeks[0]'s). Now reads both counts off each week's
+            // own resolved shape. Byte-identical for every pre-GEN.33 caller,
+            // whose every week has HasKeySession=true and an identical
+            // EasySupportWorkouts.Count throughout the window.
+            var allocation = FourDaySessionDistanceAllocationPolicy.Allocate(
+                total, longRun,
+                keySessionCount: week.HasKeySession ? 1 : 0,
+                easySupportCount: week.EasySupportWorkouts.Count);
+            var keySessionDistanceKm = allocation.KeySessionDistancesKm.Count > 0
+                ? allocation.KeySessionDistanceKm
+                : 0d;
             return new LongHorizonGeWeekNumericResult(
-                week.WeekIndex, total, longRun, allocation.KeySessionDistanceKm,
+                week.WeekIndex, total, longRun, keySessionDistanceKm,
                 allocation.EasySupportDistancesKm);
         }).ToList();
     }
@@ -215,16 +248,23 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         // = DaysPerWeek - 2. Byte-identical for every existing caller
         // (4D: 4-2=2, 5D: 5-2=3) -- not a new decision, the same values the
         // ternary already produced, generalized to the frequency-neutral rule.
+        // Phase 10K-GEN.33 -- routed through LongHorizonGeCardinality.Resolve
+        // (GEN.32's own item-3 fix, previously wired only at the initial-
+        // activation runtime's call site, not here) so 2D's checkpoint-path
+        // continuation windows also alternate correctly instead of hitting
+        // Select's own ">=1 EASY_SUPPORT" precondition at DaysPerWeek-2==0.
+        // Byte-identical for every other DaysPerWeek.
+        var (geEasySupportCount, geAlternating) = LongHorizonGeCardinality.Resolve(request.DaysPerWeek);
         var descriptors = LongHorizonGeStructuralSelector
-            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile, request.DaysPerWeek - 2)
+            .Select(request.StructuralRoadmap.GeneralEnduranceWeeks, request.ReadinessProfile, geEasySupportCount, geAlternating)
             .Skip(nextStart - 1).Take(nextEnd - nextStart + 1).ToList();
         IReadOnlyList<LongHorizonGeWeekNumericResult> numeric;
         try
         {
             numeric = evaluation.Decision.Outcome == LongHorizonCheckpointOutcome.GrowthEligible
                 ? _growthMaterializer.Materialize(descriptors, new LongHorizonGeEntryBaselineInput(
-                    evaluation.EffectiveLoad!.WeeklyVolumeKm, evaluation.EffectiveLoad.LongRunKm, null), request.Level)
-                : _maintenanceMaterializer.Materialize(descriptors, evaluation.EffectiveLoad!, request.Level);
+                    evaluation.EffectiveLoad!.WeeklyVolumeKm, evaluation.EffectiveLoad.LongRunKm, null), request.Level, request.DaysPerWeek)
+                : _maintenanceMaterializer.Materialize(descriptors, evaluation.EffectiveLoad!, request.Level, request.DaysPerWeek);
             if (numeric.Count != descriptors.Count)
                 throw new LongHorizonCheckpointDecisionInvalidException("NUMERIC_WINDOW_INFEASIBLE: bounded materializer returned an incomplete window.");
             stages.Add(evaluation.Decision.Outcome == LongHorizonCheckpointOutcome.GrowthEligible ? "GrowthMaterialization" : "MaintenanceMaterialization");

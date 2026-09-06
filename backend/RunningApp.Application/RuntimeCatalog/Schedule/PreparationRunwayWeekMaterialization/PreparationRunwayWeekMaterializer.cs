@@ -62,7 +62,15 @@ internal static class PreparationRunwayWeekMaterializer
                     return Failure<TKey>(PreparationRunwayWeekMaterializationFailureCode.AnchorRoleIncompatible,
                         $"Block '{allocation.BlockKey}' progression step {progressionStep} maps its single anchor to a repeated support role.", trace);
 
-                var weekRoles = ResolveWeekRoles(request.CanonicalWeeklyLayout, runwayWeekNumber);
+                // Phase 10K-GEN.33 (GEN.32 §5 item 4) -- pattern selection uses
+                // the plan-global week ordinal (StartGlobalWeek + local
+                // runwayWeekNumber - 1), not the local runwayWeekNumber
+                // alone; StartGlobalWeek defaults to 1, so globalWeekNumber
+                // == runwayWeekNumber and this is byte-identical to every
+                // pre-GEN.33 caller (standalone Runway, and every LongHorizon
+                // caller whose GE segment happens to have even length).
+                var globalWeekNumber = request.StartGlobalWeek + runwayWeekNumber - 1;
+                var weekRoles = ResolveWeekRoles(request.CanonicalWeeklyLayout, globalWeekNumber);
 
                 // Phase 10K-GEN.29 -- role-conditioned Pattern-A/Pattern-B
                 // content selection (GEN.28 §9 Candidate C, the frozen
@@ -389,18 +397,25 @@ internal static class PreparationRunwayWeekMaterializer
     /// pre-GEN.27, non-2D layout), returns <c>OrderedRoles</c> unchanged,
     /// byte-identical to pre-GEN.27 behavior. Otherwise selects by the
     /// frozen global week-ordinal sequence (GEN.11 §1/§11, GEN.26 Q1):
-    /// <c>Pattern[(runwayWeekNumber-1) % PatternPeriodWeeks]</c>. Runway has
+    /// <c>Pattern[(globalWeekNumber-1) % PatternPeriodWeeks]</c>. Runway has
     /// no TAPER stage of its own (GEN.11 §5's taper override applies only to
     /// Core), so unlike Core's own <c>ResolveWeekRoles</c>, there is no
     /// stage-key override branch here.
     /// </summary>
+    /// <param name="globalWeekNumber">
+    /// Phase 10K-GEN.33 -- the plan-global ordinal of this Runway week
+    /// (<c>request.StartGlobalWeek + local runwayWeekNumber - 1</c>), not
+    /// merely Runway's own local counter; for standalone Runway
+    /// (StartGlobalWeek=1) this is numerically identical to the local
+    /// counter, byte-identical to pre-GEN.33 behavior.
+    /// </param>
     private static IReadOnlyList<PreparationRunwaySlotRole> ResolveWeekRoles(
-        PreparationRunwayCanonicalWeeklyLayout layout, int runwayWeekNumber)
+        PreparationRunwayCanonicalWeeklyLayout layout, int globalWeekNumber)
     {
         if (layout.WeeklyPatternRoles is not { } patterns)
             return layout.OrderedRoles;
 
-        var patternIndex = (runwayWeekNumber - 1) % layout.PatternPeriodWeeks!.Value;
+        var patternIndex = (globalWeekNumber - 1) % layout.PatternPeriodWeeks!.Value;
         return patterns[patternIndex];
     }
 

@@ -87,8 +87,19 @@ internal static class LongHorizonStructuralValidator
         // 3D/4D/5D/6D candidate identities (GEN.7/GEN.8 authority) alongside
         // Intermediate's. Advanced x3D (a genuinely new daysPerWeek value no
         // prior Level ever exercised in LongHorizon) resolves to 3.
+        // Phase 10K-GEN.33 -- recognizes the approved 2D candidate identities
+        // (V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateKey/
+        // TwoDayIntermediateCandidateKey, already public for 2D Core) so this
+        // validator's own expectedSlotCount is correct for 2D the moment any
+        // future phase wires a 2D skeleton through to it -- LongHorizonStructuralMaterializer
+        // itself does not yet build one (its own daysPerWeek guard, candidate-key
+        // dispatch, GE-selector call site, and Core run-layout dispatch all still
+        // need their own 2D wiring, disclosed but not fixed this phase; see the
+        // phase document). Unreachable, therefore zero-delta, until that wiring exists.
         var expectedSlotCount = skeleton.CandidateKey switch
         {
+            RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateKey
+                or RunningApp.Application.RuntimeCatalog.PreviewRouting.V1CatalogPilotIdentityPolicy.TwoDayIntermediateCandidateKey => 2,
             LongHorizonStructuralMaterializer.CandidateKeyAdvancedThreeDay => 3,
             LongHorizonStructuralMaterializer.CandidateKeyFiveDay or LongHorizonStructuralMaterializer.CandidateKeyAdvancedFiveDay => 5,
             LongHorizonStructuralMaterializer.CandidateKeySixDay or LongHorizonStructuralMaterializer.CandidateKeyAdvancedSixDay => 6,
@@ -110,9 +121,20 @@ internal static class LongHorizonStructuralValidator
                 var keyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "KEY_SESSION");
                 var easyCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "EASY_SUPPORT");
                 var longCount = week.OrderedWorkoutSlots.Count(s => s.StructuralRole == "LONG_RUN");
+                // Phase 10K-GEN.33 (GEN.32 §5 item 2) -- generalized off the
+                // week's own HasKeySession flag instead of a per-skeleton
+                // uniform "every week has exactly 1 (or 2) KEY_SESSION"
+                // assumption (independently corroborated by this roadmap's
+                // pre-existing GEN.19 note). HasKeySession defaults to true
+                // for every Runway/Core week and every non-alternating GE
+                // week, so this is byte-identical to the pre-GEN.33 formula
+                // for every existing candidate; only an alternating
+                // (Option-A, GEN.31 §1) Pattern-B GE week (HasKeySession
+                // false) now correctly expects 0 KEY_SESSION / 1 more
+                // EASY_SUPPORT instead of a false-positive finding.
                 var (expectedKey, expectedEasy) = hasDualKeyCore && week.Segment == LongHorizonSegmentType.Core
                     ? (2, expectedSlotCount - 3)
-                    : (1, expectedSlotCount - 2);
+                    : (week.HasKeySession ? 1 : 0, expectedSlotCount - 1 - (week.HasKeySession ? 1 : 0));
                 if (keyCount != expectedKey || easyCount != expectedEasy || longCount != 1)
                     findings.Add($"Global week {week.GlobalWeekNumber} does not contain exactly {expectedKey} KEY_SESSION, {expectedEasy} EASY_SUPPORT, and 1 LONG_RUN slot.");
                 var indices = week.OrderedWorkoutSlots.Select(s => s.StructuralSlotIndex).ToList();

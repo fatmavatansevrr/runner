@@ -48,7 +48,15 @@ internal sealed record LongHorizonStructuralWeek(
     LongHorizonGeMesocyclePosition? MesocyclePosition,
     bool? IsRecoveryWeek,
     bool? IsTerminalAlignment,
-    IReadOnlyList<LongHorizonStructuralWorkoutSlot> OrderedWorkoutSlots);
+    IReadOnlyList<LongHorizonStructuralWorkoutSlot> OrderedWorkoutSlots,
+    // Phase 10K-GEN.33 (GEN.32 §5 item 2) -- additive, defaults to true so
+    // every pre-GEN.33 week (every Runway/Core week, and every GE week built
+    // from a non-alternating descriptor) is byte-identical. For a GE week
+    // built from an alternating (Option-A, GEN.31 §1) descriptor, carries
+    // that descriptor's own HasKeySession verbatim, giving
+    // LongHorizonStructuralValidator a real per-week signal instead of a
+    // uniform per-skeleton assumption (GEN.32's disclosed defect 2).
+    bool HasKeySession = true);
 
 /// <summary>
 /// Phase 4I.5 — the single, dark, unwired structural skeleton contract for a

@@ -137,7 +137,20 @@ internal sealed record PreparationRunwayWeekMaterializationRequest<TKey>(
     IReadOnlyList<PreparationRunwayBlockAllocationOutcome<TKey>> OrderedBlockAllocations,
     IReadOnlyList<PreparationRunwayMaterializationBlockBinding<TKey>> OrderedBlockBindings,
     IReadOnlyList<PreparationRunwayBlockWeekRolePolicy<TKey>> BlockRolePolicies,
-    PreparationRunwaySupportWorkoutPolicy SupportWorkoutPolicy) where TKey : notnull;
+    PreparationRunwaySupportWorkoutPolicy SupportWorkoutPolicy,
+    // Phase 10K-GEN.33 (GEN.32 §5 item 4) -- the plan-global ordinal of this
+    // Runway's own local week 1, used only to select the correct entry of a
+    // repeating WeeklyPatternRoles (2D Model A/B); every other layout has no
+    // pattern and ignores this value entirely. Defaults to 1, reproducing
+    // standalone Runway's existing local-numbering behavior byte-for-byte
+    // (RunwayWeekNumber itself, used for contiguity/ordinal identity, is
+    // untouched -- only the *pattern-index* calculation changes). A
+    // LongHorizon caller whose preceding GE segment has odd length supplies
+    // GeWeeks+1 here so Runway's Pattern A/B selection continues the same
+    // global odd/even parity GE itself just established, instead of always
+    // restarting local week 1 at Pattern A regardless of GE's own length
+    // parity (GEN.32's own disclosed defect 4).
+    int StartGlobalWeek = 1) where TKey : notnull;
 
 internal sealed record PreparationRunwayMaterializedWorkoutSlot<TKey>(
     PreparationRunwaySlotRole SlotRole,
