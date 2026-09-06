@@ -38,8 +38,21 @@ internal static class LongHorizonCalendarAssigner
     public static IReadOnlyDictionary<string, DayOfWeek> AssignWeekdays(
         IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDay, int daysPerWeek = 4)
     {
-        if (daysPerWeek < 3)
-            throw new InvalidOperationException("daysPerWeek must be at least 3 (KEY_SESSION + at least one EASY_SUPPORT + LONG_RUN).");
+        // Phase 10K-GEN.34 -- widened from "daysPerWeek must be at least 3"
+        // to admit 2. A real 2D GE/Runway/Core week never has both a
+        // KEY_SESSION and an EASY_SUPPORT slot in the same week (GEN.11 §1's
+        // alternating Model B) -- its single non-long-run slot is
+        // KEY_SESSION on a Pattern-A week and EASY_SUPPORT_1 on a Pattern-B
+        // week, on the *same* physical weekday every week (the alternation is
+        // in the role assigned to that weekday's session, not in which
+        // weekday is used). This weekday-assignment dictionary is built once
+        // per activation window and reused by MapActivatedWeek's per-week
+        // RoleKeyFor lookup, so for 2D it must carry both role-key spellings
+        // pointing at the same single remaining day. Byte-identical for
+        // every daysPerWeek >= 3 caller (a real 3D+ week never needs both
+        // "KEY_SESSION" and "EASY_SUPPORT_1" to resolve to the same day).
+        if (daysPerWeek < 2)
+            throw new InvalidOperationException("daysPerWeek must be at least 2 (one alternating KEY_SESSION/EASY_SUPPORT slot + LONG_RUN).");
         if (preferredDays is null || preferredDays.Count != daysPerWeek || preferredDays.Distinct().Count() != daysPerWeek)
             throw new InvalidOperationException($"Preferred days must contain exactly {daysPerWeek} distinct weekdays.");
         if (!preferredDays.Contains(longRunDay))
@@ -51,8 +64,15 @@ internal static class LongHorizonCalendarAssigner
             ["LONG_RUN"] = longRunDay,
             ["KEY_SESSION"] = remaining[0],
         };
-        for (var i = 1; i < remaining.Count; i++)
-            assignments[$"EASY_SUPPORT_{i}"] = remaining[i];
+        if (daysPerWeek == 2)
+        {
+            assignments["EASY_SUPPORT_1"] = remaining[0];
+        }
+        else
+        {
+            for (var i = 1; i < remaining.Count; i++)
+                assignments[$"EASY_SUPPORT_{i}"] = remaining[i];
+        }
         return assignments;
     }
 

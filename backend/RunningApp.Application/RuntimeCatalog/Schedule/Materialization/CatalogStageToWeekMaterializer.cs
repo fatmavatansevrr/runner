@@ -86,6 +86,23 @@ public sealed class CatalogStageToWeekMaterializationContext
 
     /// <summary>Phase 10K-GEN.12 — verbatim from <see cref="Materialization.CatalogRunLayoutSlots.PatternPeriodWeeks"/>. Null iff <see cref="RunLayoutWeeklyPatternRoles"/> is null.</summary>
     public int? PatternPeriodWeeks { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.34 — the plan-global ordinal of this materialization's
+    /// own local week 1, used only to select the correct entry of a
+    /// repeating <see cref="RunLayoutWeeklyPatternRoles"/> (2D Model A/B);
+    /// every non-repeating layout ignores this value entirely. Defaults to 1,
+    /// reproducing every pre-GEN.34 caller's existing local-numbering
+    /// behavior byte-for-byte (standalone 2D Core's own local week 1 already
+    /// is global week 1). A LongHorizon caller whose Core segment is the
+    /// plan's third segment (GE then Runway then Core) supplies
+    /// <c>GeWeeks + 8 + 1</c> here so Core's own Pattern A/B selection
+    /// continues the same global odd/even parity GE and Runway already
+    /// established, instead of always restarting local week 1 at Pattern A
+    /// (mirroring <c>PreparationRunwayWeekMaterializationRequest.StartGlobalWeek</c>'s
+    /// identical GEN.33 fix for Runway).
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>Wraps a successfully materialized skeleton. <see cref="ICatalogStageToWeekMaterializer.Materialize"/> never returns a failure variant — every failure is a thrown, typed exception (see <c>CatalogStageToWeekMaterializationExceptions.cs</c>), never a partial or swallowed-error result.</summary>
@@ -393,7 +410,14 @@ public sealed class CatalogStageToWeekMaterializer : ICatalogStageToWeekMaterial
             return patterns[0];
         }
 
-        var patternIndex = (weekNumber - 1) % context.PatternPeriodWeeks!.Value;
+        // Phase 10K-GEN.34 -- pattern selection uses the plan-global week
+        // ordinal (StartGlobalWeek + local weekNumber - 1), not the local
+        // weekNumber alone; StartGlobalWeek defaults to 1, so globalWeekNumber
+        // == weekNumber and this is byte-identical to every pre-GEN.34 caller
+        // (standalone 2D Core, and every non-2D layout for which this branch
+        // is unreachable in the first place).
+        var globalWeekNumber = context.StartGlobalWeek + weekNumber - 1;
+        var patternIndex = (globalWeekNumber - 1) % context.PatternPeriodWeeks!.Value;
         return patterns[patternIndex];
     }
 }

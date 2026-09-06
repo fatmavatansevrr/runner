@@ -448,13 +448,20 @@ internal sealed class LongHorizonRollingCheckpointRuntime : ILongHorizonRollingC
         // widened further to admit Advanced 3D/4D/5D/6D (GEN.7/GEN.8
         // authority). Internal/dark checkpoint-runtime eligibility only --
         // not the public gate.
+        // Phase 10K-GEN.34 -- widened to admit Beginner/Intermediate x2D,
+        // mirroring the identical widening applied to
+        // LongHorizonRollingInitialActivationInputValidator.Validate (all
+        // eight structural-materializer defects GEN.32/GEN.33 disclosed, plus
+        // a ninth found by this phase, are now fixed and individually
+        // tested). No Advanced x2D identity exists or is approved.
         var levelFrequencyEligible =
-            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 2 or 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Beginner && request.DaysPerWeek is 2) ||
             (request.Level == RunningBackground.Advanced && request.DaysPerWeek is 3 or 4 or 5 or 6);
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible
             || request.StructuralRoadmap.TotalWeeks is < 21 or > 52
             || request.ReadinessProfile != request.StructuralRoadmap.Profile)
-            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Intermediate 4D-6D/Advanced 3D-6D/21-52 only.");
+            throw new LongHorizonCheckpointDecisionInvalidException("Checkpoint runtime eligibility is Race/exact-10K/Beginner or Intermediate 2D/Intermediate 4D-6D/Advanced 3D-6D/21-52 only.");
     }
 
     private static void ValidatePendingBoundary(LongHorizonRollingCheckpointRequest request, (int StartGlobalWeek, int EndGlobalWeek) boundary)

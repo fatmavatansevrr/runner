@@ -110,8 +110,11 @@ internal static class LongHorizonStructuralMaterializer
         // reaches daysPerWeek=3 here (its own gate in
         // LongHorizonRollingInitialActivationContracts/CheckpointRuntime
         // never admits Intermediate x3D LongHorizon).
-        if (daysPerWeek is not (3 or 4 or 5 or 6))
-            throw new InvalidOperationException($"LongHorizonStructuralMaterializer only recognizes daysPerWeek 3, 4, 5, or 6; received {daysPerWeek}.");
+        // Phase 10K-GEN.34 (GEN.33 §8 item 1) -- widened to admit 2
+        // (Beginner/Intermediate x2D LongHorizon, GEN.11/GEN.26/GEN.29/GEN.31
+        // authority). Every other daysPerWeek's behavior is byte-identical.
+        if (daysPerWeek is not (2 or 3 or 4 or 5 or 6))
+            throw new InvalidOperationException($"LongHorizonStructuralMaterializer only recognizes daysPerWeek 2, 3, 4, 5, or 6; received {daysPerWeek}.");
 
         if (decision.HorizonPath != LongHorizonPath.LongHorizonGeneralEnduranceRunwayAndCore)
             throw new InvalidOperationException(
@@ -130,8 +133,15 @@ internal static class LongHorizonStructuralMaterializer
             throw new InvalidOperationException(
                 $"AvailableFullWeeks ({decision.AvailableFullWeeks}) does not equal GE+Runway+Core ({geWeeks}+8+12).");
 
-        var easySupportCount = daysPerWeek - 2;
-        var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile, easySupportCount);
+        // Phase 10K-GEN.34 (GEN.33 §8 item 3) -- was raw `daysPerWeek - 2`,
+        // which both violates LongHorizonGeStructuralSelector.Select's own
+        // ">=1 EASY_SUPPORT" precondition for 2D (daysPerWeek-2==0) and never
+        // passed alternatingKeyEasy, so a 2D GE segment would never actually
+        // alternate even if the precondition were bypassed. Byte-identical
+        // for every other daysPerWeek (LongHorizonGeCardinality.Resolve
+        // reproduces the exact daysPerWeek-2/false pair for every value != 2).
+        var (easySupportCount, alternatingKeyEasy) = LongHorizonGeCardinality.Resolve(daysPerWeek);
+        var geDescriptors = LongHorizonGeStructuralSelector.Select(geWeeks, profile, easySupportCount, alternatingKeyEasy);
         if (geDescriptors.Count != geWeeks)
             throw new InvalidOperationException($"GE selector returned {geDescriptors.Count} weeks, expected {geWeeks}.");
 
@@ -139,7 +149,7 @@ internal static class LongHorizonStructuralMaterializer
         if (runwayWeeks.Count != 8)
             throw new InvalidOperationException($"Preparation Runway materializer returned {runwayWeeks.Count} weeks, expected 8.");
 
-        var coreWeeks = MaterializeCore(daysPerWeek, level);
+        var coreWeeks = MaterializeCore(daysPerWeek, level, geWeeks);
         if (coreWeeks.Count != 12)
             throw new InvalidOperationException($"Core materializer returned {coreWeeks.Count} weeks, expected 12.");
 
@@ -177,9 +187,26 @@ internal static class LongHorizonStructuralMaterializer
         return skeleton;
     }
 
-    /// <summary>Phase 10K-FREQ.6D.26 -- centralizes the three-way daysPerWeek-to-candidate-identity dispatch previously duplicated as separate `daysPerWeek == 5 ? ... : ...` ternaries. Phase 10K-GEN.9 -- added Level-aware dispatch to the approved Advanced identities; Intermediate's own dispatch is byte-identical for every existing caller (default level parameter).</summary>
+    /// <summary>
+    /// Phase 10K-FREQ.6D.26 -- centralizes the three-way daysPerWeek-to-candidate-identity dispatch previously duplicated as separate `daysPerWeek == 5 ? ... : ...` ternaries. Phase 10K-GEN.9 -- added Level-aware dispatch to the approved Advanced identities; Intermediate's own dispatch is byte-identical for every existing caller (default level parameter).
+    /// Phase 10K-GEN.34 (GEN.33 §8 item 2) -- added the missing 2D case,
+    /// dispatching to the already-existing, already-public 2D candidate
+    /// identities (<see cref="V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateKey"/>/
+    /// <see cref="V1CatalogPilotIdentityPolicy.TwoDayIntermediateCandidateKey"/>)
+    /// instead of silently falling through to the bare default (the 4D
+    /// Intermediate identity), which is what every pre-GEN.34 2D request
+    /// would have received. No Advanced x2D identity exists or is approved
+    /// (GEN.11/26/29/31 authority covers only Beginner/Intermediate 2D) --
+    /// (Advanced, 2) is not given its own case and falls through to the same
+    /// default every other unlisted combination already used pre-GEN.34;
+    /// this is unreachable in practice because neither eligibility gate
+    /// (LongHorizonRollingInitialActivationContracts/CheckpointRuntime) ever
+    /// admits Advanced x2D LongHorizon.
+    /// </summary>
     private static string ResolveCandidateKey(int daysPerWeek, RunningBackground level) => (level, daysPerWeek) switch
     {
+        (RunningBackground.Beginner, 2) => V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateKey,
+        (RunningBackground.Intermediate, 2) => V1CatalogPilotIdentityPolicy.TwoDayIntermediateCandidateKey,
         (RunningBackground.Advanced, 3) => CandidateKeyAdvancedThreeDay,
         (RunningBackground.Advanced, 4) => CandidateKeyAdvancedFourDay,
         (RunningBackground.Advanced, 5) => CandidateKeyAdvancedFiveDay,
@@ -191,6 +218,8 @@ internal static class LongHorizonStructuralMaterializer
 
     private static int ResolveCandidateVersion(int daysPerWeek, RunningBackground level) => (level, daysPerWeek) switch
     {
+        (RunningBackground.Beginner, 2) => V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateVersion,
+        (RunningBackground.Intermediate, 2) => V1CatalogPilotIdentityPolicy.TwoDayIntermediateCandidateVersion,
         (RunningBackground.Advanced, 3) => CandidateVersionAdvancedThreeDay,
         (RunningBackground.Advanced, 4) => CandidateVersionAdvancedFourDay,
         (RunningBackground.Advanced, 5) => CandidateVersionAdvancedFiveDay,
@@ -337,15 +366,33 @@ internal static class LongHorizonStructuralMaterializer
             MesocyclePosition: null,
             IsRecoveryWeek: null,
             IsTerminalAlignment: null,
-            OrderedWorkoutSlots: slots);
+            OrderedWorkoutSlots: slots,
+            // Phase 10K-GEN.34 -- computed from this week's own actual
+            // materialized slots rather than left at the record's default
+            // (true). Every pre-GEN.34 (non-2D) Runway week always carries a
+            // real KEY_SESSION slot, so this is byte-identical there; a real
+            // 2D Model-B Pattern-B Runway week (EASY_SUPPORT+LONG_RUN, GEN.27)
+            // genuinely has none -- leaving the default here would have made
+            // LongHorizonStructuralValidator's own HasKeySession-based check
+            // (GEN.33 §2 defect 2) falsely flag every such week the moment
+            // this materializer's own 2D dispatch (this phase) started
+            // producing them. A previously-undisclosed, dormant-until-now gap.
+            HasKeySession: slots.Any(s => s.StructuralRole == "KEY_SESSION"));
     }
+
+    /// <summary>Phase 10K-GEN.34 -- the real, already-public 2D Core run layout (GEN.11, real catalog artifact <c>run-layout-2d.v1.json</c>), verbatim structural mirror. Pattern A (odd global week) is KEY_SESSION+LONG_RUN; Pattern B (even) is EASY_SUPPORT+LONG_RUN -- the same Option-A alternation convention GE/Runway already use.</summary>
+    private static readonly PlanCatalogReference CoreRunLayoutTwoDay = new("RUN_LAYOUT_2D", 1);
+    private static readonly IReadOnlyList<string> CoreRunLayoutSlotRolesTwoDay = ["KEY_SESSION", "LONG_RUN"];
+    private static readonly IReadOnlyList<IReadOnlyList<string>> CoreRunLayoutWeeklyPatternRolesTwoDay =
+        [["KEY_SESSION", "LONG_RUN"], ["EASY_SUPPORT", "LONG_RUN"]];
+    private const int CoreRunLayoutPatternPeriodWeeksTwoDay = 2;
 
     // ── Core segment (reuses the existing, unchanged pure structural materializer) ──
 
-    private static IReadOnlyList<GeneratedCatalogWeekSkeleton> MaterializeCore(int daysPerWeek, RunningBackground level)
+    private static IReadOnlyList<GeneratedCatalogWeekSkeleton> MaterializeCore(int daysPerWeek, RunningBackground level, int geWeeks)
     {
-        var runLayout = daysPerWeek switch { 3 => CoreRunLayoutThreeDay, 5 => CoreRunLayoutFiveDay, 6 => CoreRunLayoutSixDay, _ => CoreRunLayout };
-        var runLayoutSlotRoles = daysPerWeek switch { 3 => CoreRunLayoutSlotRolesThreeDay, 5 => CoreRunLayoutSlotRolesFiveDay, 6 => CoreRunLayoutSlotRolesSixDay, _ => CoreRunLayoutSlotRoles };
+        var runLayout = daysPerWeek switch { 2 => CoreRunLayoutTwoDay, 3 => CoreRunLayoutThreeDay, 5 => CoreRunLayoutFiveDay, 6 => CoreRunLayoutSixDay, _ => CoreRunLayout };
+        var runLayoutSlotRoles = daysPerWeek switch { 2 => CoreRunLayoutSlotRolesTwoDay, 3 => CoreRunLayoutSlotRolesThreeDay, 5 => CoreRunLayoutSlotRolesFiveDay, 6 => CoreRunLayoutSlotRolesSixDay, _ => CoreRunLayoutSlotRoles };
         var context = new CatalogStageToWeekMaterializationContext
         {
             StartDate = DiscardedAnchorDate,
@@ -360,6 +407,22 @@ internal static class LongHorizonStructuralMaterializer
             StageWeekAllocations = CoreStageAllocations,
             RunLayout = runLayout,
             RunLayoutSlotRoles = runLayoutSlotRoles,
+            // Phase 10K-GEN.34 (GEN.33 §8 item 4) -- 2D's own repeating
+            // pattern, null for every other daysPerWeek (byte-identical to
+            // pre-GEN.34 behavior: CatalogStageToWeekMaterializer.ResolveWeekRoles
+            // returns RunLayoutSlotRoles unchanged whenever this is null).
+            RunLayoutWeeklyPatternRoles = daysPerWeek == 2 ? CoreRunLayoutWeeklyPatternRolesTwoDay : null,
+            PatternPeriodWeeks = daysPerWeek == 2 ? CoreRunLayoutPatternPeriodWeeksTwoDay : null,
+            // Phase 10K-GEN.34 (GEN.33 §8 item 4) -- Core is the plan's third
+            // segment (GE then Runway then Core, GEN.30 §3.4), so its own
+            // local week 1 is plan-global week geWeeks+8+1. Threading this
+            // through (mirroring defect 4's identical Runway fix) lets Core's
+            // own 2D pattern selection continue the same global odd/even
+            // parity GE/Runway already established, instead of always
+            // restarting local week 1 at Pattern A. Defaults to 1 for every
+            // non-2D layout's own no-op call (RunLayoutWeeklyPatternRoles is
+            // null there, so this value is never consulted) -- byte-identical.
+            StartGlobalWeek = geWeeks + 8 + 1,
         };
 
         var materializer = new CatalogStageToWeekMaterializer();
@@ -387,6 +450,15 @@ internal static class LongHorizonStructuralMaterializer
             MesocyclePosition: null,
             IsRecoveryWeek: null,
             IsTerminalAlignment: null,
-            OrderedWorkoutSlots: slots);
+            OrderedWorkoutSlots: slots,
+            // Phase 10K-GEN.34 -- same fix as BuildRunwayWeek above: computed
+            // from this week's own actual materialized slots, not the
+            // record's default (true). Every pre-GEN.34 (non-2D, including
+            // the dual-KEY 5D/6D) Core week always carries >=1 KEY_SESSION
+            // slot, so this is byte-identical there and does not affect
+            // LongHorizonStructuralValidator's separate hasDualKeyCore branch
+            // (which never consults HasKeySession at all); a real 2D Core
+            // Pattern-B week (EASY_SUPPORT+LONG_RUN) genuinely has none.
+            HasKeySession: slots.Any(s => s.StructuralRole == "KEY_SESSION"));
     }
 }

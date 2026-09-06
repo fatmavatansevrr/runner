@@ -109,26 +109,30 @@ internal static class LongHorizonRollingInitialActivationInputValidator
         // left untouched -- the public gate remains closed for every Advanced
         // frequency.
         //
-        // Phase 10K-GEN.32 -- NOT widened to admit 2D this phase. GEN.32's own
-        // investigation (PHASE_10K_GEN_32 §3.3) found that opening this gate
-        // alone would let 2D traffic reach at least three unfixed downstream
-        // defects (the Level-dispatch branch below/in ExistingLongHorizonGeWindowMaterializer
-        // has no Beginner case and would silently apply Intermediate's numeric
-        // policy to Beginner; LongHorizonStructuralValidator's per-skeleton
-        // uniform expectedKey/expectedEasy shape does not yet recognize 2D's
-        // per-week alternation; LongHorizonGeMaintenanceWindowMaterializer's
-        // checkpoint-path Allocate call does not yet honor a week's own
-        // HasKeySession flag) -- left closed deliberately rather than shipping
-        // a gate that is open but not yet safe to exercise.
+        // Phase 10K-GEN.32/33 -- NOT widened to admit 2D those phases.
+        // GEN.32's own investigation (PHASE_10K_GEN_32 §3.3) found unfixed
+        // downstream defects; GEN.33 fixed those four but then found four
+        // more, one layer deeper, in LongHorizonStructuralMaterializer
+        // itself, and again left this gate closed.
+        //
+        // Phase 10K-GEN.34 -- all eight defects (GEN.32's original four,
+        // GEN.33's four disclosed structural-materializer gaps) are now
+        // fixed and individually tested, plus a ninth (BuildRunwayWeek/
+        // BuildCoreWeek's HasKeySession was hardcoded true regardless of a
+        // week's own actual materialized content, found by this phase's own
+        // additional trace). Widened to admit Beginner/Intermediate x2D
+        // (GEN.11/26/29/31 authority). No Advanced x2D identity exists or is
+        // approved, so Advanced is deliberately not widened here.
         var levelFrequencyEligible =
-            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Intermediate && request.DaysPerWeek is 2 or 4 or 5 or 6) ||
+            (request.Level == RunningBackground.Beginner && request.DaysPerWeek is 2) ||
             (request.Level == RunningBackground.Advanced && request.DaysPerWeek is 3 or 4 or 5 or 6);
         if (request.GoalType != GoalType.Race || request.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible)
         {
             throw new LongHorizonRollingInitialActivationException(
                 LongHorizonRollingInitialActivationFailureReason.InvalidEligibility,
                 "LONG_HORIZON_ROLLING_INITIAL_ELIGIBILITY_INVALID",
-                "Rolling initial activation is restricted to Race / exact 10K / Intermediate 4-6 days per week / Advanced 3-6 days per week.");
+                "Rolling initial activation is restricted to Race / exact 10K / Beginner or Intermediate 2 days per week / Intermediate 4-6 days per week / Advanced 3-6 days per week.");
         }
 
         if (request.StartDate >= request.RaceDate
