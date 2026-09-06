@@ -169,4 +169,4 @@ The one remaining item — the GE→Runway/Core JIT-composition boundary and any
 
 ## 11. Governance
 
-`PHASE_LEDGER.md` row appended (`GEN.34`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item (§Backlog item 1) updated to record the admission gate's opening, the six total fixed gaps, the real-PostgreSQL GE-segment verification, and the disclosed bundle-publication remainder as the next phase's concrete starting point. Two-commit self-referential-SHA-backfill pattern followed. Normal push only.
+`PHASE_LEDGER.md` row appended (`GEN.34`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item (§Backlog item 1) updated to record the admission gate's opening, the six total fixed gaps, the real-PostgreSQL GE-segment verification, and the disclosed bundle-publication remainder as the next phase's concrete starting point. Two-commit self-referential-SHA-backfill pattern followed: implementation commit `802e26a`, this document and the ledger row backfilled with that SHA in a second, documentation-only commit. Normal push only.
