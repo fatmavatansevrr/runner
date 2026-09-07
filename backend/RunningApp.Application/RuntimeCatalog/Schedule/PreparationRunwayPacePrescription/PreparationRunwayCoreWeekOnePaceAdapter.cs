@@ -8,7 +8,30 @@ internal static class PreparationRunwayCoreWeekOnePaceAdapter
 {
     public static PreparationRunwayCoreWeekOnePaceTarget FromAuthoritativeCoreBehavior(CatalogPrescribedPlan corePlan)
     {
-        var first = corePlan.Weeks.OrderBy(w => w.WeekNumber).FirstOrDefault();
+        var weeksOrdered = corePlan.Weeks.OrderBy(w => w.WeekNumber).ToArray();
+        var localWeekOne = weeksOrdered.Length > 0 ? weeksOrdered[0] : null;
+        var localWeekOneKeyCount = localWeekOne?.Sessions.Count(s => s.StructuralRole == "KEY_SESSION") ?? 0;
+
+        // Phase 10K-GEN.37 -- "DECISION ON GEN.36": anchor to the first Core
+        // week (within local weeks 1-2) that carries a KEY_SESSION, rather
+        // than unconditionally assuming local week 1 always does. Core's
+        // Pattern-A/B alternation is strict (proven GEN.26-GEN.36): if local
+        // week 1 is Pattern B (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION --
+        // only reachable once a continuation offset makes Core's true week 1
+        // continue an odd GeneralEnduranceWeeks global parity), local week 2
+        // is guaranteed Pattern A. Anchoring to local week 1 when it already
+        // carries a KEY_SESSION (every case reachable before GEN.37, and
+        // every case where the continuation offset happens to land Core's
+        // week 1 on Pattern A) is byte-identical to pre-GEN.37 behavior --
+        // zero delta. This does not add any new pace/numeric authority: it
+        // only changes WHICH week supplies the existing goal-pace data, never
+        // what that data means or how it is computed (deriving a target from
+        // an EASY_SUPPORT session was explicitly considered and rejected --
+        // not implemented here or anywhere).
+        var first = localWeekOneKeyCount >= 1
+            ? localWeekOne
+            : (weeksOrdered.Length > 1 ? weeksOrdered[1] : null);
+
         var keyCount = first?.Sessions.Count(s => s.StructuralRole == "KEY_SESSION") ?? 0;
         var easyCount = first?.Sessions.Count(s => s.StructuralRole == "EASY_SUPPORT") ?? 0;
         var longCount = first?.Sessions.Count(s => s.StructuralRole == "LONG_RUN") ?? 0;
@@ -47,6 +70,7 @@ internal static class PreparationRunwayCoreWeekOnePaceAdapter
 
         return new PreparationRunwayCoreWeekOnePaceTarget(
             corePlan.CandidateKey, corePlan.CandidateVersion, slots,
-            "CatalogSessionPrescriptionPlanner authoritative Core Foundation Week 1 output");
+            $"CatalogSessionPrescriptionPlanner authoritative Core Foundation week {first.WeekNumber} output" +
+            (first.WeekNumber == 1 ? string.Empty : " (GEN.37: local week 1 carried zero KEY_SESSION, anchored to the next KEY_SESSION-bearing week per DECISION ON GEN.36)"));
     }
 }

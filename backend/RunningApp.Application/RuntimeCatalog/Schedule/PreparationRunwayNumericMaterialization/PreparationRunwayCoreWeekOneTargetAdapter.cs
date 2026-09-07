@@ -24,9 +24,27 @@ internal static class PreparationRunwayCoreWeekOneTargetAdapter
     public static PreparationRunwayCoreWeekOneNumericTarget FromAuthoritativeCoreBehavior(
         CatalogVolumeAndLongRunPlan volumePlan, CatalogPrescribedPlan finalPrescribedPlan)
     {
-        var weekly = volumePlan.WeeklyVolumePlan.Weeks.OrderBy(w => w.WeekNumber).FirstOrDefault();
-        var longRun = volumePlan.LongRunProgression.Weeks.OrderBy(w => w.WeekNumber).FirstOrDefault();
-        var firstPrescribedWeek = finalPrescribedPlan.Weeks.OrderBy(w => w.WeekNumber).FirstOrDefault();
+        // Phase 10K-GEN.37 -- "DECISION ON GEN.36": recurring-defect-family instance,
+        // fixed the same way as PreparationRunwayCoreWeekOnePaceAdapter. This adapter's
+        // firstPrescribedWeek lookup previously assumed Core's local week 1 always carries
+        // a KEY_SESSION (true for every case reachable before GEN.37). Once the
+        // continuation offset makes Core's true local week 1 legitimately land on Pattern B
+        // (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION), the same anchor-selection rule applies:
+        // anchor to the first Core local week (within weeks 1-2) that carries a KEY_SESSION,
+        // guaranteed to exist by Core's strict Pattern-A/B alternation. All three sources
+        // (weekly volume, long-run distance, and session-role counts) are anchored to the
+        // SAME resolved week for internal self-consistency -- byte-identical to pre-GEN.37
+        // behavior whenever local week 1 already carries a KEY_SESSION (every case reachable
+        // before this phase).
+        var localWeekOnePrescribed = finalPrescribedPlan.Weeks.OrderBy(w => w.WeekNumber).FirstOrDefault();
+        var localWeekOneKeyCount = localWeekOnePrescribed?.Sessions.Count(s => s.StructuralRole == "KEY_SESSION") ?? 0;
+        var anchorWeekNumber = localWeekOneKeyCount >= 1
+            ? localWeekOnePrescribed?.WeekNumber
+            : finalPrescribedPlan.Weeks.OrderBy(w => w.WeekNumber).Skip(1).FirstOrDefault()?.WeekNumber;
+
+        var weekly = anchorWeekNumber is { } wn1 ? volumePlan.WeeklyVolumePlan.Weeks.FirstOrDefault(w => w.WeekNumber == wn1) : null;
+        var longRun = anchorWeekNumber is { } wn2 ? volumePlan.LongRunProgression.Weeks.FirstOrDefault(w => w.WeekNumber == wn2) : null;
+        var firstPrescribedWeek = anchorWeekNumber is { } wn3 ? finalPrescribedPlan.Weeks.FirstOrDefault(w => w.WeekNumber == wn3) : null;
         if (weekly is null || longRun is null || firstPrescribedWeek is null)
         {
             throw new InvalidOperationException("Authoritative Core Week 1 numeric prescription is unavailable.");

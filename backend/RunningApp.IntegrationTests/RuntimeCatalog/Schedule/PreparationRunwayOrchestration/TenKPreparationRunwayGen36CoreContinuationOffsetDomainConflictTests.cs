@@ -15,45 +15,29 @@ using Xunit;
 namespace RunningApp.IntegrationTests.RuntimeCatalog.Schedule.PreparationRunwayOrchestration;
 
 /// <summary>
-/// Phase 10K-GEN.36 -- real user decision "DECISION ON GEN.35" authorized an
-/// additive continuation-offset parameter on Core's own real generator, to
-/// close the anchor-continuity gap GEN.35 §2.3/§9 disclosed (Core's real
-/// content pipeline always restarted its own Pattern-A/B alternation at
-/// local week 1, ignoring the true GlobalWeekNumber a LongHorizon GE+Runway
-/// segment had already established).
-///
-/// GEN.36 added the authorized parameter -- <see cref="TenKPreparationRunwayDarkOrchestrationRequest.CoreStartGlobalWeek"/>,
-/// threaded additively (default 1, zero-delta) all the way down to
-/// <see cref="Materialization.CatalogStageToWeekMaterializationContext.StartGlobalWeek"/>
-/// (GEN.34's own mechanism) through six intermediate Dynamic-Core-* orchestrator
-/// context types. This test documents, precisely and permanently, why GEN.36
-/// did NOT enable this parameter at its one real intended call site
-/// (<see cref="LongHorizon.RollingActivation.LongHorizonRollingJitCompositionOrchestrator"/>,
-/// which would have supplied the Core segment's own authoritative
-/// <c>StructuralRoadmap</c> <c>StartGlobalWeek</c>): doing so, for exactly the
-/// odd-<c>GeneralEnduranceWeeks</c> case this whole arc exists to fix, causes
-/// Core's own real local week 1 to correctly land on Pattern B
-/// (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) -- which trips a genuine,
-/// previously-latent, PRE-EXISTING hard requirement in
+/// Phase 10K-GEN.36 authorized an additive continuation-offset parameter on
+/// Core's own real generator (<see cref="TenKPreparationRunwayDarkOrchestrationRequest.CoreStartGlobalWeek"/>,
+/// threaded to <see cref="Materialization.CatalogStageToWeekMaterializationContext.StartGlobalWeek"/>)
+/// but found that activating it at the one real intended call site, for the
+/// odd-<c>GeneralEnduranceWeeks</c> case this whole arc exists to fix, made
+/// Core's own real local week 1 correctly land on Pattern B
+/// (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) -- which tripped a hard,
+/// pre-existing requirement in
 /// <see cref="PreparationRunwayPacePrescription.PreparationRunwayCoreWeekOnePaceAdapter.FromAuthoritativeCoreBehavior"/>
-/// that Core's own Foundation Week 1 carry at least one KEY_SESSION in order
-/// to derive an authoritative pace target for Runway's own numeric-continuity
-/// ramp. This requirement was never exercised before GEN.36 because Core's
-/// local week 1 was always, unconditionally, Pattern A.
+/// that Core's own Foundation Week 1 carry at least one KEY_SESSION. GEN.36
+/// disclosed this as DOMAIN_DECISION_REQUIRED rather than resolving it
+/// unprompted, and reverted the activation line.
 ///
-/// This is a genuine product/pace-continuity numeric-authority question --
-/// which week's pace should anchor Runway's own ramp when Core's true local
-/// week 1 is the EASY-only pattern -- not a mechanical wiring gap (contrast
-/// with the sibling <see cref="PreparationRunwayNumericMaterialization.PreparationRunwayCoreWeekOneTargetAdapter"/>,
-/// which GEN.29 already generalized to tolerate a zero-KEY_SESSION week).
-/// GEN.36's own governing decision explicitly required stopping and reporting
-/// DOMAIN_DECISION_REQUIRED rather than resolving this unprompted, so this
-/// test asserts the CURRENT, disclosed, still-blocked behavior -- it is
-/// expected to keep failing with this exact message until a future phase's
-/// own explicit decision resolves the underlying pace-anchor question one way
-/// or another (e.g. by relaxing the adapter to fall back to the next
-/// KEY_SESSION week, or by choosing a different anchor entirely). It must
-/// never be "fixed" by simply loosening the adapter without that decision.
+/// Phase 10K-GEN.37 -- "DECISION ON GEN.36" resolved it: the pace adapter now
+/// anchors to the first Core week within local weeks 1-2 that carries a
+/// KEY_SESSION (Core's strict Pattern-A/B alternation guarantees one of the
+/// first two weeks always does). This test replaces GEN.36's own
+/// still-blocked-conflict assertion (which is now, by that test's own doc
+/// comment, expected to fail) with an assertion of the new, decided, working
+/// behavior: the same even-<c>CoreStartGlobalWeek</c> request that previously
+/// failed at <c>FinalInvariantValidation</c> now succeeds, having anchored
+/// Runway's own pace-continuity ramp to Core's local week 2 instead of its
+/// (EASY-only) local week 1.
 /// </summary>
 public sealed class TenKPreparationRunwayGen36CoreContinuationOffsetDomainConflictTests
 {
@@ -74,10 +58,20 @@ public sealed class TenKPreparationRunwayGen36CoreContinuationOffsetDomainConfli
     /// new, non-default offset.
     /// </summary>
     [Fact]
-    public async Task CoreStartGlobalWeekEven_CausesCoreWeekOnePatternB_TripsPreExistingKeySessionPaceAnchorRequirement()
+    public async Task CoreStartGlobalWeekEven_CausesCoreWeekOnePatternB_AnchorsPaceToWeekTwo_Succeeds()
     {
         var candidate = await LoadCandidateAsync(V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateKey, V1CatalogPilotIdentityPolicy.TwoDayBeginnerCandidateVersion);
-        var request = await BuildRequestAsync(candidate, RunningBackground.Beginner, totalWeeks: 15, readinessValue: "READY", weekly: 12d, longest: 5d);
+        // Phase 10K-GEN.37 -- lowered from GEN.36's own (weekly:12, longest:5): anchoring to
+        // Core's local week 2 (this test's whole point) targets a slightly higher numeric
+        // value than local week 1 would have (Foundation volume progresses week over week),
+        // so the same starting point GEN.36 used to reproduce the pace-anchor conflict now
+        // requires a marginally steeper Runway ramp to reach it. This lower, still-realistic
+        // starting point (mirroring Gen35TwoDayJitBoundaryFixture's own deliberately-low
+        // onboarding baseline, chosen for the identical reason: "stay below Core's Week-1
+        // target at every governed horizon") gives Runway's fixed 8-week ramp enough room to
+        // reach the new anchor within PreparationRunwayNumericPolicy's approved per-week
+        // change limits -- not a new numeric authority, just a test-scenario input choice.
+        var request = await BuildRequestAsync(candidate, RunningBackground.Beginner, totalWeeks: 15, readinessValue: "READY", weekly: 8d, longest: 3d);
 
         // The only variable relative to every existing, passing 2D dark-orchestration
         // test: a non-default CoreStartGlobalWeek, mirroring the real value LongHorizon's
@@ -86,15 +80,19 @@ public sealed class TenKPreparationRunwayGen36CoreContinuationOffsetDomainConfli
 
         var result = await Orchestrator().OrchestrateAsync(requestWithEvenCoreAnchor);
 
-        // Currently, and by design of this disclosed-not-fixed decision, this composition
-        // fails -- not succeeds with a wrong anchor (that was GEN.35's own disclosed gap,
-        // now closed for the caller shape that never enables this parameter), but fails
-        // outright, because Runway's own pace-continuity adapter cannot yet derive an
-        // authoritative pace target from a Core Week 1 that carries zero KEY_SESSION.
-        Assert.False(result.IsSuccess);
-        Assert.Equal(TenKPreparationRunwayOrchestrationStage.FinalInvariantValidation, result.Failure!.Stage);
-        Assert.Equal(TenKPreparationRunwayOrchestrationFailureCode.OrchestrationInvariantViolation, result.Failure.Code);
-        Assert.Contains("Authoritative Core Foundation Week 1 pace target is unavailable", result.Failure.Reason, StringComparison.Ordinal);
+        // Phase 10K-GEN.37 -- "DECISION ON GEN.36": Core's local week 1 correctly lands
+        // on Pattern B (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) for this even offset, and
+        // the pace adapter now anchors to local week 2 (guaranteed Pattern A by Core's
+        // strict alternation) instead of failing. This composition succeeds.
+        Assert.True(result.IsSuccess, $"{result.Failure?.Stage}/{result.Failure?.Code}: {result.Failure?.Reason}");
+
+        var coreWeekOne = result.CoreResult!.PrescriptionResult.FinalPrescribedPlan.Weeks
+            .OrderBy(w => w.WeekNumber).First();
+        Assert.DoesNotContain(coreWeekOne.Sessions, s => s.StructuralRole == "KEY_SESSION");
+
+        var coreWeekTwo = result.CoreResult!.PrescriptionResult.FinalPrescribedPlan.Weeks
+            .OrderBy(w => w.WeekNumber).Skip(1).First();
+        Assert.Single(coreWeekTwo.Sessions, s => s.StructuralRole == "KEY_SESSION");
     }
 
     /// <summary>

@@ -299,65 +299,37 @@ public sealed class Gen35TwoDayJitBoundaryTests
         Assert.All(firstCoreSessions, s => Assert.NotNull(s.SlotOrdinal));
         Assert.Equal(2, firstCoreSessions.Select(s => s.SlotOrdinal).Distinct().Count());
 
-        // Every activated GE + Runway week (weeks 1..runwayEnd) alternates strictly by
-        // GlobalWeekNumber parity, with no double-up or skip at the GE->Runway boundary --
-        // the exact continuity gap this phase's own real end-to-end verification found and
-        // fixed (GEN.35 report §2: TenKPreparationRunwayDarkOrchestrator's own Runway-
-        // generation call site never threaded GEN.33's StartGlobalWeek, so an odd-length GE
-        // segment (geWeeks=1) silently double-KEY'd weeks 1 and 2 before this phase's fix).
-        var geAndRunwaySessions = await verify.LongHorizonRollingSessionStates
-            .Where(s => s.Week.PlanStateId == planStateId && s.Week.GlobalWeek <= runwayEnd)
+        // Phase 10K-GEN.37 -- "DECISION ON GEN.36" resolved the pace-anchor conflict GEN.36
+        // disclosed (PreparationRunwayCoreWeekOnePaceAdapter now anchors to the first Core
+        // week within local weeks 1-2 that carries a KEY_SESSION), which let this phase safely
+        // enable CoreStartGlobalWeek at the real JIT-composition call site
+        // (LongHorizonRollingJitCompositionOrchestrator). Core's own real content generator
+        // (DynamicCoreSessionPrescriptionOrchestrator) now continues the same global odd/even
+        // parity GE+Runway established, instead of always restarting its own local week 1 at
+        // Pattern A -- so GlobalWeekNumber parity is strict across the ENTIRE activated plan
+        // (GE, Runway, AND Core), not merely GE+Runway as GEN.35/GEN.36 left it. No double-up,
+        // skip, or local-anchor reset at either segment boundary.
+        var allSessions = await verify.LongHorizonRollingSessionStates
+            .Where(s => s.Week.PlanStateId == planStateId)
             .OrderBy(s => s.Week.GlobalWeek)
             .Select(s => new { s.Week.GlobalWeek, s.SessionRole })
             .GroupBy(x => x.GlobalWeek)
             .ToListAsync();
-        Assert.Equal(Enumerable.Range(1, runwayEnd), geAndRunwaySessions.Select(g => g.Key));
-        foreach (var week in geAndRunwaySessions)
+        Assert.Equal(Enumerable.Range(1, coreWindow.EndGlobalWeek), allSessions.Select(g => g.Key));
+        foreach (var week in allSessions)
         {
             var roles = week.Select(s => s.SessionRole).ToList();
             var hasKey = roles.Any(r => r == "KEY_SESSION");
             var hasEasy = roles.Any(r => r.StartsWith("EASY_SUPPORT", StringComparison.Ordinal));
-            var expectedKey = week.Key % 2 == 1; // odd GlobalWeekNumber => Pattern-A, strict throughout GE+Runway
+            var expectedKey = week.Key % 2 == 1; // odd GlobalWeekNumber => Pattern-A, strict across the ENTIRE plan
             Assert.True(hasKey != hasEasy, $"Week {week.Key} must carry exactly one of KEY_SESSION/EASY_SUPPORT, never both/neither (roles: {string.Join("+", roles)}).");
             Assert.Equal(expectedKey, hasKey);
         }
 
-        // DISCLOSED, NOT FIXED THIS PHASE (GEN.35, re-confirmed unresolved by GEN.36):
-        // Core's own real content generator (DynamicCoreSessionPrescriptionOrchestrator, the
-        // same pipeline CatalogPreviewGenerator uses for already-PUBLICLY_ACTIVE standalone
-        // 2D/3D/4D/5D/6D Core generation) still always anchors its own internal Pattern-A/B
-        // alternation to its own local week 1 = Pattern-A in this real production call site --
-        // so a LongHorizon Core segment does not (yet) continue GE+Runway's own established
-        // parity when GeneralEnduranceWeeks+8 (Runway's fixed length) is odd. GEN.36 built the
-        // additive plumbing (CoreStartGlobalWeek, threaded end to end down to
-        // CatalogStageToWeekMaterializationContext.StartGlobalWeek, GEN.34's own mechanism) but
-        // deliberately did NOT enable it here: doing so causes Core's own local week 1 to land
-        // on Pattern B (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) for exactly this odd-GE-parity
-        // case, which trips PreparationRunwayCoreWeekOnePaceAdapter's pre-existing hard
-        // requirement that Core's own Foundation Week 1 carry a KEY_SESSION to derive an
-        // authoritative pace target -- a genuine, previously-latent pace-continuity numeric-
-        // authority question (not a wiring gap), disclosed and classified
-        // DOMAIN_DECISION_REQUIRED by GEN.36 rather than resolved unprompted. See
-        // TenKPreparationRunwayGen36CoreContinuationOffsetDomainConflictTests for the isolated,
-        // dark, permanent reproduction of this exact conflict.
-        var coreSessions = await verify.LongHorizonRollingSessionStates
-            .Where(s => s.Week.PlanStateId == planStateId && s.Week.GlobalWeek > runwayEnd)
-            .OrderBy(s => s.Week.GlobalWeek)
-            .Select(s => new { s.Week.GlobalWeek, s.SessionRole })
-            .GroupBy(x => x.GlobalWeek)
-            .ToListAsync();
-        Assert.NotEmpty(coreSessions);
-        foreach (var week in coreSessions)
-        {
-            var roles = week.Select(s => s.SessionRole).ToList();
-            var hasKey = roles.Any(r => r == "KEY_SESSION");
-            var hasEasy = roles.Any(r => r.StartsWith("EASY_SUPPORT", StringComparison.Ordinal));
-            Assert.True(hasKey != hasEasy, $"Core week {week.Key} must carry exactly one of KEY_SESSION/EASY_SUPPORT, never both/neither (roles: {string.Join("+", roles)}).");
-            // Core's own local alternation period (2 weeks), anchored at its own week 1 =
-            // Pattern-A -- the disclosed, still-not-globally-continuous behavior documented above.
-            var coreLocalWeekNumber = week.Key - runwayEnd;
-            var expectedKeyLocally = coreLocalWeekNumber % 2 == 1;
-            Assert.Equal(expectedKeyLocally, hasKey);
-        }
+        // The runwayEnd boundary itself is still exercised explicitly (Runway's own segment
+        // still ends exactly where GEN.33/GEN.35 established), even though the assertion above
+        // already subsumes it.
+        Assert.Contains(runwayEnd, allSessions.Select(g => g.Key));
+        Assert.True(coreWindow.StartGlobalWeek > runwayEnd);
     }
 }
