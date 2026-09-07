@@ -3,7 +3,7 @@
 **Phase type**: DECISION (decision-recording/governance-closure only — no production code, no HM catalog artifacts, no public routing changes, no 10K changes of any kind)
 **Execution status**: DONE
 **Final classification**: `HM_WORKOUT_PROGRESSION_STAGE_CATALOG_CLOSED`
-**Governance commit**: PENDING (backfilled in the following commit, per this engagement's established two-commit self-referential-SHA pattern).
+**Governance commit**: `2c281a3` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Parent**: `HM.1.2` (`PHASE_HM_1_2_WORKOUT_PROGRESSION_STAGE_CATALOG_CLOSURE.md`), which derived and evidence-traced the full HM stage catalog for `HALF_MARATHON × INTERMEDIATE × 4D × 14W` but classified itself `HM_WORKOUT_PROGRESSION_STAGE_CATALOG_BLOCKED` on exactly one remaining numeric gap (§14 item 1: exact `MinimumExposures`/`MaximumExposures`, or a simpler fixed week-count, per `KEY_SESSION`-lane stage for this one cell), plus one disclosed non-blocking preference (§14 item 2: Taper KEY-lane family choice).
 
 ---
