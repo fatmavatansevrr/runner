@@ -161,4 +161,4 @@ Step 0 found `GEN.34`'s own mechanism already existed at the bottom of Core's re
 
 ## 10. Governance
 
-`PHASE_LEDGER.md` row appended (`GEN.36`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item updated to record the additive plumbing, the zero-delta proof, and the disclosed `DOMAIN_DECISION_REQUIRED` pace-anchor conflict. Two-commit self-referential-SHA-backfill pattern followed: implementation commit (production plumbing + new tests + this report + ledger/roadmap with `PENDING` placeholder), this document and the ledger row backfilled with that SHA in a second, documentation-only commit. Normal push only.
+`PHASE_LEDGER.md` row appended (`GEN.36`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item updated to record the additive plumbing, the zero-delta proof, and the disclosed `DOMAIN_DECISION_REQUIRED` pace-anchor conflict. Two-commit self-referential-SHA-backfill pattern followed: implementation commit `c19b893` (production plumbing + new tests + this report + ledger/roadmap with `PENDING` placeholder), this document and the ledger row backfilled with that SHA in a second, documentation-only commit. Normal push only.
