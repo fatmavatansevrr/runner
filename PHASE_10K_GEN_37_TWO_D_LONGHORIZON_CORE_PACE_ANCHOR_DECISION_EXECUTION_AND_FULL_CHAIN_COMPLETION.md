@@ -155,4 +155,4 @@ This closes the `GEN.33`-`GEN.37` arc: 2D LongHorizon's GE→Runway→Core chain
 
 ## 9. Governance
 
-`PHASE_LEDGER.md` row appended (`GEN.37`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item updated to record the resolved decision, the recurring-defect-family fix, and the full-chain completion. Two-commit self-referential-SHA-backfill pattern followed: implementation commit (production fixes + updated tests + this report + ledger/roadmap with `PENDING` placeholder), this document and the ledger row backfilled with that SHA in a second, documentation-only commit. Normal push only.
+`PHASE_LEDGER.md` row appended (`GEN.37`). `MASTER_ROADMAP.md`'s 2D-LongHorizon backlog item updated to record the resolved decision, the recurring-defect-family fix, and the full-chain completion. Two-commit self-referential-SHA-backfill pattern followed: implementation commit `157803f` (production fixes + updated tests + this report + ledger/roadmap with `PENDING` placeholder), this document and the ledger row backfilled with that SHA in a second, documentation-only commit. Normal push only.
