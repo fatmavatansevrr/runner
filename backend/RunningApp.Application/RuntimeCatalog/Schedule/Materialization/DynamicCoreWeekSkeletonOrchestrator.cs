@@ -21,6 +21,15 @@ internal sealed class DynamicCoreWeekSkeletonOrchestrationContext
     public required DateOnly StartDate { get; init; }
 
     public required DateOnly AsOfDate { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.36 — threaded straight through to
+    /// <see cref="CatalogStageToWeekMaterializationContext.StartGlobalWeek"/> (added GEN.34), the
+    /// mechanism that already existed at this materializer's own level but which this orchestrator
+    /// never set, leaving every real Core caller (including LongHorizon's, per GEN.35 §2.3's disclosed
+    /// gap) implicitly at the default. Defaults to 1, byte-identical for every existing caller.
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>Backend Integration Phase 4G.5D result — mirrors <see cref="CatalogPlanSkeletonOrchestrationResult"/>'s shape, plus the generic <see cref="PhaseAllocationResult"/> that produced it.</summary>
@@ -163,6 +172,7 @@ internal sealed class DynamicCoreWeekSkeletonOrchestrator : IDynamicCoreWeekSkel
             RunLayoutSlotRoles = runLayout.StructuralRoles,
             RunLayoutWeeklyPatternRoles = runLayout.WeeklyPatternRoles,
             PatternPeriodWeeks = runLayout.PatternPeriodWeeks,
+            StartGlobalWeek = context.StartGlobalWeek,
         };
 
         // Step 4: delegate to the existing, unmodified Phase 4F.2 materializer.

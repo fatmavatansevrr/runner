@@ -56,6 +56,18 @@ internal sealed class DynamicCoreCalendarMaterializationContext
     /// itself construct, cache, or interpret it. See that type's own doc comment.
     /// </summary>
     public ExecutionPrescriptionIndex? ExecutionIndex { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.36 — threaded straight through to
+    /// <see cref="DynamicCoreSessionPrescriptionContext.StartGlobalWeek"/>, and ultimately to
+    /// <see cref="CatalogStageToWeekMaterializationContext.StartGlobalWeek"/> (added GEN.34), the
+    /// mechanism that already exists at the bottom of this pipeline but which no caller here ever
+    /// threaded a real value into (GEN.35 §2.3's disclosed gap). Defaults to 1, byte-identical for
+    /// every existing caller (<c>CatalogPreviewGenerator</c>'s own live standalone-Core composition,
+    /// every already-PUBLICLY_ACTIVE frequency/level, and every pre-GEN.36 test) that does not supply
+    /// one — none of those has (or needs) a plan-global week ordinal distinct from its own local week 1.
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>Backend Integration Phase 4G.5H result — every intermediate artifact from the full five-layer pipeline, plus race-date alignment verification.</summary>
@@ -133,6 +145,7 @@ internal sealed class DynamicCoreCalendarMaterializationOrchestrator : IDynamicC
             WorkoutDefinitionLoader = context.WorkoutDefinitionLoader,
             PeakVolumeBandLoader = context.PeakVolumeBandLoader,
             ExecutionIndex = context.ExecutionIndex,
+            StartGlobalWeek = context.StartGlobalWeek,
         }, ct);
 
         // Step 2: race-date alignment (the one genuinely new composition --

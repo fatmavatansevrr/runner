@@ -44,6 +44,15 @@ internal sealed class DynamicCoreVolumeAndLongRunContext
 
     public required ICatalogWorkoutDefinitionLoader WorkoutDefinitionLoader { get; init; }
     public required ICatalogPeakVolumeBandLoader PeakVolumeBandLoader { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.36 — threaded straight through to
+    /// <see cref="Schedule.Binding.DynamicCoreWorkoutBindingContext.StartGlobalWeek"/>, one layer
+    /// further up the same additive continuation-offset chain that ultimately reaches
+    /// <c>CatalogStageToWeekMaterializationContext.StartGlobalWeek</c> (GEN.34's own mechanism).
+    /// Defaults to 1, byte-identical for every existing caller.
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>
@@ -137,6 +146,7 @@ internal sealed class DynamicCoreVolumeAndLongRunOrchestrator : IDynamicCoreVolu
             LongRunDayPreference = context.LongRunDayPreference,
             ConditionResults = context.ConditionResults,
             WorkoutDefinitionLoader = context.WorkoutDefinitionLoader,
+            StartGlobalWeek = context.StartGlobalWeek,
         }, ct);
 
         // Step 2: resolved workout-definition closure -- needed by the

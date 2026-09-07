@@ -228,7 +228,8 @@ internal sealed class TenKPreparationRunwayDarkOrchestrator
                 core = await _coreGenerator.GenerateAsync(new TenKPreparationRunwayCoreGenerationRequest(
                     request.Candidate, authority.RunwayDateDecision.CoreStartDate, request.RaceDate,
                     request.AsOfDate, request.PreferredDays, request.LongRunDayPreference,
-                    request.ConditionResults, request.PreviewRequest, request.ResolverInput), ct);
+                    request.ConditionResults, request.PreviewRequest, request.ResolverInput,
+                    CoreStartGlobalWeek: request.CoreStartGlobalWeek), ct);
             }
             catch (Exception exception)
             {

@@ -145,6 +145,21 @@ internal sealed class LongHorizonRollingJitCompositionOrchestrator : ILongHorizo
                 // exactly (GEN.33). Byte-identical for every non-2D layout (this value is ignored
                 // unless a repeating WeeklyPatternRoles pattern exists).
                 var runwayStartGlobalWeek = request.StructuralRoadmap.GeneralEnduranceWeeks + 1;
+                // Phase 10K-GEN.36 -- CoreStartGlobalWeek is deliberately NOT enabled here
+                // (left at its default, 1) despite the additive plumbing now existing end to
+                // end down to CatalogStageToWeekMaterializationContext.StartGlobalWeek. GEN.36
+                // attempted to supply coreSegment.StartGlobalWeek (mirroring runwayStartGlobalWeek's
+                // own convention exactly) and found that doing so, for the odd-GeneralEnduranceWeeks
+                // case this whole arc exists to fix, causes Core's own local week 1 to land on
+                // Pattern B (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) -- which trips
+                // PreparationRunwayCoreWeekOnePaceAdapter.FromAuthoritativeCoreBehavior's hard,
+                // pre-existing requirement that Core's own Foundation Week 1 carry at least one
+                // KEY_SESSION to derive an authoritative pace target. This is a genuine, previously-
+                // latent pace-continuity numeric-authority question (which week's pace anchors
+                // Runway's own ramp when Core's true local week 1 is the EASY-only pattern), not a
+                // mechanical wiring gap -- GEN.36's report classifies this DOMAIN_DECISION_REQUIRED
+                // and stops here rather than resolving it unprompted. Enabling this line is the
+                // concrete, single-line remainder once that question is settled.
                 var compositionRequest = new TenKPreparationRunwayDarkOrchestrationRequest(
                     request.Candidate, runwayStartDate, request.RaceDate, request.CheckpointDate,
                     request.PreferredDays, request.LongRunDay, coreEntryReadiness, conditionResults,

@@ -138,6 +138,7 @@ internal sealed class TenKPreparationRunwayCoreGenerator : ITenKPreparationRunwa
             WorkoutDefinitionLoader = _workoutLoader,
             PeakVolumeBandLoader = _peakVolumeLoader,
             ExecutionIndex = executionIndex,
+            StartGlobalWeek = request.CoreStartGlobalWeek,
         }, ct);
     }
 

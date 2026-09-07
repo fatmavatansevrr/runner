@@ -38,6 +38,15 @@ internal sealed class DynamicCoreWorkoutBindingContext
     public required IReadOnlyList<RuntimeConditionResolutionResult> ConditionResults { get; init; }
 
     public required ICatalogWorkoutDefinitionLoader WorkoutDefinitionLoader { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.36 — threaded straight through to
+    /// <see cref="Materialization.DynamicCoreWeekSkeletonOrchestrationContext.StartGlobalWeek"/>, one
+    /// layer further down the same additive continuation-offset chain that ultimately reaches
+    /// <c>CatalogStageToWeekMaterializationContext.StartGlobalWeek</c> (GEN.34's own mechanism).
+    /// Defaults to 1, byte-identical for every existing caller.
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>Backend Integration Phase 4G.5E result — every intermediate artifact plus the final bound plan, for test/inspection purposes.</summary>
@@ -146,6 +155,7 @@ internal sealed class DynamicCoreWorkoutBindingOrchestrator : IDynamicCoreWorkou
             TargetWeekCount = context.TargetWeekCount,
             StartDate = context.StartDate,
             AsOfDate = context.AsOfDate,
+            StartGlobalWeek = context.StartGlobalWeek,
         });
 
         var skeleton = skeletonResult.Skeleton;

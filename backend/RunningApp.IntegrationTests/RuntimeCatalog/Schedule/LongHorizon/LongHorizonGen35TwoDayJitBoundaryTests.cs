@@ -322,21 +322,24 @@ public sealed class Gen35TwoDayJitBoundaryTests
             Assert.Equal(expectedKey, hasKey);
         }
 
-        // DISCLOSED, NOT FIXED THIS PHASE: Core's own real content generator
-        // (DynamicCoreSessionPrescriptionOrchestrator, the same pipeline
-        // CatalogPreviewGenerator uses for already-PUBLICLY_ACTIVE standalone
-        // 2D/3D/4D/5D/6D Core generation -- see DynamicCoreCalendarMaterializationOrchestrator's
-        // own doc comment) always anchors its own internal Pattern-A/B alternation to its
-        // own local week 1 = Pattern-A, with no mechanism to accept an external
-        // GlobalWeekNumber continuation offset -- so a LongHorizon Core segment does not
-        // (yet) continue GE+Runway's own established parity when GeneralEnduranceWeeks+8
-        // (Runway's fixed length) is odd. Internally, Core's own alternation is still a
-        // correct, consistent 2-week period (verified below) -- only its anchor/phase
-        // relative to the true GlobalWeekNumber is wrong. Fixing this would require
-        // threading a StartGlobalWeek-equivalent parameter through the same shared
-        // standalone-Core generation pipeline GEN.25's real public HTTP endpoint uses --
-        // explicitly out of scope per this phase's "Do not touch 2D Core (frozen)"
-        // constraint. Filed as the concrete remaining item for the next phase.
+        // DISCLOSED, NOT FIXED THIS PHASE (GEN.35, re-confirmed unresolved by GEN.36):
+        // Core's own real content generator (DynamicCoreSessionPrescriptionOrchestrator, the
+        // same pipeline CatalogPreviewGenerator uses for already-PUBLICLY_ACTIVE standalone
+        // 2D/3D/4D/5D/6D Core generation) still always anchors its own internal Pattern-A/B
+        // alternation to its own local week 1 = Pattern-A in this real production call site --
+        // so a LongHorizon Core segment does not (yet) continue GE+Runway's own established
+        // parity when GeneralEnduranceWeeks+8 (Runway's fixed length) is odd. GEN.36 built the
+        // additive plumbing (CoreStartGlobalWeek, threaded end to end down to
+        // CatalogStageToWeekMaterializationContext.StartGlobalWeek, GEN.34's own mechanism) but
+        // deliberately did NOT enable it here: doing so causes Core's own local week 1 to land
+        // on Pattern B (EASY_SUPPORT+LONG_RUN, zero KEY_SESSION) for exactly this odd-GE-parity
+        // case, which trips PreparationRunwayCoreWeekOnePaceAdapter's pre-existing hard
+        // requirement that Core's own Foundation Week 1 carry a KEY_SESSION to derive an
+        // authoritative pace target -- a genuine, previously-latent pace-continuity numeric-
+        // authority question (not a wiring gap), disclosed and classified
+        // DOMAIN_DECISION_REQUIRED by GEN.36 rather than resolved unprompted. See
+        // TenKPreparationRunwayGen36CoreContinuationOffsetDomainConflictTests for the isolated,
+        // dark, permanent reproduction of this exact conflict.
         var coreSessions = await verify.LongHorizonRollingSessionStates
             .Where(s => s.Week.PlanStateId == planStateId && s.Week.GlobalWeek > runwayEnd)
             .OrderBy(s => s.Week.GlobalWeek)
@@ -351,7 +354,7 @@ public sealed class Gen35TwoDayJitBoundaryTests
             var hasEasy = roles.Any(r => r.StartsWith("EASY_SUPPORT", StringComparison.Ordinal));
             Assert.True(hasKey != hasEasy, $"Core week {week.Key} must carry exactly one of KEY_SESSION/EASY_SUPPORT, never both/neither (roles: {string.Join("+", roles)}).");
             // Core's own local alternation period (2 weeks), anchored at its own week 1 =
-            // Pattern-A -- the disclosed, not-yet-globally-continuous behavior documented above.
+            // Pattern-A -- the disclosed, still-not-globally-continuous behavior documented above.
             var coreLocalWeekNumber = week.Key - runwayEnd;
             var expectedKeyLocally = coreLocalWeekNumber % 2 == 1;
             Assert.Equal(expectedKeyLocally, hasKey);

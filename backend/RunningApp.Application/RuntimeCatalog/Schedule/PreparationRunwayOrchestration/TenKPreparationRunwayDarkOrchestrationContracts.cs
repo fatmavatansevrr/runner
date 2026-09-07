@@ -46,7 +46,21 @@ internal sealed record TenKPreparationRunwayDarkOrchestrationRequest(
     // existing caller (public preview routing, GEN.27/28/29's own dark verification, all of which never
     // supply this parameter). A LongHorizon caller whose preceding GE segment has odd length supplies
     // GeWeeks+1, exactly mirroring GEN.33's own convention.
-    int RunwayStartGlobalWeek = 1);
+    int RunwayStartGlobalWeek = 1,
+    // Phase 10K-GEN.36 -- the analogous continuation offset for Core's own real
+    // content generator (Stage 8, ITenKPreparationRunwayCoreGenerator.GenerateAsync
+    // -> TenKPreparationRunwayCoreGenerationRequest.CoreStartGlobalWeek), disclosed as
+    // missing by GEN.35 §2.3/§9: CatalogStageToWeekMaterializationContext.StartGlobalWeek
+    // (added GEN.34) already exists at the bottom of Core's own real pipeline, but no
+    // caller between here and there ever threaded a real value into it -- Core's real
+    // generator always anchored its own Pattern-A/B alternation to local week 1
+    // regardless of true GlobalWeekNumber. Left at the default (1) for standalone
+    // (non-LongHorizon) Core/Runway generation -- byte-identical for every existing
+    // caller (public preview routing, every already-PUBLICLY_ACTIVE standalone Core
+    // frequency/level, GEN.27/28/29's own dark verification, none of which supply this
+    // parameter). A LongHorizon caller supplies the Core segment's own authoritative
+    // StructuralRoadmap StartGlobalWeek (GeneralEnduranceWeeks + 8 + 1).
+    int CoreStartGlobalWeek = 1);
 
 internal enum TenKPreparationRunwayOrchestrationStage
 {
@@ -179,4 +193,10 @@ internal sealed record TenKPreparationRunwayCoreGenerationRequest(
     DayOfWeek LongRunDayPreference,
     IReadOnlyList<RuntimeConditionResolutionResult> ConditionResults,
     GeneratePreviewRequest PreviewRequest,
-    ResolverInputSnapshot ResolverInput);
+    ResolverInputSnapshot ResolverInput,
+    // Phase 10K-GEN.36 -- threaded straight through to
+    // DynamicCoreCalendarMaterializationContext.StartGlobalWeek (see that field's
+    // doc comment). Defaults to 1, byte-identical for every existing caller
+    // (LongHorizonFullNumericOrchestrator's own separate 4D/5D Core generation call
+    // site, and every pre-GEN.36 test) that does not supply one.
+    int CoreStartGlobalWeek = 1);

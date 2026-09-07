@@ -56,6 +56,15 @@ internal sealed class DynamicCoreSessionPrescriptionContext
     /// (<see cref="CatalogSessionPrescriptionMissingExecutionPrescriptionException"/>).
     /// </summary>
     public ExecutionPrescriptionIndex? ExecutionIndex { get; init; }
+
+    /// <summary>
+    /// Phase 10K-GEN.36 — threaded straight through to
+    /// <see cref="Volume.DynamicCoreVolumeAndLongRunContext.StartGlobalWeek"/>, one layer further
+    /// up the same additive continuation-offset chain that ultimately reaches
+    /// <c>CatalogStageToWeekMaterializationContext.StartGlobalWeek</c> (GEN.34's own mechanism).
+    /// Defaults to 1, byte-identical for every existing caller.
+    /// </summary>
+    public int StartGlobalWeek { get; init; } = 1;
 }
 
 /// <summary>Backend Integration Phase 4G.5G result — every intermediate artifact plus the final prescribed plan.</summary>
@@ -160,6 +169,7 @@ internal sealed class DynamicCoreSessionPrescriptionOrchestrator : IDynamicCoreS
             ResolverInput = context.ResolverInput,
             WorkoutDefinitionLoader = context.WorkoutDefinitionLoader,
             PeakVolumeBandLoader = context.PeakVolumeBandLoader,
+            StartGlobalWeek = context.StartGlobalWeek,
         }, ct);
 
         // Step 2: resolved workout-definition closure -- needed by the
