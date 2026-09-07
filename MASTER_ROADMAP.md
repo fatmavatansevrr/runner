@@ -185,7 +185,9 @@ WAVE D — Cross-distance backend closure / release readiness
 
 ## 4. Current Wave
 
-**WAVE A — 10K completion.** Intermediate×5D Core (8-14 weeks) is `PUBLICLY_ACTIVE` (FREQ.6D.4D.5G, §2). Preparation Runway (15-20w) is `PUBLICLY_ACTIVE` for all readiness states including missing/explicit-zero, real HTTP/DB verified (FREQ.6D.8/FREQ.6D.10, §2). Long-Horizon (21-52w) 5D activation remains an open gap, but is now fully implementation-ready — architecture (FREQ.6D.11) and GE-segment product/numeric policy (FREQ.6D.12) are both approved, with no product or numeric decision remaining; only the implementation wave itself is left. No Half Marathon or Marathon work may begin under this roadmap's own rule until 10K's full architectural closure (§25/Wave A milestones, including the Long-Horizon 5D gap) is reached.
+**WAVE A — 10K completion: CLOSED.** `GEN.39` declared `TEN_K_V1_CAPABILITY_COMPLETE` — the full 10K Level×Frequency×Horizon target matrix re-verified directly against live gate code, every cell matching target; full regression clean (`RunningApp.IntegrationTests` 4382/4386, the 4 named/disclosed pre-existing baseline items, zero new regressions; `PlanCatalog.Tests` 1510/1510). Two backlog items remain open but are explicitly filed, not silently dropped (see §15 WAVE A backlog): the Beginner×3D zero-readiness on-ramp question, and `GEN.28`'s option (c) AerobicStrength Pattern-A steering (not evaluated/approved/implemented). Neither blocks Wave A closure per `GEN.39`'s own explicit finding.
+
+**WAVE B — Half Marathon completion: OPEN.** `HM.0` (audit-only) is `DONE` — see §16 for the HM engagement's own current state, kept as a separate axis from the 10K matrix above per this roadmap's own §13 rule.
 
 ---
 
@@ -893,5 +895,25 @@ Then (capability milestones, no Phase IDs yet):
 - Public API integration.
 - Cross-distance regression.
 - Production release readiness.
+
+---
+
+## 16. HM Program — Current State (Half-Marathon engagement, WAVE B)
+
+Kept deliberately separate from §2's 10K matrix and §14's 10K near-term block — Half Marathon is a new, distinct engagement layered on the closed 10K V1 build-out (`GEN.39`), using its own `HM.*` phase-ID namespace (see `HM.0`'s own report §0 for why: no existing repository convention for a second distance's numbering was found, and the governing prompt for this phase referred to itself as "HM.0" throughout).
+
+**Status: `HM.0` DONE — audit-only, no production code changed.**
+
+`HM.0` audited whether `HALF_MARATHON × INTERMEDIATE × 4D × 14-WEEK PREFERRED CORE × DARK` can enter the existing Level×Frequency×Horizon pipeline as another distance authority, reusing 10K's proven architecture rather than requiring a second generation engine. Final classification: `HM_DISTANCE_GENERALIZATION_READY_FOR_FIRST_DARK_VERTICAL_SLICE`, scoped explicitly to the **Core horizon only** (the requested 14-week slice cannot reach `CoreHorizonMode.PreparationRunwayPlusCore`, so Preparation Runway/LongHorizon's own large `TenK*`-hardcoded subtree, ~150 files, is out of scope for this verdict and remains unaudited beyond confirming it is unreachable here).
+
+**Key findings** (full detail in `PHASE_HM_0_DISTANCE_GENERALIZATION_REUSE_AUDIT.md`):
+- Distance-generic and reusable as-is: `CanonicalDistanceFamilyResolver`, `CoreHorizonClassifier`, `PlanCatalogCandidateSummary`, `GoalDistanceKm.Resolve` (already includes `HalfMarathon => 21.0975`), `CanonicalTargetFinishTimePolicy`, workout-role binding, condition resolvers (pace-source/goal-feasibility/time-adequacy/core-entry-readiness), calendar/PreferredDays composition, the Adaptation subsystem, and persistence entities (`CanonicalDistanceFamily`/`CatalogCandidateKey` are free-form strings).
+- Requires mechanical (non-product-decision) parameterization: `V1CatalogPilotIdentityPolicy` (its candidate-routing methods have no distance parameter at all — a structural gap, not a config value, with 17 real production consumers, 6 on the Core-only critical path); `CatalogGoalDistanceResolver` inside `CatalogPrescriptionContextBuilder.cs` (fail-closed to `TEN_K` only, and duplicates the already-correct, already-generic `GoalDistanceKm.Resolve` — a duplicate-authority finding); a distance-blind fallback defect in `CatalogVolumeAndLongRunPlanner.Build` that silently reuses 10K's numeric authority for any unmatched identity (currently inert only because the identity gate above already blocks every non-10K request; must be closed before, not after, that gate is ever widened).
+- Requires new, genuinely-HM product/numeric authority (not decided this phase, `OPEN_HM_PRODUCT_DECISION`): Core-cycle min/max week bounds around the fixed 14-week preferred value; the numeric progression authority (peak-volume trajectory, weekly-increase ratios, taper multiplier, long-run share); starting-volume/missing-readiness defaults; the 4D session-distance-allocation shape; HM workout catalog content (explicitly barred from being authored this phase).
+- No document enumerating `OPEN-HM-01` through `OPEN-HM-07` by name was found in this repository as of `HM.0`; the governing prompt references those IDs as if already enumerated elsewhere. This is recorded as an open finding, not silently resolved by inventing definitions.
+
+**Next recommended phase**: `HM.1` — HM Core-horizon authority closure for Intermediate×4D×14W (evidence/decision phase: confirm or establish the `OPEN-HM` numbering, resolve Core-cycle bounds, resolve the numeric progression authority, resolve starting-volume defaults and the session-allocation question). Implementation (`HM.2`+) — closing the two mechanical defects above, widening the identity policy additively, authoring the minimum HM catalog artifact, dark-verifying the full slice — follows only after `HM.1` closes, per this roadmap's own §9 batching/§10 gate discipline (first structural instance of a new Distance = narrow, one cell at a time, same as 10K's own `GEN.3A`→`GEN.4E` opening arc).
+
+**Rule carried forward from §3**: no Half-Marathon *implementation* (as opposed to this audit) may widen any public routing surface, add catalog artifacts, or touch 10K's own reachable code paths until `HM.1`'s authorities are frozen. Wave C (Marathon) remains closed until Half-Marathon's own distance-generalization arc reaches an equivalent closure to `GEN.39`'s.
 
 No speculative phase IDs are assigned to any of the above until their own prompt/report is created.
