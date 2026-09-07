@@ -3,7 +3,7 @@
 **Phase type**: DECISION (decision-recording/governance-closure only — no production code, no HM catalog artifacts, no public routing changes, no 10K changes of any kind)
 **Execution status**: DONE
 **Final classification**: `HALF_MARATHON_INTERMEDIATE_4D_14W_PEAK_LONG_RUN_FROZEN_EVIDENCE_INFORMED_PRODUCT_DEFAULT_HM_1_FULLY_CLOSED`
-**Governance commit**: PENDING (backfilled in the following commit, per this engagement's established two-commit self-referential-SHA pattern).
+**Governance commit**: `4d85703` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Parent**: `HM.1` (`PHASE_HM_1_CORE_HORIZON_AUTHORITY_CLOSURE_INTERMEDIATE_4D_14W.md`), which escalated Item 2 (peak long-run, `OPEN-HM-02`) as `DOMAIN_DECISION_REQUIRED` with four scored options, none selected.
 
 ---
