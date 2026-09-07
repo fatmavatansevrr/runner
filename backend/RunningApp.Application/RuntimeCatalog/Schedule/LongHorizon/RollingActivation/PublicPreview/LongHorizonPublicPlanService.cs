@@ -378,7 +378,19 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
     /// 3D/6D/7D). No new identity was invented for this gate.
     /// Phase 10K-FREQ.6D.27 -- widened again to include 6D, the same set
     /// Preparation Runway's own list was just extended to (still never wider
-    /// -- no 7D, no Beginner/Advanced).
+    /// -- no 7D, no Beginner/Advanced, at that time).
+    /// Phase 10K-GEN.38 -- widened again to admit (Beginner, 2)/
+    /// (Intermediate, 2), implementing GEN.30-37's now-complete 2D
+    /// LongHorizon GE→Runway→Core chain authority (dark-verified through
+    /// real PostgreSQL via the rolling-activation/JIT-composition path;
+    /// this phase is the first to reach that same chain through real public
+    /// HTTP). This is the first Beginner-level identity this gate has ever
+    /// admitted -- confirmed safe by construction:
+    /// <see cref="LongHorizonRollingInitialActivationContracts"/> and
+    /// <see cref="LongHorizonRollingCheckpointRuntime"/>'s own internal
+    /// eligibility gates already admit exactly (Beginner, 2) alongside
+    /// Intermediate's existing set (unchanged by this phase), so no new
+    /// dark-layer widening was required here -- only this public gate.
     /// </summary>
     private static void ValidatePilot(RacePlanPreviewCommand command)
     {
@@ -387,11 +399,14 @@ public sealed class LongHorizonPublicPlanService : ILongHorizonPublicPlanService
         // implementation) alongside Intermediate's existing 4/5/6. Advanced
         // x7D remains unreachable (PRODUCT_NON_SUPPORT, GEN.7); Advanced x2D
         // remains unreachable (OUT_OF_V1, never designed).
+        // Phase 10K-GEN.38 -- widened to admit (Beginner, 2)/(Intermediate, 2)
+        // (GEN.30-37 2D LongHorizon chain-completion authority).
         var levelFrequencyEligible =
-            (command.Level == RunningBackground.Intermediate && command.DaysPerWeek is 4 or 5 or 6) ||
-            (command.Level == RunningBackground.Advanced && command.DaysPerWeek is 3 or 4 or 5 or 6);
+            (command.Level == RunningBackground.Intermediate && command.DaysPerWeek is 2 or 4 or 5 or 6) ||
+            (command.Level == RunningBackground.Advanced && command.DaysPerWeek is 3 or 4 or 5 or 6) ||
+            (command.Level == RunningBackground.Beginner && command.DaysPerWeek is 2);
         if (command.GoalType != GoalType.Race || command.GoalDistance != GoalDistance.TenK || !levelFrequencyEligible)
-            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate 4-5-or-6-day or Advanced 3-4-5-or-6-day requests are enabled for Long-Horizon preview.");
+            throw new LongHorizonPilotUnsupportedException("Only Race/TenK/Intermediate 2-4-5-or-6-day, Advanced 3-4-5-or-6-day, or Beginner 2-day requests are enabled for Long-Horizon preview.");
     }
 
     private static ReadinessProfile ResolveProfile(RacePlanPreviewCommand command)

@@ -15,10 +15,20 @@ namespace RunningApp.IntegrationTests;
 /// already-approved authority (GEN.11 identity/product decisions,
 /// GEN.14/GEN.16 Halving mechanism, GEN.12/GEN.17 dark implementation,
 /// GEN.18's confirmed 10-14 week boundary) -- no new product/numeric
-/// authority. Deliberately does NOT widen Preparation Runway or LongHorizon
-/// for 2D (GEN.19's confirmed, still-open repeating-pattern architecture
-/// gap) -- see <see cref="RunwayHorizon_TwoDay_FailsClosed_NeverReachesRunwayOrLongHorizon"/>
-/// and <see cref="LongHorizonEndpoint_TwoDay_FailsClosed_NeverReachesLongHorizon"/>.
+/// authority. At GEN.20 time, deliberately did NOT widen Preparation Runway
+/// or LongHorizon for 2D (GEN.19's confirmed, then-still-open
+/// repeating-pattern architecture gap).
+///
+/// Phase 10K-GEN.38 subsequently closed that gap (GEN.27-29 dark Runway
+/// implementation, GEN.30-37 dark LongHorizon chain completion, GEN.38's own
+/// public activation of both) -- <see cref="RunwayHorizon_TwoDay_NowPubliclyActive_PerGen38"/>
+/// and <see cref="LongHorizonEndpoint_TwoDay_NowPubliclyActive_PerGen38"/>
+/// are this file's own corrected, no-longer-obsolete versions of what were
+/// originally (and, at the time, correctly) named
+/// <c>RunwayHorizon_TwoDay_FailsClosed_NeverReachesRunwayOrLongHorizon</c>/
+/// <c>LongHorizonEndpoint_TwoDay_FailsClosed_NeverReachesLongHorizon</c> --
+/// an <c>OBSOLETE_PRE_ACTIVATION_ASSERTION</c> correction, mirroring
+/// GEN.10 §6's established discipline for this exact situation.
 ///
 /// Mirrors <see cref="Gen10AdvancedCombinedPublicActivationTests"/>'s
 /// established pattern for a combined public-activation phase.
@@ -224,51 +234,49 @@ public sealed class Gen20TwoDayCombinedPublicActivationTests
         Assert.Contains("TWO_DAY_MISSING_OR_ZERO_READINESS_NOT_ELIGIBLE", body);
     }
 
-    // ── Runway (15-20) and LongHorizon (21+) must remain unreachable for 2D ────
+    // ── Runway (15-20) and LongHorizon (21+): OBSOLETE_PRE_ACTIVATION_ASSERTION ──
+    // corrected per Phase 10K-GEN.38, mirroring GEN.10 §6's established
+    // discipline for a prior phase's own now-superseded "still closed"
+    // assertion. GEN.19's Preparation Runway architecture gap was closed by
+    // GEN.27-29 (dark) and this phase (public); GEN.30-37 completed and this
+    // phase publicly activated 2D LongHorizon's GE->Runway->Core chain. Both
+    // horizons now correctly succeed through real HTTP for both levels --
+    // the exact opposite of what this test originally asserted when GEN.20
+    // wrote it (correctly, for its own time: neither mechanism existed yet).
 
     [Theory]
     [InlineData("beginner", 15)] [InlineData("beginner", 20)]
     [InlineData("intermediate", 15)] [InlineData("intermediate", 20)]
-    public async Task RunwayHorizon_TwoDay_FailsClosed_NeverReachesRunwayOrLongHorizon(string level, int weeks)
+    public async Task RunwayHorizon_TwoDay_NowPubliclyActive_PerGen38(string level, int weeks)
     {
-        // GEN.19's confirmed architecture gap: Preparation Runway has no
-        // repeating-pattern mechanism for 2D. This phase deliberately did NOT
-        // widen IsSupportedPreparationRunwayLevelFrequency for 2D, so a 2D
-        // request at a Runway-range horizon must fall through to the
-        // existing, unmodified PlanHorizonCompositionRequiredException --
-        // never a 200, never a silent attempt to use the unwired dark
-        // Runway/LongHorizon path.
         await ResetAsync();
         var response = await PreviewRaceAsync(TwoDayRequest(level, weeks));
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("PLAN_HORIZON_COMPOSITION_REQUIRED", body);
-        Assert.DoesNotContain("TEN_K__2D__BEGINNER", body);
-        Assert.DoesNotContain("TEN_K__2D__INTERMEDIATE", body);
+        Assert.True(response.IsSuccessStatusCode, body);
+        var expectedTemplate = level == "beginner" ? "TEN_K__2D__BEGINNER" : "TEN_K__2D__INTERMEDIATE";
+        Assert.Contains(expectedTemplate, body);
         Assert.DoesNotContain("INTERNAL_ERROR", body);
     }
 
     [Theory]
     [InlineData("beginner", 21)] [InlineData("beginner", 32)] [InlineData("beginner", 52)]
     [InlineData("intermediate", 21)] [InlineData("intermediate", 32)] [InlineData("intermediate", 52)]
-    public async Task LongHorizonEndpoint_TwoDay_FailsClosed_NeverReachesLongHorizon(string level, int weeks)
+    public async Task LongHorizonEndpoint_TwoDay_NowPubliclyActive_PerGen38(string level, int weeks)
     {
-        // LongHorizonPublicPlanService.ValidatePilot was NOT touched by this
-        // phase -- it still only admits Intermediate 4/5/6 and Advanced
-        // 3/4/5/6, so a real 2D LongHorizon HTTP request must be rejected
-        // with the existing typed LONG_HORIZON_PILOT_UNSUPPORTED error, never
-        // silently routed into the unwired LongHorizon dark path GEN.19
-        // found (LongHorizonStructuralMaterializer's daysPerWeek gate,
-        // LongHorizonFullNumericOrchestrator's narrower gate, etc).
+        // Reuses GEN.35/36/37/GEN.38's own established low LongHorizon
+        // onboarding baseline (8km weekly/3km longest/2 runs) rather than
+        // this file's own Core-anchored TwoDayRequest defaults (12/5
+        // beginner, 16/7 intermediate) -- those higher values are correct
+        // for 2D's Core path but would trip the pre-existing, correctly-
+        // restrictive AboveTarget direction guard against 2D's much lower
+        // PeakVolumeBand when used as a LongHorizon GE onboarding baseline
+        // (GEN.35's own disclosed reason, unrelated to 2D-specific code).
         await ResetAsync();
-        var response = await PreviewLongHorizonAsync(TwoDayRequest(level, weeks));
-        Assert.False(response.IsSuccessStatusCode);
+        var response = await PreviewLongHorizonAsync(TwoDayRequest(level, weeks, recentWeeklyVolumeKm: 8.0, recentLongestRunKm: 3.0, recentRunsPerWeek: 2));
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("LONG_HORIZON_PILOT_UNSUPPORTED", body);
-        Assert.DoesNotContain("TEN_K__2D__BEGINNER", body);
-        Assert.DoesNotContain("TEN_K__2D__INTERMEDIATE", body);
+        Assert.True(response.IsSuccessStatusCode, body);
+        Assert.Contains("rolling_long_horizon", body);
         Assert.DoesNotContain("INTERNAL_ERROR", body);
-        Assert.DoesNotContain("rolling_long_horizon", body);
     }
 
     // ── Unsupported neighbors: Advanced x2D, Experienced x2D remain unreachable ──

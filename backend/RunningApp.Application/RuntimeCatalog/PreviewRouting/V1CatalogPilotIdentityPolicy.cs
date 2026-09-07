@@ -132,12 +132,14 @@ public static class V1CatalogPilotIdentityPolicy
     /// now recognizes both of these keys (GEN.27/GEN.28's repeating-pattern
     /// mechanism and block-role reconciliation, implemented this phase),
     /// but that is the internal dark-consistency check only.
-    /// <see cref="IsSupportedPreparationRunwayLevelFrequency"/> (and
-    /// therefore <see cref="IsSupportedPreparationRunwayIdentity"/>, the
-    /// real public gate) is deliberately still NOT widened -- 2D Preparation
-    /// Runway remains dark-only pending its own dedicated public-activation
-    /// phase; LongHorizon for 2D remains additionally gated on GEN.28 §13's
-    /// five-item start condition, not yet met.
+    /// Phase 10K-GEN.38 -- <see cref="IsSupportedPreparationRunwayLevelFrequency"/>
+    /// (and therefore <see cref="IsSupportedPreparationRunwayIdentity"/>, the
+    /// real public gate) is now widened too -- 2D Preparation Runway (15-20wk)
+    /// is publicly activated, implementing the already-dark-verified GEN.27-29
+    /// authority. LongHorizon (21-52wk) for 2D is publicly activated in the
+    /// same phase via <see cref="RunningApp.Application.RuntimeCatalog.Schedule.LongHorizon.RollingActivation.PublicPreview.LongHorizonPublicPlanService"/>'s
+    /// own widened <c>ValidatePilot</c>, implementing GEN.30-37's completed
+    /// GE→Runway→Core chain authority.
     /// </summary>
     public const string TwoDayBeginnerCandidateKey = "TEN_K__2D__BEGINNER";
     public const int TwoDayBeginnerCandidateVersion = 1;
@@ -283,6 +285,16 @@ public static class V1CatalogPilotIdentityPolicy
     /// PHASE_10K_FREQ_6D_6_INTERMEDIATE_5D_RUNWAY_PRODUCT_DECISION.md).
     /// Widening Core's allow-list must never silently widen Runway
     /// eligibility, so Runway consults this separate, explicit list instead.
+    ///
+    /// Phase 10K-GEN.38 -- widened to admit (Beginner, 2)/(Intermediate, 2),
+    /// implementing the already-approved and already-dark-verified GEN.27-29
+    /// 2D Preparation Runway authority (repeating-pattern mechanism,
+    /// block-role/anchor reconciliation including the frozen AerobicStrength
+    /// Pattern-A/B split, Beginner/Intermediate admission, numeric dispatch,
+    /// 2-slot calendar composition, long-run clamp) for real public
+    /// HTTP/PostgreSQL routing for the first time. No new mechanism authored
+    /// here -- see <see cref="TwoDayBeginnerCandidateKey"/>/
+    /// <see cref="TwoDayIntermediateCandidateKey"/>'s own doc comment.
     /// </summary>
     private static bool IsSupportedPreparationRunwayLevelFrequency(RunningBackground level, int daysPerWeek) =>
         (level, daysPerWeek) is
@@ -295,7 +307,11 @@ public static class V1CatalogPilotIdentityPolicy
             (RunningBackground.Advanced, 3) or
             (RunningBackground.Advanced, 4) or
             (RunningBackground.Advanced, 5) or
-            (RunningBackground.Advanced, 6);
+            (RunningBackground.Advanced, 6) or
+            // Phase 10K-GEN.38 -- 2D Preparation Runway public activation
+            // (GEN.27-29 dark authority).
+            (RunningBackground.Beginner, 2) or
+            (RunningBackground.Intermediate, 2);
 
     public static bool IsSupportedPreparationRunwayIdentity(
         GoalType goalType,
