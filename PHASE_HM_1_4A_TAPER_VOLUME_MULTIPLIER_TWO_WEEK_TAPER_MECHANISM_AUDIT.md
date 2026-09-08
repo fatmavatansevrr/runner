@@ -4,6 +4,7 @@
 **Execution status**: DONE
 **Final classification**: `HM_TWO_WEEK_TAPER_REQUIRES_PARAMETERIZATION`
 **Governing prompt**: user-authored "HM PHASE PROMPT 1.4A" — exact text is the spec, followed precisely.
+**Governance commit**: `b67dee8` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Parent**: `HM.1.5` (`PHASE_HM_1_5_VOLUME_SAFETY_POLICY_PARTIAL_FREEZE_LONG_RUN_SHARE_SEMANTICS_GAP.md`), which froze 8 of 13 `VolumeSafetyPolicy` fields for `HALF_MARATHON × INTERMEDIATE × 4D × 14W` and explicitly reserved `TaperVolumeMultiplier` for this phase, `HM.1.4A`.
 
 ---
