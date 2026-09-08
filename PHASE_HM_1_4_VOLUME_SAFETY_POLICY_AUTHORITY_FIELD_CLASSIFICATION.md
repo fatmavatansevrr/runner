@@ -3,6 +3,7 @@
 **Phase type**: DECISION / AUTHORITY-CLOSURE ONLY (no production code, no HM catalog artifacts, no public routing changes, no 10K changes, no new external research)
 **Execution status**: DONE
 **Final classification**: `HM_VOLUME_PROGRESSION_AUTHORITY_PARTIAL`
+**Governance commit**: `dadea15` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Governing prompt**: user-authored "HM PHASE PROMPT 1.4" — verbatim text defines scope; followed precisely.
 **Parent**: `HM.2` (`PHASE_HM_2_CORE_VERTICAL_SLICE_PREREQUISITES_AND_IDENTITY_WIDENING.md`), which found `HM.0 §I` item 2 — a `VolumeSafetyPolicy`-shaped record for `HALF_MARATHON × INTERMEDIATE × 4D` — was never closed by any phase and correctly blocked Step 2 on it rather than improvising; `HM.1.1`/`HM.1.3` (precedent for how a field is classified `VALIDATED_CANDIDATE_EXISTS` vs. escalated as a genuine gap in this engagement's own established discipline).
 
