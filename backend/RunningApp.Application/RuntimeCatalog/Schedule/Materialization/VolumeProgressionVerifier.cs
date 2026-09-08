@@ -86,6 +86,24 @@ internal static class VolumeProgressionVerifier
         var checks = new List<WeeklyTransitionCheck>();
         var findings = new List<string>();
 
+        // HM.1.4B -- fixes the identical chaining assumption HM.1.4A found
+        // here (this verifier previously re-derived "expected" purely from
+        // `from.PlannedWeeklyVolumeKm`, the immediately preceding week's own
+        // materialized volume -- the same chained reference the planner
+        // itself used before its own HM.1.4B fix, so this verifier would
+        // report zero violation for a compounded 2+-week taper). The
+        // pre-taper anchor is now captured ONCE, at the first taper
+        // transition, and every taper week's expected value is computed
+        // independently against that SAME fixed anchor plus its own
+        // ordered-position multiplier -- never re-derived from another
+        // taper week's own output. For a 1-week taper (every existing 10K
+        // policy today), the anchor is used exactly once and equals
+        // `from.PlannedWeeklyVolumeKm` at that transition, so the resulting
+        // arithmetic is byte-identical to this method's pre-HM.1.4B formula.
+        var taperWeekNumbersOrdered = weeks.Where(w => w.IsTaperWeek).Select(w => w.WeekNumber).ToList();
+        var taperMultipliers = policy.ResolvedTaperVolumeMultipliers;
+        double? preTaperAnchorKm = null;
+
         for (var i = 0; i < weeks.Count - 1; i++)
         {
             var from = weeks[i];
@@ -100,15 +118,18 @@ internal static class VolumeProgressionVerifier
 
             if (isTaper)
             {
-                allowedMaxIncreaseRatio = policy.TaperVolumeMultiplier - 1d;
-                var expectedTaperVolumeKm = from.PlannedWeeklyVolumeKm * policy.TaperVolumeMultiplier;
+                preTaperAnchorKm ??= from.PlannedWeeklyVolumeKm;
+                var taperPosition = taperWeekNumbersOrdered.IndexOf(to.WeekNumber);
+                var multiplier = taperPosition >= 0 && taperPosition < taperMultipliers.Count ? taperMultipliers[taperPosition] : taperMultipliers[^1];
+                allowedMaxIncreaseRatio = multiplier - 1d;
+                var expectedTaperVolumeKm = preTaperAnchorKm.Value * multiplier;
                 var deviationKm = Math.Abs(to.PlannedWeeklyVolumeKm - expectedTaperVolumeKm);
                 violatesRatio = deviationKm > policy.RoundingIncrementKm;
                 violatesAbsoluteCap = false; // the absolute weekly-increment cap governs increases, not the taper reduction rule.
 
                 if (violatesRatio)
                 {
-                    findings.Add($"TAPER_MULTIPLIER_VIOLATION: week {from.WeekNumber}->{to.WeekNumber}: actual={to.PlannedWeeklyVolumeKm}km, expected={expectedTaperVolumeKm}km (FromVolumeKm={from.PlannedWeeklyVolumeKm}km * TaperVolumeMultiplier={policy.TaperVolumeMultiplier}), deviation={deviationKm}km exceeds RoundingIncrementKm={policy.RoundingIncrementKm}km.");
+                    findings.Add($"TAPER_MULTIPLIER_VIOLATION: week {from.WeekNumber}->{to.WeekNumber}: actual={to.PlannedWeeklyVolumeKm}km, expected={expectedTaperVolumeKm}km (PreTaperAnchorKm={preTaperAnchorKm.Value}km * TaperMultiplier[position {taperPosition}]={multiplier}), deviation={deviationKm}km exceeds RoundingIncrementKm={policy.RoundingIncrementKm}km.");
                 }
             }
             else

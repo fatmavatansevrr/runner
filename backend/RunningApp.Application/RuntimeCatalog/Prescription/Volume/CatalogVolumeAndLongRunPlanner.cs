@@ -135,9 +135,10 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
 
         var starting = ResolveStartingVolume(request.PrescriptionContext);
         var peak = ResolvePeak(starting.SelectedStartingVolumeKm, bounds, request.BoundPlan);
-        var taper = ResolveTaperDecision();
+        var taperWeekCount = request.BoundPlan.Weeks.Count(w => w.PhaseKey == "TAPER");
+        var (taper, taperMultipliers) = ResolveTaperDecision(taperWeekCount);
         var share = ResolveLongRunWeeklyShareDecision();
-        var weekly = BuildWeeklyPlan(request, bounds, starting, peak, taper);
+        var weekly = BuildWeeklyPlan(request, bounds, starting, peak, taper, taperMultipliers);
         if (request.Candidate.DaysPerWeek == 3)
         {
             var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
@@ -335,21 +336,69 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             "docs/canonical/golden-fixture-v3/progression_rules_v2.yaml profilePercentageCaps.INTERMEDIATE and absoluteWeeklyIncrementCapKm[4]; peak-volume band remains typical band only");
     }
 
-    private TaperVolumeDecision ResolveTaperDecision()
+    /// <summary>
+    /// HM.1.4B — generalized from a single-scalar validation to a full
+    /// ordered taper-multiplier-sequence validation, so a genuine multi-week
+    /// Taper phase (e.g. HALF_MARATHON's frozen 2-week taper) can be
+    /// represented and validated without silently permitting the
+    /// compounding defect <c>HM.1.4A</c> found (43 → 22.8 → 12.1km, ≈72%
+    /// cumulative reduction, confirmed by direct trace). Every existing 10K
+    /// policy (<see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/> null,
+    /// <see cref="VolumeSafetyPolicy.ResolvedTaperVolumeMultipliers"/>
+    /// resolving to the single-element <c>[TaperVolumeMultiplier]</c>) takes
+    /// the <c>multipliers.Count == 1</c> branch below, which is byte-identical
+    /// to this method's pre-HM.1.4B body.
+    /// </summary>
+    private (TaperVolumeDecision Decision, IReadOnlyList<double> Multipliers) ResolveTaperDecision(int taperWeekCount)
     {
-        var reduction = 1d - _policy.TaperVolumeMultiplier;
-        if (reduction < 0.41d || reduction > 0.60d)
+        var multipliers = _policy.ResolvedTaperVolumeMultipliers;
+        if (taperWeekCount > 0 && multipliers.Count != taperWeekCount)
+        {
+            throw new CatalogVolumeInvalidTaperRuleException(
+                $"Policy declares {multipliers.Count} taper multiplier(s) but the bound plan has {taperWeekCount} taper week(s); the two counts must match exactly so every taper week has its own, independently-applied multiplier.");
+        }
+
+        var finalReduction = 1d - multipliers[^1];
+        if (finalReduction < 0.41d || finalReduction > 0.60d)
         {
             throw new CatalogVolumeInvalidTaperRuleException("Taper multiplier does not map to the accepted 41%-60% reduction range.");
         }
 
-        return new TaperVolumeDecision(
-            _policy.TaperVolumeMultiplier,
-            Math.Round(reduction, 2, MidpointRounding.AwayFromZero),
-            "41%-60% reduction",
+        // Every taper week before the final (deepest) one must itself be a
+        // genuine, positive reduction from the fixed pre-taper reference,
+        // strictly smaller than the final week's own reduction -- i.e. the
+        // authored schedule must deepen monotonically toward race week.
+        // Unreachable for every existing 10K policy (multipliers.Count == 1,
+        // so this loop never executes).
+        for (var i = 0; i < multipliers.Count - 1; i++)
+        {
+            var reduction = 1d - multipliers[i];
+            if (reduction <= 0d || reduction >= finalReduction)
+            {
+                throw new CatalogVolumeInvalidTaperRuleException(
+                    $"Taper week {i + 1} of {multipliers.Count}'s reduction ({reduction:P0}) must be a genuine, positive reduction strictly smaller than the final taper week's reduction ({finalReduction:P0}) -- taper reductions must deepen monotonically toward race week, never chained from another taper week's own output.");
+            }
+        }
+
+        if (multipliers.Count == 1)
+        {
+            // Byte-identical to this method's pre-HM.1.4B body.
+            return (new TaperVolumeDecision(
+                multipliers[0],
+                Math.Round(finalReduction, 2, MidpointRounding.AwayFromZero),
+                "41%-60% reduction",
+                CatalogEvidenceBasis.EvidenceInformed,
+                CatalogDecisionStatus.ExplicitProductDefault,
+                "Golden Fixture v3 week 12 reduces from 38km to 20km (0.526 remaining); V1 default rounded to 0.53."), multipliers);
+        }
+
+        return (new TaperVolumeDecision(
+            multipliers[^1],
+            Math.Round(finalReduction, 2, MidpointRounding.AwayFromZero),
+            "41%-60% reduction (final/deepest taper week only; earlier taper weeks deepen monotonically toward it, each independently against the same fixed pre-taper reference)",
             CatalogEvidenceBasis.EvidenceInformed,
             CatalogDecisionStatus.ExplicitProductDefault,
-            "Golden Fixture v3 week 12 reduces from 38km to 20km (0.526 remaining); V1 default rounded to 0.53.");
+            $"HM.1.4B non-chained {multipliers.Count}-week taper mechanism: each taper week applies its own multiplier independently against the fixed pre-taper reference, never chained from another taper week's own output. Multipliers (first-to-last): {string.Join(", ", multipliers)}."), multipliers);
     }
 
     private LongRunWeeklyShareDecision ResolveLongRunWeeklyShareDecision() => new(
@@ -366,7 +415,8 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         CatalogVolumeBounds bounds,
         StartingVolumeDecision starting,
         ReachablePeakDecision peak,
-        TaperVolumeDecision taper)
+        TaperVolumeDecision taper,
+        IReadOnlyList<double> taperMultipliers)
     {
         var orderedWeeks = request.BoundPlan.Weeks.OrderBy(w => w.WeekNumber).ToList();
         var nonTaperWeeks = orderedWeeks.Where(w => w.PhaseKey != "TAPER").ToList();
@@ -374,6 +424,16 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         var traces = new List<WeeklyVolumeDecisionTrace>();
 
         double? previous = null;
+        // HM.1.4B -- captured exactly once, the moment the taper phase is
+        // entered (never reassigned to a taper week's own output). Every
+        // taper week's target is computed independently against THIS SAME
+        // fixed value -- no taper week's target ever depends on another
+        // taper week's result. For a 1-week taper (every existing 10K
+        // policy today), this anchor is used exactly once and equals
+        // `previous` at that moment, so the resulting arithmetic is
+        // byte-identical to the pre-HM.1.4B formula.
+        double? preTaperAnchorKm = null;
+        var taperPosition = 0;
         foreach (var week in orderedWeeks)
         {
             var isTaper = week.PhaseKey == "TAPER";
@@ -394,11 +454,16 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             }
             else if (isTaper)
             {
-                unclamped = (previous ?? starting.SelectedStartingVolumeKm) * taper.Multiplier;
+                preTaperAnchorKm ??= previous ?? starting.SelectedStartingVolumeKm;
+                var positionMultiplier = taperPosition < taperMultipliers.Count ? taperMultipliers[taperPosition] : taperMultipliers[^1];
+                unclamped = preTaperAnchorKm.Value * positionMultiplier;
                 clamp = CatalogVolumeClamp.TaperReduction;
-                changeRule = "canonical_taper_multiplier_0.53_from_previous_week";
+                changeRule = taperMultipliers.Count == 1
+                    ? "canonical_taper_multiplier_0.53_from_previous_week"
+                    : $"hm_1_4b_non_chained_taper_multiplier_{positionMultiplier:0.####}_from_fixed_pre_taper_anchor_{preTaperAnchorKm.Value:0.####}km_week_{taperPosition + 1}_of_{taperMultipliers.Count}";
                 recoveryRule = "taper_only_not_recurring_deload";
                 authority = CatalogNumericRuleAuthority.AcceptedProductDefault;
+                taperPosition++;
             }
             else
             {

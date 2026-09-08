@@ -61,11 +61,38 @@ public sealed record VolumeSafetyPolicy(
     double LongRunSelectionShare,
     double LongRunHardCapShare,
     double RoundingIncrementKm,
-    string RoundingRule)
+    string RoundingRule,
+    /// <summary>
+    /// HM.1.4B — optional, ordered sequence of taper-week multipliers, one
+    /// per taper week from first to last, each meant to be applied
+    /// INDEPENDENTLY against the fixed pre-taper reference (never chained
+    /// week-to-week — see <see cref="CatalogVolumeAndLongRunPlanner.BuildWeeklyPlan"/>).
+    /// Null for every existing 10K policy (all 17 named instances below):
+    /// <see cref="ResolvedTaperVolumeMultipliers"/> then degrades to the
+    /// single-element list [<see cref="TaperVolumeMultiplier"/>], reproducing
+    /// today's exact 1-week-taper behavior with zero delta. Populate this
+    /// only for a policy whose candidate shape has a genuine multi-week
+    /// Taper phase (e.g. HALF_MARATHON's frozen 2-week taper) — see
+    /// <see cref="HalfMarathonIntermediate4DTaperVolumePolicy"/> for the
+    /// frozen HM.1.4B values themselves (not stored as a new named
+    /// VolumeSafetyPolicy instance here, since 4 of this record's 13 fields
+    /// remain unfrozen for HM per HM.1.5 §3 — see that policy's own doc
+    /// comment).
+    /// </summary>
+    IReadOnlyList<double>? TaperVolumeMultipliers = null)
 {
     public double GoldenFixtureResolvedPeakKm => ResolvedPeakReference.Value;
     /// <summary>Stable identifier for this exact set of values — bump when any field's value changes, so a decision trace can always be traced back to the policy version that produced it.</summary>
     public const string PolicyVersion = "APPSEL_RACE_VOLUME_SAFETY_V1";
+
+    /// <summary>
+    /// HM.1.4B — the full, ordered, non-chained taper-week multiplier
+    /// sequence this policy actually represents. Every existing 10K policy
+    /// (<see cref="TaperVolumeMultipliers"/> is null) resolves to the
+    /// single-element <c>[TaperVolumeMultiplier]</c> — byte-identical to the
+    /// scalar every consumer already reads today.
+    /// </summary>
+    public IReadOnlyList<double> ResolvedTaperVolumeMultipliers => TaperVolumeMultipliers ?? [TaperVolumeMultiplier];
 
     /// <summary>
     /// The current, unchanged V1 values — identical to every value
