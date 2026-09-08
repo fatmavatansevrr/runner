@@ -4,7 +4,7 @@
 **Execution status**: DONE
 **Final classification**: `HM_TWO_WEEK_TAPER_MECHANISM_FIXED_AND_VALUES_FROZEN_ZERO_DELTA_CONFIRMED`
 **Governing prompt**: user-authored "HM PHASE PROMPT 1.4B" — exact text is the spec, followed precisely.
-**Governance commit**: PENDING (backfilled self-referentially per this engagement's established two-commit pattern — see `PHASE_LEDGER.md` row).
+**Governance commit**: `a51fbd9` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Parent**: `HM.1.4A` (`PHASE_HM_1_4A_TAPER_VOLUME_MULTIPLIER_TWO_WEEK_TAPER_MECHANISM_AUDIT.md`, audit-only, confirmed `COMPOUNDED_MULTIPLIER`: a 2-week taper chained a single scalar twice, producing 43.0→23.0→12.0km, a 72.1% cumulative reduction, and found `VolumeProgressionVerifier` shares the identical chaining assumption and would report zero violation for this exact defect).
 
 ---
