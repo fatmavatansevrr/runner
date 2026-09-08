@@ -161,6 +161,80 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         Assert.Throws<CatalogVolumeUnsupportedCycleLengthException>(() => Build(15));
     }
 
+    /// <summary>
+    /// HM.2 Step 1c — proves the primary occurrence of HM.0 §G Family 1 (the
+    /// distance-blind fallback in <see cref="CatalogVolumeAndLongRunPlanner.Build"/>)
+    /// is now closed: a synthetic HALF_MARATHON/Intermediate/4D request (a shape
+    /// that has never reached this code before -- the public/Runway gates remain
+    /// closed to it, per HM.2's own dark-only boundary) fails closed with the new,
+    /// named <see cref="CatalogVolumeUnsupportedDistanceFamilyException"/> instead
+    /// of silently falling through to <see cref="VolumeSafetyPolicy.Default"/>
+    /// (TEN_K's own numeric authority) with no error. Every existing TEN_K request
+    /// (all other tests in this file) is unaffected -- this is the only path that
+    /// changed behavior, and only for a request shape TEN_K itself can never
+    /// produce.
+    /// </summary>
+    [Fact]
+    public void Hm2Step1c_UnrecognizedHalfMarathonDistanceFamily_FailsClosed_InsteadOfSilentlyReusingTenKDefault()
+    {
+        var baseCandidate = Candidate();
+        var hmCandidate = new PlanCatalogCandidateSummary
+        {
+            CandidateKey = "HALF_MARATHON__4D__INTERMEDIATE",
+            CandidateVersion = 1,
+            CandidateStatus = baseCandidate.CandidateStatus,
+            CanonicalDistanceFamily = "HALF_MARATHON",
+            Level = baseCandidate.Level,
+            DaysPerWeek = baseCandidate.DaysPerWeek,
+            CoreCycle = baseCandidate.CoreCycle,
+            MasterTemplate = baseCandidate.MasterTemplate,
+            Layout = baseCandidate.Layout,
+            LevelModifier = baseCandidate.LevelModifier,
+            WorkoutProgression = baseCandidate.WorkoutProgression,
+            ProgressionModifier = baseCandidate.ProgressionModifier,
+            RulePack = baseCandidate.RulePack,
+            PeakVolumeBandPolicy = baseCandidate.PeakVolumeBandPolicy,
+            RuntimeConditionValueRegistry = baseCandidate.RuntimeConditionValueRegistry,
+            DependencyStatuses = baseCandidate.DependencyStatuses,
+            ReferencedWorkouts = baseCandidate.ReferencedWorkouts,
+            PhaseKeys = baseCandidate.PhaseKeys,
+            PhaseAllocations = baseCandidate.PhaseAllocations,
+            SlotRoles = baseCandidate.SlotRoles,
+        };
+
+        var request = Request(r =>
+        {
+            r.GoalDistance = GoalDistance.HalfMarathon;
+            r.RecentRace = new RecentRaceInput { Distance = GoalDistance.HalfMarathon, FinishTimeSeconds = 6000, RaceDate = AsOfDate.AddDays(-21) };
+        });
+        var bound = BoundPlan(14);
+        var hmInputSnapshot = new ResolverInputSnapshot
+        {
+            RequestedTargetDistanceKm = 21.0975d,
+            CanonicalDistanceFamily = "HALF_MARATHON",
+            GoalType = GoalType.Race,
+            GoalDistance = GoalDistance.HalfMarathon,
+            GoalDistanceKm = 21.0975d,
+            StartDate = new DateOnly(2026, 7, 20),
+            RaceDate = new DateOnly(2026, 10, 4),
+            TargetFinishTimeSeconds = 6000,
+            DaysPerWeek = 4,
+            Level = RunningBackground.Intermediate
+        };
+
+        var prescription = new CatalogPrescriptionContextBuilder().Build(new CatalogPrescriptionContextBuildRequest(
+            request, AsOfDate, hmCandidate, hmInputSnapshot,
+            new[] { Result("PACE_SOURCE_IN", "RECENT_RACE"), Result("GOAL_FEASIBILITY_IN", "REALISTIC") },
+            bound, WorkoutDefinitions()));
+
+        var ex = Assert.Throws<CatalogVolumeUnsupportedDistanceFamilyException>(() =>
+            new CatalogVolumeAndLongRunPlanner().Build(new CatalogVolumePlanningRequest(
+                hmCandidate, bound, prescription,
+                new CatalogPeakVolumeBand("HALF_MARATHON", "INTERMEDIATE", 4, 36, 50, "PEAK_VOLUME_BANDS_V1", 1))));
+
+        Assert.Equal("CATALOG_VOLUME_UNSUPPORTED_DISTANCE_FAMILY", ex.Code);
+    }
+
     [Fact]
     public void OutputHasNoPaceDurationSegmentRecoveryOrSessionPrescriptionFields()
     {

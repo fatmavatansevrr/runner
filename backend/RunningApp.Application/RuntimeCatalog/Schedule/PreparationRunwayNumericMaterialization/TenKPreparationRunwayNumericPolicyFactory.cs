@@ -66,7 +66,19 @@ internal static class TenKPreparationRunwayNumericPolicyFactory
             ("TEN_K", "ADVANCED", 4) => Build(VolumeSafetyPolicy.Advanced4D, 0d, 0d),
             ("TEN_K", "ADVANCED", 5) => Build(VolumeSafetyPolicy.Advanced5D, 0d, 0d),
             ("TEN_K", "ADVANCED", 6) => Build(VolumeSafetyPolicy.Advanced6D, 0d, 0d),
-            _ => Build(),
+            // HM.2 Step 1c — HM.0 §G Family 1 sibling occurrence: this
+            // fallback previously matched ANY unrecognized (distance, level,
+            // days) tuple unconditionally, including a future non-TEN_K
+            // candidate, and would have silently applied
+            // VolumeSafetyPolicy.Default (TEN_K/Intermediate/4D's own
+            // numeric authority) to it via the parameterless Build() below.
+            // The only TEN_K identity that legitimately reaches this arm
+            // today is TEN_K/INTERMEDIATE/4 (the pilot cell itself, whose
+            // Runway numeric authority IS VolumeSafetyPolicy.Default) —
+            // explicitly gating on CanonicalDistanceFamily == "TEN_K" is
+            // zero-delta for it and fails closed for anything else.
+            ("TEN_K", _, _) => Build(),
+            _ => throw new CatalogVolumeUnsupportedDistanceFamilyException(candidate.CanonicalDistanceFamily, candidate.Level, candidate.DaysPerWeek),
         };
 
     private static PreparationRunwayNumericPolicy Build(VolumeSafetyPolicy core, double missingWeeklyVolumeDefaultKm, double explicitZeroWeeklyVolumeDefaultKm)

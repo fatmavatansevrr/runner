@@ -22,13 +22,30 @@ public sealed class Phase4F7APrescriptionContextTests
     {
         Assert.Equal(10d, CatalogGoalDistanceResolver.Resolve("TEN_K", GoalDistance.TenK));
 
+        // HM.2 Step 1b -- GoalDistance.HalfMarathon is now a recognized
+        // request-side value (CatalogGoalDistanceResolver's additive
+        // widening, HM.0 §H's duplicate-authority resolution). A TEN_K-catalog
+        // request carrying GoalDistance.HalfMarathon is therefore no longer
+        // "unsupported" in the abstract -- it is a genuine catalog/request
+        // MISMATCH, asserted separately below. GoalDistance.Marathon remains
+        // genuinely unsupported by either resolver arm and is used here to
+        // preserve this test's original assertion intent unchanged. Note a
+        // real production request can never actually reach the
+        // TEN_K/HalfMarathon combination asserted below: the identity gate
+        // upstream (V1CatalogPilotIdentityPolicy) guarantees GoalDistance
+        // always matches the loaded candidate's own distance family before
+        // this resolver ever runs, for every existing 10K request.
         var unsupported = Assert.Throws<CatalogPrescriptionContractException>(() =>
-            CatalogGoalDistanceResolver.Resolve("TEN_K", GoalDistance.HalfMarathon));
+            CatalogGoalDistanceResolver.Resolve("TEN_K", GoalDistance.Marathon));
         Assert.Equal("UNSUPPORTED_REQUEST_GOAL_DISTANCE", unsupported.Code);
 
         var mismatch = Assert.Throws<CatalogPrescriptionContractException>(() =>
             CatalogGoalDistanceResolver.Resolve("TEN_K", GoalDistance.TenK, 5d));
         Assert.Equal("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", mismatch.Code);
+
+        var halfMarathonMismatch = Assert.Throws<CatalogPrescriptionContractException>(() =>
+            CatalogGoalDistanceResolver.Resolve("TEN_K", GoalDistance.HalfMarathon));
+        Assert.Equal("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", halfMarathonMismatch.Code);
     }
 
     [Fact]

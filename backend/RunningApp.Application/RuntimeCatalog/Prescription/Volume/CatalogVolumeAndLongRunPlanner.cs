@@ -23,7 +23,12 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
 
     public CatalogVolumeAndLongRunPlan Build(CatalogVolumePlanningRequest request)
     {
-        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        // HM.2 Step 1c — HM.0 §F.3/§G Family 1: this branch previously checked
+        // no distance field at all. Adding the explicit TEN_K check is
+        // zero-delta (only TEN_K can reach this branch today, per the
+        // identity gate) and closes the same latent defect the other
+        // sibling occurrences in this class already had fixed for them.
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.BeginnerFourDay).Build(request);
         }
@@ -50,7 +55,8 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // identity (VolumeSafetyPolicy.Advanced3D) -- restricting this branch
         // to Intermediate (its only real caller today) is implementation-only
         // and introduces no new authority.
-        if (request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        // HM.2 Step 1c — HM.0 §F.3/§G Family 1: distance check added, zero-delta (see above).
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayIntermediate).Build(request);
         }
@@ -59,7 +65,8 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // every other branch here -- never a broad "DaysPerWeek == 3"
         // condition, so this can never silently swallow a future
         // Advanced x3D candidate.
-        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        // HM.2 Step 1c — HM.0 §F.3/§G Family 1: distance check added, zero-delta (see above).
+        if (request.Candidate.CanonicalDistanceFamily == "TEN_K" && request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 3 && ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ThreeDayBeginner).Build(request);
         }
@@ -87,6 +94,28 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
+
+        // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
+        // every branch above now explicitly requires CanonicalDistanceFamily
+        // == "TEN_K", so any candidate reaching this point with the
+        // unconfigured VolumeSafetyPolicy.Default (i.e. no per-distance
+        // policy was ever selected for it) is, by construction, not TEN_K.
+        // Before this fix, such a candidate (e.g. a future HALF_MARATHON
+        // Intermediate×4D request, once the identity gate is ever widened
+        // publicly) would silently fall through to the generic algorithm
+        // below using VolumeSafetyPolicy.Default — TEN_K's own numeric
+        // authority — producing a plausible-looking but scientifically wrong
+        // plan with no error (HM.0 §O risk 1). Zero delta for TEN_K: the
+        // only candidate that legitimately reaches here with _policy still
+        // equal to Default is TEN_K/Intermediate/4D, which this guard lets
+        // through unchanged (CanonicalDistanceFamily == "TEN_K", so the
+        // condition below is false and control falls through exactly as
+        // before).
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.Default) && request.Candidate.CanonicalDistanceFamily != "TEN_K")
+        {
+            throw new CatalogVolumeUnsupportedDistanceFamilyException(request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek);
+        }
+
         var weekCount = request.BoundPlan.Weeks.Count;
         if (weekCount < request.Candidate.CoreCycle.MinimumWeeks || weekCount > request.Candidate.CoreCycle.MaximumWeeks)
         {

@@ -57,6 +57,33 @@ internal sealed class CatalogVolumeInvalidGovernanceConfigurationException : Cat
 }
 
 /// <summary>
+/// HM.2 Step 1c — closes the "exact-identity-tuple dispatch with a
+/// distance-blind fallback that silently inherits another distance's
+/// numeric authority" recurring-assumption family HM.0 §G Family 1
+/// identified (primary occurrence: <see cref="CatalogVolumeAndLongRunPlanner"/>;
+/// sibling occurrences: <see cref="RunningApp.Application.RuntimeCatalog.Schedule.PreparationRunwayNumericMaterialization.TenKPreparationRunwayNumericPolicyFactory"/>
+/// and, found by this phase's own deeper search, <see cref="RunningApp.Application.RuntimeCatalog.Prescription.Session.CatalogFinalPrescribedPlanValidator"/>).
+/// Thrown instead of silently reusing <see cref="VolumeSafetyPolicy.Default"/>
+/// (or any other TEN_K-authored named instance) for a
+/// <see cref="RunningApp.Application.RuntimeCatalog.PlanCatalogCandidateSummary.CanonicalDistanceFamily"/>
+/// no dispatcher has an explicit, approved branch for. Zero effect on any
+/// existing TEN_K request — every TEN_K identity already has an explicit
+/// branch in every fixed dispatcher; this exception is reachable only by a
+/// distance family with no approved numeric authority at all (today: any
+/// non-TEN_K family, including HALF_MARATHON, whose own VolumeSafetyPolicy-
+/// shaped numeric authority remains HM.0 §I item 2's disclosed
+/// <c>OPEN_HM_PRODUCT_DECISION</c>, not yet frozen by HM.1/HM.1.1/HM.1.2/HM.1.3).
+/// </summary>
+internal sealed class CatalogVolumeUnsupportedDistanceFamilyException : CatalogVolumePlanningException
+{
+    public CatalogVolumeUnsupportedDistanceFamilyException(string canonicalDistanceFamily, string level, int daysPerWeek)
+        : base("CATALOG_VOLUME_UNSUPPORTED_DISTANCE_FAMILY",
+            $"No VolumeSafetyPolicy-shaped numeric authority is approved for distance family '{canonicalDistanceFamily}' at Level='{level}'/DaysPerWeek={daysPerWeek}. Refusing to silently reuse a TEN_K-authored default policy for an unrecognized distance family.")
+    {
+    }
+}
+
+/// <summary>
 /// Common base for every Level/Frequency-specific "projected taper volume
 /// below the candidate's minimum full-layout volume" product-ineligibility
 /// exception. <see cref="RunningApp.Application.RuntimeCatalog.PreviewRouting.CatalogPreviewGenerator"/>

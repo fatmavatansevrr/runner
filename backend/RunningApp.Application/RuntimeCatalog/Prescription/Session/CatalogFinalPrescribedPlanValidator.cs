@@ -108,6 +108,22 @@ internal static class CatalogFinalPrescribedPlanValidator
     /// </summary>
     private static double ResolveLongRunHardCapShare(PlanCatalogCandidateSummary candidate)
     {
+        // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
+        // phase's own deeper search (not caught by HM.0's original audit,
+        // which only inspected CatalogVolumeAndLongRunPlanner and
+        // TenKPreparationRunwayNumericPolicyFactory). Every branch below
+        // dispatches on Level/DaysPerWeek only, with zero CanonicalDistanceFamily
+        // check anywhere in the method — the final `_ => VolumeSafetyPolicy.Default...`
+        // arm would have silently applied TEN_K's own long-run hard-cap
+        // share to any future distance family's Intermediate/4D (or any
+        // other unmatched DaysPerWeek) request with no error. This
+        // single top-level guard closes the whole method at once,
+        // zero-delta for every existing TEN_K caller (all reachable today).
+        if (candidate.CanonicalDistanceFamily != "TEN_K")
+        {
+            throw new CatalogVolumeUnsupportedDistanceFamilyException(candidate.CanonicalDistanceFamily, candidate.Level, candidate.DaysPerWeek);
+        }
+
         if (candidate.Level == "ADVANCED")
         {
             return VolumeSafetyPolicy.ForAdvancedDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;

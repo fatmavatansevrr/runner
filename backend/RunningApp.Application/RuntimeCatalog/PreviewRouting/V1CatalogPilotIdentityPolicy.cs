@@ -175,26 +175,79 @@ public static class V1CatalogPilotIdentityPolicy
     public const int ThreeDayBeginnerCandidateVersion = 1;
 
     /// <summary>
+    /// HM.2 Step 1a/2 — the dark-only, Half-Marathon Intermediate×4D Core
+    /// candidate identity (HM.1's frozen 3/4/5/2 phase allocation, HM.1.1's
+    /// frozen 19.0km peak-long-run ceiling, HM.1.2/HM.1.3's frozen workout
+    /// stage catalog and exposure counts). Deliberately NOT added to
+    /// <see cref="IsSupportedLevelFrequency(RunningBackground,int)"/> (the
+    /// TenK-only overload <see cref="IsSupportedIdentity"/> consults) or to
+    /// <see cref="IsSupportedPreparationRunwayLevelFrequency"/> — the public
+    /// gate and the Runway gate are both untouched by this phase (HM.2's own
+    /// explicit "dark-only, no public routing/gate change" boundary).
+    /// Resolvable only through the new distance-aware
+    /// <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/>
+    /// overloads, which no production public-routing call site invokes yet.
+    /// No catalog artifact exists yet for this identity — a real
+    /// <c>PlanCatalogBundleLoader</c> load of this candidate key/version will
+    /// fail until one is authored; this constant exists purely so the
+    /// identity/candidate-resolution seam itself is provably
+    /// distance-parameterized (HM.0 §F.1/§K), independent of catalog
+    /// authoring completeness (HM.2's own disclosed remainder).
+    /// </summary>
+    public const string HalfMarathonFourDayIntermediateCandidateKey = "HALF_MARATHON__4D__INTERMEDIATE";
+    public const int HalfMarathonFourDayIntermediateCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
-    /// pilot recognizes. Deliberately enumerated rather than derived, so a
-    /// future cell can never be admitted by accident — the two places above
-    /// that resolve identity (<see cref="IsSupportedIdentity"/> and
-    /// <see cref="ResolveCandidate"/>) both consult only this list.
+    /// pilot recognizes for TEN_K. Deliberately enumerated rather than
+    /// derived, so a future cell can never be admitted by accident — the two
+    /// places above that resolve identity (<see cref="IsSupportedIdentity"/>
+    /// and <see cref="ResolveCandidate(RunningBackground,int)"/>) both
+    /// consult only this list. Byte-identical to the pre-HM.2 list; this
+    /// overload now delegates to the distance-aware overload below with
+    /// <see cref="Domain.Enums.GoalDistance.TenK"/> pinned, per HM.0 §K/§M's
+    /// additive-overload, zero-10K-delta-by-construction recommendation.
     /// </summary>
     private static bool IsSupportedLevelFrequency(RunningBackground level, int daysPerWeek) =>
-        (level, daysPerWeek) is
-            (RunningBackground.Intermediate, 3) or
-            (RunningBackground.Intermediate, 4) or
-            (RunningBackground.Intermediate, 5) or
-            (RunningBackground.Intermediate, 6) or
-            (RunningBackground.Beginner, 4) or
-            (RunningBackground.Advanced, 3) or
-            (RunningBackground.Advanced, 4) or
-            (RunningBackground.Advanced, 5) or
-            (RunningBackground.Advanced, 6) or
-            (RunningBackground.Beginner, 2) or
-            (RunningBackground.Intermediate, 2) or
-            (RunningBackground.Beginner, 3);
+        IsSupportedLevelFrequency(Domain.Enums.GoalDistance.TenK, level, daysPerWeek);
+
+    /// <summary>
+    /// HM.2 Step 1a — the distance-parameterized widening HM.0 §F.1 found
+    /// structurally missing (no distance parameter existed anywhere in this
+    /// path). The <see cref="Domain.Enums.GoalDistance.TenK"/> arm below is
+    /// byte-identical to the pre-HM.2 <see cref="IsSupportedLevelFrequency(RunningBackground,int)"/>
+    /// list — this is the sole source of truth now, the 2-arg overload above
+    /// merely pins the distance. The <see cref="Domain.Enums.GoalDistance.HalfMarathon"/>
+    /// arm is new, additive, and — critically — is NOT consulted by
+    /// <see cref="IsSupportedIdentity"/> or <see cref="IsSupportedPreparationRunwayIdentity"/>
+    /// (both untouched, both still call only the 2-arg TenK-pinned overload
+    /// above), so this widening has zero effect on any public or Runway gate.
+    /// </summary>
+    private static bool IsSupportedLevelFrequency(GoalDistance distance, RunningBackground level, int daysPerWeek) =>
+        distance switch
+        {
+            Domain.Enums.GoalDistance.TenK => (level, daysPerWeek) is
+                (RunningBackground.Intermediate, 3) or
+                (RunningBackground.Intermediate, 4) or
+                (RunningBackground.Intermediate, 5) or
+                (RunningBackground.Intermediate, 6) or
+                (RunningBackground.Beginner, 4) or
+                (RunningBackground.Advanced, 3) or
+                (RunningBackground.Advanced, 4) or
+                (RunningBackground.Advanced, 5) or
+                (RunningBackground.Advanced, 6) or
+                (RunningBackground.Beginner, 2) or
+                (RunningBackground.Intermediate, 2) or
+                (RunningBackground.Beginner, 3),
+            // HM.2 Step 1a/2 — dark-only. HALF_MARATHON×INTERMEDIATE×4D is the
+            // only cell HM.1/HM.1.1/HM.1.2/HM.1.3 have frozen authority for;
+            // deliberately not a broad "any Half-Marathon combination" arm.
+            Domain.Enums.GoalDistance.HalfMarathon => (level, daysPerWeek) is
+                (RunningBackground.Intermediate, 4),
+            _ => false,
+        };
     // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the
     // already-approved GEN.21/GEN.23/GEN.24 authority -- Core only, exactly
     // 8-14 weeks, missing-readiness and positive-observed-readiness only.
@@ -251,31 +304,59 @@ public static class V1CatalogPilotIdentityPolicy
         goalDistance == GoalDistance &&
         IsSupportedLevelFrequency(level, daysPerWeek);
 
-    public static (string CandidateKey, int CandidateVersion) ResolveCandidate(RunningBackground level, int daysPerWeek) => (level, daysPerWeek) switch
+    /// <summary>
+    /// Byte-identical to the pre-HM.2 switch; now delegates to the
+    /// distance-aware overload below with <see cref="Domain.Enums.GoalDistance.TenK"/>
+    /// pinned. Every existing 10K call site is unaffected (HM.0 §M/§K
+    /// additive-overload discipline).
+    /// </summary>
+    public static (string CandidateKey, int CandidateVersion) ResolveCandidate(RunningBackground level, int daysPerWeek) =>
+        ResolveCandidate(Domain.Enums.GoalDistance.TenK, level, daysPerWeek);
+
+    /// <summary>
+    /// HM.2 Step 1a — the distance-parameterized widening HM.0 §F.1/§K
+    /// called for: the internal candidate map is now keyed on
+    /// (Distance, Level, DaysPerWeek) rather than (Level, DaysPerWeek) alone.
+    /// Every <see cref="Domain.Enums.GoalDistance.TenK"/> arm below is
+    /// byte-identical (same match order, same resolved key/version) to the
+    /// pre-HM.2 switch — this proves the "AFTER GENERALIZATION" claim in
+    /// HM.0 §M item 1 by construction, not merely by intent. The
+    /// <see cref="Domain.Enums.GoalDistance.HalfMarathon"/> arm is new and
+    /// additive; it is only reachable through this 3-arg overload, never
+    /// through the 2-arg overload any existing 10K call site uses.
+    /// </summary>
+    public static (string CandidateKey, int CandidateVersion) ResolveCandidate(GoalDistance distance, RunningBackground level, int daysPerWeek) => (distance, level, daysPerWeek) switch
     {
-        (RunningBackground.Intermediate, 3) => (ThreeDayCandidateKey, ThreeDayCandidateVersion),
-        (RunningBackground.Intermediate, 4) => (CandidateKey, CandidateVersion),
-        (RunningBackground.Intermediate, 5) => (FiveDayCandidateKey, FiveDayCandidateVersion),
-        (RunningBackground.Intermediate, 6) => (SixDayCandidateKey, SixDayCandidateVersion),
-        (RunningBackground.Beginner, 4) => (BeginnerCandidateKey, BeginnerCandidateVersion),
-        (RunningBackground.Advanced, 3) => (AdvancedThreeDayCandidateKey, AdvancedThreeDayCandidateVersion),
-        (RunningBackground.Advanced, 4) => (AdvancedFourDayCandidateKey, AdvancedFourDayCandidateVersion),
-        (RunningBackground.Advanced, 5) => (AdvancedFiveDayCandidateKey, AdvancedFiveDayCandidateVersion),
-        (RunningBackground.Advanced, 6) => (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion),
-        (RunningBackground.Beginner, 2) => (TwoDayBeginnerCandidateKey, TwoDayBeginnerCandidateVersion),
-        (RunningBackground.Intermediate, 2) => (TwoDayIntermediateCandidateKey, TwoDayIntermediateCandidateVersion),
-        (RunningBackground.Beginner, 3) => (ThreeDayBeginnerCandidateKey, ThreeDayBeginnerCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D Core pilot identities are resolvable.")
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Intermediate, 3) => (ThreeDayCandidateKey, ThreeDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Intermediate, 4) => (CandidateKey, CandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Intermediate, 5) => (FiveDayCandidateKey, FiveDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Intermediate, 6) => (SixDayCandidateKey, SixDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Beginner, 4) => (BeginnerCandidateKey, BeginnerCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Advanced, 3) => (AdvancedThreeDayCandidateKey, AdvancedThreeDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Advanced, 4) => (AdvancedFourDayCandidateKey, AdvancedFourDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Advanced, 5) => (AdvancedFiveDayCandidateKey, AdvancedFiveDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Advanced, 6) => (AdvancedSixDayCandidateKey, AdvancedSixDayCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Beginner, 2) => (TwoDayBeginnerCandidateKey, TwoDayBeginnerCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Intermediate, 2) => (TwoDayIntermediateCandidateKey, TwoDayIntermediateCandidateVersion),
+        (Domain.Enums.GoalDistance.TenK, RunningBackground.Beginner, 3) => (ThreeDayBeginnerCandidateKey, ThreeDayBeginnerCandidateVersion),
+        // HM.2 Step 1a/2 — dark-only, additive. See HalfMarathonFourDayIntermediateCandidateKey's own doc comment.
+        (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4) => (HalfMarathonFourDayIntermediateCandidateKey, HalfMarathonFourDayIntermediateCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 4D identity, are resolvable.")
     };
 
     /// <summary>
-    /// Non-throwing counterpart of <see cref="ResolveCandidate"/> for call
-    /// sites (e.g. route-decision logging) that must handle an unsupported
-    /// combination without an exception, since they run for every request,
-    /// not just already-confirmed pilot matches.
+    /// Non-throwing counterpart of <see cref="ResolveCandidate(RunningBackground,int)"/>
+    /// for call sites (e.g. route-decision logging) that must handle an
+    /// unsupported combination without an exception, since they run for
+    /// every request, not just already-confirmed pilot matches. Delegates to
+    /// the distance-aware overload below with TenK pinned — byte-identical.
     /// </summary>
     public static (string CandidateKey, int CandidateVersion)? TryResolveCandidate(RunningBackground level, int daysPerWeek) =>
-        IsSupportedLevelFrequency(level, daysPerWeek) ? ResolveCandidate(level, daysPerWeek) : null;
+        TryResolveCandidate(Domain.Enums.GoalDistance.TenK, level, daysPerWeek);
+
+    /// <summary>HM.2 Step 1a — distance-aware counterpart, dark-only for HALF_MARATHON.</summary>
+    public static (string CandidateKey, int CandidateVersion)? TryResolveCandidate(GoalDistance distance, RunningBackground level, int daysPerWeek) =>
+        IsSupportedLevelFrequency(distance, level, daysPerWeek) ? ResolveCandidate(distance, level, daysPerWeek) : null;
 
     /// <summary>
     /// Phase 10K-FREQ.6D.7 — the Preparation Runway's own, deliberately

@@ -295,21 +295,40 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
         ];
 }
 
+/// <summary>
+/// HM.2 Step 1b — HM.0 §H found this class duplicated <see cref="GoalDistanceKm"/>
+/// (a separate, private, TEN_K-only <c>TenKDistanceKm</c> constant that
+/// re-declared the exact same concept a second time, narrower). Per HM.0
+/// §K's recommendation, <see cref="GoalDistanceKm.Resolve"/> is now the sole
+/// owner of the GoalDistance→km mapping; this class no longer declares its
+/// own numeric constant anywhere and delegates every arm of both switches to
+/// it. The prior <c>TenKDistanceKm</c> constant is retired entirely (no
+/// external caller referenced it — confirmed by repo-wide search before
+/// removal). Zero 10K delta: <c>GoalDistanceKm.Resolve(GoalDistance.TenK)</c>
+/// == 10.0, numerically identical to the retired constant's own value.
+/// </summary>
 internal static class CatalogGoalDistanceResolver
 {
-    public const double TenKDistanceKm = 10d;
-
     public static double Resolve(string catalogDistanceFamily, GoalDistance requestGoalDistance, double? requestedTargetDistanceKm = null)
     {
         var catalogKm = catalogDistanceFamily switch
         {
-            "TEN_K" => TenKDistanceKm,
+            "TEN_K" => GoalDistanceKm.Resolve(GoalDistance.TenK),
+            // HM.2 Step 1b/2 — additive. Dark-only today: no production call
+            // site can reach this arm until the HM.2 Step 1a identity
+            // widening is exercised by a real HALF_MARATHON candidate load,
+            // which requires a catalog artifact this phase does not author
+            // (see HalfMarathonFourDayIntermediateCandidateKey's own doc
+            // comment). Present here so the resolver itself is not a second
+            // place a future HM catalog author must remember to widen.
+            "HALF_MARATHON" => GoalDistanceKm.Resolve(GoalDistance.HalfMarathon),
             _ => throw new CatalogPrescriptionContractException("UNSUPPORTED_CATALOG_GOAL_DISTANCE", $"Unsupported catalog distance family '{catalogDistanceFamily}'.")
         };
 
         var requestKm = requestGoalDistance switch
         {
-            GoalDistance.TenK => TenKDistanceKm,
+            GoalDistance.TenK => GoalDistanceKm.Resolve(GoalDistance.TenK),
+            GoalDistance.HalfMarathon => GoalDistanceKm.Resolve(GoalDistance.HalfMarathon),
             _ => throw new CatalogPrescriptionContractException("UNSUPPORTED_REQUEST_GOAL_DISTANCE", $"Unsupported request goal distance '{requestGoalDistance}' for V1 pilot.")
         };
 
