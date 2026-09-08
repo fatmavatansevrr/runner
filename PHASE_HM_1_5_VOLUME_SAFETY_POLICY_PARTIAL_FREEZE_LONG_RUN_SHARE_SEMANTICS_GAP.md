@@ -3,7 +3,7 @@
 **Phase type**: DECISION / AUTHORITY-CLOSURE, WITH a mandatory real-code pre-freeze verification step (no production code changes, no HM catalog artifacts, no public routing changes, no 10K changes; verification reads code but does not modify it)
 **Execution status**: DONE
 **Final classification**: `HM_VOLUME_PROGRESSION_GROWTH_AND_CALIBRATION_FROZEN_LONG_RUN_SHARE_BLOCKED_ON_SEMANTICS_GAP`
-**Governance commit**: `PENDING` (backfilled in the following commit, per this engagement's established two-commit pattern).
+**Governance commit**: `b5c3918` (implementation + ledger row, backfilled self-referentially per this engagement's established two-commit pattern).
 **Governing prompt**: direct user decision message "DECISION ON HM.1.4 — FREEZE 9 OF 10 FIELDS" — exact text is the spec, followed precisely, including its own instruction to withhold the freeze if pre-freeze verification fails.
 **Parent**: `HM.1.4` (`PHASE_HM_1_4_VOLUME_SAFETY_POLICY_AUTHORITY_FIELD_CLASSIFICATION.md`), which closed 3 of 13 `VolumeSafetyPolicy` fields and left 10 as `GENUINE_GAP` (the three progression/increase-rate coefficients, the golden-fixture calibration pair, `TaperVolumeMultiplier`, and the four long-run-share fields).
 
