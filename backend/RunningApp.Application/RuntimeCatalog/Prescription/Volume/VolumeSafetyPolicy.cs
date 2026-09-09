@@ -67,7 +67,7 @@ public sealed record VolumeSafetyPolicy(
     /// per taper week from first to last, each meant to be applied
     /// INDEPENDENTLY against the fixed pre-taper reference (never chained
     /// week-to-week — see <see cref="CatalogVolumeAndLongRunPlanner.BuildWeeklyPlan"/>).
-    /// Null for every existing 10K policy (all 17 named instances below):
+    /// Null for every existing 10K policy (all 12 named instances below):
     /// <see cref="ResolvedTaperVolumeMultipliers"/> then degrades to the
     /// single-element list [<see cref="TaperVolumeMultiplier"/>], reproducing
     /// today's exact 1-week-taper behavior with zero delta. Populate this
