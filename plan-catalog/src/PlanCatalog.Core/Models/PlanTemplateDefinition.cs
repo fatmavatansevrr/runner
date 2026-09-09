@@ -1,6 +1,7 @@
 using PlanCatalog.Contracts.Enums;
 using PlanCatalog.Core.Metadata;
 using PlanCatalog.Contracts.References;
+using System.Text.Json.Serialization;
 
 namespace PlanCatalog.Core.Models;
 
@@ -12,6 +13,17 @@ public sealed record PlanTemplateDefinition
     public required CoreCycleDefinition CoreCycle { get; init; }
     public required IReadOnlyList<int> SupportedRunsPerWeek { get; init; }
     public required IReadOnlyList<PhaseDefinition> Phases { get; init; }
+
+    /// <summary>
+    /// Whether the authored phase rows currently define only the
+    /// preferred/default cycle rather than every length in <see cref="CoreCycle"/>.
+    /// Defaults to <see langword="false"/> so every existing template retains
+    /// its serialized shape and validation semantics. When true, dynamic
+    /// non-default allocations remain fail-closed until their exact phase
+    /// authority is authored.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool PhasesDefineDefaultCycleOnly { get; init; }
 
     /// <summary>Distance-specific, phase-relative progression artifact — see brief §7.4.</summary>
     public required VersionedCatalogReference WorkoutProgression { get; init; }

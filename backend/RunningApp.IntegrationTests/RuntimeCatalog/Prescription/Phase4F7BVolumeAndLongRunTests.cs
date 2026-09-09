@@ -164,9 +164,8 @@ public sealed class Phase4F7BVolumeAndLongRunTests
     /// <summary>
     /// HM.2 Step 1c — proves the primary occurrence of HM.0 §G Family 1 (the
     /// distance-blind fallback in <see cref="CatalogVolumeAndLongRunPlanner.Build"/>)
-    /// is now closed: a synthetic HALF_MARATHON/Intermediate/4D request (a shape
-    /// that has never reached this code before -- the public/Runway gates remain
-    /// closed to it, per HM.2's own dark-only boundary) fails closed with the new,
+    /// is now closed: a synthetic, unsupported HALF_MARATHON/Advanced/4D request
+    /// fails closed with the new,
     /// named <see cref="CatalogVolumeUnsupportedDistanceFamilyException"/> instead
     /// of silently falling through to <see cref="VolumeSafetyPolicy.Default"/>
     /// (TEN_K's own numeric authority) with no error. Every existing TEN_K request
@@ -175,16 +174,16 @@ public sealed class Phase4F7BVolumeAndLongRunTests
     /// produce.
     /// </summary>
     [Fact]
-    public void Hm2Step1c_UnrecognizedHalfMarathonDistanceFamily_FailsClosed_InsteadOfSilentlyReusingTenKDefault()
+    public void Hm2Step1c_UnsupportedHalfMarathonIdentity_FailsClosed_InsteadOfSilentlyReusingTenKDefault()
     {
         var baseCandidate = Candidate();
         var hmCandidate = new PlanCatalogCandidateSummary
         {
-            CandidateKey = "HALF_MARATHON__4D__INTERMEDIATE",
+            CandidateKey = "HALF_MARATHON__4D__ADVANCED_UNSUPPORTED",
             CandidateVersion = 1,
             CandidateStatus = baseCandidate.CandidateStatus,
             CanonicalDistanceFamily = "HALF_MARATHON",
-            Level = baseCandidate.Level,
+            Level = "ADVANCED",
             DaysPerWeek = baseCandidate.DaysPerWeek,
             CoreCycle = baseCandidate.CoreCycle,
             MasterTemplate = baseCandidate.MasterTemplate,
@@ -219,7 +218,7 @@ public sealed class Phase4F7BVolumeAndLongRunTests
             RaceDate = new DateOnly(2026, 10, 4),
             TargetFinishTimeSeconds = 6000,
             DaysPerWeek = 4,
-            Level = RunningBackground.Intermediate
+            Level = RunningBackground.Advanced
         };
 
         var prescription = new CatalogPrescriptionContextBuilder().Build(new CatalogPrescriptionContextBuildRequest(
@@ -230,7 +229,7 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         var ex = Assert.Throws<CatalogVolumeUnsupportedDistanceFamilyException>(() =>
             new CatalogVolumeAndLongRunPlanner().Build(new CatalogVolumePlanningRequest(
                 hmCandidate, bound, prescription,
-                new CatalogPeakVolumeBand("HALF_MARATHON", "INTERMEDIATE", 4, 36, 50, "PEAK_VOLUME_BANDS_V1", 1))));
+                new CatalogPeakVolumeBand("HALF_MARATHON", "ADVANCED", 4, 46, 60, "PEAK_VOLUME_BANDS_V1", 1))));
 
         Assert.Equal("CATALOG_VOLUME_UNSUPPORTED_DISTANCE_FAMILY", ex.Code);
     }

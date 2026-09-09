@@ -8,11 +8,12 @@
   },
   "distanceFamily": "HALF_MARATHON",
   "coreCycle": {
-    "minimumWeeks": 14,
+    "minimumWeeks": 10,
     "defaultWeeks": 14,
-    "maximumWeeks": 14
+    "maximumWeeks": 16
   },
   "supportedRunsPerWeek": [4],
+  "phasesDefineDefaultCycleOnly": true,
   "phases": [
     {
       "phaseKey": "FOUNDATION",

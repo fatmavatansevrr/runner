@@ -122,9 +122,9 @@ public sealed class Hm2Step1cFailClosedDistanceBlindFallbackTests
     }
 
     [Theory]
-    [InlineData("HALF_MARATHON", "INTERMEDIATE", 4)]
+    [InlineData("HALF_MARATHON", "ADVANCED", 4)]
     [InlineData("UNKNOWN_FUTURE_DISTANCE", "ADVANCED", 4)]
-    public void CatalogFinalPrescribedPlanValidator_ResolveLongRunHardCapShare_UnrecognizedDistanceFamily_FailsClosed(
+    public void CatalogFinalPrescribedPlanValidator_ResolveLongRunHardCapShare_UnsupportedIdentity_FailsClosed(
         string distanceFamily, string level, int daysPerWeek)
     {
         var candidate = MinimalCandidate(distanceFamily, level, daysPerWeek);

@@ -32,7 +32,10 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // Phase 10K-GEN.23 -- +3 (peak-volume-bands.v8.json, appsel-race-plan.v9.json,
     // combinations/ten-k-3d-beginner.v1.json), advancing the exact count per
     // this engagement's own GEN.10/GEN.17 precedent (never weaken the check).
-    internal const int ExpectedRuntimeCatalogJsonFiles = 131;
+    // Phase HM.2 -- +8 source documents for the first full dark HM slice:
+    // master, combination, workout, progression, level/progression modifiers,
+    // peak-volume policy, and rule pack.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 139;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

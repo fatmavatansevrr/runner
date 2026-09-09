@@ -31,6 +31,7 @@ public sealed class Hm2FullDarkVerticalSliceTests
     public async Task PreferredFourteenWeekCore_TraversesRealPipelineAndMaterializesValidDarkPreview()
     {
         var candidate = await CandidateAsync();
+        Assert.Equal(new PlanCatalogCoreCycle(10, 14, 16), candidate.CoreCycle);
         var context = Context(candidate, exactPaceEvidence: true);
         var result = await Pipeline().MaterializeAsync(context);
         var prescribed = result.PrescriptionResult.FinalPrescribedPlan;
@@ -98,6 +99,26 @@ public sealed class Hm2FullDarkVerticalSliceTests
             Assert.Equal("HALF_MARATHON_WORKOUT_PROGRESSION", w.Provenance.ProgressionReferenceKey));
     }
 
+    [Theory]
+    [InlineData(10)]
+    [InlineData(11)]
+    [InlineData(12)]
+    [InlineData(13)]
+    [InlineData(15)]
+    [InlineData(16)]
+    public async Task NonPreferredCoreLengths_RemainFailClosedUntilExactPhaseAllocationsExist(int targetWeekCount)
+    {
+        var candidate = await CandidateAsync();
+
+        var allocation = new CatalogPhaseAllocationResolver().Resolve(candidate, targetWeekCount);
+
+        Assert.False(allocation.IsMathematicallyFeasible);
+        Assert.Empty(allocation.Phases);
+        Assert.Contains(targetWeekCount < 14 ? "TARGET_BELOW_SUM_OF_MINIMUMS" : "TARGET_ABOVE_SUM_OF_MAXIMUMS", allocation.ReasonCode);
+        await Assert.ThrowsAsync<DynamicCoreWeekSkeletonInfeasibleException>(() =>
+            Pipeline().MaterializeAsync(Context(candidate, exactPaceEvidence: true, targetWeekCount)));
+    }
+
     [Fact]
     public async Task MissingIndependentExactPaceEvidence_UsesApprovedCatalogFallbacks()
     {
@@ -155,10 +176,13 @@ public sealed class Hm2FullDarkVerticalSliceTests
                 new CatalogPrescriptionContextBuilder(), new CatalogVolumeAndLongRunPlanner()),
             new CatalogSessionPrescriptionPlanner(), new CatalogFinalPrescribedPlanFinalizer()));
 
-    private static DynamicCoreCalendarMaterializationContext Context(PlanCatalogCandidateSummary candidate, bool exactPaceEvidence)
+    private static DynamicCoreCalendarMaterializationContext Context(
+        PlanCatalogCandidateSummary candidate,
+        bool exactPaceEvidence,
+        int targetWeekCount = 14)
     {
         var start = new DateOnly(2026, 8, 3);
-        var race = start.AddDays(97);
+        var race = start.AddDays(targetWeekCount * 7 - 1);
         var goalKm = GoalDistanceKm.Resolve(GoalDistance.HalfMarathon);
         var request = new GeneratePreviewRequest
         {
@@ -174,7 +198,7 @@ public sealed class Hm2FullDarkVerticalSliceTests
 
         return new DynamicCoreCalendarMaterializationContext
         {
-            Candidate = candidate, TargetWeekCount = 14, StartDate = start, RaceDate = race, AsOfDate = start,
+            Candidate = candidate, TargetWeekCount = targetWeekCount, StartDate = start, RaceDate = race, AsOfDate = start,
             PreferredDays = [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday, DayOfWeek.Sunday],
             LongRunDayPreference = DayOfWeek.Sunday,
             ConditionResults = exactPaceEvidence

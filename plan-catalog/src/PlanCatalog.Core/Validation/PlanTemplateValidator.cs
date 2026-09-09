@@ -51,14 +51,14 @@ public static class PlanTemplateValidator
         }
 
         var sumMinimum = template.Phases.Sum(p => p.MinimumWeeks);
-        if (sumMinimum > cycle.MinimumWeeks)
+        if (!template.PhasesDefineDefaultCycleOnly && sumMinimum > cycle.MinimumWeeks)
         {
             issues.Add(new ValidationIssue("PT_MINIMUM_WEEKS_SUM_EXCEEDS_CYCLE", ValidationSeverity.Error,
                 $"sum(Phase.MinimumWeeks) = {sumMinimum} exceeds CoreCycle.MinimumWeeks = {cycle.MinimumWeeks}.", "$.phases"));
         }
 
         var sumMaximum = template.Phases.Sum(p => p.MaximumWeeks);
-        if (sumMaximum < cycle.MaximumWeeks)
+        if (!template.PhasesDefineDefaultCycleOnly && sumMaximum < cycle.MaximumWeeks)
         {
             issues.Add(new ValidationIssue("PT_MAXIMUM_WEEKS_SUM_BELOW_CYCLE", ValidationSeverity.Error,
                 $"sum(Phase.MaximumWeeks) = {sumMaximum} is below CoreCycle.MaximumWeeks = {cycle.MaximumWeeks}.", "$.phases"));
