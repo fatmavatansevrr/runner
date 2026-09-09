@@ -17,9 +17,9 @@
   "phases": [
     {
       "phaseKey": "FOUNDATION",
-      "minimumWeeks": 3,
+      "minimumWeeks": 2,
       "preferredWeeks": 3,
-      "maximumWeeks": 3,
+      "maximumWeeks": 4,
       "intents": ["AEROBIC_BASE"],
       "eligibleWorkoutFamilies": ["EASY", "LONG_RUN"],
       "compressionPriority": 1,
@@ -28,9 +28,9 @@
     },
     {
       "phaseKey": "BUILD",
-      "minimumWeeks": 4,
+      "minimumWeeks": 3,
       "preferredWeeks": 4,
-      "maximumWeeks": 4,
+      "maximumWeeks": 5,
       "intents": ["VOLUME_BUILD", "INTENSITY_INTRODUCTION"],
       "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
       "compressionPriority": 2,
@@ -39,7 +39,7 @@
     },
     {
       "phaseKey": "RACE_SPECIFIC",
-      "minimumWeeks": 5,
+      "minimumWeeks": 3,
       "preferredWeeks": 5,
       "maximumWeeks": 5,
       "intents": ["RACE_SPECIFIC_SHARPENING"],
