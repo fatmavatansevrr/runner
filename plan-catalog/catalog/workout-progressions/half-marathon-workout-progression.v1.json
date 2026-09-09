@@ -1,0 +1,144 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "schemaVersion": 2,
+    "key": "HALF_MARATHON_WORKOUT_PROGRESSION",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "distanceFamily": "HALF_MARATHON",
+  "phaseProgressions": [
+    {
+      "phaseKey": "FOUNDATION",
+      "stages": [
+        {
+          "stageKey": "FOUNDATION_AEROBIC_BASE",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 }],
+          "minimumExposures": 3,
+          "maximumExposures": 3,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "BUILD",
+      "stages": [
+        {
+          "stageKey": "BUILD_FASTER_THAN_HM_INTRO",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "FARTLEK", "version": 4 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        },
+        {
+          "stageKey": "BUILD_THRESHOLD_DEVELOPMENT",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 3,
+          "maximumExposures": 3,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "stages": [
+        {
+          "stageKey": "RACE_SPECIFIC_HM_INTRODUCTION",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_HM_DEVELOPMENT",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "HM_PACE", "version": 1 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] },
+            { "conditionType": "PACE_SOURCE_IN", "allowedValues": ["RECENT_RACE"] }
+          ],
+          "fallbackStageKey": "RACE_SPECIFIC_HM_DEVELOPMENT_CURRENT_FITNESS_FALLBACK"
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_HM_DEVELOPMENT_CURRENT_FITNESS_FALLBACK",
+          "relativeOrder": 3,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_HM_REHEARSAL",
+          "relativeOrder": 4,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "HM_PACE", "version": 1 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] },
+            { "conditionType": "PACE_SOURCE_IN", "allowedValues": ["RECENT_RACE"] }
+          ],
+          "fallbackStageKey": "RACE_SPECIFIC_HM_REHEARSAL_CURRENT_FITNESS_FALLBACK"
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_HM_REHEARSAL_CURRENT_FITNESS_FALLBACK",
+          "relativeOrder": 5,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "TAPER",
+      "stages": [
+        {
+          "stageKey": "TAPER_HM_ACTIVATION",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "HM_PACE", "version": 1 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] },
+            { "conditionType": "PACE_SOURCE_IN", "allowedValues": ["RECENT_RACE"] }
+          ],
+          "fallbackStageKey": "TAPER_HM_ACTIVATION_EFFORT_FALLBACK"
+        },
+        {
+          "stageKey": "TAPER_HM_ACTIVATION_EFFORT_FALLBACK",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        }
+      ]
+    }
+  ]
+}

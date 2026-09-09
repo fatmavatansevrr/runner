@@ -67,8 +67,9 @@ public sealed class AerobicStrengthPreparationRunwayCatalogTests
         // aerobic-strength-controlled-progressed.v2) = 26,
         // + 4 Phase 10K-FREQ.6D.4C DRAFT versioned eligibility extensions
         // (aerobic-strength-controlled-intro.v3, threshold-tempo.v5, fartlek.v5,
-        // goal-pace-ten-k.v3) = 30.
-        Assert.Equal(30, files.Length);
+        // goal-pace-ten-k.v3) = 30,
+        // + HM.2's HM_PACE v1 distance-specific parameterization = 31.
+        Assert.Equal(31, files.Length);
 
         foreach (var file in files)
         {

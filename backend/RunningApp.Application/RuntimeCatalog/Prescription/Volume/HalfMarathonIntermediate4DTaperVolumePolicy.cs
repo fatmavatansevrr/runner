@@ -48,19 +48,10 @@ namespace RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 /// deepen monotonically toward race week, never invert or match today's
 /// single-step envelope in isolation.
 ///
-/// Dark-only: this class exists as frozen, testable numeric authority for
-/// the taper-multiplier mechanism specifically. It is NOT wrapped in a new
-/// named <see cref="VolumeSafetyPolicy"/> static instance (e.g.
-/// "HalfMarathonIntermediate4D") because 4 of that record's 13 fields
-/// (<see cref="VolumeSafetyPolicy.LongRunPreferredMinimumShare"/>,
-/// <see cref="VolumeSafetyPolicy.LongRunPreferredMaximumShare"/>,
-/// <see cref="VolumeSafetyPolicy.LongRunSelectionShare"/>,
-/// <see cref="VolumeSafetyPolicy.LongRunHardCapShare"/>) remain genuinely
-/// unfrozen for this cell — blocked on a disclosed progression-mechanism gap,
-/// per <c>HM.1.5 §3</c> — and constructing a full instance now would require
-/// inventing values for those four fields, which no phase has authorized.
-/// No HM catalog artifact is authored and no public routing/gate is widened
-/// by this class's existence.
+/// Dark-only: <see cref="VolumeSafetyPolicy.HalfMarathonIntermediate4D"/>
+/// now consumes these values together with HM.1.5/HM.1.6's subsequently
+/// frozen share authority. No public routing/gate is widened by that named
+/// policy's existence.
 /// </summary>
 internal static class HalfMarathonIntermediate4DTaperVolumePolicy
 {

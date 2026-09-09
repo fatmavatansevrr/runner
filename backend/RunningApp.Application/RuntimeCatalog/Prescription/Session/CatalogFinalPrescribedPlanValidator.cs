@@ -1,5 +1,6 @@
 using RunningApp.Application.RuntimeCatalog.Prescription.Execution;
 using RunningApp.Application.RuntimeCatalog.Prescription.Volume;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 
 namespace RunningApp.Application.RuntimeCatalog.Prescription.Session;
@@ -93,7 +94,7 @@ internal static class CatalogFinalPrescribedPlanValidator
             }
         }
 
-        ValidateTaperCompleteness(prescribedPlan, errors);
+        ValidateTaperCompleteness(prescribedPlan, candidate, errors);
 
         return new CatalogFinalPrescribedPlanValidationResult(errors.Count == 0, errors);
     }
@@ -108,6 +109,12 @@ internal static class CatalogFinalPrescribedPlanValidator
     /// </summary>
     private static double ResolveLongRunHardCapShare(PlanCatalogCandidateSummary candidate)
     {
+        if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            candidate.Level == "INTERMEDIATE" && candidate.DaysPerWeek == 4)
+        {
+            return VolumeSafetyPolicy.HalfMarathonIntermediate4D.LongRunHardCapShare;
+        }
+
         // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
         // phase's own deeper search (not caught by HM.0's original audit,
         // which only inspected CatalogVolumeAndLongRunPlanner and
@@ -171,7 +178,7 @@ internal static class CatalogFinalPrescribedPlanValidator
         {
             errors.Add($"FINAL_SESSION_{session.WeekNumber}_{session.StructuralRole}_DISTANCE_ACCOUNTING_MISMATCH");
         }
-        if (session.WorkoutDefinitionKey != "GOAL_PACE_TEN_K" &&
+        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE") &&
             (session.Prescription.PacePrescription.Kind == CatalogPacePrescriptionKind.ExactPace ||
              segments.Any(s => s.PacePrescription.Kind == CatalogPacePrescriptionKind.ExactPace)))
         {
@@ -200,9 +207,19 @@ internal static class CatalogFinalPrescribedPlanValidator
     /// fail-closed exact-execution-resolution guarantee before this final
     /// plan could ever be reached with a ProfileBacked session present.
     /// </summary>
-    private static void ValidateTaperCompleteness(CatalogPrescribedPlan prescribedPlan, List<string> errors)
+    private static void ValidateTaperCompleteness(CatalogPrescribedPlan prescribedPlan, PlanCatalogCandidateSummary candidate, List<string> errors)
     {
         var taperKeySessions = prescribedPlan.Sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
+        if (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
+            candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion)
+        {
+            var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            if (!valid) errors.Add("FINAL_HM_TAPER_ACTIVATION_COUNT_OR_IDENTITY_INVALID");
+            return;
+        }
+
         var legacyTaperKeySessions = taperKeySessions.Where(s => s.PrescriptionSource is CatalogSessionPrescriptionSource.Legacy).ToList();
         var profileBackedTaperKeySessions = taperKeySessions.Where(s => s.PrescriptionSource is CatalogSessionPrescriptionSource.ProfileBacked).ToList();
 

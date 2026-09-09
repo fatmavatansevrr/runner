@@ -283,6 +283,27 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 "TargetFinishTimeSeconds / GoalDistanceKm");
         }
 
+        if (session.WorkoutDefinitionKey == "HM_PACE")
+        {
+            if (context.PaceSource.Source != PrescriptionPaceSource.RecentRace ||
+                context.InputSnapshot.Readiness.RecentRace is not { State: PrescriptionInputState.Available, DistanceKm: > 0, FinishTimeSeconds: > 0 } recentRace)
+            {
+                throw new CatalogGoalPacePrescriptionUnsupportedException(
+                    "HM_PACE requires independent recent-race evidence; desired Half-Marathon finish time is never a training-pace source.");
+            }
+
+            var secondsPerKm = Math.Round(recentRace.FinishTimeSeconds.Value / recentRace.DistanceKm.Value, 2, MidpointRounding.AwayFromZero);
+            return new CatalogPacePrescription(
+                CatalogPacePrescriptionKind.ExactPace,
+                secondsPerKm,
+                null,
+                null,
+                CatalogPaceSourceSelection.RecentRaceDerived,
+                "INDEPENDENT_CURRENT_FITNESS_EVIDENCE",
+                "HM_PACE",
+                "RecentRaceFinishTimeSeconds / RecentRaceDistanceKm; TargetFinishTimeSeconds rejected");
+        }
+
         return new CatalogPacePrescription(
             CatalogPacePrescriptionKind.EffortOnly,
             null,
@@ -304,7 +325,7 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         CatalogWorkoutDefinitionSummary definition)
     {
         var rejected = new List<string>();
-        if (session.WorkoutDefinitionKey != "GOAL_PACE_TEN_K")
+        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE"))
         {
             rejected.Add("TARGET_GOAL_PACE_NOT_PERMITTED_FOR_" + definition.Key);
         }
@@ -401,6 +422,7 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 "FARTLEK" => "SURGE_AND_FLOAT",
                 "THRESHOLD_TEMPO" => "THRESHOLD_EFFORT",
                 "GOAL_PACE_TEN_K" => "GOAL_PACE",
+                "HM_PACE" => "HM_PACE",
                 _ => "EASY"
             };
 

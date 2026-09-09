@@ -95,6 +95,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
+        // HM.2 — exact dark-cell dispatch only; every other HM cell remains fail-closed.
+        if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 4 &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4D).Build(request);
+        }
+
         // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
         // every branch above now explicitly requires CanonicalDistanceFamily
         // == "TEN_K", so any candidate reaching this point with the
@@ -213,6 +221,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 CatalogEvidenceBasis.EvidenceInformed,
                 CatalogDecisionStatus.CanonicalConfirmed,
                 "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md; Doc13 §3 / Golden Fixture v3 weeklyVolumeAnchorKm semantics");
+        }
+
+        // HM.1.5 explicitly froze 25km as calibration-only, never as a user
+        // default. Until a separate HM missing/zero-readiness authority is
+        // approved, fail closed instead of silently borrowing 10K's 24km.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D))
+        {
+            throw new CatalogVolumeInvalidReadinessInputException(
+                "HALF_MARATHON Intermediate×4D requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
         }
 
         // Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority:

@@ -267,3 +267,9 @@ This table is intentionally separate from the 10K Program table above: Half Mara
 ## Correction log (append-only — historical entries are never erased)
 
 - No corrections recorded yet as of `APPSEL-BACKEND.GOV.0`. FREQ.6D.1A/6D.1B already model the required pattern for future corrections: FREQ.6D.1B did not erase or edit FREQ.6D.1A's row above — it stands as the initial analysis, with FREQ.6D.1B's row recording the correction/fidelity-closure that followed it, cross-referenced via its Parent Phase(s) column.
+
+### HM continuation entries
+
+| Sequence | Phase | Type | Status | Outcome | Implementation SHA | Governance SHA | Report | Parent phase(s) | Evidence | Verification |
+|---:|---|---|---|---|---|---|---|---|---|---|
+| 13 | HM.2 (full-slice continuation) | IMPLEMENTATION — real catalog + production-owned dark pipeline + tests | DONE | `HM_INTERMEDIATE_4D_14W_FULL_DARK_VERTICAL_SLICE_COMPLETE` | PENDING | PENDING | [PHASE_HM_2_INTERMEDIATE_4D_14W_FULL_DARK_VERTICAL_SLICE.md](PHASE_HM_2_INTERMEDIATE_4D_14W_FULL_DARK_VERTICAL_SLICE.md) | HM.2 Step 1, HM.1.6, HM.1.5, HM.1.4B, HM.1.3, HM.1.2, HM.1.1, HM.1 | The governing prompt froze the final numeric authority. A real 14-week/56-session plan traverses identity → eligibility → phase/layout → volume/LR/taper → progression → binding → pace/fallback → calendar → dated validation → payload materialization. Golden peak `43.0km`, max LR `17.0km`, taper `30.0/18.5km`; public/Runway gates remain false; missing/zero volume fails closed rather than borrowing 10K. | Focused `118/118`; PlanCatalog `1510/1510`; full backend attempts timed out at 300s and 900s without a final result |

@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "documentType": "PLAN_TEMPLATE",
+    "schemaVersion": 2,
+    "key": "HALF_MARATHON_MASTER",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "distanceFamily": "HALF_MARATHON",
+  "coreCycle": {
+    "minimumWeeks": 14,
+    "defaultWeeks": 14,
+    "maximumWeeks": 14
+  },
+  "supportedRunsPerWeek": [4],
+  "phases": [
+    {
+      "phaseKey": "FOUNDATION",
+      "minimumWeeks": 3,
+      "preferredWeeks": 3,
+      "maximumWeeks": 3,
+      "intents": ["AEROBIC_BASE"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN"],
+      "compressionPriority": 1,
+      "extensionPriority": 1,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "BUILD",
+      "minimumWeeks": 4,
+      "preferredWeeks": 4,
+      "maximumWeeks": 4,
+      "intents": ["VOLUME_BUILD", "INTENSITY_INTRODUCTION"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 2,
+      "extensionPriority": 2,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "minimumWeeks": 5,
+      "preferredWeeks": 5,
+      "maximumWeeks": 5,
+      "intents": ["RACE_SPECIFIC_SHARPENING"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 3,
+      "extensionPriority": 3,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "TAPER",
+      "minimumWeeks": 2,
+      "preferredWeeks": 2,
+      "maximumWeeks": 2,
+      "intents": ["TAPER"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY", "RACE"],
+      "compressionPriority": 4,
+      "extensionPriority": 4,
+      "isCompressionProtected": true
+    }
+  ],
+  "workoutProgression": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "key": "HALF_MARATHON_WORKOUT_PROGRESSION",
+    "version": 1
+  },
+  "requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"]
+}

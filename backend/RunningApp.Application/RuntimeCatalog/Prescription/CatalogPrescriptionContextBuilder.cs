@@ -1,6 +1,7 @@
 using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.RuntimeCatalog.Resolvers;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 using RunningApp.Domain.Enums;
 
@@ -235,6 +236,7 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
         "FARTLEK" => ["work/recovery durations and repetition count"],
         "THRESHOLD_TEMPO" => ["continuous tempo duration/dose"],
         "GOAL_PACE_TEN_K" => ["goal-pace dose after feasibility gate"],
+        "HM_PACE" => ["HM-pace dose from independent current-fitness evidence"],
         _ => []
     };
 
@@ -456,7 +458,7 @@ internal static class CatalogPrescriptionContextValidator
             errors.Add("EASY_SUPPORT_MUST_NOT_HAVE_STAGE");
         }
 
-        ValidateTaperCompleteness(sessions, errors);
+        ValidateTaperCompleteness(boundPlan, sessions, errors);
 
         if (sessions.Any(s => s.GoalFeasibilityValue == "UNSUPPORTED" && s.PaceSource.Source == PrescriptionPaceSource.TargetGoal))
         {
@@ -495,9 +497,19 @@ internal static class CatalogPrescriptionContextValidator
     /// condition, kept separate from <c>TAPER_SHARPEN_CONTEXT_MISSING</c> so the two failure causes
     /// are never collapsed into one generic message.
     /// </summary>
-    private static void ValidateTaperCompleteness(IReadOnlyList<CatalogSessionPrescriptionContext> sessions, List<string> errors)
+    private static void ValidateTaperCompleteness(BoundCatalogPlan boundPlan, IReadOnlyList<CatalogSessionPrescriptionContext> sessions, List<string> errors)
     {
         var taperKeySessions = sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
+        if (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
+            boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion)
+        {
+            var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            if (!valid) errors.Add("HM_TAPER_ACTIVATION_CONTEXT_MISSING");
+            return;
+        }
+
 
         var partialLineage = taperKeySessions
             .Where(s => (s.PrescriptionProfileKey is null) != (s.PrescriptionProfileVersion is null))

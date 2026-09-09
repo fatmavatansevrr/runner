@@ -65,7 +65,7 @@ internal sealed class CatalogPublicPreviewMaterializer : ICatalogPublicPreviewMa
 
         var weeks = request.FinalPrescribedPlan.Weeks
             .OrderBy(w => w.WeekNumber)
-            .Select(w => MapWeek(request.PlanStartDate, w))
+            .Select(w => MapWeek(request.PlanStartDate, request.Candidate.WorkoutProgression.Key, w))
             .ToArray();
         var payload = new GeneratedCatalogPlanPayload
         {
@@ -101,7 +101,7 @@ internal sealed class CatalogPublicPreviewMaterializer : ICatalogPublicPreviewMa
         return new CatalogPublicMaterializationResult(payload, validation);
     }
 
-    private static GeneratedCatalogWeekPayload MapWeek(DateOnly planStartDate, CatalogPrescribedWeek week)
+    private static GeneratedCatalogWeekPayload MapWeek(DateOnly planStartDate, string workoutProgressionKey, CatalogPrescribedWeek week)
     {
         var weekStart = planStartDate.AddDays((week.WeekNumber - 1) * 7);
         var sessions = week.Sessions
@@ -124,7 +124,7 @@ internal sealed class CatalogPublicPreviewMaterializer : ICatalogPublicPreviewMa
                 StageKey = stageKey,
                 SourcePhaseKey = week.PhaseKey,
                 VolumeRuleKey = week.AllocationTrace.PolicyKey + " v" + week.AllocationTrace.PolicyVersion,
-                ProgressionReferenceKey = "TEN_K_WORKOUT_PROGRESSION_V1",
+                ProgressionReferenceKey = workoutProgressionKey,
             }
         };
     }
@@ -300,6 +300,7 @@ internal static class V1CatalogPublicWorkoutTypeMappingPolicy
             ("FARTLEK", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
             ("THRESHOLD_TEMPO", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Tempo,
             ("GOAL_PACE_TEN_K", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
+            ("HM_PACE", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
             // Phase 10K-FREQ.6D.4D.5E: real Intermediate×5D Foundation-Primary workout.
             // Key-only (no version branch) per 5E's confirmed key-level mapping-ownership
             // authority — every reachable version shares the same athlete-facing semantics.

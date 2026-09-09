@@ -189,12 +189,9 @@ public static class V1CatalogPilotIdentityPolicy
     /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/>/
     /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/>
     /// overloads, which no production public-routing call site invokes yet.
-    /// No catalog artifact exists yet for this identity — a real
-    /// <c>PlanCatalogBundleLoader</c> load of this candidate key/version will
-    /// fail until one is authored; this constant exists purely so the
-    /// identity/candidate-resolution seam itself is provably
-    /// distance-parameterized (HM.0 §F.1/§K), independent of catalog
-    /// authoring completeness (HM.2's own disclosed remainder).
+    /// HM.2's full dark vertical slice now supplies a real catalog artifact
+    /// for this identity. It remains unreachable from every public routing
+    /// overload and is loadable only through the explicit internal identity.
     /// </summary>
     public const string HalfMarathonFourDayIntermediateCandidateKey = "HALF_MARATHON__4D__INTERMEDIATE";
     public const int HalfMarathonFourDayIntermediateCandidateVersion = 1;

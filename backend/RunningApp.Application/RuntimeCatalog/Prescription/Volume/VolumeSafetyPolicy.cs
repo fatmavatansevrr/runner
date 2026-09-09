@@ -72,12 +72,9 @@ public sealed record VolumeSafetyPolicy(
     /// single-element list [<see cref="TaperVolumeMultiplier"/>], reproducing
     /// today's exact 1-week-taper behavior with zero delta. Populate this
     /// only for a policy whose candidate shape has a genuine multi-week
-    /// Taper phase (e.g. HALF_MARATHON's frozen 2-week taper) — see
-    /// <see cref="HalfMarathonIntermediate4DTaperVolumePolicy"/> for the
-    /// frozen HM.1.4B values themselves (not stored as a new named
-    /// VolumeSafetyPolicy instance here, since 4 of this record's 13 fields
-    /// remain unfrozen for HM per HM.1.5 §3 — see that policy's own doc
-    /// comment).
+    /// Taper phase. HALF_MARATHON Intermediate×4D is the first such named
+    /// policy; its complete authority was frozen across HM.1.4–HM.1.6 and
+    /// is represented by <see cref="HalfMarathonIntermediate4D"/> below.
     /// </summary>
     IReadOnlyList<double>? TaperVolumeMultipliers = null,
     /// <summary>
@@ -140,6 +137,24 @@ public sealed record VolumeSafetyPolicy(
         LongRunHardCapShare: 0.40d,
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>HM.2 dark-only HALF_MARATHON×INTERMEDIATE×4D×14W authority. Taper multipliers are independently applied to the fixed anchor; 19km is a ceiling, never a target.</summary>
+    public static VolumeSafetyPolicy HalfMarathonIntermediate4D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 25d,
+        ResolvedPeakReference: new(43d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 11,
+        TaperVolumeMultiplier: HalfMarathonIntermediate4DTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        LongRunPreferredMinimumShare: 0.30d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.33d,
+        LongRunHardCapShare: 0.40d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: HalfMarathonIntermediate4DTaperVolumePolicy.OrderedMultipliers,
+        PreferredAbsolutePeakLongRunKm: 19d);
 
     public static VolumeSafetyPolicy ThreeDayIntermediate { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,
