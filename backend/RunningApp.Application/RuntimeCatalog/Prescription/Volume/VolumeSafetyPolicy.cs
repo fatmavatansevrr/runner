@@ -79,7 +79,33 @@ public sealed record VolumeSafetyPolicy(
     /// remain unfrozen for HM per HM.1.5 §3 — see that policy's own doc
     /// comment).
     /// </summary>
-    IReadOnlyList<double>? TaperVolumeMultipliers = null)
+    IReadOnlyList<double>? TaperVolumeMultipliers = null,
+    /// <summary>
+    /// HM.1.6 — optional absolute long-run ceiling in kilometers, expressing
+    /// a PREFERRED ABSOLUTE PEAK, never a mandatory target (frozen semantic:
+    /// HM.1.1's own <c>PreferredAbsolutePeakLongRunKm</c> decision, not
+    /// re-decided here). Null for every existing 10K policy (all 12 named
+    /// instances below) — the mechanism this field gates (see
+    /// <see cref="CatalogVolumeAndLongRunPlanner.BuildLongRunPlan"/>'s
+    /// RACE_SPECIFIC-phase share-progression branch) is entirely inert when
+    /// this is null, reproducing today's exact flat-<see cref="LongRunSelectionShare"/>
+    /// behavior with zero delta, regardless of whether a given candidate's
+    /// own phase keys happen to include "RACE_SPECIFIC" (this field, not the
+    /// phase key's mere presence, is what gates the mechanism). When set
+    /// (e.g. HM's own frozen 19.0km, HM.1.1), <see cref="CatalogVolumeAndLongRunPlanner.BuildLongRunPlan"/>
+    /// (a) lets a RACE_SPECIFIC-phase week's long-run share ramp linearly,
+    /// position-in-phase-weighted, from <see cref="LongRunSelectionShare"/>
+    /// toward <see cref="LongRunHardCapShare"/> (never past it — reuses the
+    /// two already-approved share numbers, invents no new share figure), and
+    /// (b) additionally clamps every week's effective hard-cap-in-kilometers
+    /// down to this value when the share-derived hard cap would otherwise
+    /// exceed it — so the resulting long run can rise above the ordinary
+    /// selected-share target only as far as both the hard-cap SHARE and this
+    /// absolute-KM ceiling jointly allow, never forcing either bound to be
+    /// reached. See PHASE_HM_1_6_LONG_RUN_SHARE_PEAK_WEEK_MECHANISM_CLOSURE.md
+    /// for the full mechanism rationale and zero-delta proof.
+    /// </summary>
+    double? PreferredAbsolutePeakLongRunKm = null)
 {
     public double GoldenFixtureResolvedPeakKm => ResolvedPeakReference.Value;
     /// <summary>Stable identifier for this exact set of values — bump when any field's value changes, so a decision trace can always be traced back to the policy version that produced it.</summary>

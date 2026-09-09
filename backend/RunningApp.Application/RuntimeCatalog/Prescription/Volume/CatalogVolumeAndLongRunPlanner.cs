@@ -408,7 +408,8 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         _policy.LongRunHardCapShare,
         CatalogEvidenceBasis.ProductPracticeInformed,
         CatalogDecisionStatus.ExplicitProductDefault,
-        "Doc13 §8.1 / Golden Fixture v3 four-day long-run practice: preferred 30%-36%, hard cap 40%; selection share 33%.");
+        "Doc13 §8.1 / Golden Fixture v3 four-day long-run practice: preferred 30%-36%, hard cap 40%; selection share 33%.",
+        _policy.PreferredAbsolutePeakLongRunKm);
 
     private CatalogWeeklyVolumePlan BuildWeeklyPlan(
         CatalogVolumePlanningRequest request,
@@ -577,6 +578,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         var traces = new List<LongRunDecisionTrace>();
         double? previous = null;
 
+        // HM.1.6 -- ordered RACE_SPECIFIC week numbers, computed once. Only
+        // ever consulted below when share.PreferredAbsolutePeakLongRunKm is
+        // non-null (every existing 10K policy leaves it null), so this list's
+        // mere non-emptiness (e.g. a future or existing 10K candidate that
+        // also happens to use a "RACE_SPECIFIC" phase key) has zero effect on
+        // its own -- the field, not the phase key's presence, is the gate.
+        var raceSpecificWeekNumbers = weekly.Weeks.Where(w => w.PhaseKey == "RACE_SPECIFIC").Select(w => w.WeekNumber).ToList();
+
         foreach (var week in weekly.Weeks)
         {
             var lowConfidence = readiness.LongestRun.State == PrescriptionInputState.Inconsistent;
@@ -592,13 +601,49 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             var preferredMaxShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.PreferredMaximumShare : share.PreferredMaximumShare;
             var selectionShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.SelectionShare : share.SelectionShare;
             var hardCapShare = useBeginnerThreeDayTaperShare ? V1BeginnerThreeDayTaperLongRunSharePolicy.HardCapShare : share.HardCapShare;
+
+            // HM.1.6 -- RACE_SPECIFIC-phase peak-share eligibility. Gated
+            // entirely on share.PreferredAbsolutePeakLongRunKm being
+            // configured (null for every existing 10K policy -- see that
+            // field's own doc comment for the full zero-delta argument).
+            // When active, the target share ramps LINEARLY, by this week's
+            // ordered position within the RACE_SPECIFIC phase, from the
+            // ordinary SelectionShare (continuous with the immediately
+            // preceding BUILD week -- no jump at the phase boundary) toward
+            // HardCapShare (never past it -- reuses the two already-approved
+            // share numbers, invents no third share figure) at the final
+            // RACE_SPECIFIC week. This is an ALLOWANCE, not a mandate: the
+            // absolute-kilometer ceiling below and the ordinary weekly-volume
+            // progression (unchanged by this method) still jointly decide
+            // whether the higher share ever produces a materially larger
+            // long run.
+            var isPeakEligibleWeek = !useBeginnerThreeDayTaperShare && share.PreferredAbsolutePeakLongRunKm is not null && week.PhaseKey == "RACE_SPECIFIC";
+            if (isPeakEligibleWeek)
+            {
+                var position = raceSpecificWeekNumbers.IndexOf(week.WeekNumber);
+                var denominator = Math.Max(1, raceSpecificWeekNumbers.Count - 1);
+                selectionShare += (hardCapShare - selectionShare) * position / denominator;
+            }
+
             var lower = Round(weeklyVolume * preferredMinShare);
-            var upper = Round(weeklyVolume * preferredMaxShare);
+            var upper = Round(weeklyVolume * (isPeakEligibleWeek ? hardCapShare : preferredMaxShare));
             var hardCap = Round(weeklyVolume * hardCapShare);
+            // HM.1.6 -- an optional absolute ceiling additionally narrows the
+            // effective hard cap in kilometers, never widens it. No-op
+            // (hardCap unchanged) for every existing 10K policy, whose
+            // PreferredAbsolutePeakLongRunKm is always null.
+            if (share.PreferredAbsolutePeakLongRunKm is { } absoluteCeilingKm)
+            {
+                hardCap = Math.Min(hardCap, Round(absoluteCeilingKm));
+            }
             var target = Round(weeklyVolume * selectionShare);
             var unclamped = target;
             var clamp = CatalogVolumeClamp.None;
-            var reason = useBeginnerThreeDayTaperShare ? "beginner_three_day_taper_specific_long_run_share_override_gen23" : "weekly_volume_derived_long_run_share";
+            var reason = useBeginnerThreeDayTaperShare
+                ? "beginner_three_day_taper_specific_long_run_share_override_gen23"
+                : isPeakEligibleWeek
+                    ? "hm_1_6_race_specific_peak_share_progression_toward_hard_cap"
+                    : "weekly_volume_derived_long_run_share";
             var authority = CatalogNumericRuleAuthority.TechnicalDeterministicRule;
 
             if (week.WeekNumber == weekly.Weeks[0].WeekNumber &&

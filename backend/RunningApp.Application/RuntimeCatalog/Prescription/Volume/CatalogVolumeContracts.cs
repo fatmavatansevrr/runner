@@ -93,7 +93,9 @@ internal sealed record LongRunWeeklyShareDecision(
     double HardCapShare,
     CatalogEvidenceBasis EvidenceBasis,
     CatalogDecisionStatus DecisionStatus,
-    string Provenance);
+    string Provenance,
+    /// <summary>HM.1.6 — see <see cref="VolumeSafetyPolicy.PreferredAbsolutePeakLongRunKm"/> for the full mechanism this gates. Null for every existing 10K policy.</summary>
+    double? PreferredAbsolutePeakLongRunKm = null);
 
 public sealed record CatalogPeakVolumeBand(
     string DistanceFamily,
