@@ -110,3 +110,14 @@ public sealed class ProgressionStageScheduleInvalidException : ProgressionStageS
 {
     public ProgressionStageScheduleInvalidException(string message) : base(message) { }
 }
+
+/// <summary>
+/// Backend Integration Phase HM.5.2 — a stage declared a <c>PreferredExposures</c> value
+/// outside its own [MinimumExposures, MaximumExposures] range. Only reachable for a stage that
+/// opts into the new optional field at all (every pre-HM.5.2 stage leaves it null and can never
+/// throw this).
+/// </summary>
+public sealed class ProgressionStagePreferredExposuresOutOfBoundsException : ProgressionStageSchedulingException
+{
+    public ProgressionStagePreferredExposuresOutOfBoundsException(string message) : base(message) { }
+}

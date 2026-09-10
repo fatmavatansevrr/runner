@@ -91,6 +91,22 @@ public sealed class CatalogWorkoutProgressionStage
     public required int RelativeOrder { get; init; }
     public required int MinimumExposures { get; init; }
     public required int MaximumExposures { get; init; }
+
+    /// <summary>
+    /// Backend Integration Phase HM.5.2 — optional, catalog-authored exposure baseline distinct
+    /// from <see cref="MinimumExposures"/>. Null (the default) for every stage authored before
+    /// this field existed — <see cref="ProgressionStageAllocator"/> falls back to
+    /// <see cref="MinimumExposures"/> as the baseline for those stages, byte-identical to its
+    /// pre-HM.5.2 behavior (same pattern as <c>VolumeSafetyPolicy.TaperVolumeMultipliers</c>,
+    /// HM.1.4B). When set, this becomes the allocator's exact-fit/extension baseline and
+    /// <see cref="MinimumExposures"/> becomes a genuine hard compression floor distinct from it
+    /// (see <see cref="ProgressionStageAllocator"/>'s own remarks on <c>ApplyCompression</c> for
+    /// why the floor concept changes only when this field is populated). Must satisfy
+    /// MinimumExposures &lt;= PreferredExposures &lt;= MaximumExposures when present (validated
+    /// structurally, not by this type).
+    /// </summary>
+    public int? PreferredExposures { get; init; }
+
     public required CatalogStageCompressionBehavior CompressionBehavior { get; init; }
     public required CatalogStageExtensionBehavior ExtensionBehavior { get; init; }
     public required IReadOnlyList<CatalogRuntimeEligibilityCondition> Requires { get; init; }

@@ -186,6 +186,14 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                         $"impossible range (minimum {mergedMin} > maximum {mergedMax}).");
                 }
 
+                // Backend Integration Phase HM.5.2: PreferredExposures merges conservatively,
+                // mirroring the min-of-maximums rule above — only defined when BOTH contributing
+                // requested stages explicitly declare one (an undeclared side cannot contribute a
+                // safe baseline), clamped into the merged [min,max] range. Not exercised by any
+                // current real catalog data (no stage that reaches this true-convergence branch
+                // today declares PreferredExposures on either side), so this is a documented,
+                // defensible convention rather than an empirically-verified path.
+                existing.PreferredExposures = CombineConservativePreferred(existing.PreferredExposures, requested.PreferredExposures, mergedMin, mergedMax);
                 existing.MinimumExposures = mergedMin;
                 existing.MaximumExposures = mergedMax;
                 existing.ContributingRequestedKeys.Add(requested.ProgressionStageKey);
@@ -198,6 +206,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                     EffectiveStage = effective,
                     MinimumExposures = effective.MinimumExposures,
                     MaximumExposures = effective.MaximumExposures,
+                    PreferredExposures = effective.PreferredExposures,
                     ConditionOutcome = outcome,
                     ContributingRequestedKeys = new List<string> { requested.ProgressionStageKey },
                 };
@@ -217,6 +226,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                     // which is a genuine multi-source conflict and stays conservative.
                     active.MinimumExposures = Math.Max(active.MinimumExposures, requested.MinimumExposures);
                     active.MaximumExposures = Math.Max(active.MaximumExposures, requested.MaximumExposures);
+                    active.PreferredExposures = CombineGenerousPreferred(active.PreferredExposures, requested.PreferredExposures);
                 }
 
                 activeByEffectiveKey[effective.ProgressionStageKey] = active;
@@ -257,21 +267,27 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             .ToList();
 
         var availableWeeks = eligibleWeeks.Count;
-        var totalMinimum = activeStages.Sum(a => a.MinimumExposures);
+
+        // Backend Integration Phase HM.5.2: the allocator's working baseline for the
+        // exact-fit/compression/extension regimes (Section 3/4) is each stage's
+        // PreferredExposures when the catalog declares one, else MinimumExposures — byte-identical
+        // to pre-HM.5.2 behavior for every stage that leaves PreferredExposures null (every 10K
+        // stage, every pre-HM.5.2 HM stage).
+        var totalBaseline = activeStages.Sum(a => a.Baseline);
 
         var compressionAction = ProgressionPhaseCompressionAction.NotRequired;
         string tieBreakUsed = "NONE";
 
-        if (totalMinimum > availableWeeks)
+        if (totalBaseline > availableWeeks)
         {
             compressionAction = ProgressionPhaseCompressionAction.Reduced;
             tieBreakUsed = "COMPRESSION_RELATIVE_ORDER_DESC_THEN_STAGE_KEY_ORDINAL";
-            ApplyCompression(phaseKey, activeStages, availableWeeks, ref totalMinimum);
+            ApplyCompression(phaseKey, activeStages, availableWeeks, ref totalBaseline);
         }
-        else if (totalMinimum < availableWeeks)
+        else if (totalBaseline < availableWeeks)
         {
             tieBreakUsed = "EXTENSION_RELATIVE_ORDER_DESC_THEN_STAGE_KEY_ORDINAL";
-            ApplyExtension(phaseKey, activeStages, availableWeeks, totalMinimum);
+            ApplyExtension(phaseKey, activeStages, availableWeeks, totalBaseline);
         }
 
         // Contiguous block layout: ascending RelativeOrder is authoritative (Section 8),
@@ -280,7 +296,14 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
         var weekIndex = 0;
         foreach (var active in activeStages)
         {
-            var finalCount = active.FinalAllocatedExposures ?? active.MinimumExposures;
+            // Backend Integration Phase HM.5.2: the exact-fit regime (Section 3, Regime B —
+            // totalBaseline == availableWeeks) runs neither ApplyCompression nor ApplyExtension,
+            // so FinalAllocatedExposures is still null here. It must fall back to each stage's
+            // Baseline (Preferred when declared, else Minimum) — NOT the raw MinimumExposures
+            // field — or a stage that declares PreferredExposures > MinimumExposures would be
+            // silently under-allocated at its own preferred phase length. Byte-identical to the
+            // pre-HM.5.2 fallback for every stage that leaves PreferredExposures null.
+            var finalCount = active.FinalAllocatedExposures ?? active.Baseline;
             for (var i = 0; i < finalCount; i++)
             {
                 var week = eligibleWeeks[weekIndex];
@@ -311,7 +334,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                     RequestedStageKey = isFallback ? active.ContributingRequestedKeys[0] : active.EffectiveStage.ProgressionStageKey,
                     EffectiveStageKey = active.EffectiveStage.ProgressionStageKey,
                     RelativeOrder = active.EffectiveStage.RelativeOrder,
-                    AllocationKind = i < active.MinimumExposuresBeforeExtension
+                    AllocationKind = i < active.BaselineExposuresBeforeExtension
                         ? ProgressionStageAllocationKind.MinimumExposure
                         : ProgressionStageAllocationKind.ExtensionExposure,
                     CompressionAction = compressionAction,
@@ -344,6 +367,17 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             {
                 throw new ProgressionStageDuplicateOrMissingKeyException(
                     $"Phase '{phaseKey}' contains a stage with a missing/blank ProgressionStageKey.");
+            }
+
+            // Backend Integration Phase HM.5.2: a stage that opts into the new optional
+            // PreferredExposures baseline must declare it within its own bounds. Unreachable
+            // for every pre-HM.5.2 stage (PreferredExposures is null there).
+            if (stage.PreferredExposures is { } preferred
+                && (preferred < stage.MinimumExposures || preferred > stage.MaximumExposures))
+            {
+                throw new ProgressionStagePreferredExposuresOutOfBoundsException(
+                    $"Phase '{phaseKey}' stage '{stage.ProgressionStageKey}' declares PreferredExposures {preferred}, " +
+                    $"which is outside its own [MinimumExposures {stage.MinimumExposures}, MaximumExposures {stage.MaximumExposures}] range.");
             }
         }
 
@@ -463,13 +497,21 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
 
     /// <summary>
     /// Section 10: reduce Compressible active stages, highest RelativeOrder first then
-    /// ProgressionStageKey ordinal, down to a floor of 1 exposure each (Protected stages are
-    /// never touched; this floor is the literal reading of "reduce" against the only fields
-    /// the catalog actually declares — no new "compressed minimum" field is invented).
+    /// ProgressionStageKey ordinal, down to each stage's own compression floor.
+    ///
+    /// Backend Integration Phase HM.5.2: the floor is no longer unconditionally hardcoded to 1.
+    /// For a stage that leaves the new, optional PreferredExposures baseline unset (every
+    /// pre-HM.5.2 stage), the baseline IS MinimumExposures, and — exactly as before this
+    /// phase — the only floor the algorithm can express below an undifferentiated single field
+    /// is the literal constant 1 (no separate "compressed minimum" existed). For a stage that
+    /// DOES declare PreferredExposures, MinimumExposures becomes a genuine, catalog-declared
+    /// hard floor distinct from the baseline being compressed — reducing below it would silently
+    /// violate the very authority the new field exists to make representable. This is a strict
+    /// generalization: every pre-HM.5.2 stage computes the identical floor (1) it always did.
     /// </summary>
-    private static void ApplyCompression(string phaseKey, List<ActiveStage> activeStages, int availableWeeks, ref int totalMinimum)
+    private static void ApplyCompression(string phaseKey, List<ActiveStage> activeStages, int availableWeeks, ref int totalBaseline)
     {
-        var deficit = totalMinimum - availableWeeks;
+        var deficit = totalBaseline - availableWeeks;
 
         var candidates = activeStages
             .Where(a => a.EffectiveStage.CompressionBehavior == CatalogStageCompressionBehavior.Compressible)
@@ -477,11 +519,11 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             .ThenBy(a => a.EffectiveStage.ProgressionStageKey, StringComparer.Ordinal)
             .ToList();
 
-        var totalHeadroom = candidates.Sum(a => a.MinimumExposures - 1);
+        var totalHeadroom = candidates.Sum(a => a.Baseline - CompressionFloor(a));
         if (totalHeadroom < deficit)
         {
             throw new ProgressionPhaseCapacityInsufficientException(
-                $"Phase '{phaseKey}' requires {totalMinimum} minimum exposures across {activeStages.Count} active stage(s), " +
+                $"Phase '{phaseKey}' requires {totalBaseline} baseline exposures across {activeStages.Count} active stage(s), " +
                 $"but only has {availableWeeks} available week(s). Maximum permitted compression reduces this by " +
                 $"{totalHeadroom}, which is insufficient (deficit {deficit}).");
         }
@@ -493,17 +535,16 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                 break;
             }
 
-            var reducible = candidate.MinimumExposures - 1;
+            var reducible = candidate.Baseline - CompressionFloor(candidate);
             var reduceBy = Math.Min(reducible, deficit);
             if (reduceBy <= 0)
             {
                 continue;
             }
 
-            candidate.MinimumExposures -= reduceBy;
-            candidate.FinalAllocatedExposures = candidate.MinimumExposures;
-            candidate.MinimumExposuresBeforeExtension = candidate.MinimumExposures;
-            for (var i = 0; i < candidate.MinimumExposures; i++)
+            candidate.FinalAllocatedExposures = candidate.Baseline - reduceBy;
+            candidate.BaselineExposuresBeforeExtension = candidate.FinalAllocatedExposures.Value;
+            for (var i = 0; i < candidate.FinalAllocatedExposures; i++)
             {
                 candidate.AllocationReasons.Add("COMPRESSION_REDUCED_ALLOCATION");
             }
@@ -513,15 +554,55 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
 
         foreach (var stage in activeStages.Where(a => a.FinalAllocatedExposures is null))
         {
-            stage.FinalAllocatedExposures = stage.MinimumExposures;
-            stage.MinimumExposuresBeforeExtension = stage.MinimumExposures;
-            for (var i = 0; i < stage.MinimumExposures; i++)
+            stage.FinalAllocatedExposures = stage.Baseline;
+            stage.BaselineExposuresBeforeExtension = stage.Baseline;
+            for (var i = 0; i < stage.Baseline; i++)
             {
                 stage.AllocationReasons.Add("MINIMUM_EXPOSURE_ALLOCATION");
             }
         }
 
-        totalMinimum = activeStages.Sum(a => a.FinalAllocatedExposures!.Value);
+        totalBaseline = activeStages.Sum(a => a.FinalAllocatedExposures!.Value);
+    }
+
+    /// <summary>See <see cref="ApplyCompression"/>'s own remarks — the compression floor is the
+    /// stage's genuine MinimumExposures only when it also declares a distinct PreferredExposures
+    /// baseline; otherwise it stays the historical hardcoded 1.</summary>
+    private static int CompressionFloor(ActiveStage stage) => stage.PreferredExposures.HasValue ? stage.MinimumExposures : 1;
+
+    /// <summary>
+    /// Backend Integration Phase HM.5.2 — conservative merge for Section 12's TRUE-convergence
+    /// branch: only defined (non-null) when BOTH contributing sides declare a PreferredExposures
+    /// value; takes the smaller of the two, clamped into the already-merged [min,max] range.
+    /// </summary>
+    private static int? CombineConservativePreferred(int? existing, int? requested, int mergedMin, int mergedMax)
+    {
+        if (existing is null || requested is null)
+        {
+            return null;
+        }
+
+        return Math.Clamp(Math.Min(existing.Value, requested.Value), mergedMin, mergedMax);
+    }
+
+    /// <summary>
+    /// Backend Integration Phase HM.5.2 — generous merge for Section 12's single-substitution
+    /// branch (mirrors the existing max-of-minimums/max-of-maximums rule for that branch): the
+    /// larger of the two declared values, or whichever one is declared if only one is.
+    /// </summary>
+    private static int? CombineGenerousPreferred(int? existing, int? requested)
+    {
+        if (existing is null)
+        {
+            return requested;
+        }
+
+        if (requested is null)
+        {
+            return existing;
+        }
+
+        return Math.Max(existing.Value, requested.Value);
     }
 
     /// <summary>
@@ -544,15 +625,26 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
     /// used up) — documented explicitly here as a V1 technical scheduler rule, not scientific
     /// evidence, per this phase's own instruction.
     /// </summary>
-    private static void ApplyExtension(string phaseKey, List<ActiveStage> activeStages, int availableWeeks, int totalMinimum)
+    /// <summary>
+    /// Backend Integration Phase HM.5.2: extension now grows each stage from its Baseline
+    /// (PreferredExposures when declared, else MinimumExposures — byte-identical to before this
+    /// phase for every stage that leaves PreferredExposures null) up toward MaximumExposures.
+    /// This is what makes Regime B (Section 3 — totalBaseline == availableWeeks, zero surplus)
+    /// resolve each stage at its own Preferred value: this method is not even invoked in that
+    /// case (surplus is computed as 0 by the caller's branch condition), so the exact-fit
+    /// fallback in <see cref="AllocatePhase"/> (Baseline) is what actually answers Regime B —
+    /// documented here because the same Baseline concept both methods share is the crux of the
+    /// whole fix (Section 7).
+    /// </summary>
+    private static void ApplyExtension(string phaseKey, List<ActiveStage> activeStages, int availableWeeks, int totalBaseline)
     {
-        var surplus = availableWeeks - totalMinimum;
+        var surplus = availableWeeks - totalBaseline;
 
         foreach (var stage in activeStages)
         {
-            stage.MinimumExposuresBeforeExtension = stage.MinimumExposures;
-            stage.FinalAllocatedExposures = stage.MinimumExposures;
-            for (var i = 0; i < stage.MinimumExposures; i++)
+            stage.BaselineExposuresBeforeExtension = stage.Baseline;
+            stage.FinalAllocatedExposures = stage.Baseline;
+            for (var i = 0; i < stage.Baseline; i++)
             {
                 stage.AllocationReasons.Add("MINIMUM_EXPOSURE_ALLOCATION");
             }
@@ -564,12 +656,12 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
             .ThenBy(a => a.EffectiveStage.ProgressionStageKey, StringComparer.Ordinal)
             .ToList();
 
-        var totalHeadroom = candidates.Sum(a => a.MaximumExposures - a.MinimumExposures);
+        var totalHeadroom = candidates.Sum(a => a.MaximumExposures - a.Baseline);
         if (totalHeadroom < surplus)
         {
             throw new ProgressionPhaseCapacityExceedsMaximumException(
                 $"Phase '{phaseKey}' has {availableWeeks} available week(s), but its active stages' combined maximum " +
-                $"exposures can absorb at most {totalMinimum + totalHeadroom} (minimum {totalMinimum} + extension headroom " +
+                $"exposures can absorb at most {totalBaseline + totalHeadroom} (baseline {totalBaseline} + extension headroom " +
                 $"{totalHeadroom}). Excess of {surplus - totalHeadroom} week(s) beyond permitted maximum.");
         }
 
@@ -580,7 +672,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                 break;
             }
 
-            var headroom = candidate.MaximumExposures - candidate.MinimumExposures;
+            var headroom = candidate.MaximumExposures - candidate.Baseline;
             var growBy = Math.Min(headroom, surplus);
             if (growBy <= 0)
             {
@@ -592,7 +684,7 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
                 candidate.AllocationReasons.Add("EXTENSION_ALLOCATION");
             }
 
-            candidate.FinalAllocatedExposures = candidate.MinimumExposures + growBy;
+            candidate.FinalAllocatedExposures = candidate.Baseline + growBy;
             surplus -= growBy;
         }
     }
@@ -602,8 +694,15 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
         public required CatalogWorkoutProgressionStage EffectiveStage { get; init; }
         public int MinimumExposures { get; set; }
         public int MaximumExposures { get; set; }
+
+        /// <summary>Backend Integration Phase HM.5.2 — see <see cref="CatalogWorkoutProgressionStage.PreferredExposures"/>. Carried on the active/merged copy so fallback-merge resolution (Section 12) can combine it independently of the effective stage's own catalog-declared value.</summary>
+        public int? PreferredExposures { get; set; }
+
+        /// <summary>Backend Integration Phase HM.5.2 — the allocator's working exposure baseline: PreferredExposures when declared, else MinimumExposures. Byte-identical to MinimumExposures for every stage that leaves PreferredExposures null.</summary>
+        public int Baseline => PreferredExposures ?? MinimumExposures;
+
         public int? FinalAllocatedExposures { get; set; }
-        public int MinimumExposuresBeforeExtension { get; set; }
+        public int BaselineExposuresBeforeExtension { get; set; }
         public required ProgressionStageEligibilityOutcome ConditionOutcome { get; set; }
         public required List<string> ContributingRequestedKeys { get; init; }
         public List<string> AllocationReasons { get; } = new();

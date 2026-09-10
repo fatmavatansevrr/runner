@@ -118,6 +118,13 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
         var relativeOrder = RequireInt(stageEl, "relativeOrder", reference);
         var minimumExposures = RequireInt(stageEl, "minimumExposures", reference);
         var maximumExposures = RequireInt(stageEl, "maximumExposures", reference);
+
+        // Backend Integration Phase HM.5.2: optional "preferredExposures" — additive, sibling to
+        // the two required exposure fields. Absent for every stage authored before this field
+        // existed (every 10K progression, every pre-HM.5.2 HM stage).
+        int? preferredExposures = stageEl.TryGetProperty("preferredExposures", out var preferredEl) && preferredEl.ValueKind == JsonValueKind.Number
+            ? preferredEl.GetInt32()
+            : null;
         var compressionBehavior = ParseCompressionBehavior(RequireString(stageEl, "compressionBehavior", reference), stageKey, reference);
         var extensionBehavior = ParseExtensionBehavior(RequireString(stageEl, "extensionBehavior", reference), stageKey, reference);
 
@@ -159,6 +166,7 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
             RelativeOrder = relativeOrder,
             MinimumExposures = minimumExposures,
             MaximumExposures = maximumExposures,
+            PreferredExposures = preferredExposures,
             CompressionBehavior = compressionBehavior,
             ExtensionBehavior = extensionBehavior,
             Requires = requires,
