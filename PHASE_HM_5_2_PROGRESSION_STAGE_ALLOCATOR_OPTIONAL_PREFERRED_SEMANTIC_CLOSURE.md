@@ -4,7 +4,11 @@
 
 All work in this phase starts from `HEAD` at commit `182114b` (HM.5.1's own governance-backfill
 commit). This phase touches exactly five source files, adds two new test files, adds this report,
-and updates `PHASE_LEDGER.md`/`MASTER_ROADMAP.md`. No unrelated file was modified.
+and updates `PHASE_LEDGER.md`/`MASTER_ROADMAP.md`. No unrelated file was modified. The real,
+feature/fix commit for this phase's work is `615ddd051cff13ca7ddc48ffd5d9cf958460dae0`
+(`feat(hm-5-2): close progression stage allocator optional-preferred exposure semantic gap`);
+this report and `PHASE_LEDGER.md` referenced that commit's own SHA as a placeholder until the
+docs-only backfill commit that immediately follows it.
 
 ## 1. Current allocator algorithm (as found, before this phase's change)
 
