@@ -321,10 +321,35 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 threeDayProvenance);
         }
         var transitions = Math.Max(0, nonTaperWeeks - 1);
+        // HM.5.3 -- for a policy that opts in via ResolvedPeakReferenceIsSelectedCeiling (only
+        // HalfMarathonIntermediate4D today), transitions are capped at the golden-fixture
+        // calibration count before driving the interpolation ratio below.
+        // GoldenFixtureNonTaperTransitions is a CALIBRATION POINT (how many non-taper
+        // transitions the golden fixture itself has), not a floor on horizon length.
+        // Interpolating for transitions <= this count is unchanged for every policy (including
+        // HM's own 14W golden, which sits exactly at the calibration count). Once a horizon's
+        // non-taper transition count EXCEEDS the calibration count (HM 15W/16W specifically),
+        // the un-capped formula extrapolates the multiplier linearly past the calibrated ratio,
+        // producing a resolved peak above ResolvedPeakReference.Value (46.5km for 16W, strictly
+        // greater than the frozen 43.0km selected/reference peak) -- treating "more Core weeks"
+        // as authority for "a higher peak", which HM.5.3's governing semantic explicitly
+        // forbids for this cell (more weeks give more time to reach the SAME selected peak,
+        // never a higher one). Capping the numerator here makes the multiplier saturate at
+        // canonicalDefaultMultiplier for any horizon at or beyond the calibration point, so
+        // `reachable` asymptotically approaches (and, when startingVolumeKm equals
+        // GoldenFixtureStartingVolumeKm, resolves to exactly) ResolvedPeakReference.Value --
+        // never above it. Every existing 10K policy leaves the flag false (default) and keeps
+        // its own already-shipped extrapolation-past-calibration behavior for longer horizons
+        // completely unchanged (confirmed by full regression -- e.g. BeginnerFourDay's 13W/14W
+        // horizons intentionally resolve above their own 21km reference, which is real, already
+        // shipped, already-tested product behavior this phase must not alter).
+        var cappedTransitions = _policy.ResolvedPeakReferenceIsSelectedCeiling
+            ? Math.Min(transitions, _policy.GoldenFixtureNonTaperTransitions)
+            : transitions;
         // Provenance is audit metadata only. Numeric planning deliberately consumes Value
         // and never branches on ResolvedPeakReference.Provenance.
         var canonicalDefaultMultiplier = _policy.ResolvedPeakReference.Value / _policy.GoldenFixtureStartingVolumeKm;
-        var transitionAdjustedMultiplier = 1d + ((canonicalDefaultMultiplier - 1d) * transitions / _policy.GoldenFixtureNonTaperTransitions);
+        var transitionAdjustedMultiplier = 1d + ((canonicalDefaultMultiplier - 1d) * cappedTransitions / _policy.GoldenFixtureNonTaperTransitions);
         var reachable = startingVolumeKm * transitionAdjustedMultiplier;
 
         reachable = Round(reachable);
@@ -644,14 +669,34 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
 
             var lower = Round(weeklyVolume * preferredMinShare);
             var upper = Round(weeklyVolume * (isPeakEligibleWeek ? hardCapShare : preferredMaxShare));
-            var hardCap = Round(weeklyVolume * hardCapShare);
+            // HM.5.3 -- a HARD SAFETY CEILING must round DOWN (never nearest/away-from-zero),
+            // because rounding-to-nearest can round a compliant raw value UP past the true
+            // percentage cap. Example (real 12W/15W reproduction): weeklyVolume=41.0,
+            // hardCapShare=0.40 -> raw ceiling 16.4km; RoundToNearest(16.4, 0.5) = 16.5km, i.e.
+            // rounding manufactured a ceiling ABOVE the true 40% limit. `selected` below was
+            // then clamped up to that inflated 16.5km ceiling, which is genuinely > 40% of
+            // weekly volume -- exactly what CatalogFinalPrescribedPlanValidator's own
+            // (unrounded, 0.001km-tolerance) hard-cap check correctly rejected as
+            // FINAL_WEEK_*_LONG_RUN_SHARE_EXCEEDS_CAP. The planner's internal
+            // CatalogVolumePlanValidator never caught this because it validates `selected`
+            // against this same (already-inflated) rounded ceiling, not the true percentage --
+            // a planner/validator parity gap (both must honor the same true authority: the
+            // raw hard-cap fraction, not a rounding of it that can exceed it). Rounding this
+            // ceiling DOWN to the rounding grid instead guarantees the clamp ceiling is never
+            // greater than the true fractional/absolute limit, so every value the planner
+            // selects at or below it is, by construction, also accepted by the final
+            // validator's own unrounded check. Zero-delta for every existing 10K week where
+            // the nearest-rounded and floor-rounded hard cap already coincide (the common
+            // case) -- this only ever lowers a ceiling that rounding-to-nearest had incorrectly
+            // raised above the true limit.
+            var hardCap = RoundDown(weeklyVolume * hardCapShare);
             // HM.1.6 -- an optional absolute ceiling additionally narrows the
             // effective hard cap in kilometers, never widens it. No-op
             // (hardCap unchanged) for every existing 10K policy, whose
             // PreferredAbsolutePeakLongRunKm is always null.
             if (share.PreferredAbsolutePeakLongRunKm is { } absoluteCeilingKm)
             {
-                hardCap = Math.Min(hardCap, Round(absoluteCeilingKm));
+                hardCap = Math.Min(hardCap, RoundDown(absoluteCeilingKm));
             }
             var target = Round(weeklyVolume * selectionShare);
             var unclamped = target;
@@ -751,6 +796,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
 
     private static double Round(double value, double roundingIncrementKm) =>
         Math.Round(value / roundingIncrementKm, MidpointRounding.AwayFromZero) * roundingIncrementKm;
+
+    /// <summary>
+    /// HM.5.3 -- safety-ceiling-only rounding: floors to the rounding grid instead of rounding
+    /// to nearest, so a value used as a hard upper safety bound (e.g. the long-run
+    /// hard-percentage-of-weekly-volume cap) can never be rounded UP past the true limit it
+    /// represents. Never used for ordinary target/selection values (those still use the
+    /// existing nearest-rounding <see cref="Round(double)"/>).
+    /// </summary>
+    private double RoundDown(double value) => Math.Floor(value / _policy.RoundingIncrementKm) * _policy.RoundingIncrementKm;
 
     private static double RoundPercent(double value) => Math.Round(value, 4, MidpointRounding.AwayFromZero);
 

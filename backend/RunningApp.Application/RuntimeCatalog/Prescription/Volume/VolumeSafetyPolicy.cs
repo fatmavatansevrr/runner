@@ -102,7 +102,30 @@ public sealed record VolumeSafetyPolicy(
     /// reached. See PHASE_HM_1_6_LONG_RUN_SHARE_PEAK_WEEK_MECHANISM_CLOSURE.md
     /// for the full mechanism rationale and zero-delta proof.
     /// </summary>
-    double? PreferredAbsolutePeakLongRunKm = null)
+    double? PreferredAbsolutePeakLongRunKm = null,
+    /// <summary>
+    /// HM.5.3 — optional, opt-in semantic flag distinguishing two genuinely different meanings
+    /// <see cref="ResolvedPeakReference"/> can carry, discovered while closing HM's 15W/16W
+    /// peak-volume-overshoot blocker. <see cref="CatalogVolumeAndLongRunPlanner.ResolvePeak"/>'s
+    /// interpolation formula (<c>transitionAdjustedMultiplier</c>) is calibrated at exactly
+    /// <see cref="GoldenFixtureNonTaperTransitions"/> non-taper transitions; for every existing
+    /// 10K policy (all false, the default — zero delta, confirmed by full regression), a
+    /// horizon with MORE non-taper transitions than that calibration count is allowed to
+    /// EXTRAPOLATE past <see cref="ResolvedPeakReference"/>'s own value — this is real, already
+    /// shipped, already-tested 10K product behavior (e.g. <c>BeginnerFourDay</c>'s 13W/14W
+    /// horizons intentionally resolve 22/23km, above its own 21km reference — see
+    /// <c>Gen4DBeginnerFourDayCoreTests</c>). For <see cref="HalfMarathonIntermediate4D"/> only,
+    /// the frozen HM.5.3 authority is the opposite: <see cref="ResolvedPeakReference"/> (43.0km)
+    /// is a SELECTED PEAK CEILING for the whole 10–16W Core family, and a longer horizon must
+    /// gain only more time to reach that same peak, never a higher one. Setting this true is
+    /// the smallest typed seam that lets <c>ResolvePeak</c> express "the calibration ratio
+    /// saturates at the calibration point instead of extrapolating past it" as an explicit,
+    /// declarative per-policy choice rather than a distance-family branch inside the shared
+    /// algorithm. Numeric planning never branches on this field for any value other than
+    /// clamping the interpolation's own transition count — it introduces no new peak/share/taper
+    /// number anywhere.
+    /// </summary>
+    bool ResolvedPeakReferenceIsSelectedCeiling = false)
 {
     public double GoldenFixtureResolvedPeakKm => ResolvedPeakReference.Value;
     /// <summary>Stable identifier for this exact set of values — bump when any field's value changes, so a decision trace can always be traced back to the policy version that produced it.</summary>
@@ -154,7 +177,13 @@ public sealed record VolumeSafetyPolicy(
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
         TaperVolumeMultipliers: HalfMarathonIntermediate4DTaperVolumePolicy.OrderedMultipliers,
-        PreferredAbsolutePeakLongRunKm: 19d);
+        PreferredAbsolutePeakLongRunKm: 19d,
+        // HM.5.3 -- the only named policy where this is true. 43.0km is a frozen SELECTED PEAK
+        // CEILING for the whole 10-16W Core family (HM.5.3's own governing authority), not a
+        // calibration point 15W/16W may extrapolate past. Every 10K policy leaves this false
+        // (default) and keeps its own already-shipped extrapolation-past-calibration behavior
+        // for longer horizons unchanged (e.g. BeginnerFourDay's 13W/14W).
+        ResolvedPeakReferenceIsSelectedCeiling: true);
 
     public static VolumeSafetyPolicy ThreeDayIntermediate { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,

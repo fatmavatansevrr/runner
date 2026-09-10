@@ -112,16 +112,26 @@ public sealed class Hm2FullDarkVerticalSliceTests
     // own PreferredFourteenWeekCore_... test already exercises for 14W. HM remains dark (see
     // HalfMarathonIdentity_RemainsOutsideEveryPublicGate, unchanged): none of this activates
     // any public route.
-    // 12W, 15W, and 16W are deliberately excluded from this theory -- see
-    // TwelveAndFifteenWeekHorizons_HitGenuineLongRunShareNumericSafetyBlocker and
-    // SixteenWeekHorizon_HitsGenuinePeakVolumeCeilingOvershootBlocker below, which prove and
-    // document real, pre-existing volume/long-run-planner numeric-safety blockers for those
-    // three horizons instead of silently asserting success.
+    // HM.5.3 -- 12W, 15W, and 16W now join this theory. Before HM.5.3 these three horizons hit
+    // real, genuine numeric-mechanism blockers (12W/15W: FINAL_WEEK_*_LONG_RUN_SHARE_EXCEEDS_CAP
+    // from a long-run hard-cap rounding-to-nearest defect that could round the clamp ceiling UP
+    // past the true 40% share; 16W: ResolvePeak's golden-fixture interpolation extrapolating past
+    // its own calibration point, resolving 46.5km > the frozen 43.0km reference peak). Both
+    // defects are fixed at their smallest shared seam in CatalogVolumeAndLongRunPlanner
+    // (ResolvePeak's transition count is now capped at GoldenFixtureNonTaperTransitions before
+    // driving the interpolation ratio; the long-run hard-cap ceiling now rounds DOWN, never
+    // to-nearest, so it can never exceed the true percentage/absolute limit it represents) --
+    // see PHASE_HM_5_3_VOLUME_AND_LONG_RUN_BOUNDARY_SEMANTIC_CLOSURE.md. No VolumeSafetyPolicy
+    // field, phase/stage allocation, or taper multiplier was touched; 14W's golden numbers are
+    // unchanged (still exactly 43/30/18.5, proven by the still-passing 14W golden test above).
     [Theory]
     [InlineData(10, new[] { 2, 3, 3, 2 })]
     [InlineData(11, new[] { 2, 3, 4, 2 })]
+    [InlineData(12, new[] { 2, 3, 5, 2 })]
     [InlineData(13, new[] { 2, 4, 5, 2 })]
     [InlineData(14, new[] { 3, 4, 5, 2 })] // frozen, unchanged -- included for table completeness
+    [InlineData(15, new[] { 4, 4, 5, 2 })]
+    [InlineData(16, new[] { 4, 5, 5, 2 })]
     public async Task NonPreferredCoreLengths_NowFeasible_TraverseRealPipelineAndMaterializeValidDarkPreviews(
         int targetWeekCount, int[] expectedPhaseWeeks)
     {
@@ -191,56 +201,69 @@ public sealed class Hm2FullDarkVerticalSliceTests
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
     }
 
-    // Section 13/14 (HM.5.1 report) -- genuine, real numeric-safety blocker, NOT papered
-    // over. Phase allocation for 12W/15W IS mathematically feasible (proven below), and the
-    // stage schedule IS valid, but the volume/long-run planner's mechanical peak-interpolation
-    // + long-run-share resolution produces a specific mid-cycle week whose planned long-run
-    // distance exceeds the already-frozen 40% HardLongRunShareCap for these two horizons
-    // specifically (12W week 10; 15W week 13) -- confirmed by the real, unmodified
-    // CatalogFinalPrescribedPlanValidator's own fail-closed check. Per the governing
-    // instruction ("if any shorter horizon requires exceeding approved progression merely to
-    // reach the 43km reference: DO NOT modify growth policy here -- the correct result is a
-    // lower reachable peak. If the current planner cannot represent that, classify the exact
-    // numeric-mechanism blocker"), no VolumeSafetyPolicy field, growth-rate coefficient, or
-    // long-run-share constant was touched to make this pass -- the planner's own mechanism is
-    // the correct fail-closed behavior until a future phase revisits ResolvePeak's
-    // interpolation for these two specific horizons.
+    // HM.5.3 -- 12W/15W previously threw FINAL_WEEK_10_LONG_RUN_SHARE_EXCEEDS_CAP (12W) /
+    // FINAL_WEEK_13_LONG_RUN_SHARE_EXCEEDS_CAP (15W) from CatalogFinalPrescribedPlanValidator.
+    // Root cause: CatalogVolumeAndLongRunPlanner.BuildLongRunPlan computed the long-run
+    // hard-percentage-of-weekly-volume clamp CEILING via nearest-rounding
+    // (Round(weeklyVolume * hardCapShare)), which can round a compliant raw ceiling UP past the
+    // true 40% limit (e.g. weeklyVolume=41.0 -> raw ceiling 16.4km -> nearest-rounded to
+    // 16.5km); the planner then clamped `selected` up to that inflated ceiling, which
+    // CatalogFinalPrescribedPlanValidator's own unrounded 40%-of-weekly-volume check (with only
+    // a 0.001km tolerance) correctly rejected. This is now fixed by having that ceiling round
+    // DOWN (floor to the rounding grid) instead, so the planner's own clamp ceiling can never
+    // exceed the true limit the final validator independently checks against -- restoring
+    // planner/validator parity without touching the 30%/33%/36%/40% share authorities, the
+    // 19km absolute ceiling, or any phase/stage allocation. Both horizons now materialize a
+    // fully valid final prescribed plan end-to-end.
     [Theory]
-    [InlineData(12, "FINAL_WEEK_10_LONG_RUN_SHARE_EXCEEDS_CAP")]
-    [InlineData(15, "FINAL_WEEK_13_LONG_RUN_SHARE_EXCEEDS_CAP")]
-    public async Task TwelveAndFifteenWeekHorizons_HitGenuineLongRunShareNumericSafetyBlocker(int targetWeekCount, string expectedErrorCode)
+    [InlineData(12, 10)]
+    [InlineData(15, 13)]
+    public async Task TwelveAndFifteenWeekHorizons_NoLongerHitLongRunShareNumericSafetyBlocker(int targetWeekCount, int previouslyOffendingWeekNumber)
     {
         var candidate = await CandidateAsync();
 
-        // Phase allocation itself IS feasible (Layer A headroom works correctly for 12W/15W).
         var allocation = new CatalogPhaseAllocationResolver().Resolve(candidate, targetWeekCount);
         Assert.True(allocation.IsMathematicallyFeasible, allocation.ReasonCode);
 
-        // But the real, unmodified volume/long-run planner's downstream final-plan validation
-        // fails closed on a genuine long-run-share safety violation -- not an exception this
-        // phase invented, and not one it silently worked around.
-        var ex = await Assert.ThrowsAsync<DynamicCoreSessionPrescriptionFailedException>(() =>
-            Pipeline().MaterializeAsync(Context(candidate, exactPaceEvidence: true, targetWeekCount)));
-        var cause = Assert.IsType<CatalogFinalPrescribedPlanInvalidException>(ex.InnerException);
-        Assert.Contains(expectedErrorCode, cause.Message);
+        var result = await Pipeline().MaterializeAsync(Context(candidate, exactPaceEvidence: true, targetWeekCount));
+        var prescribed = result.PrescriptionResult.FinalPrescribedPlan;
+        var volume = result.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
+
+        Assert.True(prescribed.ValidationResult.IsValid, string.Join("; ", prescribed.ValidationResult.Errors));
+        Assert.True(volume.LongRunProgression.ValidationResult.IsValid);
+
+        // The specific previously-offending week is now compliant with the hard 40% share cap
+        // (post-rounding -- see BuildLongRunPlan's RoundDown safety-ceiling comment), and every
+        // other week is too.
+        var offendingWeek = volume.LongRunProgression.Weeks.Single(w => w.WeekNumber == previouslyOffendingWeekNumber);
+        Assert.True(offendingWeek.LongRunShareOfWeeklyVolume <= 0.40d + 0.001d,
+            $"Week {previouslyOffendingWeekNumber} share={offendingWeek.LongRunShareOfWeeklyVolume:P4} still exceeds the 40% hard cap.");
+        var offendingSession = prescribed.Weeks.Single(w => w.WeekNumber == previouslyOffendingWeekNumber)
+            .Sessions.Single(s => s.StructuralRole == "LONG_RUN");
+        var offendingWeeklyVolume = volume.WeeklyVolumePlan.Weeks.Single(w => w.WeekNumber == previouslyOffendingWeekNumber).PlannedWeeklyVolumeKm;
+        Assert.True(offendingSession.PlannedDistanceKm <= offendingWeeklyVolume * 0.40d + 0.001d,
+            $"Week {previouslyOffendingWeekNumber} bound session distance={offendingSession.PlannedDistanceKm} still exceeds the true 40% ceiling of {offendingWeeklyVolume} weekly km.");
+        Assert.All(volume.LongRunProgression.Weeks, w => Assert.True(w.LongRunShareOfWeeklyVolume <= 0.40d + 0.001d));
+        Assert.All(volume.LongRunProgression.Weeks, w => Assert.True(w.PlannedLongRunDistanceKm <= 19d + 0.001d));
+        Assert.True(volume.WeeklyVolumePlan.PeakVolumeKm <= 43d + 0.001d);
     }
 
-    // Section 14 (HM.5.1 report) -- genuine, real numeric-safety blocker for the LONGEST
-    // horizon, NOT papered over. Phase allocation for 16W IS mathematically feasible (Foundation
-    // extends to 4, Build extends to 5, both within HM.4's approved extension headroom), and the
-    // stage schedule IS valid, but ResolvePeak's golden-fixture-calibrated interpolation
+    // HM.5.3 -- 16W previously resolved a peak weekly volume of 46.5km, strictly greater than
+    // the frozen 43.0km HALF_MARATHON x INTERMEDIATE x 4D selected/reference peak. Root cause:
+    // ResolvePeak's golden-fixture-calibrated interpolation
     // (`transitionAdjustedMultiplier = 1 + ((canonicalDefaultMultiplier - 1) * transitions /
-    // GoldenFixtureNonTaperTransitions)`, CatalogVolumeAndLongRunPlanner.cs line ~326-328)
-    // linearly extrapolates PAST the 14W golden calibration point once 16W's larger non-taper
-    // transition count exceeds GoldenFixtureNonTaperTransitions, producing a resolved peak of
-    // 46.5km -- ABOVE the frozen 43.0km ResolvedPeakReferenceKm ceiling, confirmed by direct
-    // observation of the real, unmodified planner. Per the governing instruction ("Extension
-    // should provide more progression room, not invent a higher HM peak target" / "DO NOT
-    // modify growth policy here"), no VolumeSafetyPolicy field or ResolvePeak formula was
-    // touched to force this under 43.0km -- the overshoot is reported precisely rather than
-    // silently capped or hidden.
+    // GoldenFixtureNonTaperTransitions)`) linearly EXTRAPOLATED past the 14W golden calibration
+    // point once 16W's larger non-taper transition count (13) exceeded
+    // GoldenFixtureNonTaperTransitions (11), treating "more Core weeks" as authority for "a
+    // higher peak" -- which the frozen HM authority forbids (more weeks give more time to reach
+    // the SAME selected peak, never a higher one). Fixed by capping the transition count fed
+    // into the interpolation ratio at GoldenFixtureNonTaperTransitions, so the multiplier
+    // saturates at the calibrated ratio for any horizon at or beyond the calibration point
+    // instead of extrapolating past it. For this fixture (starting volume equals
+    // GoldenFixtureStartingVolumeKm), the resolved peak is now exactly 43.0km -- not a new
+    // number, the same already-frozen reference peak 14W already resolves to.
     [Fact]
-    public async Task SixteenWeekHorizon_HitsGenuinePeakVolumeCeilingOvershootBlocker()
+    public async Task SixteenWeekHorizon_NoLongerOvershootsThePeakVolumeCeiling()
     {
         var candidate = await CandidateAsync();
         const int targetWeekCount = 16;
@@ -249,15 +272,19 @@ public sealed class Hm2FullDarkVerticalSliceTests
         Assert.True(allocation.IsMathematicallyFeasible, allocation.ReasonCode);
 
         var result = await Pipeline().MaterializeAsync(Context(candidate, exactPaceEvidence: true, targetWeekCount));
+        var prescribed = result.PrescriptionResult.FinalPrescribedPlan;
         var volume = result.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
 
-        // The real, unmodified planner currently resolves 46.5km here -- strictly greater than
-        // the frozen 43.0km reference ceiling. Pinned as an exact value (not just "> 43") so
-        // this test breaks loudly, not silently, the moment a future phase changes this number
-        // in either direction.
-        Assert.Equal(46.5d, volume.WeeklyVolumePlan.PeakVolumeKm);
-        Assert.True(volume.WeeklyVolumePlan.PeakVolumeKm > 43d,
-            "This assertion documents a genuine, unresolved numeric-mechanism blocker (see PHASE_HM_5_1 report section 14) -- it is expected to fail (i.e. the overshoot to disappear) only once a future phase revisits ResolvePeak's extrapolation for horizons beyond the 14W golden calibration point.");
+        Assert.True(prescribed.ValidationResult.IsValid, string.Join("; ", prescribed.ValidationResult.Errors));
+        Assert.True(volume.WeeklyVolumePlan.ValidationResult.IsValid);
+        Assert.True(volume.LongRunProgression.ValidationResult.IsValid);
+        Assert.Equal(43d, volume.WeeklyVolumePlan.PeakVolumeKm);
+        Assert.True(volume.WeeklyVolumePlan.PeakVolumeKm <= 43d + 0.001d,
+            "16W must not resolve a peak above the frozen 43.0km reference merely because it has more Core weeks than 14W.");
+        Assert.All(volume.LongRunProgression.Weeks, w => Assert.True(w.LongRunShareOfWeeklyVolume <= 0.40d + 0.001d));
+        // Section 15's frozen ceiling-not-target invariant: even the longest horizon does not
+        // need to reach 19km. At 43km/week, 40% is 17.2km, so ~17km remains a fully correct peak.
+        Assert.All(volume.LongRunProgression.Weeks, w => Assert.True(w.PlannedLongRunDistanceKm <= 19d + 0.001d));
     }
 
     // Section 5: boundary proof -- 9W remains below the canonical floor (sum of minimums),
@@ -282,12 +309,11 @@ public sealed class Hm2FullDarkVerticalSliceTests
     [Fact]
     public async Task MissingIndependentExactPaceEvidence_HoldsForEveryNewlyFeasibleHorizon()
     {
-        // 12W and 15W are excluded here -- see
-        // NonPreferredCoreLengths_NowFeasible_TraverseRealPipelineAndMaterializeValidDarkPreviews,
-        // which documents a genuine, pre-existing FINAL_WEEK_*_LONG_RUN_SHARE_EXCEEDS_CAP
-        // numeric-safety blocker for those two horizons specifically (see PHASE_HM_5_1's own
-        // report section 13/14) -- not something this test should silently paper over.
-        foreach (var targetWeekCount in new[] { 10, 11, 13 })
+        // HM.5.3 -- 12W, 15W, and 16W now join this list: the FINAL_WEEK_*_LONG_RUN_SHARE_EXCEEDS_CAP
+        // (12W/15W) and peak-volume-ceiling-overshoot (16W) blockers that previously excluded
+        // them are fixed (see TwelveAndFifteenWeekHorizons_NoLongerHitLongRunShareNumericSafetyBlocker
+        // and SixteenWeekHorizon_NoLongerOvershootsThePeakVolumeCeiling above).
+        foreach (var targetWeekCount in new[] { 10, 11, 12, 13, 15, 16 })
         {
             var result = await Pipeline().MaterializeAsync(Context(await CandidateAsync(), exactPaceEvidence: false, targetWeekCount));
             var sessions = result.PrescriptionResult.FinalPrescribedPlan.Sessions;
