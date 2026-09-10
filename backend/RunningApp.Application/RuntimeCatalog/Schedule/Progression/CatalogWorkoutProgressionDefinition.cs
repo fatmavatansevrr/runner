@@ -107,6 +107,33 @@ public sealed class CatalogWorkoutProgressionStage
     /// </summary>
     public int? PreferredExposures { get; init; }
 
+    /// <summary>
+    /// Backend Integration Phase HM.5.2A — optional, catalog-authored compression-removal
+    /// priority, decoupled from <see cref="RelativeOrder"/>. Null (the default) for every
+    /// stage authored before this field existed (every 10K stage, every pre-HM.5.2A HM
+    /// stage) — <see cref="ProgressionStageAllocator"/> falls back to the historical
+    /// descending-<see cref="RelativeOrder"/> compression-selection order for those stages,
+    /// byte-identical to its pre-HM.5.2A behavior. When two or more Compressible stages in
+    /// the same phase declare this field, the stage with the LOWEST value is reduced FIRST
+    /// (mirroring the sibling, already-approved phase-level
+    /// <c>CatalogPhaseAllocationResolver.CompressionPriority</c> convention — lower number =
+    /// compressed earlier). This exists because <see cref="RelativeOrder"/> is independently
+    /// required to mean chronological/workout-sequencing order (ascending, for week-block
+    /// layout) AND extension-fill priority (descending — highest order grows first), and
+    /// HM.4's frozen Build authority requires the OPPOSITE selection order for compression
+    /// (the lowest-<see cref="RelativeOrder"/>, lowest-information "introductory" stage must
+    /// be the FIRST exposure removed) — a genuine, disclosed conflict a single reused field
+    /// cannot resolve for both directions simultaneously (see
+    /// PHASE_HM_5_2_PROGRESSION_STAGE_ALLOCATOR_OPTIONAL_PREFERRED_SEMANTIC_CLOSURE.md
+    /// Section 3/16, closed by this field in
+    /// PHASE_HM_5_2A_STAGE_COMPRESSION_PRIORITY_SEMANTIC_CLOSURE.md). Never used for
+    /// chronological ordering (still exclusively ascending <see cref="RelativeOrder"/>) or
+    /// extension-fill ordering (still exclusively descending <see cref="RelativeOrder"/>) —
+    /// this field's only consumer is <see cref="ProgressionStageAllocator"/>'s
+    /// <c>ApplyCompression</c> candidate-selection sort.
+    /// </summary>
+    public int? CompressionPriority { get; init; }
+
     public required CatalogStageCompressionBehavior CompressionBehavior { get; init; }
     public required CatalogStageExtensionBehavior ExtensionBehavior { get; init; }
     public required IReadOnlyList<CatalogRuntimeEligibilityCondition> Requires { get; init; }

@@ -43,7 +43,9 @@
                   }
                 },
                 "minimumExposures": { "type": "integer", "minimum": 0 },
+                "preferredExposures": { "type": "integer", "minimum": 0 },
                 "maximumExposures": { "type": "integer", "minimum": 0 },
+                "compressionPriority": { "type": "integer" },
                 "compressionBehavior": { "type": "string", "enum": ["COMPRESSIBLE", "PROTECTED"] },
                 "extensionBehavior": { "type": "string", "enum": ["EXTENDABLE", "FIXED_EXPOSURE"] },
                 "requires": {

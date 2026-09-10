@@ -125,6 +125,14 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
         int? preferredExposures = stageEl.TryGetProperty("preferredExposures", out var preferredEl) && preferredEl.ValueKind == JsonValueKind.Number
             ? preferredEl.GetInt32()
             : null;
+
+        // Backend Integration Phase HM.5.2A: optional "compressionPriority" — additive, sibling
+        // to "preferredExposures". Absent for every stage authored before this field existed
+        // (every 10K progression, every pre-HM.5.2A HM stage) — ProgressionStageAllocator falls
+        // back to the historical descending-RelativeOrder compression-selection order for those.
+        int? compressionPriority = stageEl.TryGetProperty("compressionPriority", out var compressionPriorityEl) && compressionPriorityEl.ValueKind == JsonValueKind.Number
+            ? compressionPriorityEl.GetInt32()
+            : null;
         var compressionBehavior = ParseCompressionBehavior(RequireString(stageEl, "compressionBehavior", reference), stageKey, reference);
         var extensionBehavior = ParseExtensionBehavior(RequireString(stageEl, "extensionBehavior", reference), stageKey, reference);
 
@@ -167,6 +175,7 @@ public sealed class CatalogWorkoutProgressionLoader : ICatalogWorkoutProgression
             MinimumExposures = minimumExposures,
             MaximumExposures = maximumExposures,
             PreferredExposures = preferredExposures,
+            CompressionPriority = compressionPriority,
             CompressionBehavior = compressionBehavior,
             ExtensionBehavior = extensionBehavior,
             Requires = requires,

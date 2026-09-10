@@ -37,8 +37,10 @@ public interface IProgressionStageAllocator
 /// <item>Duplicate-effective-stage merge for fallback targets (Section 12): safest
 /// deterministic interpretation is max-of-minimums, min-of-maximums.</item>
 /// <item>Phase capacity resolution (Sections 9/10/11): compress (reduce Compressible
-/// stages, highest RelativeOrder first, down to a floor of 1 exposure — Protected stages
-/// are never touched) or extend (grow Extendable stages, highest RelativeOrder first, up to
+/// stages — by ascending catalog-declared CompressionPriority when declared [Backend
+/// Integration Phase HM.5.2A], else highest RelativeOrder first — down to a floor of 1
+/// exposure — Protected stages are never touched) or extend (grow Extendable stages, highest
+/// RelativeOrder first, up to
 /// their own Maximum — FixedExposure stages are simply deprioritized (tried only once every
 /// Extendable candidate's own headroom is exhausted), never entirely excluded; see
 /// <see cref="ApplyExtension"/>'s own remarks for why this reading of the existing enum was
@@ -496,8 +498,18 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
     }
 
     /// <summary>
-    /// Section 10: reduce Compressible active stages, highest RelativeOrder first then
-    /// ProgressionStageKey ordinal, down to each stage's own compression floor.
+    /// Section 10: reduce Compressible active stages down to each stage's own compression
+    /// floor. Selection order: ascending catalog-declared
+    /// <see cref="CatalogWorkoutProgressionStage.CompressionPriority"/> first (lower value
+    /// removed earlier) when a stage declares one, then (for stages that leave it null, or as
+    /// the tie-break among equal/undeclared priorities) descending RelativeOrder, then
+    /// ProgressionStageKey ordinal — byte-identical to the pre-HM.5.2A order
+    /// (RelativeOrder descending, then key ordinal) whenever no active Compressible stage in
+    /// the phase declares CompressionPriority, which is true for every 10K stage and every
+    /// pre-HM.5.2A HM stage (Backend Integration Phase HM.5.2A — see
+    /// <see cref="CatalogWorkoutProgressionStage.CompressionPriority"/>'s own remarks for why
+    /// this is a distinct authority from RelativeOrder's extension-fill and chronological-order
+    /// meanings).
     ///
     /// Backend Integration Phase HM.5.2: the floor is no longer unconditionally hardcoded to 1.
     /// For a stage that leaves the new, optional PreferredExposures baseline unset (every
@@ -515,7 +527,8 @@ public sealed class ProgressionStageAllocator : IProgressionStageAllocator
 
         var candidates = activeStages
             .Where(a => a.EffectiveStage.CompressionBehavior == CatalogStageCompressionBehavior.Compressible)
-            .OrderByDescending(a => a.EffectiveStage.RelativeOrder)
+            .OrderBy(a => a.EffectiveStage.CompressionPriority ?? int.MaxValue)
+            .ThenByDescending(a => a.EffectiveStage.RelativeOrder)
             .ThenBy(a => a.EffectiveStage.ProgressionStageKey, StringComparer.Ordinal)
             .ToList();
 

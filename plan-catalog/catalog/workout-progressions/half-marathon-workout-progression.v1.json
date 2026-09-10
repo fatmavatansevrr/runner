@@ -33,6 +33,7 @@
           "minimumExposures": 0,
           "preferredExposures": 1,
           "maximumExposures": 1,
+          "compressionPriority": 1,
           "compressionBehavior": "COMPRESSIBLE",
           "extensionBehavior": "EXTENDABLE",
           "requires": []
@@ -43,6 +44,7 @@
           "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
           "minimumExposures": 3,
           "maximumExposures": 5,
+          "compressionPriority": 2,
           "compressionBehavior": "COMPRESSIBLE",
           "extensionBehavior": "EXTENDABLE",
           "requires": []
