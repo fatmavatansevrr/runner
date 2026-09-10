@@ -6,7 +6,7 @@ This phase starts from `HEAD` at HM.5.2's own governance-backfill commit (`1ee68
 exactly five source files (one production model, one loader, one allocator, one catalog document,
 one schema document), adds two new test files, adds this report, and updates `PHASE_LEDGER.md`/
 `MASTER_ROADMAP.md`. No unrelated file was modified. The real, feature/fix commit for this phase's
-work is referenced below as `<HM52A_COMMIT_SHA>` until the docs-only backfill commit that
+work is referenced below as `10f615d` until the docs-only backfill commit that
 immediately follows it fills in the literal value (this report and `PHASE_LEDGER.md` reference that
 commit's own SHA as a placeholder, per this engagement's established two-commit governance pattern).
 
