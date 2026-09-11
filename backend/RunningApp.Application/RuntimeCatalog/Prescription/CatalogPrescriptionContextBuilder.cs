@@ -500,8 +500,14 @@ internal static class CatalogPrescriptionContextValidator
     private static void ValidateTaperCompleteness(BoundCatalogPlan boundPlan, IReadOnlyList<CatalogSessionPrescriptionContext> sessions, List<string> errors)
     {
         var taperKeySessions = sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
-        if (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
-            boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion)
+        // HM.8 -- recurring-assumption-family fix, same shape as CatalogFinalPrescribedPlanValidator's
+        // own generalization: widened from a single exact CandidateKey/Version match (HALF_MARATHON
+        // Intermediate x4D only) to also admit the new HALF_MARATHON Intermediate x3D candidate,
+        // which shares the identical Taper stage shape. Byte-identical for the existing 4D candidate.
+        if ((boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||

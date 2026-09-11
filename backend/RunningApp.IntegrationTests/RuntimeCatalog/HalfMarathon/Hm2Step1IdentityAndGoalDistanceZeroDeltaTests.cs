@@ -86,15 +86,30 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
         Assert.Equal(resolved, tryResolved);
     }
 
+    // HM.8 -- HALF_MARATHON Intermediate x3D is now a second frozen, dark-only resolvable
+    // cell (HM.7's numeric authority). (Intermediate, 3) removed from this "not resolvable"
+    // theory below and covered instead by its own HalfMarathon_IntermediateThreeDay_ResolvesDarkOnly
+    // test, mirroring HalfMarathon_IntermediateFourDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly.
     [Theory]
-    [InlineData(RunningBackground.Intermediate, 3)]
     [InlineData(RunningBackground.Intermediate, 5)]
     [InlineData(RunningBackground.Beginner, 4)]
     [InlineData(RunningBackground.Advanced, 4)]
-    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheFrozenCellIsAdmitted(RunningBackground level, int daysPerWeek)
+    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheTwoFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
         Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
+    }
+
+    [Fact]
+    public void HalfMarathon_IntermediateThreeDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly()
+    {
+        var resolved = V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3);
+        Assert.Equal(
+            (V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion),
+            resolved);
+
+        var tryResolved = V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3);
+        Assert.Equal(resolved, tryResolved);
     }
 
     [Theory]
@@ -116,6 +131,14 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
     public void PublicGate_IsSupportedIdentity_RejectsTheOneCellHm2DarklyResolves()
     {
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
+    }
+
+    // HM.8 -- the new dark-only 3D cell must also remain outside every public/Runway gate.
+    [Fact]
+    public void PublicGate_IsSupportedIdentity_RejectsTheHm8DarkCellToo()
+    {
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
     }
 
     [Fact]

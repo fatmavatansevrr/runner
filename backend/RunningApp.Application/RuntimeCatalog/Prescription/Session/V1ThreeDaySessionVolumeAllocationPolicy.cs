@@ -27,7 +27,12 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
     public const double BeginnerTaperMinimumLongKm = 3d;
     private const double KeyShare = 0.35d;
     private const double EasyShare = 0.25d;
-    private const double LongHardCap = 0.42d;
+
+    /// <summary>
+    /// The TEN_K Intermediate/Beginner x3D own hard-cap share default (GEN.2B/GEN.21-23
+    /// authority) -- unchanged, still the value every existing 10K caller observes.
+    /// </summary>
+    private const double DefaultLongHardCap = 0.42d;
 
     /// <param name="useBeginnerThreeDayTaperMinima">
     /// Phase 10K-GEN.23 -- true only for a Beginner×3D candidate's TAPER
@@ -36,10 +41,24 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
     /// week) passes false and observes byte-identical behavior to before
     /// this phase.
     /// </param>
+    /// <param name="longRunHardCapShare">
+    /// Phase HM.8 -- recurring-assumption-family fix: this session-allocation-level safety
+    /// check previously re-validated the already-computed <paramref name="longRun"/> distance
+    /// against a HARDCODED 0.42 share regardless of which upstream <see cref="Volume.VolumeSafetyPolicy"/>
+    /// actually produced it -- correct for every existing TEN_K 3D policy (whose own
+    /// <see cref="Volume.VolumeSafetyPolicy.LongRunHardCapShare"/> is exactly 0.42), but silently
+    /// wrong for HALF_MARATHON Intermediate×3D's own frozen 0.46 (HM.7). Now an explicit,
+    /// caller-supplied parameter defaulting to <see cref="DefaultLongHardCap"/> -- every existing
+    /// caller that omits it observes byte-identical behavior; <see cref="CatalogSessionPrescriptionPlanner"/>
+    /// now passes the real, already-resolved <c>WeeklyShareDecision.HardCapShare</c> from the
+    /// upstream volume/long-run plan explicitly, so this check always agrees with the policy that
+    /// actually generated the long run, not a second, independent, distance-blind assumption.
+    /// </param>
     public static V1FourDayWeekAllocation Allocate(
         CatalogWeeklyVolumeWeek weekly, CatalogLongRunWeek longRun, IReadOnlyList<BoundCatalogSession> sessions,
-        bool useBeginnerThreeDayTaperMinima = false)
+        bool useBeginnerThreeDayTaperMinima = false, double longRunHardCapShare = DefaultLongHardCap)
     {
+        var longHardCap = longRunHardCapShare;
         if (sessions.Count != 3 || sessions.Count(s => s.StructuralRole == "KEY_SESSION") != 1 ||
             sessions.Count(s => s.StructuralRole == "EASY_SUPPORT") != 1 || sessions.Count(s => s.StructuralRole == "LONG_RUN") != 1)
             throw new CatalogSessionPrescriptionInfeasibleException($"Week {weekly.WeekNumber} does not match RUN_LAYOUT_3D.");
@@ -61,7 +80,7 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
         var current = new[] { Round(targets[0]), Round(targets[1]), longRun.PlannedLongRunDistanceKm };
         current[0] = Math.Max(minKey, current[0]);
         current[1] = Math.Max(minEasy, current[1]);
-        if (current[2] < minLong || current[2] / volume > LongHardCap + 0.0001d ||
+        if (current[2] < minLong || current[2] / volume > longHardCap + 0.0001d ||
             Math.Abs(current[2] * 2d - Math.Round(current[2] * 2d)) > 0.0001d)
             throw new CatalogSessionPrescriptionInfeasibleException("Resolved 3D long run violates the minimum, 42% hard cap, or 0.5km granularity.");
 
@@ -79,7 +98,7 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
             current[candidates[0].Index] = candidates[0].Value;
         }
 
-        if (current[2] / volume > LongHardCap + 0.0001d)
+        if (current[2] / volume > longHardCap + 0.0001d)
             throw new CatalogSessionPrescriptionInfeasibleException("Reconciled 3D long run exceeds the 42% hard cap.");
 
         return new V1FourDayWeekAllocation(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), new[] { current[0] }, new[] { current[1] },

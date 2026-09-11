@@ -109,10 +109,14 @@ internal static class CatalogFinalPrescribedPlanValidator
     /// </summary>
     private static double ResolveLongRunHardCapShare(PlanCatalogCandidateSummary candidate)
     {
+        // HM.8 -- generalized to also admit HALF_MARATHON Intermediate x3D (HM.7's frozen
+        // 0.46 hard-cap authority), mirroring the same VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek
+        // dispatcher CatalogVolumeAndLongRunPlanner now uses. Byte-identical for the existing
+        // 4D cell.
         if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            candidate.Level == "INTERMEDIATE" && candidate.DaysPerWeek == 4)
+            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4))
         {
-            return VolumeSafetyPolicy.HalfMarathonIntermediate4D.LongRunHardCapShare;
+            return VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
 
         // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
@@ -210,8 +214,18 @@ internal static class CatalogFinalPrescribedPlanValidator
     private static void ValidateTaperCompleteness(CatalogPrescribedPlan prescribedPlan, PlanCatalogCandidateSummary candidate, List<string> errors)
     {
         var taperKeySessions = prescribedPlan.Sessions.Where(s => s.PhaseKey == "TAPER" && s.StructuralRole == "KEY_SESSION").ToList();
-        if (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
-            candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion)
+        // HM.8 -- recurring-assumption-family fix: generalized from a single exact
+        // CandidateKey/Version match (HALF_MARATHON Intermediate x4D only) to also admit the
+        // new HALF_MARATHON Intermediate x3D candidate. Both share the identical
+        // HALF_MARATHON_WORKOUT_PROGRESSION Taper stage shape (TAPER_HM_ACTIVATION/
+        // TAPER_HM_ACTIVATION_EFFORT_FALLBACK, 2 KEY_SESSION taper weeks) -- without this,
+        // HM x3D would silently fall through to the TEN_K-only TAPER_SHARPEN legacy check
+        // below and fail closed with FINAL_TAPER_SHARPEN_COUNT_INVALID on every valid plan.
+        // Byte-identical for the existing 4D candidate (still matched by name/version below).
+        if ((candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||

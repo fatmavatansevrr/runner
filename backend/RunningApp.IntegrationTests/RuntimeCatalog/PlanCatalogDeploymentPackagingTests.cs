@@ -35,7 +35,10 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // Phase HM.2 -- +8 source documents for the first full dark HM slice:
     // master, combination, workout, progression, level/progression modifiers,
     // peak-volume policy, and rule pack.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 139;
+    // Phase HM.8 -- +1 new source document (combinations/half-marathon-3d-intermediate.v1.json).
+    // half-marathon-master.v1.json and peak-volume-bands.v9.json were edited IN PLACE
+    // (VALIDATED-status precedent, HM.5.1/1cc7a40) -- no new file for either.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 140;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

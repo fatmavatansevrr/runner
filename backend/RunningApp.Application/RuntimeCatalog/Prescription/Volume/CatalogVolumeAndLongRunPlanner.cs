@@ -95,12 +95,18 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
-        // HM.2 — exact dark-cell dispatch only; every other HM cell remains fail-closed.
+        // HM.8 -- generalized from HM.2's single hardcoded DaysPerWeek == 4 exact-match
+        // conditional (HM.6 §19's own named HIDDEN_4D_ASSUMPTION finding) to a typed
+        // dispatcher mirroring 10K's own ForIntermediateDaysPerWeek pattern. Every HM
+        // frequency without an approved policy remains fail-closed via
+        // ForHalfMarathonIntermediateDaysPerWeek's own exhaustive switch (throws
+        // ArgumentOutOfRangeException for anything but 3/4). Byte-identical dispatch for
+        // the existing 4D cell (zero delta, confirmed by full regression).
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 4 &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
-            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4D).Build(request);
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
         // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
@@ -147,7 +153,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         var (taper, taperMultipliers) = ResolveTaperDecision(taperWeekCount);
         var share = ResolveLongRunWeeklyShareDecision();
         var weekly = BuildWeeklyPlan(request, bounds, starting, peak, taper, taperMultipliers);
-        if (request.Candidate.DaysPerWeek == 3)
+        // HM.8 -- recurring-assumption-family fix: this eligibility gate assumes exactly one
+        // taper week (true for every existing TEN_K 3D candidate, both Intermediate and
+        // Beginner) and calls .Single(w => w.IsTaperWeek), which throws for HALF_MARATHON's
+        // own frozen 2-week Taper phase. Scoped to TEN_K explicitly (byte-identical behavior
+        // for every existing TEN_K 3D candidate) so HALF_MARATHON Intermediate x3D -- which has
+        // no equivalent taper-floor eligibility authority of its own -- no longer hits this
+        // TEN_K-specific check at all, rather than silently (and incorrectly) evaluating it
+        // against an arbitrary single taper week.
+        if (request.Candidate.DaysPerWeek == 3 && request.Candidate.CanonicalDistanceFamily == "TEN_K")
         {
             var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
             // Phase 10K-GEN.23 -- GEN.21's frozen Option-1 authority: Beginner
@@ -223,13 +237,16 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md; Doc13 §3 / Golden Fixture v3 weeklyVolumeAnchorKm semantics");
         }
 
-        // HM.1.5 explicitly froze 25km as calibration-only, never as a user
-        // default. Until a separate HM missing/zero-readiness authority is
-        // approved, fail closed instead of silently borrowing 10K's 24km.
-        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D))
+        // HM.1.5 explicitly froze 25km (4D) / HM.7 froze 20.0km (3D) as
+        // calibration-only, never as a user default. Until a separate HM
+        // missing/zero-readiness authority is approved for either frequency,
+        // fail closed instead of silently borrowing 10K's 24km. HM.8
+        // generalizes this guard to also cover HalfMarathonIntermediate3D --
+        // same rationale, same message shape, zero delta for 4D.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate3D))
         {
             throw new CatalogVolumeInvalidReadinessInputException(
-                "HALF_MARATHON Intermediate×4D requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
+                "HALF_MARATHON Intermediate requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
         }
 
         // Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority:

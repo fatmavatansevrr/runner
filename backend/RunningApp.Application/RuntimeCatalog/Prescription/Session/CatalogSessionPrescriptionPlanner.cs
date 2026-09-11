@@ -33,8 +33,16 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
             // non-taper week, any Intermediate x3D week including its own
             // taper) is unaffected -- both conditions must hold.
             var useBeginnerThreeDayTaperMinima = isThreeDay && weekly.IsTaperWeek && request.Candidate.Level == "NEW";
+            // HM.8 -- pass the real, already-resolved long-run hard-cap share from the upstream
+            // VolumeSafetyPolicy (via WeeklyShareDecision) explicitly, so this session-layer
+            // safety check always agrees with whichever policy actually produced longRun's own
+            // distance instead of silently re-asserting TEN_K's own 0.42 default (see
+            // V1ThreeDaySessionVolumeAllocationPolicy.Allocate's own longRunHardCapShare doc
+            // comment). Byte-identical for every existing TEN_K 3D candidate (whose own policy's
+            // HardCapShare is already exactly 0.42).
             var allocation = isThreeDay
-                ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions, useBeginnerThreeDayTaperMinima)
+                ? V1ThreeDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions, useBeginnerThreeDayTaperMinima,
+                    request.VolumePlan.LongRunProgression.WeeklyShareDecision.HardCapShare)
                 : V1FourDaySessionVolumeAllocationPolicy.Allocate(weekly, longRun, boundWeek.Sessions);
             var easyOrdinal = 0;
             var weekSessions = new List<CatalogPrescribedSession>();

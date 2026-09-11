@@ -12,7 +12,7 @@
     "defaultWeeks": 14,
     "maximumWeeks": 16
   },
-  "supportedRunsPerWeek": [4],
+  "supportedRunsPerWeek": [3, 4],
   "phasesDefineDefaultCycleOnly": true,
   "phases": [
     {

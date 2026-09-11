@@ -185,6 +185,94 @@ public sealed record VolumeSafetyPolicy(
         // for longer horizons unchanged (e.g. BeginnerFourDay's 13W/14W).
         ResolvedPeakReferenceIsSelectedCeiling: true);
 
+    /// <summary>
+    /// Phase HM.8 -- implements the already-frozen HM.7 numeric authority for
+    /// HALF_MARATHON x INTERMEDIATE x 3D x 10-16W x DARK
+    /// (PHASE_HM_7_INTERMEDIATE_3D_NUMERIC_AUTHORITY_CLOSURE.md's complete
+    /// authority table). Every field's value and classification is consumed
+    /// exactly as frozen, not re-derived here: PreferredMaxWeeklyIncreaseRatio
+    /// /HardMaxWeeklyIncreaseRatio = 0.07/0.08 (DIRECT_EXISTING_AUTHORITY,
+    /// universal across every named policy in this file);
+    /// AbsoluteWeeklyIncrementCapKm = 2.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// reused from <see cref="ThreeDayIntermediate"/>'s own on-point 10K
+    /// same-Level-same-Frequency precedent, NOT 4D's 2.5);
+    /// GoldenFixtureStartingVolumeKm = 20.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// calibration-only -- derived by reusing <see cref="HalfMarathonIntermediate4D"/>'s
+    /// own 25.0/43.0 = 0.5814 ratio against this policy's own 34.0 peak,
+    /// 34.0 x 0.5814 = 19.77, rounded to the 0.5km catalog increment = 20.0;
+    /// NEVER a missing-readiness fallback -- see <see cref="CatalogVolumeAndLongRunPlanner.ResolveStartingVolume"/>'s
+    /// fail-closed guard for this exact policy, mirroring 4D's own);
+    /// ResolvedPeakReference = 34.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT, the
+    /// exact midpoint of the frozen [28,40] PeakVolumeBand, replicating 4D's
+    /// own observed midpoint-selection pattern -- not a new methodology);
+    /// GoldenFixtureNonTaperTransitions = 11 (DIRECT_EXISTING_AUTHORITY,
+    /// frequency-generic structural derivation from HM's already-frozen
+    /// 3+4+5=12 non-taper-week Foundation/Build/RaceSpecific split, HM.4/HM.6);
+    /// TaperVolumeMultiplier(s) = 0.70/0.43 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// reused directly from <see cref="HalfMarathonIntermediate4DTaperVolumePolicy"/>
+    /// -- see <see cref="HalfMarathonIntermediate3DTaperVolumePolicy"/>'s own
+    /// doc comment for the full frequency-independence re-verification);
+    /// long-run share quadruple 0.34/0.40/0.38/0.46 (PRODUCT_DEFAULT, an
+    /// explicit user product decision per HM.7 §9 -- a moderate, still-
+    /// conservative uplift from 4D's 0.30/0.36/0.33/0.40, informed by but not
+    /// copied from two independent real-world 3-day HM program sources and
+    /// 10K's own <see cref="ThreeDayIntermediate"/> vs <see cref="Default"/>
+    /// directional precedent); PreferredAbsolutePeakLongRunKm = 19.0
+    /// (EVIDENCE_INFORMED_PRODUCT_DEFAULT, HM.1.1's own evidence base
+    /// broadened by HM.7 §10 to HALF_MARATHON x INTERMEDIATE, frequency-
+    /// independent -- a ceiling, never a target: HM.7 §5's own feasibility
+    /// check confirms this cell's hard-cap-derived long run never exceeds
+    /// ~18.5km even at the band's own upper bound, so the ceiling is never
+    /// required to bind); ResolvedPeakReferenceIsSelectedCeiling = true
+    /// (DIRECT_EXISTING_AUTHORITY, the same generic HM.5.3 mechanism 4D
+    /// already uses, reused unmodified so 15W/16W saturate at 34.0km instead
+    /// of extrapolating past it -- zero new code, per HM.7 §14).
+    /// StartingAbsoluteLongRunCap = 12.0km (DIRECT_EXISTING_AUTHORITY, HM.7
+    /// §11, frequency-independent) is documented authority only: no
+    /// VolumeSafetyPolicy field or planner clamp implements it for ANY named
+    /// policy today (including <see cref="HalfMarathonIntermediate4D"/>) --
+    /// real user readiness evidence (recent weekly volume/longest run)
+    /// remains the sole basis for a request's actual starting point, exactly
+    /// as for 4D; this phase invents no new mechanism to enforce a cap 4D
+    /// itself does not enforce.
+    /// </summary>
+    public static VolumeSafetyPolicy HalfMarathonIntermediate3D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.0d,
+        GoldenFixtureStartingVolumeKm: 20.0d,
+        ResolvedPeakReference: new(34.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 11,
+        TaperVolumeMultiplier: HalfMarathonIntermediate3DTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        LongRunPreferredMinimumShare: 0.34d,
+        LongRunPreferredMaximumShare: 0.40d,
+        LongRunSelectionShare: 0.38d,
+        LongRunHardCapShare: 0.46d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: HalfMarathonIntermediate3DTaperVolumePolicy.OrderedMultipliers,
+        PreferredAbsolutePeakLongRunKm: 19.0d,
+        // HM.7/HM.5.3 -- reused unmodified: 34.0km is a frozen SELECTED PEAK CEILING for the
+        // whole 10-16W Core family, not a calibration point 15W/16W may extrapolate past.
+        ResolvedPeakReferenceIsSelectedCeiling: true);
+
+    /// <summary>
+    /// Phase HM.8 -- centralizes the HALF_MARATHON Intermediate daysPerWeek-to-policy
+    /// dispatch, mirroring 10K's own already-established <see cref="ForIntermediateDaysPerWeek"/>
+    /// switch-based pattern (HM.6's own §19 finding: the pre-HM.8 dispatch was a
+    /// single hardcoded exact-match <c>DaysPerWeek == 4</c> conditional in
+    /// <see cref="CatalogVolumeAndLongRunPlanner"/>, not a typed dispatcher).
+    /// Fail-closed for any HALF_MARATHON Intermediate frequency without an
+    /// approved policy -- byte-identical selection for the existing 4D
+    /// caller (still resolves to <see cref="HalfMarathonIntermediate4D"/>).
+    /// </summary>
+    public static VolumeSafetyPolicy ForHalfMarathonIntermediateDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        3 => HalfMarathonIntermediate3D,
+        4 => HalfMarathonIntermediate4D,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved HALF_MARATHON Intermediate VolumeSafetyPolicy exists for this DaysPerWeek."),
+    };
+
     public static VolumeSafetyPolicy ThreeDayIntermediate { get; } = new(
         PreferredMaxWeeklyIncreaseRatio: 0.07d,
         HardMaxWeeklyIncreaseRatio: 0.08d,
