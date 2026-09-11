@@ -100,10 +100,12 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // dispatcher mirroring 10K's own ForIntermediateDaysPerWeek pattern. Every HM
         // frequency without an approved policy remains fail-closed via
         // ForHalfMarathonIntermediateDaysPerWeek's own exhaustive switch (throws
-        // ArgumentOutOfRangeException for anything but 3/4). Byte-identical dispatch for
+        // ArgumentOutOfRangeException for anything but 3/4/5). Byte-identical dispatch for
         // the existing 4D cell (zero delta, confirmed by full regression).
+        // HM.11 -- widened again to admit 5D (request.Candidate.DaysPerWeek == 5), the same
+        // typed dispatcher HM.10 froze the numeric authority for; byte-identical for 3D/4D.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4) &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
@@ -237,13 +239,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 "PHASE4F_7B1_CANONICAL_VOLUME_RULE_CORRECTION.md; Doc13 §3 / Golden Fixture v3 weeklyVolumeAnchorKm semantics");
         }
 
-        // HM.1.5 explicitly froze 25km (4D) / HM.7 froze 20.0km (3D) as
-        // calibration-only, never as a user default. Until a separate HM
-        // missing/zero-readiness authority is approved for either frequency,
-        // fail closed instead of silently borrowing 10K's 24km. HM.8
-        // generalizes this guard to also cover HalfMarathonIntermediate3D --
-        // same rationale, same message shape, zero delta for 4D.
-        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate3D))
+        // HM.1.5 explicitly froze 25km (4D) / HM.7 froze 20.0km (3D) / HM.10 froze 29.5km (5D)
+        // as calibration-only, never as a user default. Until a separate HM missing/zero-
+        // readiness authority is approved for any frequency, fail closed instead of silently
+        // borrowing 10K's 24km. HM.8 generalized this guard to also cover
+        // HalfMarathonIntermediate3D; HM.11 generalizes it again to cover
+        // HalfMarathonIntermediate5D -- same rationale, same message shape, zero delta for 4D/3D.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate3D) ||
+            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate5D))
         {
             throw new CatalogVolumeInvalidReadinessInputException(
                 "HALF_MARATHON Intermediate requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
@@ -714,6 +717,18 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             if (share.PreferredAbsolutePeakLongRunKm is { } absoluteCeilingKm)
             {
                 hardCap = Math.Min(hardCap, RoundDown(absoluteCeilingKm));
+            }
+            // HM.11 generic opt-in starting-long-run cap. The cap narrows only the first
+            // Core week's feasible interval and never manufactures a 12km anchor: observed
+            // history and the weekly-derived target still supply the candidate value, which
+            // is merely bounded here. Every pre-HM.11 policy leaves the field null.
+            var isFirstCoreWeek = week.WeekNumber == weekly.Weeks[0].WeekNumber;
+            if (isFirstCoreWeek && _policy.StartingAbsoluteLongRunCapKm is { } startingAbsoluteCapKm)
+            {
+                var roundedStartingCap = RoundDown(startingAbsoluteCapKm);
+                lower = Math.Min(lower, roundedStartingCap);
+                upper = Math.Min(upper, roundedStartingCap);
+                hardCap = Math.Min(hardCap, roundedStartingCap);
             }
             var target = Round(weeklyVolume * selectionShare);
             var unclamped = target;

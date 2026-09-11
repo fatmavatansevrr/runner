@@ -228,6 +228,48 @@ public sealed class CatalogWeekSkeletonCalendarMaterializerTests
         Assert.Single(weekdays);
     }
 
+    [Fact]
+    public void Materialize_ResolvedHardness_AllowsHardEasyKeyAdjacency_WhenHistoricalAllKeyRuleIsInfeasible()
+    {
+        var mondayStart = new DateOnly(2026, 8, 3);
+        var skeleton = CatalogCalendarAssignmentFixtures.BuildSkeleton(
+            mondayStart,
+            slotRoleOrder: new[] { "KEY_SESSION", "EASY_SUPPORT", "KEY_SESSION", "EASY_SUPPORT", "LONG_RUN" });
+        var preferredDays = new[]
+        {
+            DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+            DayOfWeek.Thursday, DayOfWeek.Friday,
+        };
+
+        var legacyContext = CatalogCalendarAssignmentFixtures.BuildContext(skeleton, preferredDays, DayOfWeek.Thursday);
+        Assert.Throws<CatalogPreferredDayConfigurationUnsafeException>(() => Materializer.Materialize(legacyContext));
+
+        var hardness = skeleton.Weeks
+            .SelectMany(week => new[]
+            {
+                new KeyValuePair<(int, int), CatalogCalendarSessionHardness>(
+                    (week.WeekNumber, 0), CatalogCalendarSessionHardness.TrueHard),
+                new KeyValuePair<(int, int), CatalogCalendarSessionHardness>(
+                    (week.WeekNumber, 1), CatalogCalendarSessionHardness.EasyEquivalent),
+            })
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        var dated = Materializer.Materialize(legacyContext with { KeySessionHardnessByWeekAndLane = hardness });
+
+        Assert.All(dated.Weeks, week =>
+        {
+            var keys = week.SessionSlots.Where(slot => slot.StructuralRole == "KEY_SESSION")
+                .OrderBy(slot => slot.SessionDate).ToArray();
+            Assert.Equal(1, Math.Abs(keys[1].SessionDate.DayNumber - keys[0].SessionDate.DayNumber));
+            Assert.Equal(CatalogCalendarSessionHardness.TrueHard, keys[0].Provenance.Hardness);
+            Assert.Equal(CatalogCalendarSessionHardness.EasyEquivalent, keys[1].Provenance.Hardness);
+        });
+
+        var validation = new DatedGeneratedCatalogPlanSkeletonValidator()
+            .Validate(dated, preferredDays, DayOfWeek.Thursday);
+        Assert.True(validation.IsValid, string.Join(", ", validation.Errors));
+    }
+
     // ─────────────────────────── Key-session separation ──────────────────────
 
     [Fact]

@@ -28,6 +28,18 @@ internal enum CatalogCalendarAssignmentPolicy
 }
 
 /// <summary>
+/// Generic, workout-derived hardness supplied to calendar placement for a resolved
+/// KEY_SESSION lane. <see cref="Unknown"/> is deliberately fail-safe and retains the
+/// historical behavior of treating the structural KEY_SESSION role as hard.
+/// </summary>
+internal enum CatalogCalendarSessionHardness
+{
+    Unknown = 0,
+    EasyEquivalent = 1,
+    TrueHard = 2,
+}
+
+/// <summary>
 /// Backend Integration Phase 4F.5 — the immutable input to
 /// <see cref="ICatalogWeekSkeletonCalendarMaterializer"/>. Every field must
 /// already be authoritative when supplied: this type carries no default,
@@ -41,7 +53,8 @@ internal sealed record CatalogCalendarAssignmentContext(
     DayOfWeek? LongRunDayPreference,
     GeneratedCatalogPlanSkeleton PlanSkeleton,
     CatalogCalendarAssignmentPolicy Policy,
-    CatalogCalendarMaterializationProvenance Provenance);
+    CatalogCalendarMaterializationProvenance Provenance,
+    IReadOnlyDictionary<(int WeekNumber, int LaneOrdinal), CatalogCalendarSessionHardness>? KeySessionHardnessByWeekAndLane = null);
 
 /// <summary>Plan-level provenance carried through to <see cref="DatedGeneratedCatalogPlanSkeleton.Provenance"/> — internal only, never exposed publicly.</summary>
 internal sealed record CatalogCalendarMaterializationProvenance(
@@ -68,7 +81,8 @@ internal sealed record CatalogSessionCalendarProvenance(
     string StructuralRole,
     DayOfWeek SelectedWeekday,
     DateOnly AssignedDate,
-    string AssignmentRule);
+    string AssignmentRule,
+    CatalogCalendarSessionHardness Hardness = CatalogCalendarSessionHardness.Unknown);
 
 /// <summary>
 /// Backend Integration Phase 4F.5 — the complete, internal-only, dated

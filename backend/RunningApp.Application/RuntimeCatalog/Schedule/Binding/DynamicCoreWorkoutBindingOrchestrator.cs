@@ -211,9 +211,12 @@ internal sealed class DynamicCoreWorkoutBindingOrchestrator : IDynamicCoreWorkou
             context.PreferredDays, context.LongRunDayPreference, CatalogCalendarDayMaterializerVersion.V1,
             skeleton.SchemaVersion, skeleton.DependencyVersions);
 
+        var keySessionHardness = await ResolveCalendarHardnessAsync(
+            progression, stageSchedule, context.WorkoutDefinitionLoader, ct);
+
         var calendarContext = new CatalogCalendarAssignmentContext(
             context.StartDate, RunningApp.Domain.Enums.GoalType.Race, context.PreferredDays, context.LongRunDayPreference,
-            skeleton, CatalogCalendarAssignmentPolicy.RaceHardConstraint, calendarProvenance);
+            skeleton, CatalogCalendarAssignmentPolicy.RaceHardConstraint, calendarProvenance, keySessionHardness);
 
         DatedGeneratedCatalogPlanSkeleton datedSkeleton;
         try
@@ -293,5 +296,65 @@ internal sealed class DynamicCoreWorkoutBindingOrchestrator : IDynamicCoreWorkou
             StageSchedule = stageSchedule,
             BoundPlan = boundPlan,
         };
+    }
+
+    /// <summary>
+    /// HM.11 generic calendar-hardness bridge. Stage allocation has already resolved each
+    /// lane's effective stage (including ordinary condition fallback) before calendar work,
+    /// and workout definitions already carry the reusable family semantic needed here.
+    /// EASY/LONG_RUN are easy-equivalent; all other families are true-hard for spacing.
+    /// Invalid or unavailable definitions remain Unknown, which the calendar treats as hard,
+    /// while the existing binder remains the authoritative fail-closed error boundary.
+    /// </summary>
+    private static async Task<IReadOnlyDictionary<(int WeekNumber, int LaneOrdinal), CatalogCalendarSessionHardness>> ResolveCalendarHardnessAsync(
+        CatalogWorkoutProgressionDefinition progression,
+        GeneratedCatalogStageSchedule stageSchedule,
+        ICatalogWorkoutDefinitionLoader definitionLoader,
+        CancellationToken ct)
+    {
+        var result = new Dictionary<(int WeekNumber, int LaneOrdinal), CatalogCalendarSessionHardness>();
+        var cache = new Dictionary<(string Key, int Version), CatalogWorkoutDefinitionSummary>();
+
+        foreach (var scheduled in stageSchedule.Weeks)
+        {
+            var stage = progression.PhaseProgressions
+                .Where(phase => phase.PhaseKey == scheduled.PhaseKey)
+                .SelectMany(phase => phase.EffectiveLanes)
+                .Where(lane => lane.LaneOrdinal == scheduled.LaneOrdinal)
+                .SelectMany(lane => lane.Stages)
+                .SingleOrDefault(candidate => candidate.ProgressionStageKey == scheduled.ProgressionStageKey);
+
+            var hardness = CatalogCalendarSessionHardness.Unknown;
+            if (stage?.WorkoutCandidateReferences.Count == 1)
+            {
+                var reference = stage.WorkoutCandidateReferences[0];
+                try
+                {
+                    if (!cache.TryGetValue((reference.Key, reference.Version), out var definition))
+                    {
+                        definition = await definitionLoader.LoadAsync(reference, ct);
+                        cache[(reference.Key, reference.Version)] = definition;
+                    }
+
+                    if (definition.Key == reference.Key && definition.Version == reference.Version &&
+                        (definition.EligiblePhases.Count == 0 || definition.EligiblePhases.Contains(scheduled.PhaseKey)))
+                    {
+                        hardness = definition.Family is "EASY" or "LONG_RUN"
+                            ? CatalogCalendarSessionHardness.EasyEquivalent
+                            : CatalogCalendarSessionHardness.TrueHard;
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // Preserve the binder's existing typed failure and message. The calendar
+                    // receives fail-safe Unknown and does not turn missing catalog content into
+                    // a relaxed placement.
+                }
+            }
+
+            result[(scheduled.WeekNumber, scheduled.LaneOrdinal)] = hardness;
+        }
+
+        return result;
     }
 }

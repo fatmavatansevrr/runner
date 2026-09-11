@@ -97,7 +97,7 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
         }
 
         DateOnly? previousWeekLongRunDate = null;
-        IReadOnlyList<DateOnly> previousWeekKeySessionDates = [];
+        IReadOnlyList<DatedGeneratedCatalogSessionSlotSkeleton> previousWeekKeySessionSlots = [];
 
         foreach (var week in orderedWeeks)
         {
@@ -211,9 +211,9 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
                     }
                 }
 
-                foreach (var previousKeySessionDate in previousWeekKeySessionDates)
+                foreach (var previousKeySessionSlot in previousWeekKeySessionSlots)
                 {
-                    var crossSeparationB = Math.Abs(longRunSlot.SessionDate.DayNumber - previousKeySessionDate.DayNumber);
+                    var crossSeparationB = Math.Abs(longRunSlot.SessionDate.DayNumber - previousKeySessionSlot.SessionDate.DayNumber);
                     if (crossSeparationB < MinimumKeySessionToLongRunSeparationDays)
                     {
                         anyCrossWeekSeparationViolated = true;
@@ -237,11 +237,20 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
                     for (var j = i + 1; j < keySessionSlots.Count; j++)
                     {
                         var keyToKeySeparation = Math.Abs(keySessionSlots[i].SessionDate.DayNumber - keySessionSlots[j].SessionDate.DayNumber);
-                        if (keyToKeySeparation < MinimumKeySessionToKeySessionSeparationDays)
+                        if (IsTrueHard(keySessionSlots[i]) && IsTrueHard(keySessionSlots[j]) &&
+                            keyToKeySeparation < MinimumKeySessionToKeySessionSeparationDays)
                         {
                             anyKeyToKeySeparationViolated = true;
                         }
                     }
+                }
+                // HM.11: the same generic, workout-derived hardness semantic also applies
+                // across the plan-relative week boundary. Unknown remains fail-safe/hard.
+                if (previousWeekKeySessionSlots.Any(previous => IsTrueHard(previous) &&
+                    keySessionSlots.Any(current => IsTrueHard(current) &&
+                        Math.Abs(previous.SessionDate.DayNumber - current.SessionDate.DayNumber) < MinimumKeySessionToKeySessionSeparationDays)))
+                {
+                    anyKeyToKeySeparationViolated = true;
                 }
                 if (anyKeyToKeySeparationViolated)
                 {
@@ -249,7 +258,7 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
                 }
 
                 previousWeekLongRunDate = longRunSlot.SessionDate;
-                previousWeekKeySessionDates = keySessionSlots.Select(s => s.SessionDate).ToList();
+                previousWeekKeySessionSlots = keySessionSlots;
             }
         }
 
@@ -262,4 +271,7 @@ internal sealed class DatedGeneratedCatalogPlanSkeletonValidator : IDatedGenerat
             ? DatedGeneratedCatalogPlanSkeletonValidationResult.Valid()
             : DatedGeneratedCatalogPlanSkeletonValidationResult.Invalid(errors);
     }
+
+    private static bool IsTrueHard(DatedGeneratedCatalogSessionSlotSkeleton slot) =>
+        slot.Provenance.Hardness is CatalogCalendarSessionHardness.TrueHard or CatalogCalendarSessionHardness.Unknown;
 }

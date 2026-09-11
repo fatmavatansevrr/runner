@@ -220,6 +220,24 @@ public static class V1CatalogPilotIdentityPolicy
     public const int HalfMarathonThreeDayIntermediateCandidateVersion = 1;
 
     /// <summary>
+    /// HM.11 — the dark-only, Half-Marathon Intermediate×5D Core candidate identity,
+    /// implementing HM.9's frozen second-KEY-lane structural authority
+    /// (PHASE_HM_9_INTERMEDIATE_5D_SECOND_KEY_LANE_AUTHORITY_CLOSURE.md) and HM.10's frozen
+    /// numeric authority (PHASE_HM_10_INTERMEDIATE_5D_NUMERIC_AUTHORITY_CLOSURE.md). Mirrors
+    /// <see cref="HalfMarathonThreeDayIntermediateCandidateKey"/>'s own exact dark-only wiring
+    /// precedent: deliberately NOT added to <see cref="IsSupportedLevelFrequency(RunningBackground,int)"/>
+    /// (the TenK-only overload <see cref="IsSupportedIdentity"/> consults) or to
+    /// <see cref="IsSupportedPreparationRunwayLevelFrequency"/> — the public gate and the
+    /// Runway gate are both untouched by this phase. Resolvable only through the distance-aware
+    /// <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/> overloads, which no
+    /// production public-routing call site invokes.
+    /// </summary>
+    public const string HalfMarathonFiveDayIntermediateCandidateKey = "HALF_MARATHON__5D__INTERMEDIATE";
+    public const int HalfMarathonFiveDayIntermediateCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
     /// pilot recognizes for TEN_K. Deliberately enumerated rather than
     /// derived, so a future cell can never be admitted by accident — the two
@@ -261,13 +279,14 @@ public static class V1CatalogPilotIdentityPolicy
                 (RunningBackground.Beginner, 2) or
                 (RunningBackground.Intermediate, 2) or
                 (RunningBackground.Beginner, 3),
-            // HM.2 Step 1a/2 / HM.8 — dark-only. HALF_MARATHON×INTERMEDIATE×3D/4D
-            // are the only two cells this engagement has frozen authority for
-            // (HM.1.x for 4D; HM.7 for 3D); deliberately not a broad "any
+            // HM.2 Step 1a/2 / HM.8 / HM.11 — dark-only. HALF_MARATHON×INTERMEDIATE×3D/4D/5D
+            // are the only three cells this engagement has frozen authority for
+            // (HM.1.x for 4D; HM.7 for 3D; HM.9/HM.10 for 5D); deliberately not a broad "any
             // Half-Marathon combination" arm.
             Domain.Enums.GoalDistance.HalfMarathon => (level, daysPerWeek) is
                 (RunningBackground.Intermediate, 3) or
-                (RunningBackground.Intermediate, 4),
+                (RunningBackground.Intermediate, 4) or
+                (RunningBackground.Intermediate, 5),
             _ => false,
         };
     // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the
@@ -365,7 +384,9 @@ public static class V1CatalogPilotIdentityPolicy
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4) => (HalfMarathonFourDayIntermediateCandidateKey, HalfMarathonFourDayIntermediateCandidateVersion),
         // HM.8 — dark-only, additive. See HalfMarathonThreeDayIntermediateCandidateKey's own doc comment.
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3) => (HalfMarathonThreeDayIntermediateCandidateKey, HalfMarathonThreeDayIntermediateCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D identities, are resolvable.")
+        // HM.11 — dark-only, additive. See HalfMarathonFiveDayIntermediateCandidateKey's own doc comment.
+        (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5) => (HalfMarathonFiveDayIntermediateCandidateKey, HalfMarathonFiveDayIntermediateCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D/5D identities, are resolvable.")
     };
 
     /// <summary>

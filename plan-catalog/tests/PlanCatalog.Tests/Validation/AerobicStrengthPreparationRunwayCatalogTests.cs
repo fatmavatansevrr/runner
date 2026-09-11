@@ -68,8 +68,10 @@ public sealed class AerobicStrengthPreparationRunwayCatalogTests
         // + 4 Phase 10K-FREQ.6D.4C DRAFT versioned eligibility extensions
         // (aerobic-strength-controlled-intro.v3, threshold-tempo.v5, fartlek.v5,
         // goal-pace-ten-k.v3) = 30,
-        // + HM.2's HM_PACE v1 distance-specific parameterization = 31.
-        Assert.Equal(31, files.Length);
+        // + HM.2's HM_PACE v1 distance-specific parameterization = 31,
+        // + HM.11's FARTLEK v6 eligibility-only widening for RACE_SPECIFIC while preserving
+        // the already-approved v4 component/dose semantics verbatim = 32.
+        Assert.Equal(32, files.Length);
 
         foreach (var file in files)
         {

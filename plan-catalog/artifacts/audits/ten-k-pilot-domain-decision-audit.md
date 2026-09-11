@@ -1,6 +1,6 @@
 # TEN_K / 4D / INTERMEDIATE Pilot — Domain Content Decision Audit
 
-Generated: 2026-09-09T15:07:38.7608734Z
+Generated: 2026-09-11T12:39:22.6319034Z
 
 Reconciled against Golden Fixture v3 per the source-governance hierarchy in `plan-catalog/docs/README.md`. See `canonical-source-preflight.md` for pre-flight results and `ten-k-pilot-vocabulary-decisions.md` for the dedicated vocabulary-ownership review.
 

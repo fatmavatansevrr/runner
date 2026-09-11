@@ -38,7 +38,24 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // Phase HM.8 -- +1 new source document (combinations/half-marathon-3d-intermediate.v1.json).
     // half-marathon-master.v1.json and peak-volume-bands.v9.json were edited IN PLACE
     // (VALIDATED-status precedent, HM.5.1/1cc7a40) -- no new file for either.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 140;
+    // Phase HM.11 -- +5 new source documents: half-marathon-master.v2.json (a NEW version,
+    // not an in-place edit of v1 -- HM.9's own recommended lanes-widening would have broken
+    // 3D/4D's existing single-lane allocation against the same shared v1 progression document,
+    // mirroring the exact real 10K precedent of TEN_K_MASTER v7/TEN_K_WORKOUT_PROGRESSION_V1 v6
+    // being a SEPARATE version pair from the v6/v5 pair 3D/4D still use, never an in-place edit
+    // of the shared single-lane document); half-marathon-workout-progression.v2.json (the new
+    // lanes-shaped secondary-KEY-lane document, HM.9/HM.10 authority); combinations/
+    // half-marathon-5d-intermediate.v1.json; workouts/fartlek.v6.json (a new, additive
+    // WORKOUT_DEFINITION version widening eligiblePhases to admit RACE_SPECIFIC -- v4/v5 are
+    // both unmodified and retain their existing eligibility, exactly as every existing 10K/HM caller of
+    // either already observes; RACE_SPECIFIC eligibility was a genuine, unanticipated gap found
+    // by direct end-to-end reproduction, not by governance-phase hand-trace, since HM.9's own
+    // frozen authority requires FARTLEK specifically -- not THRESHOLD_TEMPO -- as the
+    // RaceSpecific secondary-lane content); intermediate-modifier.v9.json (the minimum additive
+    // level-modifier version combining HM's exact workout closure with the already-existing
+    // two-hard-stimulus Intermediate progression modifier v3). peak-volume-bands.v9.json was edited IN PLACE again
+    // (a second purely-additive row) -- no new file for it.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 145;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

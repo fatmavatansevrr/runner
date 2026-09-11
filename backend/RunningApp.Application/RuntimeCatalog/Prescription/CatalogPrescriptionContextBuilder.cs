@@ -112,6 +112,7 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
             Date = session.Date,
             PhaseKey = session.PhaseKey,
             ProgressionStageKey = session.ProgressionStageKey,
+            LaneOrdinal = session.LaneOrdinal,
             StructuralRole = session.StructuralRole,
             WorkoutDefinitionKey = session.WorkoutDefinitionKey,
             WorkoutDefinitionVersion = session.WorkoutDefinitionVersion,
@@ -513,6 +514,28 @@ internal static class CatalogPrescriptionContextValidator
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
             if (!valid) errors.Add("HM_TAPER_ACTIVATION_CONTEXT_MISSING");
+            return;
+        }
+
+        // HM.11 -- same dual-KEY-lane shape as CatalogFinalPrescribedPlanValidator's own
+        // generalization: the new HALF_MARATHON Intermediate x5D candidate has two
+        // KEY_SESSION Taper sessions per week (LaneOrdinal 0 primary, unchanged identity
+        // shape; LaneOrdinal 1 secondary, HM.9's frozen EASY_EQUIVALENT Taper semantic, the
+        // new TAPER_HM_SECONDARY_EASY stage bound to EASY_STANDARD).
+        if (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
+            boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion)
+        {
+            var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
+            var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();
+            var validPrimary = primaryLane.Count == 2 && primaryLane.All(s =>
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            var validSecondary = secondaryLane.Count == 2 && secondaryLane.All(s =>
+                s.ProgressionStageKey == "TAPER_HM_SECONDARY_EASY" && s.WorkoutDefinitionKey == "EASY_STANDARD");
+            if (!validPrimary || !validSecondary || taperKeySessions.Count != 4)
+            {
+                errors.Add("HM_5D_TAPER_ACTIVATION_CONTEXT_MISSING");
+            }
             return;
         }
 

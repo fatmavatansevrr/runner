@@ -62,6 +62,20 @@ public sealed class Gen3AThreeDayAllocationMatrixTests
     }
 
     [Fact]
+    public void Allocate_CustomLongRunCap_ErrorReportsTheResolvedCap_NotTheLegacyFortyTwoPercentLiteral()
+    {
+        var exception = Assert.Throws<CatalogSessionPrescriptionInfeasibleException>(() =>
+            V1ThreeDaySessionVolumeAllocationPolicy.Allocate(
+                Week(20d),
+                LongRun(20d) with { PlannedLongRunDistanceKm = 9.5d, LongRunShareOfWeeklyVolume = 0.475d },
+                Sessions(),
+                longRunHardCapShare: 0.46d));
+
+        Assert.Contains("46% hard cap", exception.Message);
+        Assert.DoesNotContain("42% hard cap", exception.Message);
+    }
+
+    [Fact]
     public void Allocate_EqualErrorTie_UsesStableStructuralOrder()
     {
         var values = Enumerable.Range(0, 10).Select(_ => Allocate(14d)).ToArray();

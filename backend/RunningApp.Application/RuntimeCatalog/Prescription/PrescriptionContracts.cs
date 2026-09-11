@@ -167,6 +167,17 @@ internal sealed record CatalogSessionPrescriptionContext
     public required DateOnly Date { get; init; }
     public required string PhaseKey { get; init; }
     public string? ProgressionStageKey { get; init; }
+
+    /// <summary>
+    /// Phase HM.11 -- carried verbatim from the source <see cref="RunningApp.Application.RuntimeCatalog.Schedule.Binding.BoundCatalogSession.LaneOrdinal"/>,
+    /// so a dual-KEY-lane candidate's own Taper-completeness check (see
+    /// <see cref="CatalogPrescriptionContextBuilder"/>'s <c>ValidateTaperCompleteness</c>) can
+    /// distinguish primary (LaneOrdinal 0) from secondary (LaneOrdinal 1) KEY_SESSION Taper
+    /// sessions without re-deriving lane identity from date/session order. Null for every
+    /// non-KEY_SESSION role and every single-KEY candidate (3D/4D), byte-identical to before
+    /// this field existed for both.
+    /// </summary>
+    public int? LaneOrdinal { get; init; }
     public required string StructuralRole { get; init; }
     public required string WorkoutDefinitionKey { get; init; }
     public required int WorkoutDefinitionVersion { get; init; }

@@ -112,9 +112,9 @@ internal static class CatalogFinalPrescribedPlanValidator
         // HM.8 -- generalized to also admit HALF_MARATHON Intermediate x3D (HM.7's frozen
         // 0.46 hard-cap authority), mirroring the same VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek
         // dispatcher CatalogVolumeAndLongRunPlanner now uses. Byte-identical for the existing
-        // 4D cell.
+        // 4D cell. HM.11 -- widened again to admit x5D (HM.10's frozen 0.36 hard-cap authority).
         if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4))
+            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5))
         {
             return VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
@@ -231,6 +231,30 @@ internal static class CatalogFinalPrescribedPlanValidator
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
             if (!valid) errors.Add("FINAL_HM_TAPER_ACTIVATION_COUNT_OR_IDENTITY_INVALID");
+            return;
+        }
+
+        // HM.11 -- the new dual-KEY-lane HALF_MARATHON Intermediate x5D candidate has TWO
+        // KEY_SESSION Taper sessions per week (RUN_LAYOUT_5D's own two KEY_SESSION slots),
+        // never one: LaneOrdinal 0 is the unchanged primary HM activation (identical identity
+        // shape to the 3D/4D branch above); LaneOrdinal 1 is HM.9's frozen secondary-KEY Taper
+        // semantic (EASY_EQUIVALENT, never a second true hard activation) -- the new
+        // TAPER_HM_SECONDARY_EASY stage, always bound to EASY_STANDARD (no fallback chain
+        // needed: this stage carries no runtime eligibility condition, HM.9 §11).
+        if (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
+            candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion)
+        {
+            var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
+            var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();
+            var validPrimary = primaryLane.Count == 2 && primaryLane.All(s =>
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
+                (s.ProgressionStageKey == "TAPER_HM_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            var validSecondary = secondaryLane.Count == 2 && secondaryLane.All(s =>
+                s.ProgressionStageKey == "TAPER_HM_SECONDARY_EASY" && s.WorkoutDefinitionKey == "EASY_STANDARD");
+            if (!validPrimary || !validSecondary || taperKeySessions.Count != 4)
+            {
+                errors.Add("FINAL_HM_5D_TAPER_ACTIVATION_COUNT_OR_IDENTITY_INVALID");
+            }
             return;
         }
 

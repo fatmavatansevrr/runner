@@ -102,11 +102,24 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
         var weekPlans = skeleton.Weeks
             .OrderBy(w => w.WeekNumber)
-            .Select(week => BuildWeekPlan(week, preferredDays, longRunDay))
+            .Select(week => BuildWeekPlan(week, preferredDays, longRunDay, context.KeySessionHardnessByWeekAndLane))
             .ToList();
 
         var chosenKeySessionDates = new IReadOnlyList<DateOnly>?[weekPlans.Count];
-        if (!TryAssignKeySessionDates(weekPlans, chosenKeySessionDates, 0))
+        // HM.11 generic hardness seam: retain the historical all-KEY separation search as
+        // the first pass so every already-feasible 10K/HM placement is byte-identical. Only
+        // when that structural search is infeasible (or would leave a true-hard pair adjacent
+        // across a week boundary) do we retry using the resolved workout-family semantics.
+        // Unknown hardness remains fail-safe/hard, so legacy callers are exactly unchanged.
+        var assigned = TryAssignKeySessionDates(weekPlans, chosenKeySessionDates, 0, useResolvedHardness: false) &&
+            AllCrossWeekTrueHardPairsSatisfySeparation(weekPlans, chosenKeySessionDates);
+        if (!assigned)
+        {
+            Array.Clear(chosenKeySessionDates);
+            assigned = TryAssignKeySessionDates(weekPlans, chosenKeySessionDates, 0, useResolvedHardness: true);
+        }
+
+        if (!assigned)
         {
             throw new CatalogPreferredDayConfigurationUnsafeException(
                 "No deterministic full-plan assignment satisfies the KEY_SESSION/LONG_RUN and " +
@@ -264,14 +277,23 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
         GeneratedCatalogWeekSkeleton Source,
         DateOnly LongRunDate,
         int KeyCount,
+        IReadOnlyList<CatalogCalendarSessionHardness> KeySessionHardness,
         IReadOnlyDictionary<DayOfWeek, DateOnly> DateByWeekday,
         IReadOnlyList<DateOnly> KeySessionCandidates);
 
-    private static WeekPlan BuildWeekPlan(GeneratedCatalogWeekSkeleton week, IReadOnlyList<DayOfWeek> preferredDays, DayOfWeek longRunDay)
+    private static WeekPlan BuildWeekPlan(
+        GeneratedCatalogWeekSkeleton week,
+        IReadOnlyList<DayOfWeek> preferredDays,
+        DayOfWeek longRunDay,
+        IReadOnlyDictionary<(int WeekNumber, int LaneOrdinal), CatalogCalendarSessionHardness>? hardnessByWeekAndLane)
     {
         var dateByWeekday = preferredDays.ToDictionary(day => day, day => MapWeekdayToDateInWeek(week.StartDate, day));
         var longRunDate = dateByWeekday[longRunDay];
         var keyCount = week.SessionSlots.Count(s => s.StructuralRole == "KEY_SESSION");
+        var keySessionHardness = Enumerable.Range(0, keyCount)
+            .Select(laneOrdinal => hardnessByWeekAndLane?.GetValueOrDefault((week.WeekNumber, laneOrdinal))
+                ?? CatalogCalendarSessionHardness.Unknown)
+            .ToList();
 
         var candidates = preferredDays
             .Where(day => day != longRunDay)
@@ -281,7 +303,7 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             .ThenBy(date => date.DayNumber)
             .ToList();
 
-        return new WeekPlan(week, longRunDate, keyCount, dateByWeekday, candidates);
+        return new WeekPlan(week, longRunDate, keyCount, keySessionHardness, dateByWeekday, candidates);
     }
 
     /// <summary>
@@ -353,13 +375,22 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
         }
     }
 
-    private static bool AllPairsSatisfyKeyToKeySeparation(IReadOnlyList<DateOnly> combination)
+    private static bool AllPairsSatisfyKeyToKeySeparation(
+        IReadOnlyList<DateOnly> combination,
+        IReadOnlyList<CatalogCalendarSessionHardness> hardness,
+        bool useResolvedHardness)
     {
+        var ordered = combination.OrderBy(date => date.DayNumber).ToList();
         for (var i = 0; i < combination.Count; i++)
         {
             for (var j = i + 1; j < combination.Count; j++)
             {
-                if (DaySeparation(combination[i], combination[j]) < DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays)
+                if (useResolvedHardness && (!IsTrueHard(hardness[i]) || !IsTrueHard(hardness[j])))
+                {
+                    continue;
+                }
+
+                if (DaySeparation(ordered[i], ordered[j]) < DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays)
                 {
                     return false;
                 }
@@ -371,7 +402,11 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
     // ── Step 6: bounded cross-week backtracking search ───────────────────────
 
-    private static bool TryAssignKeySessionDates(IReadOnlyList<WeekPlan> weekPlans, IReadOnlyList<DateOnly>?[] chosen, int weekIndex)
+    private static bool TryAssignKeySessionDates(
+        IReadOnlyList<WeekPlan> weekPlans,
+        IReadOnlyList<DateOnly>?[] chosen,
+        int weekIndex,
+        bool useResolvedHardness)
     {
         if (weekIndex == weekPlans.Count)
         {
@@ -396,7 +431,14 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
         foreach (var combination in Combinations(plan.KeySessionCandidates, plan.KeyCount))
         {
-            if (!AllPairsSatisfyKeyToKeySeparation(combination))
+            if (!AllPairsSatisfyKeyToKeySeparation(combination, plan.KeySessionHardness, useResolvedHardness))
+            {
+                continue;
+            }
+
+            if (useResolvedHardness && weekIndex > 0 &&
+                !CrossWeekTrueHardPairsSatisfySeparation(
+                    weekPlans[weekIndex - 1], chosen[weekIndex - 1]!, plan, combination))
             {
                 continue;
             }
@@ -413,7 +455,7 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
             }
 
             chosen[weekIndex] = combination;
-            if (TryAssignKeySessionDates(weekPlans, chosen, weekIndex + 1))
+            if (TryAssignKeySessionDates(weekPlans, chosen, weekIndex + 1, useResolvedHardness))
             {
                 return true;
             }
@@ -423,6 +465,56 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
 
         return false;
     }
+
+    private static bool AllCrossWeekTrueHardPairsSatisfySeparation(
+        IReadOnlyList<WeekPlan> weekPlans,
+        IReadOnlyList<DateOnly>?[] chosen)
+    {
+        for (var weekIndex = 1; weekIndex < weekPlans.Count; weekIndex++)
+        {
+            if (!CrossWeekTrueHardPairsSatisfySeparation(
+                    weekPlans[weekIndex - 1], chosen[weekIndex - 1]!,
+                    weekPlans[weekIndex], chosen[weekIndex]!))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool CrossWeekTrueHardPairsSatisfySeparation(
+        WeekPlan previousPlan,
+        IReadOnlyList<DateOnly> previousDates,
+        WeekPlan currentPlan,
+        IReadOnlyList<DateOnly> currentDates)
+    {
+        var previousOrdered = previousDates.OrderBy(date => date.DayNumber).ToList();
+        var currentOrdered = currentDates.OrderBy(date => date.DayNumber).ToList();
+
+        for (var previousLane = 0; previousLane < previousOrdered.Count; previousLane++)
+        {
+            if (!IsTrueHard(previousPlan.KeySessionHardness[previousLane]))
+            {
+                continue;
+            }
+
+            for (var currentLane = 0; currentLane < currentOrdered.Count; currentLane++)
+            {
+                if (IsTrueHard(currentPlan.KeySessionHardness[currentLane]) &&
+                    DaySeparation(previousOrdered[previousLane], currentOrdered[currentLane]) <
+                    DatedGeneratedCatalogPlanSkeletonValidator.MinimumKeySessionToKeySessionSeparationDays)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsTrueHard(CatalogCalendarSessionHardness hardness) =>
+        hardness is CatalogCalendarSessionHardness.TrueHard or CatalogCalendarSessionHardness.Unknown;
 
     // ── Steps 7-8: building the final dated week ─────────────────────────────
 
@@ -482,7 +574,10 @@ internal sealed class CatalogWeekSkeletonCalendarMaterializer : ICatalogWeekSkel
                     slot.StructuralRole,
                     assignedDate.DayOfWeek,
                     assignedDate,
-                    assignmentRule)));
+                    assignmentRule,
+                    slot.StructuralRole == "KEY_SESSION"
+                        ? plan.KeySessionHardness[keyIndex - 1]
+                        : CatalogCalendarSessionHardness.EasyEquivalent)));
         }
 
         return new DatedGeneratedCatalogWeekSkeleton(

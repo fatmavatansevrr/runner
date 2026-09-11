@@ -82,7 +82,12 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
         current[1] = Math.Max(minEasy, current[1]);
         if (current[2] < minLong || current[2] / volume > longHardCap + 0.0001d ||
             Math.Abs(current[2] * 2d - Math.Round(current[2] * 2d)) > 0.0001d)
-            throw new CatalogSessionPrescriptionInfeasibleException("Resolved 3D long run violates the minimum, 42% hard cap, or 0.5km granularity.");
+            // HM.11 -- cosmetic-message correction (HM.8's own disclosed defect): this message
+            // hardcoded the literal text "42%" even after HM.8 parameterized the actual cap via
+            // longRunHardCapShare (which HALF_MARATHON Intermediate x3D already resolves to 46%
+            // in real production). Reports the real, resolved cap now -- behaviorally zero-delta,
+            // no validation condition above is touched.
+            throw new CatalogSessionPrescriptionInfeasibleException($"Resolved 3D long run violates the minimum, {longHardCap * 100:0}% hard cap, or 0.5km granularity.");
 
         while (Math.Abs(current.Sum() - volume) > 0.001d)
         {
@@ -99,7 +104,8 @@ internal static class V1ThreeDaySessionVolumeAllocationPolicy
         }
 
         if (current[2] / volume > longHardCap + 0.0001d)
-            throw new CatalogSessionPrescriptionInfeasibleException("Reconciled 3D long run exceeds the 42% hard cap.");
+            // HM.11 -- same cosmetic-message correction as above.
+            throw new CatalogSessionPrescriptionInfeasibleException($"Reconciled 3D long run exceeds the {longHardCap * 100:0}% hard cap.");
 
         return new V1FourDayWeekAllocation(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), new[] { current[0] }, new[] { current[1] },
             new SessionVolumeAllocationTrace(weekly.WeekNumber, volume, current[2], Round(volume-current[2]), current[0], current[1], 0d, PolicyKey, PolicyVersion));
