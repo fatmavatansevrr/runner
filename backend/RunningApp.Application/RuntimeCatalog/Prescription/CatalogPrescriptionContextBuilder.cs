@@ -508,7 +508,12 @@ internal static class CatalogPrescriptionContextValidator
         if ((boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
                 boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion) ||
             (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateKey &&
-                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion))
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion) ||
+            // HM.14 -- Beginner 3D/4D share the identical single-KEY-lane Taper stage shape.
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||

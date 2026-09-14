@@ -328,6 +328,139 @@ public sealed record VolumeSafetyPolicy(
     };
 
     /// <summary>
+    /// Phase HM.14 -- implements the already-frozen HM.13 numeric authority for
+    /// HALF_MARATHON x BEGINNER x 3D x 10-16W x DARK
+    /// (PHASE_HM_13_BEGINNER_3D_4D_5D_NUMERIC_AND_LEVEL_AUTHORITY_CLOSURE.md §24's
+    /// complete Beginner 3D authority table). Every field's value and
+    /// classification is consumed exactly as frozen, not re-derived here:
+    /// PreferredMaxWeeklyIncreaseRatio/HardMaxWeeklyIncreaseRatio = 0.07/0.08
+    /// (DIRECT_EXISTING_AUTHORITY, universal across every named policy in this
+    /// file); AbsoluteWeeklyIncrementCapKm = 2.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// direct on-point 10K <see cref="ThreeDayBeginner"/> same-level-same-frequency
+    /// precedent, HM.13 §10); GoldenFixtureStartingVolumeKm = 15.5
+    /// (EVIDENCE_INFORMED_PRODUCT_DEFAULT, HM.13 §11 -- <see cref="HalfMarathonIntermediate4D"/>'s
+    /// own 25.0/43.0 = 0.5814 ratio extended across levels for the first time,
+    /// applied to this policy's own 27.0 peak: 27.0 x 0.5814 = 15.70, rounded
+    /// to the 0.5km catalog increment = 15.5; NEVER a missing-readiness
+    /// fallback -- the same fail-closed guard <see cref="CatalogVolumeAndLongRunPlanner.ResolveStartingVolume"/>
+    /// already applies to <see cref="HalfMarathonIntermediate3D"/>/<see cref="HalfMarathonIntermediate4D"/>/<see cref="HalfMarathonIntermediate5D"/> is
+    /// mechanically extended to this policy too); ResolvedPeakReference = 27.0
+    /// (EVIDENCE_INFORMED_PRODUCT_DEFAULT, the exact midpoint of the frozen
+    /// [22,32] PeakVolumeBand, HM.13 §7/§8); GoldenFixtureNonTaperTransitions =
+    /// 11 (DIRECT_EXISTING_AUTHORITY, the same frequency-generic structural
+    /// derivation from HM's already-frozen 3+4+5=12 non-taper-week
+    /// Foundation/Build/RaceSpecific split every other named HM policy in
+    /// this file uses, re-verified as still correct for Beginner since the
+    /// Foundation/Build/RaceSpecific/Taper split is carried by
+    /// HALF_MARATHON_MASTER, which has no level field, HM.13 §15); TaperVolumeMultiplier(s)
+    /// = 0.70/0.43 (EVIDENCE_INFORMED_PRODUCT_DEFAULT, reused directly from
+    /// <see cref="HalfMarathonBeginner3DTaperVolumePolicy"/>, HM.13 §16 --
+    /// re-verified, and found strengthened, scope: Beginner's own lower peak
+    /// sits further below best-running-tips.com's ~56km/week lighter-taper
+    /// threshold than any Intermediate cell does); long-run share quadruple
+    /// 0.34/0.40/0.38/0.46 (STRONG_EVIDENCE_DERIVED_DECISION, HM.13 §12 --
+    /// reused verbatim from <see cref="HalfMarathonIntermediate3D"/>, the
+    /// strongest evidentiary tier this phase reached, earned by 10K's own
+    /// twice-independently-confirmed real precedent that Beginner's LR-share
+    /// quadruple equals the same-frequency Intermediate quadruple exactly
+    /// when the field is frequency-owned); PreferredAbsolutePeakLongRunKm =
+    /// 16.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT, HM.13 §13 -- HM.1.1's own
+    /// already-accepted B.A.A. Level One ~9-10mi/14.5-16.1km evidence,
+    /// Beginner-wide, frequency-independent within Beginner, a ceiling never
+    /// a target -- HM.13 §22 confirms this ceiling never actually binds at
+    /// this cell's own selected peak x selected share, 27.0x0.38=10.26km);
+    /// ResolvedPeakReferenceIsSelectedCeiling = true (DIRECT_EXISTING_AUTHORITY,
+    /// the same generic HM.5.3 mechanism every other named HM policy in this
+    /// file already uses, reused unmodified so 15W/16W saturate at 27.0km
+    /// instead of extrapolating past it -- zero new code, HM.13 §22).
+    /// StartingAbsoluteLongRunCap = N/A (NOT_APPLICABLE, HM.13 §14, mirrors
+    /// <see cref="HalfMarathonIntermediate3D"/>'s own null -- the historical
+    /// 8km legacy candidate is explicitly not promoted).
+    /// </summary>
+    public static VolumeSafetyPolicy HalfMarathonBeginner3D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.0d,
+        GoldenFixtureStartingVolumeKm: 15.5d,
+        ResolvedPeakReference: new(27.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 11,
+        TaperVolumeMultiplier: HalfMarathonBeginner3DTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        LongRunPreferredMinimumShare: 0.34d,
+        LongRunPreferredMaximumShare: 0.40d,
+        LongRunSelectionShare: 0.38d,
+        LongRunHardCapShare: 0.46d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: HalfMarathonBeginner3DTaperVolumePolicy.OrderedMultipliers,
+        PreferredAbsolutePeakLongRunKm: 16.0d,
+        // HM.13/HM.14/HM.5.3 -- reused unmodified: 27.0km is a frozen SELECTED PEAK CEILING for
+        // the whole 10-16W Core family, not a calibration point 15W/16W may extrapolate past.
+        ResolvedPeakReferenceIsSelectedCeiling: true);
+
+    /// <summary>
+    /// Phase HM.14 -- implements the already-frozen HM.13 numeric authority for
+    /// HALF_MARATHON x BEGINNER x 4D x 10-16W x DARK
+    /// (PHASE_HM_13_BEGINNER_3D_4D_5D_NUMERIC_AND_LEVEL_AUTHORITY_CLOSURE.md §24's
+    /// complete Beginner 4D authority table). Mirrors <see cref="HalfMarathonBeginner3D"/>'s
+    /// own doc comment shape exactly, at 4D's own frozen values:
+    /// AbsoluteWeeklyIncrementCapKm = 2.5 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// direct on-point 10K <see cref="BeginnerFourDay"/> precedent, HM.13 §10);
+    /// GoldenFixtureStartingVolumeKm = 19.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// same 0.5814 cross-level ratio applied to this policy's own 33.0 peak:
+    /// 33.0 x 0.5814 = 19.19, rounded to 19.0, HM.13 §11; NEVER a missing-readiness
+    /// fallback, same mechanically-extended fail-closed guard); ResolvedPeakReference
+    /// = 33.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT, exact midpoint of the frozen
+    /// [28,38] PeakVolumeBand, HM.13 §7/§8); GoldenFixtureNonTaperTransitions = 11
+    /// (DIRECT_EXISTING_AUTHORITY, same frequency-generic derivation);
+    /// TaperVolumeMultiplier(s) = 0.70/0.43 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// <see cref="HalfMarathonBeginner4DTaperVolumePolicy"/>, HM.13 §16); long-run
+    /// share quadruple 0.30/0.36/0.33/0.40 (STRONG_EVIDENCE_DERIVED_DECISION,
+    /// HM.13 §12 -- reused verbatim from <see cref="HalfMarathonIntermediate4D"/>);
+    /// PreferredAbsolutePeakLongRunKm = 16.0 (EVIDENCE_INFORMED_PRODUCT_DEFAULT,
+    /// same Beginner-wide ceiling as 3D, HM.13 §13 -- never binds at this cell's
+    /// own 33.0x0.33=10.89km); ResolvedPeakReferenceIsSelectedCeiling = true
+    /// (DIRECT_EXISTING_AUTHORITY, same generic HM.5.3 mechanism). StartingAbsoluteLongRunCap
+    /// = N/A (NOT_APPLICABLE, HM.13 §14, mirrors <see cref="HalfMarathonIntermediate4D"/>'s
+    /// own null).
+    /// </summary>
+    public static VolumeSafetyPolicy HalfMarathonBeginner4D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 19.0d,
+        ResolvedPeakReference: new(33.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 11,
+        TaperVolumeMultiplier: HalfMarathonBeginner4DTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        LongRunPreferredMinimumShare: 0.30d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.33d,
+        LongRunHardCapShare: 0.40d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: HalfMarathonBeginner4DTaperVolumePolicy.OrderedMultipliers,
+        PreferredAbsolutePeakLongRunKm: 16.0d,
+        // HM.13/HM.14/HM.5.3 -- reused unmodified: 33.0km is a frozen SELECTED PEAK CEILING for
+        // the whole 10-16W Core family, not a calibration point 15W/16W may extrapolate past.
+        ResolvedPeakReferenceIsSelectedCeiling: true);
+
+    /// <summary>
+    /// Phase HM.14 -- centralizes the HALF_MARATHON Beginner daysPerWeek-to-policy
+    /// dispatch, mirroring <see cref="ForHalfMarathonIntermediateDaysPerWeek"/>'s
+    /// own shape and 10K's own <see cref="ForBeginnerDaysPerWeek"/> sibling-method
+    /// pattern. Fail-closed for any HALF_MARATHON Beginner frequency without an
+    /// approved policy -- deliberately NO 5-arm: HM.13 §6 froze HALF_MARATHON
+    /// Beginner x5D as PRODUCT_INELIGIBLE (real, on-point internal evidence: HM's
+    /// own named rollout matrix + 10K's own real precedent), not a gap awaiting a
+    /// future decision.
+    /// </summary>
+    public static VolumeSafetyPolicy ForHalfMarathonBeginnerDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        3 => HalfMarathonBeginner3D,
+        4 => HalfMarathonBeginner4D,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved HALF_MARATHON Beginner VolumeSafetyPolicy exists for this DaysPerWeek (5D is PRODUCT_INELIGIBLE, HM.13 §6)."),
+    };
+
+    /// <summary>
     /// Phase HM.8 -- centralizes the HALF_MARATHON Intermediate daysPerWeek-to-policy
     /// dispatch, mirroring 10K's own already-established <see cref="ForIntermediateDaysPerWeek"/>
     /// switch-based pattern (HM.6's own §19 finding: the pre-HM.8 dispatch was a

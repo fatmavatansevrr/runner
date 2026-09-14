@@ -119,6 +119,15 @@ internal static class CatalogFinalPrescribedPlanValidator
             return VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
 
+        // HM.14 -- parallel Beginner branch (HM.13's frozen 0.46/0.40 hard-cap authority for 3D/4D
+        // respectively), mirroring the same VolumeSafetyPolicy.ForHalfMarathonBeginnerDaysPerWeek
+        // dispatcher CatalogVolumeAndLongRunPlanner now uses. No 5D arm: PRODUCT_INELIGIBLE.
+        if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            candidate.Level == "NEW" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4))
+        {
+            return VolumeSafetyPolicy.ForHalfMarathonBeginnerDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
+        }
+
         // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
         // phase's own deeper search (not caught by HM.0's original audit,
         // which only inspected CatalogVolumeAndLongRunPlanner and
@@ -225,7 +234,14 @@ internal static class CatalogFinalPrescribedPlanValidator
         if ((candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateKey &&
                 candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayIntermediateCandidateVersion) ||
             (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateKey &&
-                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion))
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayIntermediateCandidateVersion) ||
+            // HM.14 -- Beginner 3D/4D share the identical single-KEY-lane HALF_MARATHON_WORKOUT_PROGRESSION
+            // Taper stage shape (TAPER_HM_ACTIVATION/TAPER_HM_ACTIVATION_EFFORT_FALLBACK) as Intermediate
+            // 3D/4D -- Beginner has no second lane, so this same branch applies unmodified.
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||

@@ -91,13 +91,42 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
     // (Intermediate, 5) removed from this "not resolvable" theory below and covered instead by
     // their own HalfMarathon_Intermediate{Three,Five}Day_ResolvesDarkOnly tests, mirroring
     // HalfMarathon_IntermediateFourDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly.
+    // HM.14 -- HALF_MARATHON Beginner x3D/x4D are now frozen, dark-only resolvable cells (HM.13's
+    // numeric authority). (Beginner, 4) removed from this "not resolvable" theory below and
+    // covered instead by HalfMarathon_Beginner{Three,Four}Day_ResolvesDarkOnly tests below.
+    // (Beginner, 5) remains deliberately absent from every resolvable set anywhere -- HM.13 §6
+    // froze it PRODUCT_INELIGIBLE, proven by Hm14Beginner3D4DFullDarkVerticalSliceTests'
+    // own HalfMarathonBeginnerFiveDay_RemainsProductIneligible test.
     [Theory]
-    [InlineData(RunningBackground.Beginner, 4)]
     [InlineData(RunningBackground.Advanced, 4)]
-    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheThreeFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
+    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheFiveFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
         Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
+    }
+
+    [Fact]
+    public void HalfMarathon_BeginnerThreeDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly()
+    {
+        var resolved = V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Beginner, 3);
+        Assert.Equal(
+            (V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateVersion),
+            resolved);
+
+        var tryResolved = V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Beginner, 3);
+        Assert.Equal(resolved, tryResolved);
+    }
+
+    [Fact]
+    public void HalfMarathon_BeginnerFourDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly()
+    {
+        var resolved = V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Beginner, 4);
+        Assert.Equal(
+            (V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion),
+            resolved);
+
+        var tryResolved = V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Beginner, 4);
+        Assert.Equal(resolved, tryResolved);
     }
 
     [Fact]

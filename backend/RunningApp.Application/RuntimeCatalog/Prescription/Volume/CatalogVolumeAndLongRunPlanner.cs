@@ -111,6 +111,19 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
+        // HM.14 -- implements HM.13's frozen HALF_MARATHON Beginner 3D/4D numeric authority.
+        // Deliberately a SEPARATE, parallel condition block (not folded into the Intermediate
+        // branch above): Beginner's catalog experience label is "NEW" (populated from
+        // BEGINNER_MODIFIER's own "experience" field via PlanCatalogBundleLoader), never
+        // "INTERMEDIATE" -- confirmed by direct read, not assumed. Deliberately no 5D arm:
+        // HM.13 §6 froze HALF_MARATHON Beginner x5D as PRODUCT_INELIGIBLE.
+        if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            request.Candidate.Level == "NEW" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4) &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonBeginnerDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
+        }
+
         // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
         // every branch above now explicitly requires CanonicalDistanceFamily
         // == "TEN_K", so any candidate reaching this point with the
@@ -183,7 +196,17 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 throw new ThreeDayCoreProductIneligibleException(projectedTaper);
             }
         }
-        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4)
+        // HM.14 -- recurring-assumption-family fix (the same defect shape HM.8 already found and
+        // fixed for the 3-day check above): this eligibility gate was unconditional on
+        // CanonicalDistanceFamily, assuming exactly one taper week (true for TEN_K's own 1-week
+        // Taper phase) and TEN_K's own V1BeginnerFourDayVolumeEligibilityPolicy floor. HALF_MARATHON's
+        // frozen 2-week Taper phase would make .Single(w => w.IsTaperWeek) throw for the new HM
+        // Beginner x4D candidate, and even if it didn't, TEN_K's floor has no HM authority behind
+        // it. Scoped to TEN_K explicitly (byte-identical for every existing TEN_K Beginner x4D
+        // candidate) so HALF_MARATHON Beginner x4D -- which has no equivalent taper-floor
+        // eligibility authority of its own (HM.13 never froze one) -- no longer hits this
+        // TEN_K-specific check at all.
+        if (request.Candidate.Level == "NEW" && request.Candidate.DaysPerWeek == 4 && request.Candidate.CanonicalDistanceFamily == "TEN_K")
         {
             var projectedTaper = weekly.Weeks.Single(w => w.IsTaperWeek).PlannedWeeklyVolumeKm;
             if (projectedTaper < V1BeginnerFourDayVolumeEligibilityPolicy.MinimumFullLayoutWeeklyVolumeKm)
@@ -250,6 +273,15 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             throw new CatalogVolumeInvalidReadinessInputException(
                 "HALF_MARATHON Intermediate requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
+        }
+
+        // HM.14 -- mechanical extension of the same fail-closed guard to the two new Beginner
+        // policies (HM.13 §11/§26: GoldenFixtureStartingVolumeKm is calibration-only, never a
+        // missing/zero-readiness fallback). Same rationale, same message shape as Intermediate.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonBeginner3D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonBeginner4D))
+        {
+            throw new CatalogVolumeInvalidReadinessInputException(
+                "HALF_MARATHON Beginner requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
         }
 
         // Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority:

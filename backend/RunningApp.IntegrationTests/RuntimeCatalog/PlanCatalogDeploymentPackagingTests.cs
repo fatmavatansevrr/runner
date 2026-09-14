@@ -55,7 +55,15 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // level-modifier version combining HM's exact workout closure with the already-existing
     // two-hard-stimulus Intermediate progression modifier v3). peak-volume-bands.v9.json was edited IN PLACE again
     // (a second purely-additive row) -- no new file for it.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 145;
+    // Phase HM.14 -- +3 new source documents: level-modifiers/beginner-modifier.v2.json (adds
+    // HM_PACE v1 to eligibleWorkouts, mirroring INTERMEDIATE_MODIFIER's own shape, dark-only for
+    // HALF_MARATHON -- 10K's own combinations stay on v1, unmodified); combinations/
+    // half-marathon-3d-beginner.v1.json; combinations/half-marathon-4d-beginner.v1.json. No new
+    // master/layout/workout-progression version needed (HM.13's own recommended shape reuses the
+    // existing, unmodified HALF_MARATHON_MASTER v1 / RUN_LAYOUT_3D-4D v1 / HALF_MARATHON_WORKOUT_PROGRESSION
+    // v1 verbatim). peak-volume-bands.v9.json was edited IN PLACE again (two more purely-additive
+    // rows, Beginner 3D/4D) -- no new file for it.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 148;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
