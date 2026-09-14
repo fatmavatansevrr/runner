@@ -1,5 +1,6 @@
 using System;
 using RunningApp.Application.RuntimeCatalog.Schedule.Horizon;
+using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.Common;
 
@@ -78,6 +79,27 @@ public static class RaceHorizonPolicy
     public const int ExactStandaloneCoreSupportedWeeks = 12;
 
     /// <summary>
+    /// HM.18 Blocker 1 — Half-Marathon's own real, frozen standalone core
+    /// bounds, mirroring HALF_MARATHON_MASTER's coreCycle
+    /// (minimumWeeks/defaultWeeks/maximumWeeks: 10/14/16 — byte-identical
+    /// across v1/v2/v3, confirmed by direct read of
+    /// plan-catalog/catalog/templates/half-marathon-master.v1/v2/v3.json).
+    /// Additive only: introducing these constants does not change
+    /// <see cref="MinimumSupportedStandaloneWeeks"/>/<see cref="ExactStandaloneCoreSupportedWeeks"/>/
+    /// <see cref="MaximumSupportedStandaloneWeeks"/> (TEN_K's own bounds) at
+    /// all, so every existing TEN_K caller of the parameterless
+    /// <see cref="Decide(DateOnly,DateOnly)"/> overload is byte-identical,
+    /// zero-delta, by construction.
+    /// </summary>
+    public const int HalfMarathonMinimumSupportedStandaloneWeeks = 10;
+
+    /// <summary>See <see cref="HalfMarathonMinimumSupportedStandaloneWeeks"/>.</summary>
+    public const int HalfMarathonMaximumSupportedStandaloneWeeks = 16;
+
+    /// <summary>See <see cref="HalfMarathonMinimumSupportedStandaloneWeeks"/>.</summary>
+    public const int HalfMarathonExactStandaloneCoreSupportedWeeks = 14;
+
+    /// <summary>
     /// Complete weeks available between <paramref name="startDate"/> and
     /// <paramref name="raceDate"/>. The canonical decision retains any
     /// partial days separately and never rounds this value upward.
@@ -88,6 +110,40 @@ public static class RaceHorizonPolicy
     internal static CoreHorizonDecision Decide(DateOnly startDate, DateOnly raceDate) =>
         Decide(startDate, raceDate, MinimumSupportedStandaloneWeeks,
             ExactStandaloneCoreSupportedWeeks, MaximumSupportedStandaloneWeeks);
+
+    /// <summary>
+    /// HM.18 Blocker 1 — the single distance-aware entry point the early
+    /// fail-closed gate in <c>PlanServices.GeneratePreviewAsync</c> now uses,
+    /// replacing its previous unconditional call to the parameterless,
+    /// TEN_K-hardcoded <see cref="Decide(DateOnly,DateOnly)"/>. For every
+    /// <paramref name="distance"/> other than
+    /// <see cref="GoalDistance.HalfMarathon"/> this delegates to the exact
+    /// same parameterless overload — same bounds, same classification, same
+    /// exceptions — so TEN_K (and every other non-HM distance) is byte-identical,
+    /// zero-delta. Only <see cref="GoalDistance.HalfMarathon"/> now resolves
+    /// its own real 10/14/16-week bounds instead of borrowing TEN_K's 8/12/14.
+    /// </summary>
+    internal static CoreHorizonDecision DecideForDistance(DateOnly startDate, DateOnly raceDate, GoalDistance distance) =>
+        distance switch
+        {
+            GoalDistance.HalfMarathon => Decide(
+                startDate, raceDate,
+                HalfMarathonMinimumSupportedStandaloneWeeks,
+                HalfMarathonExactStandaloneCoreSupportedWeeks,
+                HalfMarathonMaximumSupportedStandaloneWeeks),
+            _ => Decide(startDate, raceDate),
+        };
+
+    /// <summary>
+    /// HM.18 Blocker 1 — advisory-only "if you started earlier, this exact
+    /// race date would fit the standalone core" date. This is a forward
+    /// projection from RaceDate by a whole number of weeks (never a reverse
+    /// derivation of the elapsed-day/full-week split <see cref="CoreHorizonClassifier"/>
+    /// owns), so it can never disagree with that classifier's own calculation.
+    /// Never used to mutate a request's own StartDate — advisory metadata only.
+    /// </summary>
+    internal static DateOnly RecommendedStartDateForMaximumWeeks(DateOnly raceDate, int maximumSupportedStandaloneWeeks) =>
+        raceDate.AddDays(-(maximumSupportedStandaloneWeeks * 7));
 
     internal static CoreHorizonDecision Decide(
         DateOnly startDate,

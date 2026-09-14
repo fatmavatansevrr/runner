@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/models/running_background.dart';
 import '../data/onboarding_provider.dart';
 
 class WeeklyFrequencyPage extends ConsumerStatefulWidget {
@@ -58,11 +59,34 @@ class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
     }
   }
 
+  /// HM.18 §32/§13 -- the frozen HALF_MARATHON V1 public frequency matrix
+  /// (Beginner 3D/4D, Intermediate 3D/4D/5D, Advanced 3D/4D/5D). Never
+  /// includes 2D/6D, never includes Beginner x5D -- both are permanently
+  /// out of V1 scope (HM.17 §2/§3, HM.13 §6). Kept in exact sync with the
+  /// backend's own real, frozen gate (`V1CatalogPilotIdentityPolicy`'s
+  /// HALF_MARATHON arm) -- if that backend matrix ever changes, this table
+  /// must be updated to match, not derived automatically (no shared codegen
+  /// exists between backend and this client, same discipline already used
+  /// for `CanonicalTargetFinishTimePolicy`/`AverageFinishTimePolicy`).
+  /// `RunningBackground.experienced` has no HALF_MARATHON (or TEN_K) V1
+  /// arm at all today, so it is intentionally left out of this map --
+  /// unrestricted for that level, unchanged from pre-HM.18 behavior; the
+  /// backend's own fail-closed gate remains the real safety net.
+  static const Map<RunningBackground, List<int>> _halfMarathonFrequencyMatrix = {
+    RunningBackground.beginner: [3, 4],
+    RunningBackground.intermediate: [3, 4, 5],
+    RunningBackground.advanced: [3, 4, 5],
+  };
+
   @override
   Widget build(BuildContext context) {
     final onboardingState = ref.watch(onboardingProvider);
     final isRace = onboardingState.goalType == 'race';
-    final options = isRace ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7];
+    final isHalfMarathon = onboardingState.goalDistance == 'half_marathon';
+    final hmOptions = _halfMarathonFrequencyMatrix[onboardingState.runningBackground];
+    final options = isHalfMarathon && hmOptions != null
+        ? hmOptions
+        : (isRace ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]);
 
     return Scaffold(
       backgroundColor: AppColors.surface,

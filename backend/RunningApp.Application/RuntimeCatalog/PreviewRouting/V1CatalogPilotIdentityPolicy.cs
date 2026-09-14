@@ -419,14 +419,27 @@ public static class V1CatalogPilotIdentityPolicy
     /// candidate's supported combination. Pure identity comparison — no
     /// catalog files, resolvers, or database are consulted here.
     /// </summary>
+    /// <summary>
+    /// HM.18 gate-widening -- now also admits <see cref="Domain.Enums.GoalDistance.HalfMarathon"/>
+    /// as a candidate-identity match, in addition to this policy's own
+    /// TEN_K <see cref="GoalDistance"/> constant. Delegates the level/frequency
+    /// check to the distance-aware 3-arg <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>
+    /// overload rather than the 2-arg TEN_K-pinned one -- for TEN_K requests
+    /// this is byte-identical (the 2-arg overload is defined as exactly this
+    /// call with TEN_K pinned), so zero TEN_K delta. For HALF_MARATHON, this
+    /// now matches the already-frozen 8-cell V1 matrix that overload's own
+    /// HALF_MARATHON arm enumerates (Intermediate 3D/4D/5D, Beginner 3D/4D,
+    /// Advanced 3D/4D/5D) -- never Beginner×5D, never 2D/6D, both of which
+    /// remain false through that same allow-list.
+    /// </summary>
     public static bool IsSupportedIdentity(
         GoalType goalType,
         GoalDistance goalDistance,
         RunningBackground level,
         int daysPerWeek) =>
         goalType == GoalType &&
-        goalDistance == GoalDistance &&
-        IsSupportedLevelFrequency(level, daysPerWeek);
+        (goalDistance == GoalDistance || goalDistance == Domain.Enums.GoalDistance.HalfMarathon) &&
+        IsSupportedLevelFrequency(goalDistance, level, daysPerWeek);
 
     /// <summary>
     /// Byte-identical to the pre-HM.2 switch; now delegates to the

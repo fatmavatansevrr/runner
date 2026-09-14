@@ -19,6 +19,10 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     private static readonly JsonSerializerOptions ResponseJsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        // HM.18 Blocker 1 -- omit RecommendedStartDate (null for every error
+        // except PLAN_HORIZON_START_TOO_EARLY) so every pre-existing error
+        // response's JSON shape is completely unchanged.
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
     private readonly ILogger<GlobalExceptionHandler> _logger;
@@ -106,6 +110,16 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             // Long-horizon race fail-closed safety constraint (temporary —
             // see RaceHorizonPolicy). Never a 400: the request is
             // structurally valid, just not yet composable.
+            // HM.18 Blocker 1 -- more specific subtype/sibling exceptions
+            // must be matched BEFORE the generic PlanHorizonCompositionRequiredException
+            // base-type case below (PlanHorizonStartTooEarlyException is a
+            // subtype of it; C# switch-expression type patterns match
+            // top-down, so order here is load-bearing).
+            PlanHorizonStartTooEarlyException startTooEarly => (StatusCodes.Status422UnprocessableEntity, "PLAN_HORIZON_START_TOO_EARLY"),
+            PlanCoreHorizonTooShortException              => (StatusCodes.Status422UnprocessableEntity, "PLAN_CORE_HORIZON_TOO_SHORT"),
+            HmFrequencyNotSupportedException              => (StatusCodes.Status422UnprocessableEntity, "HM_FREQUENCY_NOT_SUPPORTED_V1"),
+            RunningApp.Application.RuntimeCatalog.Schedule.Materialization.CatalogPreferredDayPlacementInfeasibleException
+                                                           => (StatusCodes.Status422UnprocessableEntity, "PREFERRED_DAY_PLACEMENT_INFEASIBLE"),
             PlanHorizonCompositionRequiredException      => (StatusCodes.Status422UnprocessableEntity, "PLAN_HORIZON_COMPOSITION_REQUIRED"),
             PlanCoreHorizonUnsupportedException           => (StatusCodes.Status422UnprocessableEntity, "PLAN_CORE_HORIZON_UNSUPPORTED"),
             CatalogRaceDateAlignmentInvalidException     => (StatusCodes.Status422UnprocessableEntity, "CATALOG_RACE_DATE_ALIGNMENT_INVALID"),
@@ -188,6 +202,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 _ => exception.Message,
             },
             CorrelationId = correlationId,
+            // HM.18 Blocker 1 -- advisory only, never used to mutate anything server-side.
+            RecommendedStartDate = exception is PlanHorizonStartTooEarlyException early ? early.RecommendedStartDate : null,
         };
 
         httpContext.Response.StatusCode = statusCode;

@@ -270,6 +270,12 @@ public sealed class Phase4F5_1ProductionValidatorWiringTests
     [Fact]
     public async Task Validator_NotInvoked_WhenMaterializationThrows()
     {
+        // HM.18 Blocker 3 -- see the identical rationale in
+        // Phase4F5DarkCalendarWiringTests.DarkCalendar_MaterializerException_BecomesTypedPreviewFailure_PreservingCause:
+        // this specific exception now surfaces as its own typed
+        // CatalogPreferredDayPlacementInfeasibleException, not the generic
+        // PlanPreviewGenerationFailedException. The validator-not-invoked
+        // invariant this test exists to prove is unaffected.
         var candidate = await LoadControlledPublishedCandidateAsync();
         var gate = new FixedResultEligibilityGate(candidate);
         var cause = new CatalogPreferredDayConfigurationUnsafeException("synthetic materializer failure");
@@ -278,7 +284,7 @@ public sealed class Phase4F5_1ProductionValidatorWiringTests
         var generator = new CatalogPreviewGenerator(gate, RealOrchestration(), RealSkeletonOrchestrator(), throwingMaterializer, countingValidator);
         var asOfDate = new DateOnly(2026, 1, 5);
 
-        var ex = await Assert.ThrowsAsync<PlanPreviewGenerationFailedException>(() =>
+        var ex = await Assert.ThrowsAsync<CatalogPreferredDayPlacementInfeasibleException>(() =>
             generator.GenerateAsync(PilotRequest(asOfDate.AddDays(84)), asOfDate));
 
         Assert.Equal(0, countingValidator.InvocationCount);

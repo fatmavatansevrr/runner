@@ -129,12 +129,55 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         // policy below so the two can never disagree.
         if (request.GoalType == GoalType.Race && request.RaceDate is { } raceDateForHorizonCheck)
         {
-            var horizonDecision = RaceHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck);
+            // HM.18 Blocker 1 -- distance-aware horizon gate. For every
+            // distance other than HalfMarathon this resolves to the exact
+            // same parameterless Decide(...) TEN_K has always used (zero
+            // delta, byte-identical). Only HalfMarathon now uses its own
+            // real 10/14/16-week bounds instead of TEN_K's borrowed 8/12/14
+            // -- see RaceHorizonPolicy.DecideForDistance's own doc comment.
+            var horizonDecision = RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
             var availableWeeks = horizonDecision.AvailableFullWeeks;
             var classification = RaceHorizonPolicy.Classify(horizonDecision);
 
+            // HM.18 Blocker 1 -- HALF_MARATHON's own typed "<10W too short"
+            // contract. Distance-scoped: TEN_K's own BelowMinimum handling
+            // is pre-existing and unchanged (falls through to routing, as
+            // before). Never thrown for any other distance.
+            if (classification == RaceHorizonClassification.BelowMinimum && request.GoalDistance == GoalDistance.HalfMarathon)
+            {
+                _logger.LogWarning(
+                    "GeneratePreview: HALF_MARATHON race horizon is below the supported minimum. " +
+                    "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MinimumSupportedWeeks={MinimumSupportedWeeks}",
+                    request.StartDate, raceDateForHorizonCheck, availableWeeks, RaceHorizonPolicy.HalfMarathonMinimumSupportedStandaloneWeeks);
+                throw new PlanCoreHorizonTooShortException(
+                    "The available race-plan horizon is shorter than the supported HALF_MARATHON standalone core minimum " +
+                    $"({RaceHorizonPolicy.HalfMarathonMinimumSupportedStandaloneWeeks} weeks). Available horizon is approximately " +
+                    $"{availableWeeks} weeks. Reason: PLAN_CORE_HORIZON_TOO_SHORT.");
+            }
+
             if (classification == RaceHorizonClassification.CompositionRequired)
             {
+                // HM.18 Blocker 1 -- HALF_MARATHON's own typed ">16W start
+                // too early" contract, with an advisory recommended_start_date.
+                // Scoped to HalfMarathon only -- TEN_K's own >14W behavior
+                // (including the Preparation Runway pilot carve-out
+                // immediately below) is completely untouched.
+                if (request.GoalDistance == GoalDistance.HalfMarathon)
+                {
+                    var recommendedStartDate = RaceHorizonPolicy.RecommendedStartDateForMaximumWeeks(
+                        raceDateForHorizonCheck, RaceHorizonPolicy.HalfMarathonMaximumSupportedStandaloneWeeks);
+                    _logger.LogWarning(
+                        "GeneratePreview: HALF_MARATHON race horizon exceeds the supported maximum. " +
+                        "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaximumSupportedWeeks={MaximumSupportedWeeks}, RecommendedStartDate={RecommendedStartDate}",
+                        request.StartDate, raceDateForHorizonCheck, availableWeeks,
+                        RaceHorizonPolicy.HalfMarathonMaximumSupportedStandaloneWeeks, recommendedStartDate);
+                    throw new PlanHorizonStartTooEarlyException(
+                        "The available race-plan horizon exceeds the supported HALF_MARATHON standalone core maximum " +
+                        $"({RaceHorizonPolicy.HalfMarathonMaximumSupportedStandaloneWeeks} weeks). Available horizon is approximately " +
+                        $"{availableWeeks} weeks. Reason: PLAN_HORIZON_START_TOO_EARLY. " +
+                        $"A StartDate on or after {recommendedStartDate:yyyy-MM-dd} would fit the supported standalone core for this RaceDate.",
+                        recommendedStartDate);
+                }
                 // Backend Integration Phase 4G.6B: the ONLY narrowing of this
                 // otherwise-unchanged fail-closed gate. Scoped strictly to
                 // the exact pilot candidate (typed identity, never inferred

@@ -56,7 +56,15 @@ internal enum LivePlanPreviewRoute
     CatalogCoreLengthNotImplemented,
     CatalogGenerationInfeasible,
     CatalogTwoDayCoreEightOrNineWeekFormallyNonSupported,
-    RequestInvalid
+    RequestInvalid,
+    // HM.18 Blocker 2 -- HALF_MARATHON-scoped typed rejections. Deliberately
+    // NOT a global "unsupported frequency"/"ineligible" rule: 2D/6D are real,
+    // valid, publicly-activated frequencies for other distances (e.g.
+    // TEN_K), and Beginner×5D ineligibility is HALF_MARATHON-specific
+    // (HM.13 §6), unrelated to TEN_K's own Beginner×5D (which simply has no
+    // TEN_K candidate at all and is NotPilotRequest/Legacy, unchanged).
+    HalfMarathonFrequencyUnsupported,
+    HalfMarathonProductIneligible
 }
 
 internal enum LivePlanPreviewRouteReason
@@ -70,7 +78,9 @@ internal enum LivePlanPreviewRouteReason
     CoreLengthRecognizedButNotImplemented,
     KnownInfeasibleEightWeekExplicitZero,
     TwoDayCoreEightOrNineWeekNonSupportFormalizedFinal,
-    RequestInvalid
+    RequestInvalid,
+    HalfMarathonFrequencyNotSupportedV1,
+    HalfMarathonBeginnerFiveDayProductIneligible
 }
 
 internal sealed record LivePlanPreviewRouteDecision(
@@ -125,6 +135,21 @@ internal static class V1LiveCatalogPilotRoutingPolicy
 
         if (!pilotMatch)
         {
+            // HM.18 Blocker 2 -- scoped strictly to GoalType.Race + HALF_MARATHON,
+            // never widening to any other distance's own unsupported-frequency
+            // shape (e.g. a hypothetical future TEN_K 7D request still falls
+            // through to Legacy/NotPilotRequest, unchanged). Beginner×5D is
+            // HALF_MARATHON's own separately-frozen PRODUCT_INELIGIBLE cell
+            // (HM.13 §6) -- distinguished here so it never returns the generic
+            // frequency-unsupported reason.
+            if (request.GoalType == GoalType.Race && request.GoalDistance == GoalDistance.HalfMarathon)
+            {
+                if (request.Level == RunningBackground.Beginner && request.DaysPerWeek == 5)
+                {
+                    return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.HalfMarathonProductIneligible, LivePlanPreviewRouteReason.HalfMarathonBeginnerFiveDayProductIneligible, false);
+                }
+                return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.HalfMarathonFrequencyUnsupported, LivePlanPreviewRouteReason.HalfMarathonFrequencyNotSupportedV1, false);
+            }
             return Decision(request, cycleLength, candidateLifecycleStatus, activationEnabled, LivePlanPreviewRoute.Legacy, LivePlanPreviewRouteReason.NotPilotRequest, true);
         }
         if (request.RaceDate is null)
@@ -236,7 +261,10 @@ internal static class V1LiveCatalogPilotRoutingPolicy
         LivePlanPreviewRouteReason reason,
         bool fallbackPermitted)
     {
-        var resolvedIdentity = V1CatalogPilotIdentityPolicy.TryResolveCandidate(request.Level, request.DaysPerWeek);
+        // HM.18 gate-widening -- distance-aware resolution. Byte-identical
+        // for TEN_K (the 2-arg overload delegates to this one with TEN_K
+        // pinned); only HALF_MARATHON now resolves its own real candidate.
+        var resolvedIdentity = V1CatalogPilotIdentityPolicy.TryResolveCandidate(request.GoalDistance, request.Level, request.DaysPerWeek);
         return new(
         PolicyKey,
         PolicyVersion,
@@ -351,7 +379,8 @@ public sealed class LivePlanPreviewRoutingService : IGenerationRouteDecider
         // replaced, an out-of-range cycle length no longer short-circuits
         // before this I/O, because "out of range" can only be determined
         // once the real bounds are known.
-        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.Level, request.DaysPerWeek);
+        // HM.18 gate-widening -- distance-aware resolution, byte-identical for TEN_K.
+        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.GoalDistance, request.Level, request.DaysPerWeek);
         PlanCatalogCandidateSummary candidate;
         try
         {
@@ -445,6 +474,16 @@ public sealed class LivePlanPreviewRoutingService : IGenerationRouteDecider
                     "(TWO_D_CORE_EIGHT_AND_NINE_WEEK_NON_SUPPORT_FORMALIZED_FINAL, Phase 10K-GEN.18). The supported 2-day-per-week Core " +
                     "range is exactly 10-14 weeks. This is not a temporary or readiness-dependent restriction -- it is a final, evidenced " +
                     "non-representability determination that applies identically to Beginner and Intermediate at both 8 and 9 weeks."),
+            // HM.18 Blocker 2 -- HALF_MARATHON-scoped typed rejections, never
+            // a silent Legacy fallthrough.
+            LivePlanPreviewRoute.HalfMarathonFrequencyUnsupported =>
+                throw new RunningApp.Application.Exceptions.HmFrequencyNotSupportedException(
+                    $"HALF_MARATHON {decision.Level}x{decision.DaysPerWeek}D is not part of the supported V1 frequency matrix " +
+                    "(HM_FREQUENCY_NOT_SUPPORTED_V1). Supported HALF_MARATHON combinations: Beginner 3D/4D, Intermediate 3D/4D/5D, Advanced 3D/4D/5D."),
+            LivePlanPreviewRoute.HalfMarathonProductIneligible =>
+                throw new RunningApp.Application.Exceptions.PlanProductIneligibleException(
+                    "PRODUCT_INELIGIBLE",
+                    "HALF_MARATHON Beginner x5D is not a supported product configuration (frozen PRODUCT_INELIGIBLE decision, HM.13 §6)."),
             _ => throw new CatalogLiveRouteDecisionInvalidException("Unsupported live catalog route decision.")
         };
     }

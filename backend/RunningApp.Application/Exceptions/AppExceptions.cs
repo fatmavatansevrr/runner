@@ -484,9 +484,67 @@ public sealed class CatalogPrescriptionPersistenceUnsupportedException : Excepti
 /// is thrown.
 /// Mapped to HTTP 422, error code PLAN_HORIZON_COMPOSITION_REQUIRED.
 /// </summary>
-public sealed class PlanHorizonCompositionRequiredException : Exception
+public class PlanHorizonCompositionRequiredException : Exception
 {
     public PlanHorizonCompositionRequiredException(string message) : base(message) { }
+}
+
+/// <summary>
+/// HM.18 Blocker 1 — the stable, typed ">16W start too early" contract for
+/// HALF_MARATHON Standard Core (distance-scoped; does not change TEN_K's own
+/// &gt;14W behavior, which continues to throw the base
+/// <see cref="PlanHorizonCompositionRequiredException"/> unchanged). Carries
+/// an advisory <see cref="RecommendedStartDate"/> (RaceDate minus the
+/// distance's own maximum supported standalone weeks, computed via
+/// <see cref="RunningApp.Application.Common.RaceHorizonPolicy.RecommendedStartDateForMaximumWeeks"/>
+/// — the same canonical elapsed-day arithmetic every other horizon decision
+/// in this codebase uses). Metadata only: never auto-mutates the request's
+/// StartDate, never generates Preparation Runway/LongHorizon sessions.
+/// Mapped to HTTP 422, error code PLAN_HORIZON_START_TOO_EARLY. A subtype of
+/// <see cref="PlanHorizonCompositionRequiredException"/> so any legacy
+/// catch-by-base-type code path still observes it as horizon-composition
+/// territory, while <see cref="RunningApp.Api.ErrorHandling.GlobalExceptionHandler"/>
+/// pattern-matches this exact subtype first for the richer, typed response.
+/// </summary>
+public sealed class PlanHorizonStartTooEarlyException : PlanHorizonCompositionRequiredException
+{
+    public DateOnly RecommendedStartDate { get; }
+
+    public PlanHorizonStartTooEarlyException(string message, DateOnly recommendedStartDate) : base(message)
+    {
+        RecommendedStartDate = recommendedStartDate;
+    }
+}
+
+/// <summary>
+/// HM.18 Blocker 1 — the stable, typed "&lt;10W start too short" contract for
+/// HALF_MARATHON Standard Core, distinct from unsupported-frequency
+/// (<see cref="HmFrequencyNotSupportedException"/>), insufficient-readiness
+/// (<see cref="PlanProductIneligibleException"/>), and internal errors. Never
+/// thrown for TEN_K — TEN_K's own below-minimum handling is pre-existing and
+/// unchanged (see <see cref="RunningApp.Application.Common.RaceHorizonPolicy"/>'s
+/// own "BelowMinimum ... not addressed by this policy" doc comment).
+/// Mapped to HTTP 422, error code PLAN_CORE_HORIZON_TOO_SHORT.
+/// </summary>
+public sealed class PlanCoreHorizonTooShortException : Exception
+{
+    public PlanCoreHorizonTooShortException(string message) : base(message) { }
+}
+
+/// <summary>
+/// HM.18 Blocker 2 — the stable, typed, HALF_MARATHON-scoped
+/// frequency-unsupported contract (e.g. 2D/6D). Deliberately NOT a global
+/// "unsupported frequency" rule: 2D/6D are valid, real, publicly-activated
+/// frequencies for other distances (e.g. TEN_K). Reached only when
+/// GoalDistance is HALF_MARATHON and the (Level, DaysPerWeek) pair is outside
+/// the frozen 8-cell V1 matrix (and is not the separately-classified
+/// Beginner×5D PRODUCT_INELIGIBLE cell). Never silently falls through to the
+/// legacy SQL engine.
+/// Mapped to HTTP 422, error code HM_FREQUENCY_NOT_SUPPORTED_V1.
+/// </summary>
+public sealed class HmFrequencyNotSupportedException : Exception
+{
+    public HmFrequencyNotSupportedException(string message) : base(message) { }
 }
 
 /// <summary>

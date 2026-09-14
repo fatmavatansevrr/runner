@@ -172,6 +172,7 @@ class ApiClient {
         errorCode: data['errorCode'] as String?,
         correlationId: data['correlationId'] as String?,
         statusCode: statusCode,
+        recommendedStartDate: data['recommendedStartDate'] as String?,
       );
     }
 

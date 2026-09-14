@@ -35,9 +35,9 @@ internal static class LongHorizonActivatedCalendarAlignmentValidator
                 if (p.SessionDate < boundary.Start || p.SessionDate > boundary.End)
                     throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} session {p.SessionOrdinal} is outside its structural week.");
                 if (!preferredDays.Contains(p.Weekday))
-                    throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} session {p.SessionOrdinal} is not on a preferred day.");
+                    throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} session {p.SessionOrdinal} is not on a preferred day.", reason: "PREFERRED_DAY_PLACEMENT_INFEASIBLE");
                 if (IsLongRun(p.SessionRole) && p.Weekday != longRunDay)
-                    throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} long run is not on the preferred long-run day.");
+                    throw new LongHorizonActivatedCalendarAlignmentException($"Week {week.GlobalWeekNumber} long run is not on the preferred long-run day.", reason: "PREFERRED_DAY_PLACEMENT_INFEASIBLE");
                 if (!string.Equals(numeric.SessionRole, p.SessionRole, StringComparison.Ordinal)
                     || !string.Equals(numeric.WorkoutKey, p.WorkoutKey, StringComparison.Ordinal)
                     || numeric.WorkoutVersion != p.WorkoutVersion

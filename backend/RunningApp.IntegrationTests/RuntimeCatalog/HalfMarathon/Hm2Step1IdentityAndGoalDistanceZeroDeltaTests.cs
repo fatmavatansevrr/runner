@@ -17,9 +17,14 @@ namespace RunningApp.IntegrationTests.RuntimeCatalog.HalfMarathon;
 /// branch/value" vs "AFTER GENERALIZATION -> same authority -> same branch -> same
 /// output" proof structure: every existing TEN_K 2-arg call site is proven
 /// byte-identical to the new 3-arg (distance-aware) overload evaluated with
-/// GoalDistance.TenK pinned, and the public/Runway gates (IsSupportedIdentity /
-/// IsSupportedPreparationRunwayIdentity), which HM.2 explicitly does not touch, are
-/// proven to still reject HALF_MARATHON for every existing cell.
+/// GoalDistance.TenK pinned. Originally (HM.2-HM.16) both the public gate
+/// (IsSupportedIdentity) and the Runway gate (IsSupportedPreparationRunwayIdentity)
+/// rejected every HALF_MARATHON identity -- HM.18 is the explicitly-scoped phase
+/// that widens IsSupportedIdentity for exactly the frozen 8-cell V1 matrix, so the
+/// public-gate assertions below now reflect that intentional, tested widening
+/// (updated from their original "still rejected" form, not left obsolete).
+/// IsSupportedPreparationRunwayIdentity remains completely untouched by HM.18 and
+/// is still proven to reject every HALF_MARATHON identity below.
 /// </summary>
 public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
 {
@@ -127,8 +132,12 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
         var tryResolved = V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek);
         Assert.Equal(resolved, tryResolved);
 
-        // Still outside every public/Runway gate -- dark-only, mirroring every other HM cell.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
+        // HM.18 -- Advanced 3D/4D/5D are 3 of the frozen 8-cell public V1 matrix,
+        // so the public gate now admits them (updated, not obsolete: HM.2's own
+        // "does not touch the public gate" boundary applied only through HM.16;
+        // HM.18 is the explicitly-scoped phase that widens it). Runway remains
+        // completely untouched -- still False for every HALF_MARATHON identity.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
     }
 
@@ -182,9 +191,30 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
         Assert.Equal(resolved, tryResolved);
     }
 
+    // HM.18 -- the public gate now admits exactly the frozen 8-cell HALF_MARATHON
+    // V1 matrix (Intermediate 3D/4D/5D, Beginner 3D/4D, Advanced 3D/4D/5D), never
+    // Beginner x5D, never 2D/6D. Of the TEN_K (level, daysPerWeek) pairs in
+    // AllExistingTenKLevelFrequencyPairs, exactly the 8 that coincide with that
+    // frozen matrix are now also True for HALF_MARATHON with the SAME
+    // (level, daysPerWeek) pair -- (Intermediate,6), (Beginner,2), (Intermediate,2)
+    // remain False (never designed/approved for HALF_MARATHON). This replaces the
+    // pre-HM.18 "always False" theory (OBSOLETE_PRE_ACTIVATION_ASSERTION, same
+    // correction discipline this repo's own TEN_K activation phases have always used)
+    // with the real, intentional post-widening truth table.
+    private static bool IsFrozenHalfMarathonPublicCell(RunningBackground level, int daysPerWeek) =>
+        (level, daysPerWeek) is
+            (RunningBackground.Intermediate, 3) or
+            (RunningBackground.Intermediate, 4) or
+            (RunningBackground.Intermediate, 5) or
+            (RunningBackground.Beginner, 3) or
+            (RunningBackground.Beginner, 4) or
+            (RunningBackground.Advanced, 3) or
+            (RunningBackground.Advanced, 4) or
+            (RunningBackground.Advanced, 5);
+
     [Theory]
     [MemberData(nameof(AllExistingTenKLevelFrequencyPairs))]
-    public void PublicGate_IsSupportedIdentity_TenKUnaffected_HalfMarathonStillRejected(
+    public void PublicGate_IsSupportedIdentity_TenKUnaffected_HalfMarathonMatchesFrozenEightCellMatrix(
         RunningBackground level, int daysPerWeek, string expectedKey, int expectedVersion)
     {
         _ = expectedKey;
@@ -193,30 +223,54 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
         // TEN_K gate byte-identical (still admits exactly what it did before this phase).
         Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.TenK, level, daysPerWeek));
 
-        // The public gate must remain closed to HALF_MARATHON -- HM.2 explicitly does not widen it.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, daysPerWeek));
+        // HALF_MARATHON now matches TEN_K's own admission for exactly the 8 frozen
+        // cells, and remains rejected for every other (level, daysPerWeek) pair.
+        Assert.Equal(
+            IsFrozenHalfMarathonPublicCell(level, daysPerWeek),
+            V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, daysPerWeek));
     }
 
     [Fact]
-    public void PublicGate_IsSupportedIdentity_RejectsTheOneCellHm2DarklyResolves()
+    public void PublicGate_IsSupportedIdentity_AdmitsTheHm2CellNowThatHm18HasWidenedTheGate()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
     }
 
-    // HM.8 -- the new dark-only 3D cell must also remain outside every public/Runway gate.
+    // HM.8/HM.18 -- the 3D cell is one of the frozen 8-cell public V1 matrix; Runway remains untouched.
     [Fact]
-    public void PublicGate_IsSupportedIdentity_RejectsTheHm8DarkCellToo()
+    public void PublicGate_IsSupportedIdentity_AdmitsTheHm8CellButRunwayStaysClosed()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
     }
 
-    // HM.11 -- the new dark-only 5D cell must also remain outside every public/Runway gate.
+    // HM.11/HM.18 -- the 5D cell is one of the frozen 8-cell public V1 matrix; Runway remains untouched.
     [Fact]
-    public void PublicGate_IsSupportedIdentity_RejectsTheHm11DarkCellToo()
+    public void PublicGate_IsSupportedIdentity_AdmitsTheHm11CellButRunwayStaysClosed()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
+    }
+
+    // HM.13/HM.18 -- Beginner x5D is the one deliberately-never-admitted cell:
+    // PRODUCT_INELIGIBLE (HM.13 §6), not merely unresolved. Must remain False
+    // through the public gate even though Beginner x3D/x4D are now True.
+    [Fact]
+    public void PublicGate_IsSupportedIdentity_BeginnerFiveDayRemainsClosed_ProductIneligibleNotResolvable()
+    {
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Beginner, 5));
+        Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Beginner, 5));
+    }
+
+    // HM.18 -- 2D/6D remain permanently out of V1 scope for HALF_MARATHON at every level.
+    [Theory]
+    [InlineData(RunningBackground.Beginner, 2)]
+    [InlineData(RunningBackground.Intermediate, 2)]
+    [InlineData(RunningBackground.Intermediate, 6)]
+    [InlineData(RunningBackground.Advanced, 6)]
+    public void PublicGate_IsSupportedIdentity_TwoDayAndSixDayRemainClosedForHalfMarathon(RunningBackground level, int daysPerWeek)
+    {
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, daysPerWeek));
     }
 
     [Fact]

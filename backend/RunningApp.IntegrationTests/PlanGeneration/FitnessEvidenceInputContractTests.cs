@@ -120,9 +120,18 @@ public sealed class FitnessEvidenceInputContractTests
     {
         await ResetAsync();
 
+        // HM.18 -- this fixture used HALF_MARATHON Intermediate x5D as its
+        // "unsupported combo" example; that cell is now one of the frozen
+        // 8-cell public V1 matrix (typed 200/catalog, not legacy 404), so it
+        // no longer proves this test's own point (an unsupported combo still
+        // falling through to the legacy engine's PLAN_TEMPLATE_NOT_FOUND).
+        // MARATHON has no catalog identity mapping at all and is untouched
+        // by this phase -- it is the same class of "genuinely unsupported,
+        // falls through to legacy, still 404" fixture the original intent
+        // required.
         var unsupportedRequestWithEvidence = new
         {
-            goal_distance = "half_marathon",
+            goal_distance = "marathon",
             level = "intermediate",
             days_per_week = 5,
             unit = "km",

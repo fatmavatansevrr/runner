@@ -337,7 +337,14 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
 
     public async Task<CatalogPreviewSnapshot> GenerateAsync(GeneratePreviewRequest request, DateOnly asOfDate, CancellationToken ct = default)
     {
-        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.Level, request.DaysPerWeek);
+        // HM.18 Blocker 4 / gate-widening -- distance-aware resolution
+        // (previously the 2-arg, TEN_K-pinned overload). For every TEN_K
+        // request this resolves to the exact same candidate identity as
+        // before (the 2-arg overload delegates to this one with TEN_K
+        // pinned) -- zero delta. Only a HALF_MARATHON request now resolves
+        // its own real candidate instead of never reaching this method
+        // (public routing previously never matched HALF_MARATHON identity).
+        var identity = V1CatalogPilotIdentityPolicy.ResolveCandidate(request.GoalDistance, request.Level, request.DaysPerWeek);
         var candidate = await _gate.LoadForPublicPreviewAsync(identity.CandidateKey, identity.CandidateVersion, ct);
 
         var input = BuildInputSnapshot(request, asOfDate, candidate);
@@ -667,6 +674,21 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                 {
                     throw new PlanProductIneligibleException(ineligible.Code, ineligible.Message, ineligible);
                 }
+                // HM.18 -- discovered by this phase's own mandatory acceptance
+                // testing: a request with no positive observed
+                // RecentWeeklyVolumeKm for a candidate with no approved
+                // missing/zero starting-volume fallback (e.g. real, pre-existing
+                // HALF_MARATHON Intermediate/Advanced volume-planning authority)
+                // previously propagated as this uncaught internal exception,
+                // surfacing as a raw HTTP 500 -- this is a real, stable,
+                // client-input-driven readiness-insufficient outcome, not an
+                // internal/technical failure, so it is now surfaced through the
+                // same typed PlanProductIneligibleException contract as every
+                // other readiness-insufficient rejection in this codebase.
+                catch (DynamicCoreVolumeAndLongRunFailedException ex) when (ex.InnerException is Prescription.Volume.CatalogVolumeInvalidReadinessInputException invalidReadiness)
+                {
+                    throw new PlanProductIneligibleException(invalidReadiness.Code, invalidReadiness.Message, invalidReadiness);
+                }
                 var volumeResult = dynamicResult.PrescriptionResult.VolumeResult;
                 return _publicPreviewMaterializer.Materialize(new CatalogPublicPreviewMaterializationRequest(
                     request, candidate, request.StartDate, asOfDate, volumeResult.VolumeAndLongRunPlan,
@@ -826,13 +848,29 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                 }
             }
         }
+        catch (CatalogPreferredDayConfigurationUnsafeException ex)
+        {
+            // HM.18 Blocker 3 -- this specific condition (no deterministic
+            // full-plan assignment can satisfy the KEY_SESSION/LONG_RUN
+            // separation invariant for the caller's own PreferredDays/
+            // LongRunDayPreference combination) is a client-input-shaped
+            // rejection, not an internal/technical failure. Previously
+            // rewrapped into the generic 500 below along with its six
+            // siblings; now surfaced as its own typed, stable, 422 result so
+            // no HM (or TEN_K) request can ever receive a raw 500 for this
+            // condition. The six siblings below are unchanged -- they are
+            // genuinely internal/already-upstream-validated conditions, not
+            // this phase's scope.
+            throw new CatalogPreferredDayPlacementInfeasibleException(
+                $"The requested preferred days / long-run day cannot be placed for candidate " +
+                $"'{candidate.CandidateKey}' v{candidate.CandidateVersion}': {ex.Message}", ex);
+        }
         catch (Exception ex) when (ex is CatalogPreferredDaysRequiredException
             or CatalogPreferredDayCountInvalidException
             or CatalogPreferredDaysDuplicatedException
             or CatalogLongRunDayRequiredException
             or CatalogLongRunDayNotPreferredException
             or CatalogCalendarRoleStructureInvalidException
-            or CatalogPreferredDayConfigurationUnsafeException
             or CatalogDatedSkeletonInvalidException)
         {
             throw new PlanPreviewGenerationFailedException(
@@ -939,6 +977,13 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             throw new PlanProductIneligibleException(ineligible.Code, ineligible.Message, ineligible);
         }
         catch (CatalogProductIneligibleException ex)
+        {
+            throw new PlanProductIneligibleException(ex.Code, ex.Message, ex);
+        }
+        // HM.18 -- same readiness-insufficient reclassification as the
+        // dynamic-core catch above, for this method's own (static/exact
+        // 12-week-style) materialization path.
+        catch (Prescription.Volume.CatalogVolumeInvalidReadinessInputException ex)
         {
             throw new PlanProductIneligibleException(ex.Code, ex.Message, ex);
         }

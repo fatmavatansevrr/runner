@@ -315,9 +315,14 @@ public class UserJourneyTests
     {
         await ResetAsync();
 
+        // HM.18 -- HALF_MARATHON Intermediate x5D is now one of the frozen
+        // 8-cell public V1 matrix (typed 200/catalog, not legacy 404); MARATHON
+        // has no catalog identity mapping at all and is untouched by this
+        // phase, preserving this test's original "genuinely unsupported combo"
+        // intent.
         var unsupportedRequest = new
         {
-            goal_distance = "half_marathon",
+            goal_distance = "marathon",
             level = "intermediate",
             days_per_week = 5,
             unit = "km",

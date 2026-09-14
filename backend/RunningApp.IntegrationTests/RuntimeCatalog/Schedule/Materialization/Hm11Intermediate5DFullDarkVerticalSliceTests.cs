@@ -288,8 +288,12 @@ public sealed class Hm11Intermediate5DFullDarkVerticalSliceTests
             Assert.True(Math.Abs(keyDates[1].DayNumber - keyDates[0].DayNumber) >= 2);
         }
 
-        // HM stays dark regardless of newly-feasible catalog headroom.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Intermediate x5D is one of the frozen 8-cell public V1
+        // matrix; the public gate now admits it regardless of this
+        // newly-feasible catalog headroom being exercised only via the dark
+        // pipeline here (updated, not obsolete: HM.11 predates HM.18's own
+        // explicitly-scoped public-gate widening).
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
     }
 
@@ -420,9 +424,12 @@ public sealed class Hm11Intermediate5DFullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonFiveDayIdentity_RemainsOutsideEveryPublicGate()
+    public void HalfMarathonFiveDayIdentity_IsNowAdmittedByThePublicGate_RunwayStaysClosed()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- updated from "RemainsOutsideEveryPublicGate": Intermediate
+        // x5D is one of the frozen 8-cell public V1 matrix. Runway is
+        // untouched by HM.18 and remains closed.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5));
@@ -431,11 +438,13 @@ public sealed class Hm11Intermediate5DFullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonFourAndThreeDayIdentity_ZeroDelta_AfterFiveDayDispatchGeneralization()
+    public void HalfMarathonFourAndThreeDayIdentity_AlsoNowAdmittedByThePublicGate_AfterFiveDayDispatchGeneralization()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Intermediate x4D/x3D are likewise 2 of the frozen 8-cell
+        // public V1 matrix.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
         Assert.Same(VolumeSafetyPolicy.HalfMarathonIntermediate4D, VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(4));
         Assert.Same(VolumeSafetyPolicy.HalfMarathonIntermediate3D, VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(3));

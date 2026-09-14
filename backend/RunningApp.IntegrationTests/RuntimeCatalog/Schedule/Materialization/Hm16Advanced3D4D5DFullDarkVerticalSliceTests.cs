@@ -449,8 +449,8 @@ public sealed class Hm16Advanced3D4D5DFullDarkVerticalSliceTests
             $"|lr=[{string.Join(',', volume.LongRunProgression.Weeks.Select(w => w.PlannedLongRunDistanceKm.ToString("F1")))}]" +
             $"|peak={volume.WeeklyVolumePlan.PeakVolumeKm:F1}|taper={taperWeeks[0].PlannedWeeklyVolumeKm:F1}/{taperWeeks[1].PlannedWeeklyVolumeKm:F1}");
 
-        // HM stays dark regardless of newly-feasible catalog headroom.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Advanced x3D/x4D/x5D are 3 of the frozen 8-cell public V1 matrix.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
     }
 
@@ -552,11 +552,14 @@ public sealed class Hm16Advanced3D4D5DFullDarkVerticalSliceTests
     // Identity/policy encoding proofs.
     // ============================================================================================
     [Fact]
-    public void HalfMarathonAdvancedThreeAndFourAndFiveDayIdentity_RemainOutsideEveryPublicGate()
+    public void HalfMarathonAdvancedThreeAndFourAndFiveDayIdentity_NowAdmittedByPublicGate_RunwayStaysClosed()
     {
+        // HM.18 -- updated from "RemainOutsideEveryPublicGate": all three
+        // Advanced frequencies are in the frozen 8-cell public V1 matrix.
+        // Runway remains untouched and closed.
         foreach (var daysPerWeek in new[] { 3, 4, 5 })
         {
-            Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+            Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
                 GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
             Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
                 GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));

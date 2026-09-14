@@ -75,5 +75,26 @@ internal sealed class LongHorizonCalendarIdentityMismatchException : LongHorizon
 
 internal sealed class LongHorizonActivatedCalendarAlignmentException : LongHorizonRollingContractException
 {
-    public LongHorizonActivatedCalendarAlignmentException(string message) : base("LONG_HORIZON_ACTIVATED_CALENDAR_ALIGNMENT_FAILED", message) { }
+    /// <summary>
+    /// HM.18 Blocker 3 -- optional, more specific sub-reason alongside this
+    /// exception's own fixed <see cref="LongHorizonRollingContractException.Code"/>.
+    /// Null for every throw site except the two "not on a preferred day"/
+    /// "not on the preferred long-run day" checks in
+    /// <see cref="LongHorizonActivatedCalendarAlignmentValidator"/>, which set
+    /// it to <c>PREFERRED_DAY_PLACEMENT_INFEASIBLE</c> -- the same reason code
+    /// this phase adds to the reachable Standard-Core sibling condition
+    /// (<see cref="RunningApp.Application.RuntimeCatalog.Schedule.Materialization.CatalogPreferredDayPlacementInfeasibleException"/>).
+    /// This type remains dark/unwired (per its own class doc comment, "not
+    /// thrown by any production/live request path") -- LongHorizon activation
+    /// is explicitly out of this phase's scope; this is a consistency/paperwork
+    /// change only, added so the two structurally-identical conditions share
+    /// one vocabulary if/when LongHorizon is ever activated.
+    /// </summary>
+    public string? Reason { get; }
+
+    public LongHorizonActivatedCalendarAlignmentException(string message, string? reason = null)
+        : base("LONG_HORIZON_ACTIVATED_CALENDAR_ALIGNMENT_FAILED", message)
+    {
+        Reason = reason;
+    }
 }

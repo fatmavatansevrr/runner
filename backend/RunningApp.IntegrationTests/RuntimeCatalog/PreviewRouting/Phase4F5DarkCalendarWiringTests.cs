@@ -188,6 +188,17 @@ public sealed class Phase4F5DarkCalendarWiringTests
     [Fact]
     public async Task DarkCalendar_MaterializerException_BecomesTypedPreviewFailure_PreservingCause()
     {
+        // HM.18 Blocker 3 -- CatalogPreferredDayConfigurationUnsafeException
+        // specifically (unlike its six siblings, still exercised by the
+        // sibling tests in this file/Phase4F5_1ProductionValidatorWiringTests)
+        // is now surfaced as its own typed, public
+        // CatalogPreferredDayPlacementInfeasibleException (HTTP 422,
+        // PREFERRED_DAY_PLACEMENT_INFEASIBLE) rather than the generic
+        // PlanPreviewGenerationFailedException (HTTP 500) this test
+        // previously asserted -- that 500 was the real, live, HM-reachable
+        // gap HM.18 closed. Updated assertion, not an obsolete one: the
+        // underlying mechanism (typed, cause-preserving) is unchanged, only
+        // the specific outer type/HTTP mapping for this one condition.
         var candidate = await LoadControlledPublishedCandidateAsync();
         var gate = new FixedResultEligibilityGate(candidate);
         var cause = new CatalogPreferredDayConfigurationUnsafeException("synthetic unsafe configuration");
@@ -195,7 +206,7 @@ public sealed class Phase4F5DarkCalendarWiringTests
         var generator = new CatalogPreviewGenerator(gate, RealOrchestration(), RealSkeletonOrchestrator(), throwing);
         var asOfDate = new DateOnly(2026, 1, 5);
 
-        var ex = await Assert.ThrowsAsync<PlanPreviewGenerationFailedException>(() =>
+        var ex = await Assert.ThrowsAsync<CatalogPreferredDayPlacementInfeasibleException>(() =>
             generator.GenerateAsync(PilotRequest(asOfDate.AddDays(84)), asOfDate));
 
         Assert.Same(cause, ex.InnerException);

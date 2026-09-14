@@ -184,8 +184,8 @@ public sealed class Hm8Intermediate3DFullDarkVerticalSliceTests
         Assert.True(taperWeeks[0].PlannedWeeklyVolumeKm >= taperWeeks[1].PlannedWeeklyVolumeKm,
             $"Taper must be non-chained/non-increasing for every horizon (week1={taperWeeks[0].PlannedWeeklyVolumeKm}, week2={taperWeeks[1].PlannedWeeklyVolumeKm}).");
 
-        // HM stays dark regardless of newly-feasible catalog headroom.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Intermediate x3D is one of the frozen 8-cell public V1 matrix.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
     }
 
@@ -261,9 +261,9 @@ public sealed class Hm8Intermediate3DFullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonThreeDayIdentity_RemainsOutsideEveryPublicGate()
+    public void HalfMarathonThreeDayIdentity_NowAdmittedByPublicGate_RunwayStaysClosed()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
@@ -272,9 +272,9 @@ public sealed class Hm8Intermediate3DFullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonFourDayIdentity_ZeroDelta_AfterDispatchGeneralization()
+    public void HalfMarathonFourDayIdentity_AlsoNowAdmittedByPublicGate_AfterDispatchGeneralization()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));

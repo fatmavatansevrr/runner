@@ -11,4 +11,13 @@ public sealed class ApiErrorResponse
     public required string ErrorCode { get; init; }
     public required string Message { get; init; }
     public required string CorrelationId { get; init; }
+
+    /// <summary>
+    /// HM.18 Blocker 1 -- advisory-only field, populated only for
+    /// PLAN_HORIZON_START_TOO_EARLY. Never present (serialized) for any other
+    /// error code, so it adds zero shape delta to every pre-existing error
+    /// response. Never used to auto-mutate a request's StartDate; advisory
+    /// metadata for the client only.
+    /// </summary>
+    public DateOnly? RecommendedStartDate { get; init; }
 }

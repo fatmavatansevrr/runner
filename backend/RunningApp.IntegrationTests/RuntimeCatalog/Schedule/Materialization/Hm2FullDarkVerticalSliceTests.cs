@@ -196,8 +196,8 @@ public sealed class Hm2FullDarkVerticalSliceTests
         Assert.True(taperWeeks[0].PlannedWeeklyVolumeKm >= taperWeeks[1].PlannedWeeklyVolumeKm,
             $"Taper must be non-chained/non-increasing for every horizon (week1={taperWeeks[0].PlannedWeeklyVolumeKm}, week2={taperWeeks[1].PlannedWeeklyVolumeKm}).");
 
-        // Section 19: HM stays dark regardless of newly-feasible catalog headroom.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Intermediate x4D is one of the frozen 8-cell public V1 matrix.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
     }
 
@@ -348,9 +348,9 @@ public sealed class Hm2FullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonIdentity_RemainsOutsideEveryPublicGate()
+    public void HalfMarathonIdentity_NowAdmittedByPublicGate_RunwayStaysClosed()
     {
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));

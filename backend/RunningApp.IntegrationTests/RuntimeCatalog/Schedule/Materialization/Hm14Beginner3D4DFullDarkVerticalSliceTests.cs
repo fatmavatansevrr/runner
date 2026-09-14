@@ -254,8 +254,9 @@ public sealed class Hm14Beginner3D4DFullDarkVerticalSliceTests
             $"|lr=[{string.Join(',', volume.LongRunProgression.Weeks.Select(w => w.PlannedLongRunDistanceKm.ToString("F1")))}]" +
             $"|peak={volume.WeeklyVolumePlan.PeakVolumeKm:F1}|taper={taperWeeks[0].PlannedWeeklyVolumeKm:F1}/{taperWeeks[1].PlannedWeeklyVolumeKm:F1}");
 
-        // HM stays dark regardless of newly-feasible catalog headroom.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM.18 -- Beginner x3D/x4D are 2 of the frozen 8-cell public V1
+        // matrix; the public gate now admits them.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Beginner, daysPerWeek));
     }
 
@@ -394,11 +395,14 @@ public sealed class Hm14Beginner3D4DFullDarkVerticalSliceTests
     }
 
     [Fact]
-    public void HalfMarathonBeginnerThreeAndFourDayIdentity_RemainOutsideEveryPublicGate()
+    public void HalfMarathonBeginnerThreeAndFourDayIdentity_NowAdmittedByPublicGate_RunwayStaysClosed()
     {
+        // HM.18 -- updated from "RemainOutsideEveryPublicGate": Beginner
+        // x3D/x4D are 2 of the frozen 8-cell public V1 matrix. Runway remains
+        // untouched and closed.
         foreach (var daysPerWeek in new[] { 3, 4 })
         {
-            Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+            Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
                 GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Beginner, daysPerWeek));
             Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
                 GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Beginner, daysPerWeek));

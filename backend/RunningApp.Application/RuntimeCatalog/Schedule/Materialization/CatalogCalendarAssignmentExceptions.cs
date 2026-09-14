@@ -66,3 +66,24 @@ internal sealed class CatalogDatedSkeletonInvalidException : Exception
 {
     public CatalogDatedSkeletonInvalidException(string message) : base(message) { }
 }
+
+/// <summary>
+/// HM.18 Blocker 3 — the public, typed counterpart of
+/// <see cref="CatalogPreferredDayConfigurationUnsafeException"/> (Standard-Core,
+/// non-LongHorizon path). Prior to this phase, <c>CatalogPreviewGenerator</c>
+/// caught that exception (and its siblings) by exact type and rewrapped ALL
+/// of them into the generic <see cref="RunningApp.Application.Exceptions.PlanPreviewGenerationFailedException"/>
+/// (HTTP 500, PLAN_PREVIEW_GENERATION_FAILED) -- a real, live, HM-reachable
+/// gap: a preferred-days/long-run-day combination that cannot satisfy the
+/// KEY_SESSION/LONG_RUN separation invariant is a client-input-shaped
+/// rejection, not an internal/technical failure, and per this phase's own
+/// requirement no case may surface as a raw 500. Scoped narrowly to exactly
+/// this one condition (deliberately not touching the other six sibling
+/// exceptions in this file, which remain genuinely internal/upstream-validated
+/// conditions) -- see PlanServices/CatalogPreviewGenerator's own catch site.
+/// Mapped to HTTP 422, error code PREFERRED_DAY_PLACEMENT_INFEASIBLE.
+/// </summary>
+public sealed class CatalogPreferredDayPlacementInfeasibleException : Exception
+{
+    public CatalogPreferredDayPlacementInfeasibleException(string message, Exception innerException) : base(message, innerException) { }
+}
