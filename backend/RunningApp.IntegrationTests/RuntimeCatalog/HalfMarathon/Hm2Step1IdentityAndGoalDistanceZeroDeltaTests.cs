@@ -97,12 +97,39 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
     // (Beginner, 5) remains deliberately absent from every resolvable set anywhere -- HM.13 §6
     // froze it PRODUCT_INELIGIBLE, proven by Hm14Beginner3D4DFullDarkVerticalSliceTests'
     // own HalfMarathonBeginnerFiveDay_RemainsProductIneligible test.
+    // HM.16 -- HALF_MARATHON Advanced x3D/x4D/x5D are now frozen, dark-only resolvable cells
+    // (HM.15's numeric authority). (Advanced, 3/4/5) removed from this "not resolvable" theory
+    // below and covered instead by their own HalfMarathon_Advanced{Three,Four,Five}Day_ResolvesDarkOnly
+    // tests. (Advanced, 6) remains a real, never-admitted HALF_MARATHON Advanced frequency.
     [Theory]
-    [InlineData(RunningBackground.Advanced, 4)]
-    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheFiveFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
+    [InlineData(RunningBackground.Advanced, 6)]
+    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheEightFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
         Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
+    }
+
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void HalfMarathon_AdvancedDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly(int daysPerWeek)
+    {
+        var expected = daysPerWeek switch
+        {
+            3 => (V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateVersion),
+            4 => (V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateVersion),
+            _ => (V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion),
+        };
+        var resolved = V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek);
+        Assert.Equal(expected, resolved);
+
+        var tryResolved = V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek);
+        Assert.Equal(resolved, tryResolved);
+
+        // Still outside every public/Runway gate -- dark-only, mirroring every other HM cell.
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, daysPerWeek));
     }
 
     [Fact]

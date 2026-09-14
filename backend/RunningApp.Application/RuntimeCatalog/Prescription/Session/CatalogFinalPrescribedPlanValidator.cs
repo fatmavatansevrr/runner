@@ -128,6 +128,15 @@ internal static class CatalogFinalPrescribedPlanValidator
             return VolumeSafetyPolicy.ForHalfMarathonBeginnerDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
 
+        // HM.16 -- parallel Advanced branch (HM.15's frozen 0.46/0.40/0.36 hard-cap authority for
+        // 3D/4D/5D respectively), mirroring VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek.
+        // Unlike Beginner, admits all three frequencies (HM.15 §9: all PRODUCT_ELIGIBLE).
+        if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            candidate.Level == "ADVANCED" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5))
+        {
+            return VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
+        }
+
         // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
         // phase's own deeper search (not caught by HM.0's original audit,
         // which only inspected CatalogVolumeAndLongRunPlanner and
@@ -241,7 +250,13 @@ internal static class CatalogFinalPrescribedPlanValidator
             (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateKey &&
                 candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateVersion) ||
             (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateKey &&
-                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion))
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion) ||
+            // HM.16 -- Advanced 3D/4D share the identical single-KEY-lane Taper stage shape
+            // (HM.15 §5/§6: one true-hard KEY, no KEY2 at either frequency).
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
@@ -257,8 +272,13 @@ internal static class CatalogFinalPrescribedPlanValidator
         // semantic (EASY_EQUIVALENT, never a second true hard activation) -- the new
         // TAPER_HM_SECONDARY_EASY stage, always bound to EASY_STANDARD (no fallback chain
         // needed: this stage carries no runtime eligibility condition, HM.9 §11).
-        if (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
-            candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion)
+        // HM.16 -- Advanced x5D shares the identical dual-KEY-lane Taper IDENTITY shape with
+        // Intermediate x5D (HM.15 §7: Taper KEY2 is EASY_EQUIVALENT for Advanced too, reusing the
+        // same TAPER_HM_SECONDARY_EASY stage key -- only Build/RaceSpecific KEY2 differs).
+        if ((candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion))
         {
             var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
             var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();

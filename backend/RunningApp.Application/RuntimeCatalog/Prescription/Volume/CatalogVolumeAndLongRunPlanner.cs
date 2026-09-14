@@ -124,6 +124,21 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonBeginnerDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
+        // HM.16 -- implements HM.15's frozen HALF_MARATHON Advanced 3D/4D/5D numeric authority.
+        // Deliberately a SEPARATE, parallel condition block (not folded into the Intermediate
+        // branch above): confirmed by direct read of PlanCatalogBundleLoader.cs/advanced-modifier.v3.json
+        // that Advanced's own catalog experience label is the literal string "ADVANCED" (matching
+        // the backend RunningBackground.Advanced enum name exactly -- unlike Beginner's own "NEW"
+        // label, this one is not a distinct string, verified directly rather than assumed per this
+        // phase's own §37 recurring-assumption-family instruction). All three frequencies admitted
+        // (unlike Beginner's deliberate no-5D-arm): HM.15 §9 froze all three PRODUCT_ELIGIBLE.
+        if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            request.Candidate.Level == "ADVANCED" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
+        }
+
         // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
         // every branch above now explicitly requires CanonicalDistanceFamily
         // == "TEN_K", so any candidate reaching this point with the
@@ -282,6 +297,17 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         {
             throw new CatalogVolumeInvalidReadinessInputException(
                 "HALF_MARATHON Beginner requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
+        }
+
+        // HM.16 -- mechanical extension of the same fail-closed guard to the three new Advanced
+        // policies (HM.15 §14/§30 item 4a: GoldenFixtureStartingVolumeKm -- 24.5/31.0/36.0 -- is
+        // calibration-only, never a missing/zero-readiness fallback). Same rationale, same message
+        // shape as Intermediate/Beginner above.
+        if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced3D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced4D) ||
+            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced5D))
+        {
+            throw new CatalogVolumeInvalidReadinessInputException(
+                "HALF_MARATHON Advanced requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
         }
 
         // Phase 10K-GEN.9 -- GEN.8's frozen Advanced readiness authority:

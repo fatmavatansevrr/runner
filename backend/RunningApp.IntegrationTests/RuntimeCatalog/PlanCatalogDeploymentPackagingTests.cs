@@ -63,7 +63,26 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // existing, unmodified HALF_MARATHON_MASTER v1 / RUN_LAYOUT_3D-4D v1 / HALF_MARATHON_WORKOUT_PROGRESSION
     // v1 verbatim). peak-volume-bands.v9.json was edited IN PLACE again (two more purely-additive
     // rows, Beginner 3D/4D) -- no new file for it.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 148;
+    // Phase HM.16 -- +6 new source documents: level-modifiers/advanced-modifier.v3.json (adds
+    // HM_PACE v1 and FARTLEK v4 to eligibleWorkouts -- FARTLEK v4 closes a real, disclosed
+    // CAPABILITY_GAP found by this phase's own full-graph validation: the existing v1/v2
+    // HALF_MARATHON_WORKOUT_PROGRESSION lane-0 BUILD_FASTER_THAN_HM_INTRO stage references
+    // FARTLEK v4, which v2's own eligibleWorkouts never declared -- Advanced needs it too since
+    // 3D/4D/5D all reuse lane 0 verbatim); combinations/half-marathon-3d-advanced.v1.json;
+    // combinations/half-marathon-4d-advanced.v1.json (both reuse the existing, unmodified
+    // HALF_MARATHON_MASTER v1 / RUN_LAYOUT_3D-4D v1 / HALF_MARATHON_WORKOUT_PROGRESSION v1
+    // verbatim); templates/half-marathon-master.v3.json (byte-identical to v2 except
+    // workoutProgression now points at v3, scoped only to the new 5D Advanced combination --
+    // v1/v2 consumers are completely unaffected); workout-progressions/half-marathon-workout-progression.v3.json
+    // (introduces Advanced 5D's own new KEY2/lane-1 Build/RaceSpecific content --
+    // BUILD_HM_SECONDARY_THRESHOLD_ADVANCED/RACE_SPECIFIC_HM_SECONDARY_THRESHOLD_ADVANCED,
+    // THRESHOLD_TEMPO-based true-hard, distinct from v2's own FARTLEK-based Intermediate content;
+    // Foundation/Taper lane-1 stages are reused verbatim, byte-identical stage keys, since HM.15
+    // froze identical EASY_EQUIVALENT content there); combinations/half-marathon-5d-advanced.v1.json
+    // (the only new combination referencing the new master v3/progression v3 pair). peak-volume-bands.v9.json
+    // was edited IN PLACE again (three more purely-additive rows, Advanced 3D/4D/5D) -- no new
+    // file for it.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 154;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

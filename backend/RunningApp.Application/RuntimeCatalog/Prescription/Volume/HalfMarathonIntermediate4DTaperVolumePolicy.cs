@@ -229,3 +229,131 @@ internal static class HalfMarathonBeginner4DTaperVolumePolicy
     /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
     public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
 }
+
+/// <summary>
+/// Phase HM.16 -- freezes the two taper-week volume multipliers for
+/// <c>HALF_MARATHON × ADVANCED × 3D</c>'s reused 2-week Taper phase (the same
+/// frequency-generic Foundation/Build/RaceSpecific/Taper=2 structure every
+/// other HM cell uses). Values reused directly from HM.15 §19's own frozen
+/// decision -- 0.70/0.43 reused unchanged. HM.15 §19 re-examined the same
+/// four evidence sources (Mujika &amp; Padilla, Marathon Handbook, best-running-tips.com,
+/// runtothefinish.com) against Advanced 3D's own frozen peak (42.0km):
+/// comfortably below best-running-tips.com's own named ~56km/week
+/// lighter-taper-exception threshold, so the standard regime applies cleanly,
+/// same reasoning as every Intermediate/Beginner cell. Classification:
+/// <c>EVIDENCE_INFORMED_PRODUCT_DEFAULT</c> (clean fit, no disclosed tension --
+/// contrast <see cref="HalfMarathonAdvanced5DTaperVolumePolicy"/> below).
+///
+/// <see cref="TaperWeek1VolumeMultiplier"/> = 0.70 (≈30% reduction).
+/// <see cref="TaperWeek2VolumeMultiplier"/> = 0.43 (≈57% reduction, final/
+/// deepest week). At the frozen 42.0km reference peak: 42.0 → 29.4→29.5 →
+/// 18.06→18.0km (rounded to the 0.5km grid).
+///
+/// Dark-only: <see cref="VolumeSafetyPolicy.HalfMarathonAdvanced3D"/> consumes
+/// these values together with HM.15's frozen peak/growth/long-run-share
+/// authority. No public routing/gate is widened by that named policy's
+/// existence.
+/// </summary>
+internal static class HalfMarathonAdvanced3DTaperVolumePolicy
+{
+    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ≈30% reduction.</summary>
+    public const double TaperWeek1VolumeMultiplier = 0.70d;
+
+    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ≈57% reduction.</summary>
+    public const double TaperWeek2VolumeMultiplier = 0.43d;
+
+    /// <summary>The frozen HM.15 pre-taper reference this cell's taper multipliers are computed against (not re-decided here).</summary>
+    public const double ResolvedPeakReferenceKm = 42.0d;
+
+    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
+    public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
+}
+
+/// <summary>
+/// Phase HM.16 -- freezes the two taper-week volume multipliers for
+/// <c>HALF_MARATHON × ADVANCED × 4D</c>'s reused 2-week Taper phase. Values
+/// reused directly from HM.15 §19's own frozen decision -- 0.70/0.43 reused
+/// unchanged. HM.15 §19 disclosed a real, non-blocking evidence tension for
+/// this cell: its own PeakVolumeBand ceiling (60.0km) exceeds
+/// best-running-tips.com's own named ~56km/week lighter-taper-exception
+/// threshold, though this cell's own SELECTED peak (53.0km) does not. No
+/// exact alternative percentage exists anywhere in this engagement's evidence
+/// base for the "lighter taper" exception, so 0.70/0.43 is retained as the
+/// only concrete number available -- not because the evidence cleanly
+/// supports it at this cell's own band ceiling. Classification:
+/// <c>EVIDENCE_INFORMED_PRODUCT_DEFAULT</c>, with a disclosed tension at the
+/// band ceiling (not at the selected peak itself).
+///
+/// <see cref="TaperWeek1VolumeMultiplier"/> = 0.70 (≈30% reduction).
+/// <see cref="TaperWeek2VolumeMultiplier"/> = 0.43 (≈57% reduction, final/
+/// deepest week). At the frozen 53.0km reference peak: 53.0 → 37.1→37.0 →
+/// 22.79→23.0km (rounded to the 0.5km grid).
+///
+/// Dark-only: <see cref="VolumeSafetyPolicy.HalfMarathonAdvanced4D"/> consumes
+/// these values together with HM.15's frozen peak/growth/long-run-share
+/// authority. No public routing/gate is widened by that named policy's
+/// existence.
+/// </summary>
+internal static class HalfMarathonAdvanced4DTaperVolumePolicy
+{
+    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ≈30% reduction.</summary>
+    public const double TaperWeek1VolumeMultiplier = 0.70d;
+
+    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ≈57% reduction.</summary>
+    public const double TaperWeek2VolumeMultiplier = 0.43d;
+
+    /// <summary>The frozen HM.15 pre-taper reference this cell's taper multipliers are computed against (not re-decided here).</summary>
+    public const double ResolvedPeakReferenceKm = 53.0d;
+
+    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
+    public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
+}
+
+/// <summary>
+/// Phase HM.16 -- freezes the two taper-week volume multipliers for
+/// <c>HALF_MARATHON × ADVANCED × 5D</c>'s reused 2-week Taper phase. Values
+/// reused directly from HM.15 §19's own frozen decision -- 0.70/0.43 reused
+/// unchanged, per explicit instruction not to reinterpret or replace them.
+///
+/// <b>Genuine disclosed evidence tension (HM.15 §19/§30 item 2, NOT resolved
+/// by this implementation phase, only implemented as frozen):</b> this cell's
+/// own selected peak (62.0km/week) itself EXCEEDS best-running-tips.com's own
+/// named ~56km/week "lighter taper" exception threshold -- the first HM cell
+/// where the evidence source's own stated exception condition is genuinely
+/// triggered by the frozen selected-peak value itself, not merely an edge of
+/// its band. The source's own guidance is qualitative ("lighter taper") with
+/// no exact alternative percentage ever cited in this engagement's evidence
+/// record, so no new number is invented here. 0.70/0.43 is frozen as the only
+/// concrete value available -- potentially sub-optimal (a deeper taper
+/// reduction is not itself unsafe) but not unsafe; HM.16's own test suite
+/// verifies this taper depth still produces a feasible, non-degenerate
+/// prescription (both KEY roles, including the genuinely-hard KEY2 which
+/// reverts to EASY_EQUIVALENT in Taper anyway per HM.15 §7, still receive
+/// real dose at Taper W2 volume) rather than assuming it does.
+///
+/// <see cref="TaperWeek1VolumeMultiplier"/> = 0.70 (≈30% reduction).
+/// <see cref="TaperWeek2VolumeMultiplier"/> = 0.43 (≈57% reduction, final/
+/// deepest week). At the frozen 62.0km reference peak: 62.0 → 43.4→43.5 →
+/// 26.66→26.5km (rounded to the 0.5km grid). Note: Taper-phase KEY2 reverts to
+/// EASY_EQUIVALENT (HM.15 §7) -- Taper W2's own reduced volume is never asked
+/// to carry two true-hard KEY sessions in the same week.
+///
+/// Dark-only: <see cref="VolumeSafetyPolicy.HalfMarathonAdvanced5D"/> consumes
+/// these values together with HM.15's frozen peak/growth/long-run-share
+/// authority. No public routing/gate is widened by that named policy's
+/// existence.
+/// </summary>
+internal static class HalfMarathonAdvanced5DTaperVolumePolicy
+{
+    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ≈30% reduction.</summary>
+    public const double TaperWeek1VolumeMultiplier = 0.70d;
+
+    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ≈57% reduction.</summary>
+    public const double TaperWeek2VolumeMultiplier = 0.43d;
+
+    /// <summary>The frozen HM.15 pre-taper reference this cell's taper multipliers are computed against (not re-decided here).</summary>
+    public const double ResolvedPeakReferenceKm = 62.0d;
+
+    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
+    public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
+}

@@ -179,12 +179,18 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         var baseCandidate = Candidate();
         var hmCandidate = new PlanCatalogCandidateSummary
         {
-            CandidateKey = "HALF_MARATHON__4D__ADVANCED_UNSUPPORTED",
+            // HM.16 -- HALF_MARATHON x ADVANCED x 4D is now a genuinely supported dark-only
+            // identity (HalfMarathonAdvanced4D). This test's own premise (an UNSUPPORTED
+            // HALF_MARATHON x ADVANCED combination) is re-pointed at 6D, which HM.16 never
+            // admitted (only 3/4/5 are frozen PRODUCT_ELIGIBLE, HM.15 §9) -- still a real,
+            // unsupported HALF_MARATHON x ADVANCED frequency, preserving this test's own
+            // fail-closed intent with zero change to its assertion.
+            CandidateKey = "HALF_MARATHON__6D__ADVANCED_UNSUPPORTED",
             CandidateVersion = 1,
             CandidateStatus = baseCandidate.CandidateStatus,
             CanonicalDistanceFamily = "HALF_MARATHON",
             Level = "ADVANCED",
-            DaysPerWeek = baseCandidate.DaysPerWeek,
+            DaysPerWeek = 6,
             CoreCycle = baseCandidate.CoreCycle,
             MasterTemplate = baseCandidate.MasterTemplate,
             Layout = baseCandidate.Layout,
@@ -229,7 +235,7 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         var ex = Assert.Throws<CatalogVolumeUnsupportedDistanceFamilyException>(() =>
             new CatalogVolumeAndLongRunPlanner().Build(new CatalogVolumePlanningRequest(
                 hmCandidate, bound, prescription,
-                new CatalogPeakVolumeBand("HALF_MARATHON", "ADVANCED", 4, 46, 60, "PEAK_VOLUME_BANDS_V1", 1))));
+                new CatalogPeakVolumeBand("HALF_MARATHON", "ADVANCED", 6, 46, 60, "PEAK_VOLUME_BANDS_V1", 1))));
 
         Assert.Equal("CATALOG_VOLUME_UNSUPPORTED_DISTANCE_FAMILY", ex.Code);
     }

@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "documentType": "PLAN_TEMPLATE",
+    "schemaVersion": 2,
+    "key": "HALF_MARATHON_MASTER",
+    "version": 3,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase HM.16 -- byte-identical to v2 in every field except workoutProgression, which now points to HALF_MARATHON_WORKOUT_PROGRESSION v3 (Advanced 5D's own new KEY2/lane-1 content, PHASE_HM_15 §7/§8). No phase/taper-duration/CoreCycle authority is touched -- CoreCycle (10/14/16), the 2-week Taper phase, and every phase's own week bounds are byte-identical to v1/v2. Scoped only to HALF_MARATHON__5D__ADVANCED's own combination file; v1 (3D/4D) and v2 (Intermediate 5D) remain completely untouched and continue to resolve their own unchanged workoutProgression versions (v1/v2 respectively) with zero delta.",
+  "distanceFamily": "HALF_MARATHON",
+  "coreCycle": {
+    "minimumWeeks": 10,
+    "defaultWeeks": 14,
+    "maximumWeeks": 16
+  },
+  "supportedRunsPerWeek": [5],
+  "phasesDefineDefaultCycleOnly": true,
+  "phases": [
+    {
+      "phaseKey": "FOUNDATION",
+      "minimumWeeks": 2,
+      "preferredWeeks": 3,
+      "maximumWeeks": 4,
+      "intents": ["AEROBIC_BASE"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN"],
+      "compressionPriority": 1,
+      "extensionPriority": 1,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "BUILD",
+      "minimumWeeks": 3,
+      "preferredWeeks": 4,
+      "maximumWeeks": 5,
+      "intents": ["VOLUME_BUILD", "INTENSITY_INTRODUCTION"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 2,
+      "extensionPriority": 2,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "minimumWeeks": 3,
+      "preferredWeeks": 5,
+      "maximumWeeks": 5,
+      "intents": ["RACE_SPECIFIC_SHARPENING"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 3,
+      "extensionPriority": 3,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "TAPER",
+      "minimumWeeks": 2,
+      "preferredWeeks": 2,
+      "maximumWeeks": 2,
+      "intents": ["TAPER"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY", "RACE"],
+      "compressionPriority": 4,
+      "extensionPriority": 4,
+      "isCompressionProtected": true
+    }
+  ],
+  "workoutProgression": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "key": "HALF_MARATHON_WORKOUT_PROGRESSION",
+    "version": 3
+  },
+  "requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"]
+}

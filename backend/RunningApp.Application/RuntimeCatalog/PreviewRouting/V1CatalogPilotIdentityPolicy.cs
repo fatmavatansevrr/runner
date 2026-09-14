@@ -269,6 +269,48 @@ public static class V1CatalogPilotIdentityPolicy
     public const int HalfMarathonFourDayBeginnerCandidateVersion = 1;
 
     /// <summary>
+    /// HM.16 -- the dark-only, Half-Marathon Advanced×3D Core candidate
+    /// identity, implementing HM.15's frozen numeric authority
+    /// (PHASE_HM_15_ADVANCED_3D_4D_5D_NUMERIC_AND_LEVEL_AUTHORITY_CLOSURE.md).
+    /// Mirrors <see cref="HalfMarathonThreeDayIntermediateCandidateKey"/>'s own
+    /// exact dark-only wiring precedent: deliberately NOT added to
+    /// <see cref="IsSupportedLevelFrequency(RunningBackground,int)"/> (the
+    /// TenK-only overload <see cref="IsSupportedIdentity"/> consults) or to
+    /// <see cref="IsSupportedPreparationRunwayLevelFrequency"/> — the public
+    /// gate and the Runway gate are both untouched by this phase. Resolvable
+    /// only through the distance-aware
+    /// <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/>/
+    /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/>
+    /// overloads, which no production public-routing call site invokes.
+    /// Unlike Beginner (no 5D arm, PRODUCT_INELIGIBLE), Advanced DOES admit
+    /// 3D/4D/5D — HM.15 §9 froze all three as PRODUCT_ELIGIBLE.
+    /// </summary>
+    public const string HalfMarathonThreeDayAdvancedCandidateKey = "HALF_MARATHON__3D__ADVANCED";
+    public const int HalfMarathonThreeDayAdvancedCandidateVersion = 1;
+
+    /// <summary>
+    /// HM.16 -- the dark-only, Half-Marathon Advanced×4D Core candidate
+    /// identity. See <see cref="HalfMarathonThreeDayAdvancedCandidateKey"/>'s
+    /// own doc comment for the full rationale (same wiring precedent).
+    /// </summary>
+    public const string HalfMarathonFourDayAdvancedCandidateKey = "HALF_MARATHON__4D__ADVANCED";
+    public const int HalfMarathonFourDayAdvancedCandidateVersion = 1;
+
+    /// <summary>
+    /// HM.16 -- the dark-only, Half-Marathon Advanced×5D Core candidate
+    /// identity, implementing HM.15's frozen §7/§8 KEY2 structural authority
+    /// (genuine second true-hard KEY2 via THRESHOLD_TEMPO in Build/RaceSpecific,
+    /// EASY_EQUIVALENT in Foundation/Taper, never HM_PACE) via a new
+    /// distance-wide progression version (half-marathon-workout-progression.v3.json)
+    /// and a corresponding new HALF_MARATHON_MASTER v3 pointing at it. See
+    /// <see cref="HalfMarathonThreeDayAdvancedCandidateKey"/>'s own doc comment
+    /// for the shared dark-only wiring precedent.
+    /// </summary>
+    public const string HalfMarathonFiveDayAdvancedCandidateKey = "HALF_MARATHON__5D__ADVANCED";
+    public const int HalfMarathonFiveDayAdvancedCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
     /// pilot recognizes for TEN_K. Deliberately enumerated rather than
     /// derived, so a future cell can never be admitted by accident — the two
@@ -316,12 +358,18 @@ public static class V1CatalogPilotIdentityPolicy
             // Intermediate 5D; HM.13 for Beginner 3D/4D); deliberately not a broad "any Half-Marathon
             // combination" arm, and deliberately NOT (RunningBackground.Beginner, 5) — HM.13 §6 froze
             // that cell PRODUCT_INELIGIBLE.
+            // HM.16 -- widened again to admit (Advanced, 3)/(Advanced, 4)/(Advanced, 5),
+            // implementing HM.15's frozen PRODUCT_ELIGIBLE matrix (all three Advanced
+            // frequencies, none deliberately excluded -- unlike Beginner x5D).
             Domain.Enums.GoalDistance.HalfMarathon => (level, daysPerWeek) is
                 (RunningBackground.Intermediate, 3) or
                 (RunningBackground.Intermediate, 4) or
                 (RunningBackground.Intermediate, 5) or
                 (RunningBackground.Beginner, 3) or
-                (RunningBackground.Beginner, 4),
+                (RunningBackground.Beginner, 4) or
+                (RunningBackground.Advanced, 3) or
+                (RunningBackground.Advanced, 4) or
+                (RunningBackground.Advanced, 5),
             _ => false,
         };
     // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the
@@ -424,7 +472,11 @@ public static class V1CatalogPilotIdentityPolicy
         // HM.14 — dark-only, additive. See HalfMarathonThreeDayBeginnerCandidateKey's own doc comment. No 5D arm: PRODUCT_INELIGIBLE.
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Beginner, 3) => (HalfMarathonThreeDayBeginnerCandidateKey, HalfMarathonThreeDayBeginnerCandidateVersion),
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Beginner, 4) => (HalfMarathonFourDayBeginnerCandidateKey, HalfMarathonFourDayBeginnerCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D/5D and Beginner 3D/4D identities, are resolvable.")
+        // HM.16 — dark-only, additive. See HalfMarathonThreeDayAdvancedCandidateKey's own doc comment.
+        (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Advanced, 3) => (HalfMarathonThreeDayAdvancedCandidateKey, HalfMarathonThreeDayAdvancedCandidateVersion),
+        (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Advanced, 4) => (HalfMarathonFourDayAdvancedCandidateKey, HalfMarathonFourDayAdvancedCandidateVersion),
+        (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Advanced, 5) => (HalfMarathonFiveDayAdvancedCandidateKey, HalfMarathonFiveDayAdvancedCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D/5D, Beginner 3D/4D, and Advanced 3D/4D/5D identities, are resolvable.")
     };
 
     /// <summary>

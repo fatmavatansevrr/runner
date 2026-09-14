@@ -23,6 +23,9 @@
     { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 28, "maximumKm": 40 },
     { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 44, "maximumKm": 58 },
     { "distanceFamily": "HALF_MARATHON", "experience": "NEW", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },
-    { "distanceFamily": "HALF_MARATHON", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 28, "maximumKm": 38 }
+    { "distanceFamily": "HALF_MARATHON", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 28, "maximumKm": 38 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 3, "minimumKm": 36, "maximumKm": 48 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 4, "minimumKm": 46, "maximumKm": 60 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 5, "minimumKm": 54, "maximumKm": 70 }
   ]
 }

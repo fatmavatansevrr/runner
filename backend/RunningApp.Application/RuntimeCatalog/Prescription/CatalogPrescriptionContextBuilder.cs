@@ -513,7 +513,13 @@ internal static class CatalogPrescriptionContextValidator
             (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateKey &&
                 boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayBeginnerCandidateVersion) ||
             (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateKey &&
-                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion))
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayBeginnerCandidateVersion) ||
+            // HM.16 -- Advanced 3D/4D share the identical single-KEY-lane Taper stage shape
+            // (HM.15 §5/§6: one true-hard KEY, no KEY2 at either frequency).
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonThreeDayAdvancedCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFourDayAdvancedCandidateVersion))
         {
             var valid = taperKeySessions.Count == 2 && taperKeySessions.All(s =>
                 (s.ProgressionStageKey == "TAPER_HM_ACTIVATION" && s.WorkoutDefinitionKey == "HM_PACE") ||
@@ -527,8 +533,18 @@ internal static class CatalogPrescriptionContextValidator
         // KEY_SESSION Taper sessions per week (LaneOrdinal 0 primary, unchanged identity
         // shape; LaneOrdinal 1 secondary, HM.9's frozen EASY_EQUIVALENT Taper semantic, the
         // new TAPER_HM_SECONDARY_EASY stage bound to EASY_STANDARD).
-        if (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
-            boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion)
+        // HM.16 -- Advanced x5D shares the identical dual-KEY-lane Taper stage IDENTITY shape
+        // with Intermediate x5D: HM.15 §7 froze Taper KEY2 as EASY_EQUIVALENT for Advanced too
+        // (mirrors Intermediate's own Foundation/Taper choice exactly -- the new
+        // half-marathon-workout-progression.v3.json's own Taper lane-1 reuses the identical
+        // TAPER_HM_SECONDARY_EASY stage key/EASY_STANDARD identity, deliberately not a new
+        // Advanced-specific Taper stage, since the content is genuinely identical). Only
+        // Build/RaceSpecific KEY2 differs for Advanced (THRESHOLD_TEMPO, not FARTLEK) -- Taper
+        // is unaffected, so the same validation shape applies unchanged.
+        if ((boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion))
         {
             var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
             var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();
