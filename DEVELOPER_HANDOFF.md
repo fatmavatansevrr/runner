@@ -83,7 +83,7 @@ Before moving to production, address the following debt items:
 When starting Phase 2, implement features in the following logical sequence:
 
 1. **Authentication (JWT)**: Setup identity provider, add token interceptors to Dio client, and authorize API endpoints.
-2. **Additional Plan Templates**: Seed additional schedules for Marathon, Half Marathon, and 10K distances, supporting varying runner experience levels.
+2. **Additional Plan Templates**: ~~Seed additional schedules for Marathon, Half Marathon, and 10K distances, supporting varying runner experience levels.~~ **Superseded (current state):** 10K is implemented and public via the real catalog engine (see `PHASE_LEDGER.md`'s GEN.* table). `HALF_MARATHON` V1 Standard Core is likewise implemented and public — Beginner 3D/4D, Intermediate 3D/4D/5D, Advanced 3D/4D/5D across a 10–16 week horizon (see `HALF_MARATHON_V1_FINAL_CLOSURE_AND_EXPANSION_HANDOFF.md` for the full frozen authority and the post-V1 expansion tracks — 2D, 6D, 7-9W compressed, ≤6W readiness-only, >16W Runway/LongHorizon — which are new product expansions, not remaining initial-template work). Marathon has no catalog implementation and remains genuinely future work, per this item's original scope.
 3. **Wearable Integrations**: Wire Apple HealthKit / Google Fit SDKs in the mobile app, and create endpoints in the backend to sync activity logs.
 4. **Adaptive Engine implementation**: Replace the `PlaceholderAdaptationEngine` with real rescheduling algorithms (e.g., shifting runs, increasing rest intervals) based on compliance metrics.
 5. **Real-time Notifications**: Setup Firebase Cloud Messaging for morning workout reminders and weekly summaries.
