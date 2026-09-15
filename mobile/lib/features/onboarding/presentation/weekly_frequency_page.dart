@@ -59,11 +59,13 @@ class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
     }
   }
 
-  /// HM.18 §32/§13 -- the frozen HALF_MARATHON V1 public frequency matrix
-  /// (Beginner 3D/4D, Intermediate 3D/4D/5D, Advanced 3D/4D/5D). Never
-  /// includes 2D/6D, never includes Beginner x5D -- both are permanently
-  /// out of V1 scope (HM.17 §2/§3, HM.13 §6). Kept in exact sync with the
-  /// backend's own real, frozen gate (`V1CatalogPilotIdentityPolicy`'s
+  /// HM.18 §32/§13 -- the frozen HALF_MARATHON V1 public frequency matrix.
+  /// HM-X1.4 -- widened to admit Intermediate x6D and Advanced x6D
+  /// (Beginner 3D/4D, Intermediate 3D/4D/5D/6D, Advanced 3D/4D/5D/6D). Never
+  /// includes Beginner x6D, never includes 2D, never includes Beginner x5D --
+  /// all permanently out of V1 scope (HM-X1.2's own frozen authority never
+  /// evaluated Beginner x6D; HM.17 §2/§3, HM.13 §6). Kept in exact sync with
+  /// the backend's own real, frozen gate (`V1CatalogPilotIdentityPolicy`'s
   /// HALF_MARATHON arm) -- if that backend matrix ever changes, this table
   /// must be updated to match, not derived automatically (no shared codegen
   /// exists between backend and this client, same discipline already used
@@ -71,11 +73,13 @@ class _WeeklyFrequencyPageState extends ConsumerState<WeeklyFrequencyPage> {
   /// `RunningBackground.experienced` has no HALF_MARATHON (or TEN_K) V1
   /// arm at all today, so it is intentionally left out of this map --
   /// unrestricted for that level, unchanged from pre-HM.18 behavior; the
-  /// backend's own fail-closed gate remains the real safety net.
+  /// backend's own fail-closed gate remains the real safety net. This is
+  /// documented pre-existing UX debt from PHASE_EXP_0, not addressed by
+  /// HM-X1.4 (out of this phase's scope).
   static const Map<RunningBackground, List<int>> _halfMarathonFrequencyMatrix = {
     RunningBackground.beginner: [3, 4],
-    RunningBackground.intermediate: [3, 4, 5],
-    RunningBackground.advanced: [3, 4, 5],
+    RunningBackground.intermediate: [3, 4, 5, 6],
+    RunningBackground.advanced: [3, 4, 5, 6],
   };
 
   @override

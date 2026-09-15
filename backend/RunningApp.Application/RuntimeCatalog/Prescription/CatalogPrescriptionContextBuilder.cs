@@ -541,10 +541,28 @@ internal static class CatalogPrescriptionContextValidator
         // Advanced-specific Taper stage, since the content is genuinely identical). Only
         // Build/RaceSpecific KEY2 differs for Advanced (THRESHOLD_TEMPO, not FARTLEK) -- Taper
         // is unaffected, so the same validation shape applies unchanged.
+        // HM-X1.4 -- discovered by this phase's own real end-to-end HTTP acceptance testing
+        // (a genuine, independent gap HM-X1.3's own dark test harness never exercised, since it
+        // called CatalogCandidateEligibilityGate.LoadForInternalDryRunAsync + internal
+        // prescription helpers directly, bypassing this exact validator): HALF_MARATHON x6D
+        // Intermediate/Advanced share the identical dual-KEY-lane Taper stage IDENTITY shape as
+        // their own x5D siblings (HM-X1.2 §2/§21: RUN_LAYOUT_6D's structural delta is exactly one
+        // added EASY_SUPPORT session; Taper's 2-KEY-lane shape and TAPER_HM_ACTIVATION/
+        // TAPER_HM_SECONDARY_EASY stage identities are frozen unchanged from 5D for both levels).
+        // Without this widening, every real HTTP HALF_MARATHON x6D generate-preview request threw
+        // an uncaught TAPER_SHARPEN_CONTEXT_MISSING 500 -- HM-X1.3's own analogous fix to
+        // CatalogFinalPrescribedPlanValidator.ValidateTaperCompleteness (its §10 item 7) covered
+        // that sibling validator but not this one. This is the same narrow, additive
+        // identity-list widening pattern as every prior HM.11/HM.16 addition above -- no new
+        // authority, no training-content change.
         if ((boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
                 boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion) ||
             (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateKey &&
-                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion))
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateVersion))
         {
             var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
             var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();

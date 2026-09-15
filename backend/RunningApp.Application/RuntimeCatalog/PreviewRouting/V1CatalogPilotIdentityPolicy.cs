@@ -311,36 +311,34 @@ public static class V1CatalogPilotIdentityPolicy
     public const int HalfMarathonFiveDayAdvancedCandidateVersion = 1;
 
     /// <summary>
-    /// HM-X1.3 -- the dark-only, Half-Marathon Intermediate x6D Core candidate identity,
+    /// HM-X1.3 -- the Half-Marathon Intermediate x6D Core candidate identity,
     /// implementing HM-X1.2's frozen numeric/structural authority
-    /// (PHASE_HM_X1_2_..._STRUCTURAL_AND_NUMERIC_AUTHORITY_CLOSURE.md). Mirrors
-    /// <see cref="HalfMarathonFiveDayIntermediateCandidateKey"/>'s own exact dark-only
-    /// wiring precedent from before HM.18's later public-gate widening: deliberately
-    /// NOT added to <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>
-    /// (the list <see cref="IsSupportedIdentity"/> now consults for every HALF_MARATHON
-    /// identity, including 5D, post-HM.18) or to <see cref="IsSupportedPreparationRunwayLevelFrequency"/>
-    /// -- the public gate and the Runway gate are both untouched by this phase.
-    /// Resolvable only through the distance-aware
-    /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/> overload directly
-    /// (e.g. by an internal test harness loading via <c>CatalogCandidateEligibilityGate.LoadForInternalDryRunAsync</c>);
-    /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/> still returns
-    /// null for this identity (gated by the same untouched allow-list), matching the
-    /// non-throwing public-routing check's own dark-only behavior.
+    /// (PHASE_HM_X1_2_..._STRUCTURAL_AND_NUMERIC_AUTHORITY_CLOSURE.md). Originally wired
+    /// dark-only (HM-X1.3), mirroring <see cref="HalfMarathonFiveDayIntermediateCandidateKey"/>'s
+    /// own exact dark-only wiring precedent from before HM.18's later public-gate widening.
+    /// HM-X1.4 -- now publicly activated: added to
+    /// <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/> (the list
+    /// <see cref="IsSupportedIdentity"/> consults for every HALF_MARATHON identity), so
+    /// <see cref="TryResolveCandidate(GoalDistance,RunningBackground,int)"/> now resolves this
+    /// identity too, through the same real public routing path as every other HALF_MARATHON
+    /// Core cell. <see cref="IsSupportedPreparationRunwayLevelFrequency"/> remains untouched --
+    /// HM-X1.4 activates Core only, not Preparation Runway/LongHorizon.
     /// </summary>
     public const string HalfMarathonSixDayIntermediateCandidateKey = "HALF_MARATHON__6D__INTERMEDIATE";
     public const int HalfMarathonSixDayIntermediateCandidateVersion = 1;
 
     /// <summary>
-    /// HM-X1.3 -- the dark-only, Half-Marathon Advanced x6D Core candidate identity. See
+    /// HM-X1.3 -- the Half-Marathon Advanced x6D Core candidate identity. See
     /// <see cref="HalfMarathonSixDayIntermediateCandidateKey"/>'s own doc comment for the
-    /// full rationale (same dark-only wiring precedent). Implements HM-X1.2's frozen
-    /// §4/§5/§30 KEY2 structural authority (genuine second true-hard KEY2 via
-    /// THRESHOLD_TEMPO in Build/RaceSpecific, EASY_EQUIVALENT in Foundation/Taper, never
-    /// HM_PACE) via the existing, unmodified half-marathon-workout-progression.v3.json
-    /// (the same content already bound at Advanced 5D) and a new, minimal, additive
-    /// HALF_MARATHON_MASTER v5 pointing at it (see half-marathon-master.v5.json's own
-    /// comment for why a new master version -- not v3 itself -- was structurally
-    /// required). No third KEY_SESSION slot, no new hard stimulus.
+    /// full rationale (same wiring precedent, now publicly activated by HM-X1.4).
+    /// Implements HM-X1.2's frozen §4/§5/§30 KEY2 structural authority (genuine second
+    /// true-hard KEY2 via THRESHOLD_TEMPO in Build/RaceSpecific, EASY_EQUIVALENT in
+    /// Foundation/Taper, never HM_PACE) via the existing, unmodified
+    /// half-marathon-workout-progression.v3.json (the same content already bound at
+    /// Advanced 5D) and a new, minimal, additive HALF_MARATHON_MASTER v5 pointing at it
+    /// (see half-marathon-master.v5.json's own comment for why a new master version --
+    /// not v3 itself -- was structurally required). No third KEY_SESSION slot, no new
+    /// hard stimulus.
     /// </summary>
     public const string HalfMarathonSixDayAdvancedCandidateKey = "HALF_MARATHON__6D__ADVANCED";
     public const int HalfMarathonSixDayAdvancedCandidateVersion = 1;
@@ -396,15 +394,26 @@ public static class V1CatalogPilotIdentityPolicy
             // HM.16 -- widened again to admit (Advanced, 3)/(Advanced, 4)/(Advanced, 5),
             // implementing HM.15's frozen PRODUCT_ELIGIBLE matrix (all three Advanced
             // frequencies, none deliberately excluded -- unlike Beginner x5D).
+            // HM-X1.4 -- widened again to admit (Intermediate, 6)/(Advanced, 6),
+            // implementing HM-X1.2's frozen PRODUCT_ELIGIBLE authority and HM-X1.3's
+            // proven dark implementation for HALF_MARATHON x6D at both levels. Mirrors
+            // HM.18's own exact public-gate-widening precedent (a narrow addition to
+            // this same allow-list, nothing else). Deliberately NOT (Beginner, 6) --
+            // HM-X1.1/HM-X1.2 never evaluated or froze Beginner x6D authority -- and
+            // deliberately never RunningBackground.Experienced at any frequency, per
+            // PHASE_EXP_0's binding PRODUCT_WIDE_EXPERIENCED_LEVEL_REMAINS_EXCLUDED
+            // decision.
             Domain.Enums.GoalDistance.HalfMarathon => (level, daysPerWeek) is
                 (RunningBackground.Intermediate, 3) or
                 (RunningBackground.Intermediate, 4) or
                 (RunningBackground.Intermediate, 5) or
+                (RunningBackground.Intermediate, 6) or
                 (RunningBackground.Beginner, 3) or
                 (RunningBackground.Beginner, 4) or
                 (RunningBackground.Advanced, 3) or
                 (RunningBackground.Advanced, 4) or
-                (RunningBackground.Advanced, 5),
+                (RunningBackground.Advanced, 5) or
+                (RunningBackground.Advanced, 6),
             _ => false,
         };
     // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the

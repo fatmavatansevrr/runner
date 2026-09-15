@@ -89,9 +89,15 @@ public sealed class Hm18PublicActivationAndBoundaryTests : IClassFixture<Publish
 
     [Theory]
     [InlineData("intermediate", 2)]
-    [InlineData("intermediate", 6)]
     [InlineData("beginner", 2)]
-    [InlineData("advanced", 6)]
+    [InlineData("beginner", 6)]
+    [InlineData("experienced", 6)]
+    // HM-X1.4 -- ("intermediate", 6) and ("advanced", 6) are no longer genuinely-unsupported
+    // examples: HM-X1.4 publicly activated exactly those two cells (see
+    // HmX14IntermediateAdvancedSixDayPublicActivationTests for their own real HTTP/PostgreSQL
+    // acceptance proof). Replaced here with ("beginner", 6) and ("experienced", 6), which remain
+    // genuinely unsupported, mirroring HM-X1.3's own §36 test-drift diagnosis/fix pattern
+    // (re-pointing a stale "unsupported example" InlineData row, not weakening the assertion).
     public async Task UnsupportedHmFrequency_ReturnsTypedRejection_NotSilentLegacyFallthrough(string level, int days)
     {
         await ResetAsync();

@@ -4,18 +4,30 @@
 
 ```
 CURRENT STATUS
-HALF_MARATHON V1 STANDARD CORE — PUBLIC
+HALF_MARATHON STANDARD CORE — PUBLIC (V1 8-cell matrix + HM-X1 6D expansion)
 
-Public matrix:
-  Beginner       3D  PUBLIC   4D  PUBLIC   5D  PRODUCT_INELIGIBLE
-  Intermediate   3D  PUBLIC   4D  PUBLIC   5D  PUBLIC
-  Advanced       3D  PUBLIC   4D  PUBLIC   5D  PUBLIC
+Public matrix (updated by PHASE_HM_X1_4, superseding the original V1-only matrix below):
+  Beginner       3D  PUBLIC   4D  PUBLIC   5D  PRODUCT_INELIGIBLE   6D  OUT_OF_SCOPE
+  Intermediate   3D  PUBLIC   4D  PUBLIC   5D  PUBLIC               6D  PUBLIC
+  Advanced       3D  PUBLIC   4D  PUBLIC   5D  PUBLIC               6D  PUBLIC
+  Experienced    3D  EXCLUDED 4D  EXCLUDED 5D  EXCLUDED             6D  EXCLUDED  (PHASE_EXP_0, product-wide)
 
 Supported Core: 10–16 full weeks inclusive
 
-Post-V1 (explicitly NOT missing V1 work — separate future expansion tracks):
-  2D, 6D, 7–9W compressed, ≤6W readiness-only, >16W Preparation Runway / LongHorizon,
+Post-V1 (explicitly NOT missing work — separate future expansion tracks; 6D is no longer
+in this list, having been closed by HM-X1.1-X1.4):
+  2D, 7–9W compressed, ≤6W readiness-only, >16W Preparation Runway / LongHorizon,
   missing/zero-readiness base-building, quality-in-long-run, stretch-goal public warning
+
+Next planned axis (not begun): custom/intermediate race-distance generalization for
+10.0km < target distance < 21.1km, pilot candidate 16km (PHASE_HM_X1_4 §50 handoff).
+```
+
+**Original V1 (HM.18) 8-cell matrix, for historical reference — accurate as of HM.18/HM.19, superseded above by HM-X1.4's 6D activation:**
+```
+  Beginner       3D  PUBLIC   4D  PUBLIC   5D  PRODUCT_INELIGIBLE
+  Intermediate   3D  PUBLIC   4D  PUBLIC   5D  PUBLIC
+  Advanced       3D  PUBLIC   4D  PUBLIC   5D  PUBLIC
 ```
 
 Final classification of the engagement that produced this state: `HM_V1_STANDARD_CORE_PUBLIC_ACTIVATION_COMPLETE` (HM.18).
@@ -526,6 +538,8 @@ These are **new product expansions**, not continuations of unfinished V1 work. N
 
 ### HM-X1 — 6D Expansion
 
+**Status: CLOSED — publicly activated.** Resolved across four phases: HM-X1.1 (eligibility/architecture audit), HM-X1.2 (structural/numeric authority closure), HM-X1.3 (10-16W dark implementation), HM-X1.4 (public activation and end-to-end proof). Intermediate×6D and Advanced×6D are now `PUBLIC`, exactly as this section originally anticipated (Beginner was correctly not assumed eligible, and remains out of scope — HM-X1 never evaluated or froze Beginner×6D authority). See `PHASE_HM_X1_4_6D_INTERMEDIATE_ADVANCED_PUBLIC_READINESS_CONTROLLED_ACTIVATION_AND_END_TO_END_PROOF.md` for the final public matrix and end-to-end proof. The paragraph below is retained as the original pre-work framing, for historical continuity.
+
 **Likely product-eligible levels**: Intermediate and Advanced (do not assume Beginner — 10K's own real precedent never gave Beginner a 5D or 6D cell at all, and this same reasoning underpinned Beginner×5D's own `PRODUCT_INELIGIBLE` decision).
 
 **Must audit before any decision**: `RUN_LAYOUT_6D`'s real slot structure; true-hard count and any secondary/tertiary quality-role structure it implies; the same-frequency 10K precedent (10K already has real, shipped Intermediate/Advanced 6D cells — mechanism precedent only, never numeric authority, per this engagement's own established discipline); HM's own peak-volume band, selected peak, absolute weekly cap, calibration start, LR shares, absolute LR ceiling, and taper multipliers for each eligible level; session concentration and calendar spacing feasibility. Determine whether the existing Advanced/Intermediate progression content can represent 6D without inventing new training families.
@@ -543,7 +557,7 @@ These are **new product expansions**, not continuations of unfinished V1 work. N
 **Do not model HM 2D as "3D minus one EASY session."** It is a separate low-frequency product problem. Future authority must resolve: minimum viable quality-session frequency, long-run share/session-concentration behavior at only 2 sessions/week, hard-stimulus structure, its own peak-volume band, readiness threshold, whether it's a Standard-Core or compressed-horizon variant, calendar semantics, and product warning/positioning. **2D is intentionally lower priority than 6D** in the recommended order below — 6D has real, direct same-distance 10K precedent (Intermediate/Advanced 6D already ship for 10K); 2D's own low-frequency HM product shape has no comparably direct precedent.
 
 **Recommended expansion order** (a recommendation for planning purposes, not canonical training authority):
-1. HM-X1 — 6D
+1. ~~HM-X1 — 6D~~ **CLOSED** (HM-X1.1-X1.4, publicly activated)
 2. HM-X2 — 7–9W compressed
 3. HM-X3 — >16W Runway/LongHorizon
 4. HM-X4 — 2D

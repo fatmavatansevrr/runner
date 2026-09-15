@@ -50,27 +50,30 @@ public sealed class HmX13Intermediate6DAdvanced6DFullDarkVerticalSliceTests
     // Identity/policy encoding proofs — dark/public separation.
     // ============================================================================================
     [Fact]
-    public void HalfMarathonSixDayIntermediateAndAdvanced_RemainOutsideEveryPublicGate()
+    public void HalfMarathonSixDayIntermediateAndAdvanced_ArePubliclyActivated_ForCoreOnly()
     {
-        // The public gate must be byte-identical before/after this phase: HALF_MARATHON x6D was
-        // never in the frozen 8-cell public V1 matrix before this phase, and still is not.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        // HM-X1.4 superseded this dark-only-for-Core-too assertion: the two cells this test
+        // originally proved were dark are now the exact, sole, intentional public-activation
+        // scope of HM-X1.4. This is not a regression in HM-X1.3 -- it is the planned next step
+        // HM-X1.3 §38/HM-X1.4-readiness explicitly anticipated.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6));
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, 6));
+
+        // Preparation Runway/LongHorizon remain untouched and closed -- HM-X1.4 activates Core
+        // only, per its own explicit scope boundary.
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6));
         Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(
             GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Advanced, 6));
 
-        // Non-throwing public-routing check also returns null (dark), even though the identity
-        // is directly resolvable via the internal 3-arg ResolveCandidate overload below.
-        Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6));
-        Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Advanced, 6));
+        // The non-throwing public-routing check now resolves both identities for real.
+        Assert.Equal((V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateKey, 1),
+            V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6));
+        Assert.Equal((V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateKey, 1),
+            V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Advanced, 6));
 
-        // But the identity IS resolvable directly for internal/dark-only test-harness use,
-        // mirroring exactly how 5D was originally wired dark-only before HM.18's later
-        // public-gate widening.
         Assert.Equal((V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateKey, 1),
             V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6));
         Assert.Equal((V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateKey, 1),
@@ -528,8 +531,12 @@ public sealed class HmX13Intermediate6DAdvanced6DFullDarkVerticalSliceTests
             $"{level}6D-{targetWeekCount}|vol=[{string.Join(',', volume.WeeklyVolumePlan.Weeks.Select(w => w.PlannedWeeklyVolumeKm.ToString("F1")))}]" +
             $"|peak={volume.WeeklyVolumePlan.PeakVolumeKm:F1}|taper={taperWeeks[0].PlannedWeeklyVolumeKm:F1}/{taperWeeks[1].PlannedWeeklyVolumeKm:F1}");
 
-        // Dark: still not part of the public gate at this or any horizon.
-        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, 6));
+        // HM-X1.4 superseded this dark-only assertion: HALF_MARATHON x6D Intermediate/Advanced
+        // are now the exact, sole, intentional public-activation scope of HM-X1.4 -- this is not
+        // a regression in HM-X1.3, it is the planned next step HM-X1.3 §38 explicitly
+        // anticipated. See HmX14IntermediateAdvancedSixDayPublicActivationTests for the real
+        // HTTP/PostgreSQL public-activation proof.
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, 6));
     }
 
     // Boundary proof: 9W/17W remain infeasible for the low-level infeasibility signal (mirroring
