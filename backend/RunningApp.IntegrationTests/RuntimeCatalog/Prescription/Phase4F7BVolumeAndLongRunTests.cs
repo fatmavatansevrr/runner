@@ -181,16 +181,19 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         {
             // HM.16 -- HALF_MARATHON x ADVANCED x 4D is now a genuinely supported dark-only
             // identity (HalfMarathonAdvanced4D). This test's own premise (an UNSUPPORTED
-            // HALF_MARATHON x ADVANCED combination) is re-pointed at 6D, which HM.16 never
-            // admitted (only 3/4/5 are frozen PRODUCT_ELIGIBLE, HM.15 §9) -- still a real,
-            // unsupported HALF_MARATHON x ADVANCED frequency, preserving this test's own
-            // fail-closed intent with zero change to its assertion.
-            CandidateKey = "HALF_MARATHON__6D__ADVANCED_UNSUPPORTED",
+            // HALF_MARATHON x ADVANCED combination) was re-pointed at 6D by HM.16.
+            // HM-X1.3 -- HALF_MARATHON x ADVANCED x 6D is now ALSO a genuinely supported
+            // dark-only identity (HalfMarathonAdvanced6D, HM-X1.2's frozen numeric authority) --
+            // re-pointed again, this time at 7D, which no phase has ever admitted for any
+            // HALF_MARATHON level (RUN_LAYOUT_7D does not exist), still a real, unsupported
+            // HALF_MARATHON x ADVANCED frequency, preserving this test's own fail-closed intent
+            // with zero change to its assertion.
+            CandidateKey = "HALF_MARATHON__7D__ADVANCED_UNSUPPORTED",
             CandidateVersion = 1,
             CandidateStatus = baseCandidate.CandidateStatus,
             CanonicalDistanceFamily = "HALF_MARATHON",
             Level = "ADVANCED",
-            DaysPerWeek = 6,
+            DaysPerWeek = 7,
             CoreCycle = baseCandidate.CoreCycle,
             MasterTemplate = baseCandidate.MasterTemplate,
             Layout = baseCandidate.Layout,
@@ -235,7 +238,7 @@ public sealed class Phase4F7BVolumeAndLongRunTests
         var ex = Assert.Throws<CatalogVolumeUnsupportedDistanceFamilyException>(() =>
             new CatalogVolumeAndLongRunPlanner().Build(new CatalogVolumePlanningRequest(
                 hmCandidate, bound, prescription,
-                new CatalogPeakVolumeBand("HALF_MARATHON", "ADVANCED", 6, 46, 60, "PEAK_VOLUME_BANDS_V1", 1))));
+                new CatalogPeakVolumeBand("HALF_MARATHON", "ADVANCED", 7, 46, 60, "PEAK_VOLUME_BANDS_V1", 1))));
 
         Assert.Equal("CATALOG_VOLUME_UNSUPPORTED_DISTANCE_FAMILY", ex.Code);
     }

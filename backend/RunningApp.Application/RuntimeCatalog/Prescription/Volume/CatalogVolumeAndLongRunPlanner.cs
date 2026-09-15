@@ -104,8 +104,10 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // the existing 4D cell (zero delta, confirmed by full regression).
         // HM.11 -- widened again to admit 5D (request.Candidate.DaysPerWeek == 5), the same
         // typed dispatcher HM.10 froze the numeric authority for; byte-identical for 3D/4D.
+        // HM-X1.3 -- widened again to admit 6D (dark-only; HM-X1.2's frozen numeric authority).
+        // Byte-identical for 3D/4D/5D.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5 || request.Candidate.DaysPerWeek == 6) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
@@ -132,8 +134,10 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // label, this one is not a distinct string, verified directly rather than assumed per this
         // phase's own §37 recurring-assumption-family instruction). All three frequencies admitted
         // (unlike Beginner's deliberate no-5D-arm): HM.15 §9 froze all three PRODUCT_ELIGIBLE.
+        // HM-X1.3 -- widened again to admit 6D (dark-only; HM-X1.2's frozen numeric
+        // authority). Byte-identical for 3D/4D/5D.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "ADVANCED" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
+            request.Candidate.Level == "ADVANCED" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5 || request.Candidate.DaysPerWeek == 6) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
@@ -284,7 +288,7 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // HalfMarathonIntermediate3D; HM.11 generalizes it again to cover
         // HalfMarathonIntermediate5D -- same rationale, same message shape, zero delta for 4D/3D.
         if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate4D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate3D) ||
-            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate5D))
+            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate5D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonIntermediate6D))
         {
             throw new CatalogVolumeInvalidReadinessInputException(
                 "HALF_MARATHON Intermediate requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");
@@ -304,7 +308,7 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // calibration-only, never a missing/zero-readiness fallback). Same rationale, same message
         // shape as Intermediate/Beginner above.
         if (ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced3D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced4D) ||
-            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced5D))
+            ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced5D) || ReferenceEquals(_policy, VolumeSafetyPolicy.HalfMarathonAdvanced6D))
         {
             throw new CatalogVolumeInvalidReadinessInputException(
                 "HALF_MARATHON Advanced requires positive observed RecentWeeklyVolumeKm; no approved missing/zero starting-volume fallback exists.");

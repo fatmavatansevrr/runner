@@ -125,7 +125,10 @@ public sealed class Hm2Step1cFailClosedDistanceBlindFallbackTests
     // HM.16 -- HALF_MARATHON x ADVANCED x 4D is now a genuinely supported dark-only identity
     // (HalfMarathonAdvanced4D). Re-pointed at 6D, which HM.16 never admitted (only 3/4/5 are
     // frozen PRODUCT_ELIGIBLE, HM.15 §9) -- still a real, unsupported combination.
-    [InlineData("HALF_MARATHON", "ADVANCED", 6)]
+    // HM-X1.3 -- HALF_MARATHON x ADVANCED x 6D is now ALSO a genuinely supported dark-only
+    // identity (HalfMarathonAdvanced6D, HM-X1.2's frozen numeric authority). Re-pointed again,
+    // this time at 7D, which no phase has ever admitted for any HALF_MARATHON level.
+    [InlineData("HALF_MARATHON", "ADVANCED", 7)]
     [InlineData("UNKNOWN_FUTURE_DISTANCE", "ADVANCED", 4)]
     public void CatalogFinalPrescribedPlanValidator_ResolveLongRunHardCapShare_UnsupportedIdentity_FailsClosed(
         string distanceFamily, string level, int daysPerWeek)

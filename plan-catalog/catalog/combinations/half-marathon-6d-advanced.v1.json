@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "documentType": "TEMPLATE_COMBINATION",
+    "schemaVersion": 1,
+    "key": "HALF_MARATHON__6D__ADVANCED",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase HM-X1.3 -- dark-only. Implements HM-X1.2's frozen HALF_MARATHON x ADVANCED x 6D numeric/structural authority (PHASE_HM_X1_2_..._STRUCTURAL_AND_NUMERIC_AUTHORITY_CLOSURE.md SS4/SS11/SS12/SS17/SS20/SS35). Byte-identical to half-marathon-5d-advanced.v1.json except layout (RUN_LAYOUT_6D instead of RUN_LAYOUT_5D), masterTemplate version, and rulePack version -- levelModifier (ADVANCED_MODIFIER v3) is reused completely unmodified. masterTemplate points to a new, minimal, additive HALF_MARATHON_MASTER v5 (byte-identical to v3 except supportedRunsPerWeek widened from [5] to [6] -- required because PlanCatalog.Core's CatalogGraphValidator hard-fails TC_LAYOUT_RUNS_PER_WEEK_NOT_SUPPORTED otherwise, confirmed by direct probe, not assumed; see half-marathon-master.v5.json's own comment) rather than the existing v3, so v3 itself (and the existing public 5D Advanced combination that resolves it) has zero delta. v5 reuses v3's own workoutProgression pointer (HALF_MARATHON_WORKOUT_PROGRESSION v3, Advanced's KEY2/THRESHOLD_TEMPO lane-1 content) unmodified, per HM-X1.2 SS7's PRIMARY_PROGRESSION_REUSE_APPROVED finding: lane binding is layout-driven, not frequency-driven. rulePack points to the new APPSEL_RACE_PLAN_V1 v11 (byte-identical to the existing v10 except its peakVolumeBandPolicy pointer, which now resolves the new additive PEAK_VOLUME_BANDS_V1 v10 carrying this cell's [54,72] band) rather than the existing v10. No third KEY_SESSION slot, no new hard stimulus. Not publicly routable: no public V1CatalogPilotIdentityPolicy allow-list entry references this key/version.",
+  "masterTemplate": {
+    "documentType": "PLAN_TEMPLATE",
+    "key": "HALF_MARATHON_MASTER",
+    "version": 5
+  },
+  "layout": {
+    "documentType": "RUN_LAYOUT",
+    "key": "RUN_LAYOUT_6D",
+    "version": 1
+  },
+  "levelModifier": {
+    "documentType": "LEVEL_MODIFIER",
+    "key": "ADVANCED_MODIFIER",
+    "version": 3
+  },
+  "rulePack": {
+    "documentType": "RULE_PACK",
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 11
+  }
+}

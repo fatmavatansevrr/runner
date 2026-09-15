@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "documentType": "RULE_PACK",
+    "schemaVersion": 1,
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 11,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase HM-X1.3 -- byte-identical to v10 except peakVolumeBandPolicy, which now points to the new additive PEAK_VOLUME_BANDS_V1 v10 (the two new HALF_MARATHON x 6D rows, HM-X1.2 SS10/SS11). Referenced only by the new dark-only half-marathon-6d-intermediate.v1.json / half-marathon-6d-advanced.v1.json combination files. Every existing combination file continues to reference v10 (pinned to PEAK_VOLUME_BANDS_V1 v9) unmodified -- zero delta for every existing HM/TEN_K cell.",
+  "runtimeConditionValueRegistry": {
+    "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY",
+    "key": "RUNTIME_CONDITION_VALUES_V1",
+    "version": 2
+  },
+  "peakVolumeBandPolicy": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 10
+  },
+  "policies": [],
+  "rules": []
+}

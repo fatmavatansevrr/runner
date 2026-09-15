@@ -82,7 +82,12 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // (the only new combination referencing the new master v3/progression v3 pair). peak-volume-bands.v9.json
     // was edited IN PLACE again (three more purely-additive rows, Advanced 3D/4D/5D) -- no new
     // file for it.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 154;
+    // Phase HM-X1.3 -- bumped from 154 by exactly 6 new additive JSON artifacts:
+    // half-marathon-6d-intermediate.v1.json, half-marathon-6d-advanced.v1.json (combinations),
+    // half-marathon-master.v4.json, half-marathon-master.v5.json (templates),
+    // peak-volume-bands.v10.json (policies), appsel-race-plan.v11.json (rule-packs). No existing
+    // file was removed or renamed.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 160;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

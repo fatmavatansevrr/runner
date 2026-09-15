@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "documentType": "TEMPLATE_COMBINATION",
+    "schemaVersion": 1,
+    "key": "HALF_MARATHON__6D__INTERMEDIATE",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase HM-X1.3 -- dark-only. Implements HM-X1.2's frozen HALF_MARATHON x INTERMEDIATE x 6D numeric/structural authority (PHASE_HM_X1_2_..._STRUCTURAL_AND_NUMERIC_AUTHORITY_CLOSURE.md SS3/SS10/SS12/SS15/SS16/SS19/SS20/SS34). Byte-identical to half-marathon-5d-intermediate.v1.json except layout (RUN_LAYOUT_6D instead of RUN_LAYOUT_5D) and rulePack version -- levelModifier (INTERMEDIATE_MODIFIER v9) is reused completely unmodified. masterTemplate points to a new, minimal, additive HALF_MARATHON_MASTER v4 (byte-identical to v2 except supportedRunsPerWeek widened from [5] to [6] -- required because PlanCatalog.Core's CatalogGraphValidator hard-fails TC_LAYOUT_RUNS_PER_WEEK_NOT_SUPPORTED otherwise, confirmed by direct probe, not assumed; see half-marathon-master.v4.json's own comment) rather than the existing v2, so v2 itself (and the existing public 5D combination that resolves it) has zero delta. v4 reuses v2's own workoutProgression pointer (HALF_MARATHON_WORKOUT_PROGRESSION v2) unmodified, per HM-X1.2 SS7's PRIMARY_PROGRESSION_REUSE_APPROVED finding: lane binding is layout-driven, not frequency-driven, so this progression serves 6D unmodified with zero new progression content. rulePack points to the new APPSEL_RACE_PLAN_V1 v11 (byte-identical to the existing v10 except its peakVolumeBandPolicy pointer, which now resolves the new additive PEAK_VOLUME_BANDS_V1 v10 carrying this cell's [44,58] band) rather than the existing v10, so this cell's own peak-volume-band resolution never touches any existing combination's pinned v9 band file. Not publicly routable: no public V1CatalogPilotIdentityPolicy allow-list entry references this key/version.",
+  "masterTemplate": {
+    "documentType": "PLAN_TEMPLATE",
+    "key": "HALF_MARATHON_MASTER",
+    "version": 4
+  },
+  "layout": {
+    "documentType": "RUN_LAYOUT",
+    "key": "RUN_LAYOUT_6D",
+    "version": 1
+  },
+  "levelModifier": {
+    "documentType": "LEVEL_MODIFIER",
+    "key": "INTERMEDIATE_MODIFIER",
+    "version": 9
+  },
+  "rulePack": {
+    "documentType": "RULE_PACK",
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 11
+  }
+}

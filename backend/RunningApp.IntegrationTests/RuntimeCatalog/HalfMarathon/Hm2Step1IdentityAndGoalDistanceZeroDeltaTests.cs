@@ -105,13 +105,49 @@ public sealed class Hm2Step1IdentityAndGoalDistanceZeroDeltaTests
     // HM.16 -- HALF_MARATHON Advanced x3D/x4D/x5D are now frozen, dark-only resolvable cells
     // (HM.15's numeric authority). (Advanced, 3/4/5) removed from this "not resolvable" theory
     // below and covered instead by their own HalfMarathon_Advanced{Three,Four,Five}Day_ResolvesDarkOnly
-    // tests. (Advanced, 6) remains a real, never-admitted HALF_MARATHON Advanced frequency.
+    // tests.
+    // HM-X1.3 -- HALF_MARATHON Intermediate x6D / Advanced x6D are now ALSO frozen, dark-only
+    // resolvable cells (HM-X1.2's numeric authority). (Advanced, 6) removed from this "not
+    // resolvable via ResolveCandidate" theory below (it now resolves directly, dark-only) and
+    // covered instead by HalfMarathon_SixDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly
+    // below. (Beginner, 6) is added instead -- HALF_MARATHON x BEGINNER x6D was never in scope
+    // for HM-X1 (HM-X1.1 SS3, explicitly not audited/authored), and (Beginner, 7)/(Intermediate, 7)
+    // prove no distance-aware overload ever resolves an unrecognized frequency either -- every
+    // HALF_MARATHON Intermediate/Advanced frequency this engagement has ever produced numeric
+    // authority for (3/4/5/6) is dark-resolvable; only Beginner x5D (PRODUCT_INELIGIBLE, its own
+    // dedicated test), Beginner x6D (never in scope), and 7D+ (never designed for any level)
+    // remain genuinely unresolvable.
     [Theory]
-    [InlineData(RunningBackground.Advanced, 6)]
-    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheEightFrozenCellsAreAdmitted(RunningBackground level, int daysPerWeek)
+    [InlineData(RunningBackground.Beginner, 6)]
+    [InlineData(RunningBackground.Beginner, 7)]
+    [InlineData(RunningBackground.Intermediate, 7)]
+    [InlineData(RunningBackground.Advanced, 7)]
+    public void HalfMarathon_AnyOtherLevelFrequency_IsNotResolvable_OnlyTheTenFrozenDarkCellsAreAdmitted(RunningBackground level, int daysPerWeek)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
         Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, level, daysPerWeek));
+    }
+
+    // HM-X1.3 -- HALF_MARATHON Intermediate x6D / Advanced x6D dark-only resolution proof,
+    // mirroring HalfMarathon_AdvancedDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly's own
+    // shape. The public gate and Runway gate are both untouched (still False for 6D at both
+    // levels) -- see PublicGate_IsSupportedIdentity_TwoDayAndSixDayRemainClosedForHalfMarathon.
+    [Theory]
+    [InlineData(RunningBackground.Intermediate)]
+    [InlineData(RunningBackground.Advanced)]
+    public void HalfMarathon_SixDay_ResolvesDarkOnly_ThroughDistanceAwareOverloadOnly(RunningBackground level)
+    {
+        var expected = level == RunningBackground.Intermediate
+            ? (V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateVersion)
+            : (V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateKey, V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateVersion);
+        var resolved = V1CatalogPilotIdentityPolicy.ResolveCandidate(GoalDistance.HalfMarathon, level, 6);
+        Assert.Equal(expected, resolved);
+
+        // Dark: TryResolveCandidate still returns null (gated by the untouched
+        // IsSupportedLevelFrequency allow-list), and the public/Runway gates still reject 6D.
+        Assert.Null(V1CatalogPilotIdentityPolicy.TryResolveCandidate(GoalDistance.HalfMarathon, level, 6));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, 6));
+        Assert.False(V1CatalogPilotIdentityPolicy.IsSupportedPreparationRunwayIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, 6));
     }
 
     [Theory]

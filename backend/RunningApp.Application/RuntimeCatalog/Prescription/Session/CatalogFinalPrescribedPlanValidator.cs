@@ -113,8 +113,10 @@ internal static class CatalogFinalPrescribedPlanValidator
         // 0.46 hard-cap authority), mirroring the same VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek
         // dispatcher CatalogVolumeAndLongRunPlanner now uses. Byte-identical for the existing
         // 4D cell. HM.11 -- widened again to admit x5D (HM.10's frozen 0.36 hard-cap authority).
+        // HM-X1.3 -- widened again to admit x6D (dark-only; HM-X1.2's frozen 0.36
+        // hard-cap authority, unchanged from 5D).
         if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5))
+            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5 || candidate.DaysPerWeek == 6))
         {
             return VolumeSafetyPolicy.ForHalfMarathonIntermediateDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
@@ -131,8 +133,10 @@ internal static class CatalogFinalPrescribedPlanValidator
         // HM.16 -- parallel Advanced branch (HM.15's frozen 0.46/0.40/0.36 hard-cap authority for
         // 3D/4D/5D respectively), mirroring VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek.
         // Unlike Beginner, admits all three frequencies (HM.15 §9: all PRODUCT_ELIGIBLE).
+        // HM-X1.3 -- widened again to admit x6D (dark-only; HM-X1.2's frozen 0.36
+        // hard-cap authority, unchanged from 5D).
         if (candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            candidate.Level == "ADVANCED" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5))
+            candidate.Level == "ADVANCED" && (candidate.DaysPerWeek == 3 || candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5 || candidate.DaysPerWeek == 6))
         {
             return VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
@@ -275,10 +279,20 @@ internal static class CatalogFinalPrescribedPlanValidator
         // HM.16 -- Advanced x5D shares the identical dual-KEY-lane Taper IDENTITY shape with
         // Intermediate x5D (HM.15 §7: Taper KEY2 is EASY_EQUIVALENT for Advanced too, reusing the
         // same TAPER_HM_SECONDARY_EASY stage key -- only Build/RaceSpecific KEY2 differs).
+        // HM-X1.3 -- the new dark-only dual-KEY-lane HALF_MARATHON x6D candidates (Intermediate
+        // and Advanced) share the identical dual-lane Taper IDENTITY shape with their own 5D
+        // siblings (RUN_LAYOUT_6D still has exactly 2 KEY_SESSION slots, HM-X1.1 SS4/SS10; the
+        // one added EASY_SUPPORT slot has no Taper KEY identity of its own). Folded into the
+        // same branch as 5D rather than a separate one -- zero new logic, only two more
+        // recognized candidate identities.
         if ((candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateKey &&
                 candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayIntermediateCandidateVersion) ||
             (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateKey &&
-                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion))
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonFiveDayAdvancedCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayIntermediateCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.HalfMarathonSixDayAdvancedCandidateVersion))
         {
             var primaryLane = taperKeySessions.Where(s => (s.LaneOrdinal ?? 0) == 0).ToList();
             var secondaryLane = taperKeySessions.Where(s => s.LaneOrdinal == 1).ToList();
