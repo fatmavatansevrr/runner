@@ -140,4 +140,26 @@ public class GeneratePreviewRequest
     /// race (<see cref="RaceName"/>/<see cref="RaceDate"/>/<see cref="TargetFinishTimeSeconds"/>).
     /// </summary>
     public RecentRaceInput? RecentRace { get; set; }
+
+    /// <summary>
+    /// PHASE DIST-GEN.2 — internal-only, dark target-distance projection
+    /// override. Always null for every real HTTP-originated request: no
+    /// public wire DTO (<c>GenerateRacePlanPreviewRequest</c>/
+    /// <c>GenerateHabitPlanPreviewRequest</c>) carries a field for this, and
+    /// <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper.ToInternalRequest"/>
+    /// never sets it. Consumed ONLY through the narrow
+    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
+    /// gate, which requires this to be exactly 16.0 AND <see cref="GoalDistance"/>
+    /// to be <see cref="Domain.Enums.GoalDistance.HalfMarathon"/> AND
+    /// <see cref="Level"/> to be Intermediate AND <see cref="DaysPerWeek"/> to
+    /// be 4 before it has any effect anywhere in the pipeline. This does NOT
+    /// change <see cref="GoalDistance"/>, does not add a new enum value, and
+    /// does not weaken <c>GoalDistance.Custom</c>'s fail-closed contract
+    /// (PHASE_DIST_GEN_0_1) in any way — a genuinely custom/arbitrary
+    /// distance still has no way to reach this field through any public
+    /// surface. Only a test harness or a future internal orchestrator
+    /// constructing this internal request type directly can ever populate
+    /// it. See PHASE_DIST_GEN_2_16K_INTERMEDIATE_4D_FULL_DARK_TARGET_DISTANCE_PROJECTION_IMPLEMENTATION.md.
+    /// </summary>
+    public double? TargetDistanceKmOverride { get; set; }
 }

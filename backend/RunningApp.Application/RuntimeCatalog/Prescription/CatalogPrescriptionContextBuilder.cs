@@ -26,7 +26,8 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
     public CatalogPlanPrescriptionContext Build(CatalogPrescriptionContextBuildRequest request)
     {
         var goalDistanceKm = CatalogGoalDistanceResolver.Resolve(
-            request.Candidate.CanonicalDistanceFamily, request.PreviewRequest.GoalDistance, request.ResolverInput.RequestedTargetDistanceKm);
+            request.Candidate.CanonicalDistanceFamily, request.PreviewRequest.GoalDistance, request.ResolverInput.RequestedTargetDistanceKm,
+            request.PreviewRequest.Level, request.PreviewRequest.DaysPerWeek);
 
         var readiness = CatalogPrescriptionInputNormalizer.Normalize(request.PreviewRequest, request.AsOfDate);
         var weekly = SelectWeeklyVolumeAnchor(readiness, request.Candidate);
@@ -41,6 +42,7 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
             GoalType = request.PreviewRequest.GoalType,
             GoalDistance = request.PreviewRequest.GoalDistance,
             GoalDistanceKm = goalDistanceKm,
+            RequestedTargetDistanceKm = request.ResolverInput.RequestedTargetDistanceKm,
             Level = request.PreviewRequest.Level,
             DaysPerWeek = request.PreviewRequest.DaysPerWeek,
             StartDate = request.ResolverInput.StartDate ?? request.AsOfDate,
@@ -312,7 +314,12 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
 /// </summary>
 internal static class CatalogGoalDistanceResolver
 {
-    public static double Resolve(string catalogDistanceFamily, GoalDistance requestGoalDistance, double? requestedTargetDistanceKm = null)
+    public static double Resolve(
+        string catalogDistanceFamily,
+        GoalDistance requestGoalDistance,
+        double? requestedTargetDistanceKm = null,
+        RunningBackground? level = null,
+        int? daysPerWeek = null)
     {
         var catalogKm = catalogDistanceFamily switch
         {
@@ -340,11 +347,21 @@ internal static class CatalogGoalDistanceResolver
             throw new CatalogPrescriptionContractException("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", "Request goal distance disagrees with catalog candidate distance.");
         }
 
-        if (requestedTargetDistanceKm is { } requested && Math.Abs(catalogKm - requested) > 0.001)
+        if (requestedTargetDistanceKm is { } requested && Math.Abs(catalogKm - requested) > 0.001 &&
+            !RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsEligible(
+                requested, requestGoalDistance, level, daysPerWeek))
         {
             throw new CatalogPrescriptionContractException("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", "Resolved request target distance disagrees with catalog candidate distance.");
         }
 
+        // PHASE DIST-GEN.2 -- GoalDistanceKm always stays the fixed
+        // family-representative distance (catalogKm), even for the approved
+        // 16K dark pilot. This is deliberate: GoalDistanceKm and
+        // RequestedTargetDistanceKm are two distinct fields by design
+        // (TrainingPlan's own doc-commented separation) -- the pilot's
+        // divergent target distance is carried on RequestedTargetDistanceKm
+        // only (see ResolverInputSnapshot/CatalogPrescriptionInputSnapshot),
+        // never by substituting it here.
         return catalogKm;
     }
 }

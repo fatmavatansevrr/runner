@@ -618,7 +618,18 @@ public sealed class CatalogPlanConfirmationService : ICatalogPlanConfirmationSer
             CatalogRuntimeConditionRegistryKey = GetRef(snapshot, "runtimeConditionValueRegistry")?.Key,
             CatalogRuntimeConditionRegistryVersion = GetRef(snapshot, "runtimeConditionValueRegistry")?.Version,
             CanonicalDistanceFamily = payload.CanonicalDistanceFamily,
-            RequestedTargetDistanceKm = snapshot.NormalizedInput.GoalDistanceKm,
+            // PHASE DIST-GEN.2 -- was snapshot.NormalizedInput.GoalDistanceKm (the
+            // fixed family-representative distance), which silently collapsed
+            // RequestedTargetDistanceKm into GoalDistanceKm for every plan,
+            // including the approved dark 16K pilot (whose own generation-time
+            // snapshot already correctly carries RequestedTargetDistanceKm=16.0 --
+            // see CatalogPreviewGenerator.BuildInputSnapshot/ResolveRequestedTargetDistanceKm).
+            // Zero-delta for every canonical TEN_K/HALF_MARATHON request: their
+            // own NormalizedInput.RequestedTargetDistanceKm already always equals
+            // GoalDistanceKm (CatalogGoalDistanceResolver's own mismatch guard
+            // enforces this), so this change only ever changes behavior for the
+            // one approved eligible dark request shape.
+            RequestedTargetDistanceKm = snapshot.NormalizedInput.RequestedTargetDistanceKm ?? snapshot.NormalizedInput.GoalDistanceKm,
         };
     }
 

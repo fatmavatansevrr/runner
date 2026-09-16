@@ -11,6 +11,7 @@ using RunningApp.Application.RuntimeCatalog.Schedule.Binding;
 using RunningApp.Application.RuntimeCatalog.Schedule.Materialization;
 using RunningApp.Application.RuntimeCatalog.Schedule.Progression;
 using RunningApp.Application.RuntimeCatalog.Schedule.Horizon;
+using RunningApp.Application.RuntimeCatalog.TargetDistanceProjection;
 using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.RuntimeCatalog.PreviewRouting;
@@ -636,13 +637,68 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         // disclosed blocker) — now both consume this single instance.
         var executionIndex = LoadExecutionIndex(candidate);
 
+        // PHASE DIST-GEN.2 -- computed once per call. Always false for a
+        // canonical request (TargetDistanceKmOverride is always null), so
+        // every branch below that reads this stays structurally unreachable
+        // for canonical TEN_K/HALF_MARATHON requests.
+        var isDark16KEligibleForSkeleton = Dark16KPilotEligibilityPolicy.IsEligible(
+            request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+
+        // PHASE DIST-GEN.2 -- every downstream peak-volume-band lookup in this
+        // method (both the CompressedCore/ExtendedCore dynamic-core branch and
+        // the exact-preferred-core static branch further below) goes through
+        // this single decorator, which substitutes the pilot's own frozen
+        // [34,46] band (TargetDistance16KPeakVolumeBandPolicy) only for the
+        // approved eligible request, and otherwise delegates unchanged to the
+        // real catalog-loaded band -- so canonical HM/10K requests are
+        // byte-identical, and both the static and dynamic-core 16K paths get
+        // the same, correct, non-catalog band.
+        var peakVolumeBandLoaderForRequest = new TargetDistance16KAwarePeakVolumeBandLoader(
+            _peakVolumeBandLoader, request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+
         if (request.RaceDate is { } activatedRaceDate)
         {
-            var horizon = RaceHorizonPolicy.Decide(
-                request.StartDate, activatedRaceDate,
-                candidate.CoreCycle.MinimumWeeks, candidate.CoreCycle.DefaultWeeks,
-                candidate.CoreCycle.MaximumWeeks ?? throw new PlanPreviewGenerationFailedException("Catalog core maximum is required for dynamic standalone-core generation."));
-            if (horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
+            // PHASE DIST-GEN.2 -- for the approved dark 16K pilot, this
+            // candidate-core-cycle-driven horizon decision (10/14/16, HM's own
+            // catalog-declared bounds) is the WRONG authority: this pilot's
+            // own frozen bounds are 8/12/14 (TargetDistance16KHorizonPolicy),
+            // genuinely different from the reused HALF_MARATHON catalog
+            // identity's own bounds. Substituting the pilot's own bounds here
+            // (gated, never for a canonical request) is required so this
+            // decision's own Mode/AvailableFullWeeks reflect the pilot's own
+            // authority, not HM's.
+            // PHASE DIST-GEN.2 -- exactly one RaceHorizonPolicy.Decide call site
+            // remains in this method (source-governance invariant, see
+            // PreparationRunwayHorizonAuthorityTests): the min/preferred/max
+            // bounds are resolved to plain locals first (pilot's own 8/12/14
+            // when eligible, else the candidate's own real CoreCycle bounds),
+            // and Decide is invoked exactly once against whichever bounds apply.
+            int horizonMinimumWeeks, horizonPreferredWeeks, horizonMaximumWeeks;
+            if (isDark16KEligibleForSkeleton)
+            {
+                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
+                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.PreferredCoreWeeks;
+                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks;
+            }
+            else
+            {
+                horizonMinimumWeeks = candidate.CoreCycle.MinimumWeeks;
+                horizonPreferredWeeks = candidate.CoreCycle.DefaultWeeks;
+                horizonMaximumWeeks = candidate.CoreCycle.MaximumWeeks ?? throw new PlanPreviewGenerationFailedException("Catalog core maximum is required for dynamic standalone-core generation.");
+            }
+            var horizon = RaceHorizonPolicy.Decide(request.StartDate, activatedRaceDate, horizonMinimumWeeks, horizonPreferredWeeks, horizonMaximumWeeks);
+            // PHASE DIST-GEN.2 -- the STATIC ("exact preferred core") path a
+            // few lines below this branch structurally assumes the reused
+            // catalog candidate's OWN declared week count (it builds the
+            // skeleton straight from candidate.CoreCycle/MasterTemplate, with
+            // no distinct TargetWeekCount input) -- it can only ever be
+            // correct for HM's own real 14-week preferred length, never for
+            // this pilot's own distinct 12-week preferred length, even though
+            // both classify as "PreferredCore" under their own respective
+            // bounds. The dark 16K pilot must therefore ALWAYS use the
+            // generic dynamic-core path (which does take an explicit
+            // TargetWeekCount), regardless of horizon.Mode, whenever eligible.
+            if (isDark16KEligibleForSkeleton || horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
             {
                 var preferredDays = CatalogPreferredDayAdapter.ParsePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays));
                 var longRunDay = CatalogPreferredDayAdapter.ParseLongRunDay(WeekdayCsv.ToCsv(request.LongRunDay));
@@ -666,7 +722,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                         StartDate = request.StartDate, RaceDate = activatedRaceDate, AsOfDate = asOfDate,
                         PreferredDays = preferredDays, LongRunDayPreference = longRunDay,
                         ConditionResults = conditionResults, PreviewRequest = request, ResolverInput = input,
-                        WorkoutDefinitionLoader = _workoutDefinitionLoader, PeakVolumeBandLoader = _peakVolumeBandLoader,
+                        WorkoutDefinitionLoader = _workoutDefinitionLoader, PeakVolumeBandLoader = peakVolumeBandLoaderForRequest,
                         ExecutionIndex = executionIndex,
                     }).GetAwaiter().GetResult();
                 }
@@ -930,7 +986,12 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                     "Prescription context validation failed: " + string.Join(", ", prescriptionContext.ValidationResult.Errors) + ".");
             }
 
-            var peakVolumeBand = _peakVolumeBandLoader.LoadAsync(
+            // PHASE DIST-GEN.2 -- see peakVolumeBandLoaderForRequest's own doc
+            // comment (above, in BuildDarkInternalDatedSkeleton): substitutes
+            // the pilot's own frozen [34,46] band only for the approved
+            // eligible request, byte-identical to the original unconditional
+            // _peakVolumeBandLoader.LoadAsync(...) call for every canonical request.
+            var peakVolumeBand = peakVolumeBandLoaderForRequest.LoadAsync(
                 candidate.PeakVolumeBandPolicy,
                 candidate.CanonicalDistanceFamily,
                 candidate.Level,
@@ -1039,10 +1100,26 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
     /// and are all null when RecentRace is null. Never touches Level,
     /// RaceDate, or any target-race field.
     /// </summary>
+    /// <summary>
+    /// PHASE DIST-GEN.2 — resolves the snapshot's own RequestedTargetDistanceKm.
+    /// For every canonical request (<see cref="GeneratePreviewRequest.TargetDistanceKmOverride"/>
+    /// is null) this is byte-identical to the original unconditional
+    /// <c>CatalogGoalDistanceResolver.Resolve(...)</c> expression. Only when the
+    /// dark <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
+    /// gate approves the exact (16.0, HalfMarathon, Intermediate, 4D) triple does
+    /// this diverge from the family-representative constant — never GoalDistanceKm
+    /// itself (see <see cref="CatalogGoalDistanceResolver.Resolve"/>'s own doc note).
+    /// </summary>
+    private static double ResolveRequestedTargetDistanceKm(GeneratePreviewRequest request, PlanCatalogCandidateSummary candidate) =>
+        Dark16KPilotEligibilityPolicy.IsEligible(
+            request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek)
+            ? request.TargetDistanceKmOverride!.Value
+            : CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance);
+
     private static ResolverInputSnapshot BuildInputSnapshot(GeneratePreviewRequest request, DateOnly asOfDate, PlanCatalogCandidateSummary candidate) => new()
     {
         CanonicalDistanceFamily = candidate.CanonicalDistanceFamily,
-        RequestedTargetDistanceKm = CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance),
+        RequestedTargetDistanceKm = ResolveRequestedTargetDistanceKm(request, candidate),
         GoalType = request.GoalType,
         GoalDistance = request.GoalDistance,
         GoalDistanceKm = CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance),

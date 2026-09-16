@@ -145,6 +145,16 @@ internal sealed record CatalogPrescriptionInputSnapshot
     public required GoalType GoalType { get; init; }
     public required GoalDistance GoalDistance { get; init; }
     public required double GoalDistanceKm { get; init; }
+
+    /// <summary>
+    /// PHASE DIST-GEN.2 — the user's exact requested target distance in km,
+    /// distinct from <see cref="GoalDistanceKm"/> (the fixed family-representative
+    /// distance). Null unless the (dark-only, gated) target-distance override
+    /// path populated it; always equal to <see cref="GoalDistanceKm"/> for
+    /// every canonical TEN_K/HALF_MARATHON request today, but never collapsed
+    /// into it — see <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>.
+    /// </summary>
+    public double? RequestedTargetDistanceKm { get; init; }
     public required RunningBackground Level { get; init; }
     public required int DaysPerWeek { get; init; }
     public required DateOnly StartDate { get; init; }

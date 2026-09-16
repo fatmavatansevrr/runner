@@ -95,6 +95,25 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
+        // PHASE DIST-GEN.2 -- the dark 16K x INTERMEDIATE x 4D pilot's own
+        // frozen VolumeSafetyPolicy, selected BEFORE the generic HM
+        // Intermediate branch below so it never falls through to
+        // HalfMarathonIntermediate4D's own canonical (21.0975km) authority.
+        // Gated by Dark16KPilotEligibilityPolicy against the prescription
+        // context's own RequestedTargetDistanceKm -- for every canonical
+        // HALF_MARATHON request that value always equals the family-representative
+        // 21.0975km (never 16.0), so this branch is structurally unreachable
+        // for any canonical request, not merely empirically untriggered.
+        if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
+            request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 4 &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default) &&
+            RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsEligible(
+                request.PrescriptionContext.InputSnapshot.RequestedTargetDistanceKm,
+                request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance16K).Build(request);
+        }
+
         // HM.8 -- generalized from HM.2's single hardcoded DaysPerWeek == 4 exact-match
         // conditional (HM.6 §19's own named HIDDEN_4D_ASSUMPTION finding) to a typed
         // dispatcher mirroring 10K's own ForIntermediateDaysPerWeek pattern. Every HM
