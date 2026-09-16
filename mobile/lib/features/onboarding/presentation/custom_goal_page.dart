@@ -30,7 +30,20 @@ class _CustomGoalPageState extends ConsumerState<CustomGoalPage> {
     _timeMins = state.customGoalTime;
   }
 
+  // PHASE DIST-GEN.0.1 safety fix: this screen's stepper value is NEVER sent
+  // to the backend -- _onContinue always calls updateGoalDistance('custom')
+  // regardless of the chosen km, which the backend now correctly rejects
+  // with a typed error instead of silently generating a 5K plan (the exact
+  // defect this phase closes). Continuing past this screen has therefore
+  // never been able to produce the plan the user actually asked for; the
+  // smallest honest fix is to block it here rather than let the user
+  // proceed into a request that now correctly fails server-side. This does
+  // not imply arbitrary distances are "coming soon" -- only the four preset
+  // distances (5K/10K/Half Marathon/Marathon) are supported today.
+  bool get _isUnsupportedDistance => true;
+
   void _onContinue() {
+    if (_isUnsupportedDistance) return;
     ref.read(onboardingProvider.notifier).updateCustomGoalDetails(
       distance: _distanceKm,
       type: _focusType,
@@ -198,7 +211,12 @@ class _CustomGoalPageState extends ConsumerState<CustomGoalPage> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
 
-
+                    if (_isUnsupportedDistance)
+                      Text(
+                        'Custom distances aren\'t supported yet. Please choose "Run 5 km", "Run 10 km", '
+                        'or "Run for 30 minutes" on the previous screen instead.',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.missed),
+                      ),
                   ],
                 ),
               ),
@@ -208,7 +226,7 @@ class _CustomGoalPageState extends ConsumerState<CustomGoalPage> {
               child: AppPrimaryButton(
                 label: 'Continue',
                 icon: Icons.arrow_forward_rounded,
-                onPressed: _onContinue,
+                onPressed: _isUnsupportedDistance ? null : _onContinue,
               ),
             ),
           ],

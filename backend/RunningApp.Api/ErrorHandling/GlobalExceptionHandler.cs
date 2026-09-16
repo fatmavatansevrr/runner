@@ -51,6 +51,11 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             NotFoundAppException              => (StatusCodes.Status404NotFound,      "NOT_FOUND"),
             ConflictAppException              => (StatusCodes.Status409Conflict,      "CONFLICT"),
             UnsupportedTargetDistanceException =>(StatusCodes.Status400BadRequest,   "UNSUPPORTED_TARGET_DISTANCE"),
+            // PHASE DIST-GEN.0.1 -- fail-closed guard for GoalDistance.Custom
+            // (and any other unresolvable GoalDistance). Never falls back to a
+            // 5K plan or a generic 500; see UnsupportedGoalDistanceException's
+            // own doc comment.
+            UnsupportedGoalDistanceException  => (StatusCodes.Status422UnprocessableEntity, "GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED"),
             // Backend Integration Phase 4E.1: catalog preview routing errors.
             // None of these are caught upstream and converted into a legacy-SQL
             // fallback -- they are the final outcome once a request is routed

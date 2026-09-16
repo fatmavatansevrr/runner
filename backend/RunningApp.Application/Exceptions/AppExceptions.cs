@@ -57,6 +57,35 @@ public sealed class UnsupportedTargetDistanceException : Exception
 }
 
 /// <summary>
+/// PHASE DIST-GEN.0.1 safety fix. Thrown when a request identifies its goal
+/// distance (or a recent-race distance) as <see cref="RunningApp.Domain.Enums.GoalDistance.Custom"/>
+/// (or, defensively, any other <see cref="RunningApp.Domain.Enums.GoalDistance"/>
+/// value with no canonical family-representative km value -- see
+/// <see cref="RunningApp.Application.Common.GoalDistanceKm.Resolve"/>).
+///
+/// This is NOT a statement that custom/arbitrary distances are permanently
+/// unsupported -- it exists specifically so that today's real product gap
+/// (the wire format has no field to carry an arbitrary decimal km value; see
+/// <c>PHASE_DIST_GEN_0_...md</c> §2/§46) fails closed with a precise,
+/// typed, non-500 error instead of silently resolving to a 5K plan
+/// (the exact defect this exception exists to eliminate). A future phase
+/// that adds genuine custom-distance authority is expected to retire or
+/// narrow this exception's trigger conditions, not this exception itself.
+///
+/// Deliberately distinct from <see cref="UnsupportedTargetDistanceException"/>
+/// (that one is about an out-of-range NUMERIC value fed to the dormant
+/// <c>ICanonicalDistanceFamilyResolver</c>; this one is about the enum
+/// identity <c>GoalDistance.Custom</c> itself carrying no numeric payload at
+/// all on the current live request/DTO surface).
+///
+/// Mapped to HTTP 422, error code <c>GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED</c>.
+/// </summary>
+public sealed class UnsupportedGoalDistanceException : Exception
+{
+    public UnsupportedGoalDistanceException(string message) : base(message) { }
+}
+
+/// <summary>
 /// Thrown by <c>IPlanCatalogBundleLoader</c> when a Process A plan-catalog
 /// candidate cannot be read-only loaded/parsed: missing file, invalid JSON,
 /// a missing required field, or a candidate key/version that doesn't match

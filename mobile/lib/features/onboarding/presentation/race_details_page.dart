@@ -32,7 +32,20 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
     if (state.raceDate != null) {
       _raceDate = DateTime.tryParse(state.raceDate!);
     }
+    _distanceController.addListener(() => setState(() {}));
   }
+
+  // PHASE DIST-GEN.0.1 safety fix: today, only the four preset distances
+  // (5K/10K/Half Marathon/Marathon) actually reach the backend -- anything
+  // else resolves to the literal string 'custom', which the backend now
+  // correctly rejects with a typed error rather than silently generating a
+  // 5K plan (the exact defect this phase closes). This is the smallest
+  // honest UX change: block Continue and say so, rather than letting the
+  // user proceed into a request that used to silently misfire and now
+  // correctly fails server-side -- never implying "16K supported" or
+  // "coming soon".
+  bool get _isUnsupportedDistance =>
+      _mapDistanceTextToEnum(_distanceController.text.trim()) == 'custom';
 
   @override
   void dispose() {
@@ -278,6 +291,13 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
                         ),
                       ],
                     ),
+                    if (_isUnsupportedDistance) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'This exact distance isn\'t supported yet. Please choose 5K, 10K, Half Marathon, or Marathon.',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.missed),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -287,7 +307,7 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
               child: AppPrimaryButton(
                 label: 'Continue',
                 icon: Icons.arrow_forward_rounded,
-                onPressed: _onContinue,
+                onPressed: _isUnsupportedDistance ? null : _onContinue,
               ),
             ),
           ],

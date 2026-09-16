@@ -1,5 +1,6 @@
 using System;
 using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.Exceptions;
 using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.Validation;
@@ -29,6 +30,38 @@ public static class GeneratePreviewRequestValidator
         if (request.StartDate == default)
         {
             throw new ArgumentException("StartDate is required.");
+        }
+
+        // ── PHASE DIST-GEN.0.1 fail-closed gate ──────────────────────────────
+        // GoalDistance.Custom (and, defensively, any other GoalDistance value
+        // with no canonical family-representative km -- see
+        // GoalDistanceKm.Resolve) must never reach route decision, horizon
+        // selection, candidate resolution, volume planning, pace resolution,
+        // or calendar materialization. The current wire format has no field
+        // that carries the user's actual typed/selected distance (see
+        // PHASE_DIST_GEN_0_...md §2/§46) -- letting Custom through here would
+        // silently produce a plan generated as if for a 5K (GoalDistanceKm's
+        // prior `_ => 5.0` fallback). This runs for BOTH race and habit
+        // requests, since both funnel through this one shared validator
+        // before PlanServices.GeneratePreviewAsync does anything else.
+        if (!RunningApp.Application.Common.GoalDistanceKm.TryResolve(request.GoalDistance, out _))
+        {
+            throw new UnsupportedGoalDistanceException(
+                $"goal_distance '{request.GoalDistance}' is not a supported goal distance for plan generation. " +
+                "Only five_k, ten_k, half_marathon, and marathon are currently supported. Reason: GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED.");
+        }
+
+        // Same guard for the optional recent-race distance: a recent race
+        // reported as GoalDistance.Custom carries no real distance either,
+        // and must never silently resolve to 5.0km inside pace/feasibility
+        // computation (CatalogPreviewGenerator/CatalogPrescriptionContextBuilder
+        // both call GoalDistanceKm.Resolve(RecentRace.Distance) downstream).
+        if (request.RecentRace is { } recentRaceForDistanceCheck &&
+            !RunningApp.Application.Common.GoalDistanceKm.TryResolve(recentRaceForDistanceCheck.Distance, out _))
+        {
+            throw new UnsupportedGoalDistanceException(
+                $"recent_race.distance '{recentRaceForDistanceCheck.Distance}' is not a supported goal distance. " +
+                "Only five_k, ten_k, half_marathon, and marathon are currently supported. Reason: GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED.");
         }
 
         var isRace = request.GoalType == GoalType.Race;

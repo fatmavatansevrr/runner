@@ -1,5 +1,6 @@
 using System;
 using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.Exceptions;
 using RunningApp.Application.Validation;
 using RunningApp.Domain.Enums;
 using Xunit;
@@ -66,9 +67,17 @@ public sealed class GenerateRacePlanPreviewRequestValidatorTests
         GenerateRacePlanPreviewRequestValidator.Validate(
             ValidRequest(goalDistance: GoalDistance.Marathon, targetFinishTimeSeconds: 15660, targetFinishTimeSource: TargetFinishTimeSource.ProductAverage));
 
+    // PHASE DIST-GEN.0.1: GoalDistance.Custom is now rejected by the earlier,
+    // dedicated fail-closed gate (UnsupportedGoalDistanceException, HTTP 422,
+    // GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED) before the canonical-finish-time
+    // consistency check below it is ever reached -- this is a genuine,
+    // intentional contract change (was a generic ArgumentException/400
+    // "no canonical value" message; is now a precise, typed, non-ArgumentException
+    // rejection of the distance itself), not a regression. See
+    // GoalDistanceCustomNotSupportedFailClosedTests for the full matrix.
     [Fact]
     public void ProductAverage_Custom_NoCanonicalValue_Throws() =>
-        Assert.Throws<ArgumentException>(() => GenerateRacePlanPreviewRequestValidator.Validate(
+        Assert.Throws<UnsupportedGoalDistanceException>(() => GenerateRacePlanPreviewRequestValidator.Validate(
             ValidRequest(goalDistance: GoalDistance.Custom, targetFinishTimeSeconds: 3480, targetFinishTimeSource: TargetFinishTimeSource.ProductAverage)));
 
     [Fact]

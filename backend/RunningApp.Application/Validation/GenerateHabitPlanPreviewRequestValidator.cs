@@ -1,10 +1,18 @@
+using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.Exceptions;
 
 namespace RunningApp.Application.Validation;
 
 /// <summary>
 /// Public-boundary shape validation for <see cref="GenerateHabitPlanPreviewRequest"/>.
-/// Throws <see cref="ArgumentException"/>, mapped to HTTP 400.
+/// Throws <see cref="ArgumentException"/>, mapped to HTTP 400, for structural
+/// shape problems. PHASE DIST-GEN.0.1 also rejects an unsupported
+/// <c>GoalDistance</c> (e.g. Custom) here with a typed
+/// <see cref="UnsupportedGoalDistanceException"/> (HTTP 422) -- this is the
+/// habit-plan path's own independent fail-closed gate; it does not rely
+/// solely on the shared internal <c>GeneratePreviewRequestValidator</c>
+/// downstream repeating the same check.
 /// </summary>
 public static class GenerateHabitPlanPreviewRequestValidator
 {
@@ -18,6 +26,13 @@ public static class GenerateHabitPlanPreviewRequestValidator
         if (request.StartDate == default)
         {
             throw new ArgumentException("StartDate is required.");
+        }
+
+        if (!GoalDistanceKm.TryResolve(request.GoalDistance, out _))
+        {
+            throw new UnsupportedGoalDistanceException(
+                $"goal_distance '{request.GoalDistance}' is not a supported goal distance for plan generation. " +
+                "Only five_k, ten_k, half_marathon, and marathon are currently supported. Reason: GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED.");
         }
 
         if (request.PreferredDays is null || request.PreferredDays.Count == 0)

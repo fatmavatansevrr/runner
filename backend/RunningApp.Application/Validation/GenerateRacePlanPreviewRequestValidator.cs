@@ -1,5 +1,6 @@
 using RunningApp.Application.Common;
 using RunningApp.Application.DTOs.Plan;
+using RunningApp.Application.Exceptions;
 using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.Validation;
@@ -24,6 +25,19 @@ public static class GenerateRacePlanPreviewRequestValidator
         if (request.StartDate == default)
         {
             throw new ArgumentException("StartDate is required.");
+        }
+
+        // ── PHASE DIST-GEN.0.1 fail-closed gate ──────────────────────────────
+        // Reject GoalDistance.Custom (or any other unresolvable GoalDistance)
+        // at the earliest possible public boundary, before this command is
+        // even mapped to the internal pipeline. GeneratePreviewRequestValidator
+        // (the shared internal validator downstream) independently repeats
+        // this check, so this is defense-in-depth, not the only gate.
+        if (!GoalDistanceKm.TryResolve(request.GoalDistance, out _))
+        {
+            throw new UnsupportedGoalDistanceException(
+                $"goal_distance '{request.GoalDistance}' is not a supported goal distance for plan generation. " +
+                "Only five_k, ten_k, half_marathon, and marathon are currently supported. Reason: GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED.");
         }
 
         if (request.PreferredDays is null || request.PreferredDays.Count == 0)
