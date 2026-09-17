@@ -142,14 +142,20 @@ public sealed class Dark16KTargetDistanceProjectionTests
     [Fact]
     public void HorizonPolicy_16K_ExactFrozenBounds()
     {
-        Assert.Equal(8, TargetDistance16KHorizonPolicy.MinimumCoreWeeks);
+        // PHASE DIST-GEN.2A/2B: MinimumCoreWeeks corrected from 8 to 10 --
+        // 8-9W are below the reused HALF_MARATHON catalog identity's own real
+        // phase-allocation minimum-week sum and are deferred to a future
+        // compressed-core track. PreferredCoreWeeks/MaximumCoreWeeks unchanged.
+        Assert.Equal(10, TargetDistance16KHorizonPolicy.MinimumCoreWeeks);
         Assert.Equal(12, TargetDistance16KHorizonPolicy.PreferredCoreWeeks);
         Assert.Equal(14, TargetDistance16KHorizonPolicy.MaximumCoreWeeks);
     }
 
     [Theory]
     [InlineData(7, RaceHorizonClassification.BelowMinimum)]
-    [InlineData(8, RaceHorizonClassification.StandaloneCoreSupported)]
+    [InlineData(8, RaceHorizonClassification.BelowMinimum)]
+    [InlineData(9, RaceHorizonClassification.BelowMinimum)]
+    [InlineData(10, RaceHorizonClassification.StandaloneCoreSupported)]
     [InlineData(12, RaceHorizonClassification.ExactStandaloneCoreSupported)]
     [InlineData(14, RaceHorizonClassification.StandaloneCoreSupported)]
     [InlineData(15, RaceHorizonClassification.CompositionRequired)]
@@ -255,7 +261,10 @@ public sealed class Dark16KTargetDistanceProjectionTests
     };
 
     [Theory]
+    [InlineData(10)]
+    [InlineData(11)]
     [InlineData(12)]
+    [InlineData(13)]
     [InlineData(14)]
     public async Task RealPipeline_EligibleHorizons_MaterializeSuccessfully(int weeks)
     {
@@ -271,33 +280,24 @@ public sealed class Dark16KTargetDistanceProjectionTests
     }
 
     /// <summary>
-    /// Proves the horizon GATE (TargetDistance16KHorizonPolicy, 8/12/14) correctly
-    /// ADMITS an 8-week request (8 is within the pilot's own frozen bounds) --
-    /// it is a genuinely SEPARATE, later mechanism (the reused catalog identity's
-    /// own phase-allocation minimum-week sum, 10, inherited from HALF_MARATHON's
-    /// own real minimum) that ultimately rejects it. This distinction matters:
-    /// an 8-week dark 16K request must NOT be rejected with a horizon-authority
-    /// reason code (that would be a false negative in the horizon gate itself);
-    /// it must fail later, for a distinct, correctly-attributed reason.
+    /// PHASE DIST-GEN.2A/2B: proves the horizon GATE (TargetDistance16KHorizonPolicy,
+    /// now 10/12/14) correctly REJECTS an 8-week request itself, before ever
+    /// reaching phase allocation. This supersedes DIST-GEN.2's own
+    /// <c>RealPipeline_EightWeekHorizon_PassesHorizonGate_ButFailsPhaseAllocation_ForCatalogReuseReasons</c>
+    /// test (removed), which proved the OPPOSITE under the since-corrected
+    /// MinimumCoreWeeks=8 authority: that 8W passed the horizon gate and only
+    /// failed later, downstream, at phase allocation
+    /// (<c>DynamicCoreWeekSkeletonInfeasibleException: TARGET_BELOW_SUM_OF_MINIMUMS</c>,
+    /// sumOfMinimums=10). DIST-GEN.2A corrected the horizon authority itself
+    /// to 10 so that this now-known-infeasible case is rejected at the
+    /// correct, earlier layer with the correct, attributable reason code
+    /// (see <see cref="RealPipeline_BelowMinimumHorizon_RejectedByDark16KAuthority_NotByHalfMarathonOrTenKBounds"/>,
+    /// which now covers 7W/8W/9W).
     /// </summary>
-    [Fact]
-    public async Task RealPipeline_EightWeekHorizon_PassesHorizonGate_ButFailsPhaseAllocation_ForCatalogReuseReasons()
-    {
-        using var context = NewInMemoryContext();
-        var service = CreateCatalogRoutedService(context);
-        var start = new DateOnly(2026, 8, 3);
-        var request = Dark16KRequest(8, start);
-
-        var ex = await Record.ExceptionAsync(() => service.GeneratePreviewAsync(Guid.NewGuid(), request));
-
-        Assert.NotNull(ex);
-        Assert.IsNotType<PlanCoreHorizonTooShortException>(ex);
-        Assert.IsNotType<PlanHorizonCompositionRequiredException>(ex);
-        _output.WriteLine($"8W dark 16K request correctly passed the horizon gate; failed downstream with: {ex!.GetType().Name}: {ex.Message}");
-    }
-
     [Theory]
     [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
     public async Task RealPipeline_BelowMinimumHorizon_RejectedByDark16KAuthority_NotByHalfMarathonOrTenKBounds(int weeks)
     {
         using var context = NewInMemoryContext();
@@ -446,8 +446,73 @@ public sealed class Dark16KTargetDistanceProjectionTests
         }
     }
 
+    /// <summary>
+    /// PHASE DIST-GEN.2B: new lower-boundary golden trace, added because
+    /// DIST-GEN.2A corrected MinimumCoreWeeks from 8 to 10, making 10W the
+    /// new minimum-boundary success case for the dark 16K Standard Core
+    /// track (mirrors <see cref="GoldenTrace_12W_MaterializesWithFrozen16KNumericsNotHmNumerics"/>'s
+    /// own style). Confirms family/target identity coexist correctly and the
+    /// real phase split at this new boundary is FOUNDATION=2/BUILD=3/
+    /// RACE_SPECIFIC=3/TAPER=2, inherited unchanged from the reused
+    /// HALF_MARATHON catalog identity's own real minimum-week allocation.
+    /// </summary>
+    [Fact]
+    public async Task GoldenTrace_10W_LowerBoundary_MaterializesWithFrozen16KNumericsNotHmNumerics()
+    {
+        var candidate = await CandidateAsync();
+        var context = Context(candidate, targetWeekCount: 10);
+        Assert.Equal("HALF_MARATHON", context.ResolverInput.CanonicalDistanceFamily);
+        Assert.Equal(16.0, context.ResolverInput.RequestedTargetDistanceKm);
+
+        var result = await Pipeline().MaterializeAsync(context);
+        var volume = result.PrescriptionResult.VolumeResult.VolumeAndLongRunPlan;
+        var prescribed = result.PrescriptionResult.FinalPrescribedPlan;
+
+        Assert.True(prescribed.ValidationResult.IsValid, string.Join("; ", prescribed.ValidationResult.Errors));
+        Assert.Equal(10, prescribed.Weeks.Count);
+        Assert.All(prescribed.Weeks, w => Assert.Equal(4, w.Sessions.Count));
+
+        // Real phase split at the new 10W minimum boundary: 2/3/3/2, inherited
+        // unchanged from the reused HALF_MARATHON catalog identity's own
+        // real minimum-week phase-allocation sum.
+        var phaseCounts = prescribed.Weeks.GroupBy(w => w.PhaseKey).ToDictionary(g => g.Key, g => g.Count());
+        Assert.Equal(2, phaseCounts["FOUNDATION"]);
+        Assert.Equal(3, phaseCounts["BUILD"]);
+        Assert.Equal(3, phaseCounts["RACE_SPECIFIC"]);
+        Assert.Equal(2, phaseCounts["TAPER"]);
+
+        // Peak volume must reflect the pilot's own 40.0km reference, never HM's own 43.0km.
+        Assert.True(volume.WeeklyVolumePlan.Weeks.Max(w => w.PlannedWeeklyVolumeKm) <= 40.0d + 0.001d);
+        Assert.NotEqual(43.0d, volume.WeeklyVolumePlan.Weeks.Max(w => w.PlannedWeeklyVolumeKm));
+
+        // Long run never reaches/exceeds the 16.0km target distance, and never exceeds the 15.0km ceiling.
+        Assert.All(volume.LongRunProgression.Weeks, w =>
+        {
+            Assert.True(w.PlannedLongRunDistanceKm < 16.0d);
+            Assert.True(w.PlannedLongRunDistanceKm <= 15.0d + 0.001d);
+            Assert.True(w.LongRunShareOfWeeklyVolume <= 0.40d + 0.001d);
+        });
+
+        // Non-chained taper: both weeks computed from the fixed anchor, never W2 = W1 x 0.43.
+        var taperWeeks = volume.WeeklyVolumePlan.Weeks.Where(w => w.IsTaperWeek).ToArray();
+        Assert.Equal(2, taperWeeks.Length);
+        var w1 = taperWeeks[0].PlannedWeeklyVolumeKm;
+        var w2 = taperWeeks[1].PlannedWeeklyVolumeKm;
+        Assert.True(Math.Abs(w2 - w1 * 0.43d) > 0.5d, "Taper W2 must not equal W1 x 0.43 (chained) -- must be anchor x 0.43.");
+
+        foreach (var week in volume.WeeklyVolumePlan.Weeks)
+        {
+            var lr = volume.LongRunProgression.Weeks.Single(w => w.WeekNumber == week.WeekNumber);
+            var phaseWeek = prescribed.Weeks.Single(w => w.WeekNumber == week.WeekNumber);
+            _output.WriteLine($"W{week.WeekNumber:D2}|{phaseWeek.PhaseKey}|vol={week.PlannedWeeklyVolumeKm:F1}|lr={lr.PlannedLongRunDistanceKm:F1}|lrShare={lr.LongRunShareOfWeeklyVolume:P1}|taper={week.IsTaperWeek}");
+        }
+    }
+
     [Theory]
+    [InlineData(10)]
+    [InlineData(11)]
     [InlineData(12)]
+    [InlineData(13)]
     [InlineData(14)]
     public async Task TwoOfThreeHorizons_MaterializeWithinFrozenPeakAndNeverForcePeak(int weeks)
     {
@@ -470,25 +535,25 @@ public sealed class Dark16KTargetDistanceProjectionTests
     }
 
     /// <summary>
-    /// GENUINE FINDING (not a test defect): the reused, unmodified
-    /// HALF_MARATHON__4D__INTERMEDIATE catalog identity's own phase-allocation
-    /// minimum-week sum (Foundation+Build+RaceSpecific+Taper minimums, as
-    /// authored in HALF_MARATHON_MASTER's phase-allocation policy) is 10
-    /// weeks -- inherited unchanged from HALF_MARATHON's own real
+    /// GENUINE FINDING, now HISTORICAL CONTEXT for the DIST-GEN.2A correction:
+    /// the reused, unmodified HALF_MARATHON__4D__INTERMEDIATE catalog
+    /// identity's own phase-allocation minimum-week sum
+    /// (Foundation+Build+RaceSpecific+Taper minimums, as authored in
+    /// HALF_MARATHON_MASTER's phase-allocation policy) is 10 weeks --
+    /// inherited unchanged from HALF_MARATHON's own real
     /// MinimumSupportedStandaloneWeeks, per DIST-GEN.1's own catalog-identity-reuse
-    /// constraint (§6: zero catalog file changes). DIST-GEN.1 §10/§38 froze
-    /// MinimumCoreWeeks=8 for this pilot from real external 10-mile-plan
-    /// evidence, and §38's own feasibility table reasoned only about
-    /// volume/growth-rate arithmetic -- it did not check the reused catalog's
-    /// own phase-allocation minimum-week sum, which is a SEPARATE, earlier
-    /// gate (<see cref="RunningApp.Application.RuntimeCatalog.Schedule.Materialization.DynamicCoreWeekSkeletonOrchestrator"/>).
-    /// Because catalog identity must remain fully unmodified (DIST-GEN.1 §6,
-    /// this phase's own diff-safety constraint), an 8-week 16K plan cannot
-    /// actually be phase-allocated against this reused identity -- it fails
-    /// with TARGET_BELOW_SUM_OF_MINIMUMS (sumOfMinimums=10) before any
-    /// volume/taper numeric authority is even consulted. This is recorded
-    /// honestly as a disclosed, real blocker (see the phase's final report,
-    /// §43) rather than silently narrowed or worked around.
+    /// constraint (§6: zero catalog file changes). This test calls the
+    /// low-level materialization pipeline DIRECTLY, bypassing
+    /// <c>PlanServices.GeneratePreviewAsync</c>'s own horizon gate entirely,
+    /// so it still demonstrates this real, unchanged allocator fact even
+    /// after DIST-GEN.2A/2B corrected <see cref="TargetDistance16KHorizonPolicy.MinimumCoreWeeks"/>
+    /// from 8 to 10. In the REAL production pipeline (see
+    /// <see cref="RealPipeline_BelowMinimumHorizon_RejectedByDark16KAuthority_NotByHalfMarathonOrTenKBounds"/>),
+    /// an 8-week request is now rejected earlier, by the horizon gate itself
+    /// (<c>PlanCoreHorizonTooShortException</c>), and this allocator-level
+    /// exception is no longer the user/caller-visible failure mode for 8W --
+    /// it remains true only for a caller that bypasses the horizon gate, as
+    /// this direct-orchestrator test deliberately does.
     /// </summary>
     [Fact]
     public async Task EightWeekHorizon_CannotPhaseAllocate_BecauseReusedCatalogIdentityOwnMinimumSumIsTen()
