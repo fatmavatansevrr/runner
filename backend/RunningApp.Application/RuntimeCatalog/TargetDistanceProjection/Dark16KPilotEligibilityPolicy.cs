@@ -194,4 +194,96 @@ public static class Dark16KPilotEligibilityPolicy
     /// <summary>Convenience boolean form of <see cref="TryResolveDarkEligibleCell(double?,string,string,int)"/>, for call sites that only need the yes/no answer.</summary>
     public static bool IsDarkEligible(double? targetDistanceKmOverride, string canonicalDistanceFamily, string level, int runsPerWeek) =>
         TryResolveDarkEligibleCell(targetDistanceKmOverride, canonicalDistanceFamily, level, runsPerWeek) is not null;
+
+    /// <summary>
+    /// PHASE DIST-GEN.7 — the small, explicit, PUBLIC projected-target-distance
+    /// registry. Deliberately declared as its OWN list, not derived from
+    /// <see cref="ApprovedDarkCells"/> — a cell being materializable
+    /// internally (dark) never implies it is publicly reachable, and vice
+    /// versa; the two lists are independently authored and independently
+    /// auditable, even though today they happen to contain the same two
+    /// entries. Consulted exclusively by
+    /// <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper"/>'s
+    /// canonicalization gate — the ONE place public target-distance
+    /// eligibility is decided. As of DIST-GEN.7 this supersedes the original,
+    /// single-target <see cref="IsEligible(double?,GoalDistance,RunningBackground?,int?)"/>
+    /// overloads as the mapper's own gate (those overloads are left in place,
+    /// unmodified, as the historical/frozen DIST-GEN.1-3 single-triple
+    /// authority and because <see cref="EligibleTargetDistanceKm"/> et al. are
+    /// still referenced by this class and by existing tests/messages — they
+    /// are no longer called by the mapper and are effectively superseded,
+    /// not dead in the sense of being unreferenced).
+    ///
+    /// Exactly two entries: 16.0 (DIST-GEN.3's own original public grant) and
+    /// 15.0 (DIST-GEN.7's own new public grant). Never a computed range —
+    /// lookup is by exact match only, per this class's established pattern.
+    /// </summary>
+    public static readonly IReadOnlyList<ApprovedDarkTargetDistanceCell> ApprovedPublicCells =
+    [
+        new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.3 -- 16.0km
+        new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.7 -- 15.0km
+    ];
+
+    /// <summary>
+    /// Enum-typed public-registry lookup, mirroring
+    /// <see cref="TryResolveDarkEligibleCell(double?,GoalDistance,RunningBackground?,int?)"/>'s
+    /// exact shape but checked against <see cref="ApprovedPublicCells"/>. This
+    /// is the overload <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper"/>
+    /// calls.
+    /// </summary>
+    public static ApprovedDarkTargetDistanceCell? TryResolvePublicEligibleCell(
+        double? targetDistanceKmOverride,
+        GoalDistance requestGoalDistance,
+        RunningBackground? level,
+        int? runsPerWeek)
+    {
+        if (targetDistanceKmOverride is not { } km)
+        {
+            return null;
+        }
+
+        foreach (var cell in ApprovedPublicCells)
+        {
+            if (Math.Abs(km - cell.TargetDistanceKm) < ToleranceKm &&
+                requestGoalDistance == cell.ParentDistanceFamily &&
+                level == cell.Level &&
+                runsPerWeek == cell.RunsPerWeek)
+            {
+                return cell;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>String/candidate-identity-typed sibling of <see cref="TryResolvePublicEligibleCell(double?,GoalDistance,RunningBackground?,int?)"/>, mirroring the dark registry's own string-typed sibling shape. Not currently called by any production call site (the mapper has only the typed enum available), kept for pattern-parity with the dark registry.</summary>
+    public static ApprovedDarkTargetDistanceCell? TryResolvePublicEligibleCell(
+        double? targetDistanceKmOverride,
+        string canonicalDistanceFamily,
+        string level,
+        int runsPerWeek)
+    {
+        if (targetDistanceKmOverride is not { } km || canonicalDistanceFamily != "HALF_MARATHON" || level != "INTERMEDIATE")
+        {
+            return null;
+        }
+
+        foreach (var cell in ApprovedPublicCells)
+        {
+            if (Math.Abs(km - cell.TargetDistanceKm) < ToleranceKm && runsPerWeek == cell.RunsPerWeek)
+            {
+                return cell;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Convenience boolean form of <see cref="TryResolvePublicEligibleCell(double?,GoalDistance,RunningBackground?,int?)"/>, for call sites that only need the yes/no answer.</summary>
+    public static bool IsPubliclyEligible(double? targetDistanceKmOverride, GoalDistance requestGoalDistance, RunningBackground? level, int? runsPerWeek) =>
+        TryResolvePublicEligibleCell(targetDistanceKmOverride, requestGoalDistance, level, runsPerWeek) is not null;
+
+    /// <summary>Convenience boolean form of <see cref="TryResolvePublicEligibleCell(double?,string,string,int)"/>, for call sites that only need the yes/no answer.</summary>
+    public static bool IsPubliclyEligible(double? targetDistanceKmOverride, string canonicalDistanceFamily, string level, int runsPerWeek) =>
+        TryResolvePublicEligibleCell(targetDistanceKmOverride, canonicalDistanceFamily, level, runsPerWeek) is not null;
 }

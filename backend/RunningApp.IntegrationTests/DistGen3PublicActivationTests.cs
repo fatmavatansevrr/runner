@@ -136,9 +136,14 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
 
     // ── §22 Unsupported custom-distance matrix ───────────────────────────────
 
+    // NOTE: 15.0 was removed from this matrix by PHASE DIST-GEN.7, which
+    // publicly activated target_distance_km=15.0 at Intermediate/4D (see
+    // DistGen7PublicActivationTests.cs) -- it is no longer an unsupported
+    // target and its premise here would now be false. 14.0 was added in its
+    // place to keep this a 4-value unsupported matrix.
     [Theory]
     [InlineData(12.0)]
-    [InlineData(15.0)]
+    [InlineData(14.0)]
     [InlineData(18.0)]
     [InlineData(20.0)]
     public async Task UnsupportedCustomTargetDistances_AtIntermediateFourDay_TypedRejection_NoSilentSubstitution(double km)

@@ -137,8 +137,11 @@ void main() {
       expect(find.textContaining('isn\'t supported yet'), findsNothing);
     });
 
-    for (final blocked in ['15.0', '16.09', '18.0']) {
-      testWidgets('typing $blocked (near but not exactly 16.0) keeps Continue disabled', (tester) async {
+    // NOTE (DIST-GEN.7): 15.0 was removed from this "near but blocked" list --
+    // it is now its own approved projected target (see the dedicated 15K
+    // group below) and would make this test's premise false.
+    for (final blocked in ['14.9', '16.09', '18.0']) {
+      testWidgets('typing $blocked (near but not exactly an approved target) keeps Continue disabled', (tester) async {
         await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
 
         await tester.enterText(find.byType(TextField).at(1), blocked);
@@ -146,7 +149,7 @@ void main() {
 
         final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(continueButton.onPressed, isNull,
-            reason: '$blocked must NOT be treated as the exact 16.0 pilot match (tight ~0.001 epsilon, '
+            reason: '$blocked must NOT be treated as an exact approved-target match (tight ~0.001 epsilon, '
                 'not the ±0.2 preset-snap band).');
         expect(find.textContaining('isn\'t supported yet'), findsOneWidget);
       });
@@ -207,6 +210,75 @@ void main() {
         targetFinishTimeSource: TargetFinishTimeSourceWire.productAverage,
       ).toJson();
       expect(payload.containsKey('target_distance_km'), isFalse);
+    });
+  });
+
+  group('RaceDetailsPage — DIST-GEN.7 exact 15K projected target', () {
+    testWidgets('typing exactly 15.0 enables Continue with no guard message', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '15');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull,
+          reason: 'Exactly 15.0 is DIST-GEN.7\'s newly approved public projected target and must enable Continue.');
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
+    });
+
+    for (final blocked in ['14.9', '15.1', '15.9', '16.1', '16.09', '18.0']) {
+      testWidgets('typing $blocked (near but not exactly an approved target) keeps Continue disabled', (tester) async {
+        await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+        await tester.enterText(find.byType(TextField).at(1), blocked);
+        await tester.pumpAndSettle();
+
+        final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(continueButton.onPressed, isNull,
+            reason: '$blocked must NOT be treated as an exact approved-target match (15.0 or 16.0 only, tight '
+                '~0.001 epsilon, not the ±0.2 preset-snap band).');
+        expect(find.textContaining('isn\'t supported yet'), findsOneWidget);
+      });
+    }
+
+    testWidgets('submitting exactly 15.0 sets goal_distance=custom and target_distance_km=15.0 in state', (tester) async {
+      final container = await pumpPageWithContainer(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '15');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      final state = container.read(onboardingProvider);
+      expect(state.goalDistance, 'custom');
+      expect(state.targetDistanceKm, 15.0);
+
+      final payload = GenerateRacePlanPreviewRequestDto(
+        goalDistance: state.goalDistance,
+        targetDistanceKm: state.targetDistanceKm,
+        level: 'intermediate',
+        daysPerWeek: 4,
+        unit: 'km',
+        startDate: '2026-07-20',
+        preferredDays: const ['mon', 'wed', 'fri', 'sun'],
+        longRunDay: 'sun',
+        raceDate: '2026-10-12',
+        targetFinishTimeSeconds: 5100,
+        targetFinishTimeSource: TargetFinishTimeSourceWire.userDefined,
+      ).toJson();
+      expect(payload['goal_distance'], 'custom');
+      expect(payload['target_distance_km'], 15.0);
+    });
+
+    testWidgets('typing exactly 16.0 still enables Continue unchanged (16K zero-delta)', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '16');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull);
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
     });
   });
 

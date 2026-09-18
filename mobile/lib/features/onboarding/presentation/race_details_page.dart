@@ -52,18 +52,26 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
   // 15.8-16.2 band) is the one approved public 16K pilot target and is
   // allowed through. Every other non-preset value remains blocked exactly
   // as before.
-  static const double _pilot16KTargetKm = 16.0;
+  //
+  // PHASE DIST-GEN.7: generalized to a small, explicit, exact-match list of
+  // approved public projected targets, mirroring the backend's own
+  // Dark16KPilotEligibilityPolicy.ApprovedPublicCells shape. Adding 15.0 here
+  // is the ONLY change this phase makes to this list -- still exact-match
+  // only (same tight epsilon as before), still completely separate from the
+  // ±0.2 preset-snap tolerance used for the four canonical presets.
+  static const List<double> _approvedProjectedTargetsKm = [15.0, 16.0];
   static const double _pilot16KExactMatchEpsilon = 0.001;
 
-  bool get _isExactPilot16KMatch {
+  bool get _isExactApprovedProjectedTargetMatch {
     final val = double.tryParse(_distanceController.text.trim());
     if (val == null) return false;
-    return (val - _pilot16KTargetKm).abs() < _pilot16KExactMatchEpsilon;
+    return _approvedProjectedTargetsKm
+        .any((approved) => (val - approved).abs() < _pilot16KExactMatchEpsilon);
   }
 
   bool get _isUnsupportedDistance =>
       _mapDistanceTextToEnum(_distanceController.text.trim()) == 'custom' &&
-      !_isExactPilot16KMatch;
+      !_isExactApprovedProjectedTargetMatch;
 
   @override
   void dispose() {
@@ -97,15 +105,17 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
     final dateStr = _raceDate != null ? _raceDate!.toIso8601String().split('T')[0] : null;
     final distText = _distanceController.text.trim();
     final selectedEnum = _mapDistanceTextToEnum(distText);
-    final isPilot16K = selectedEnum == 'custom' && _isExactPilot16KMatch;
+    final isApprovedProjectedTarget =
+        selectedEnum == 'custom' && _isExactApprovedProjectedTargetMatch;
+    final parsedTargetKm = double.tryParse(distText);
 
     ref.read(onboardingProvider.notifier).updateGoalDistance(selectedEnum);
-    // PHASE DIST-GEN.3: only the exact approved 16K pilot value is ever
-    // sent as a numeric target -- every other selection (including the
-    // four presets) clears it, so target_distance_km is never sent
-    // alongside a canonical goal_distance.
+    // PHASE DIST-GEN.3/7: only an exact approved projected-target value (see
+    // _approvedProjectedTargetsKm) is ever sent as a numeric target -- every
+    // other selection (including the four presets) clears it, so
+    // target_distance_km is never sent alongside a canonical goal_distance.
     ref.read(onboardingProvider.notifier).updateTargetDistanceKm(
-          isPilot16K ? _pilot16KTargetKm : null,
+          isApprovedProjectedTarget ? parsedTargetKm : null,
         );
     ref.read(onboardingProvider.notifier).updateUnit(_unit);
     if (name.isNotEmpty && dateStr != null) {

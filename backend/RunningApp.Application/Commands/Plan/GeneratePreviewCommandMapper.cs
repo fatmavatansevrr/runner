@@ -1,3 +1,4 @@
+using System.Linq;
 using RunningApp.Application.DTOs.Plan;
 using RunningApp.Application.Exceptions;
 using RunningApp.Application.RuntimeCatalog;
@@ -89,36 +90,34 @@ public static class GeneratePreviewCommandMapper
             request.TargetFinishTimeSource = raceCommand.TargetFinishTimeSource;
             request.RaceName = raceCommand.RaceName;
 
-            // ── PHASE DIST-GEN.3 — the one canonicalization/eligibility gate ──
+            // ── PHASE DIST-GEN.3/7 — the one canonicalization/eligibility gate ──
             // Only reachable when GoalDistance == Custom AND the validator
             // already accepted a well-formed TargetDistanceKm (see
             // GenerateRacePlanPreviewRequestValidator). Resolves the numeric
-            // target to a catalog family, checks it against the single
-            // approved dark pilot triple (Dark16KPilotEligibilityPolicy), and
-            // — only if eligible — substitutes GoalDistance/TargetDistanceKmOverride
+            // target to a catalog family, checks it against the explicit,
+            // small PUBLIC projected-target registry
+            // (Dark16KPilotEligibilityPolicy.ApprovedPublicCells — DIST-GEN.7),
+            // and — only if eligible — substitutes GoalDistance/TargetDistanceKmOverride
             // to exactly mirror the internal shape the dark pilot's own test
             // harness has always used. Any other Custom target (out of every
-            // band, or in-band but not the exact eligible triple) is rejected
-            // here with UnsupportedTargetDistanceException (400), never
-            // silently substituted into an unrelated canonical family.
+            // band, or in-band but not an exact approved public cell) is
+            // rejected here with UnsupportedTargetDistanceException (400),
+            // never silently substituted into an unrelated canonical family.
             if (raceCommand.GoalDistance == GoalDistance.Custom && raceCommand.TargetDistanceKm is { } targetDistanceKm)
             {
                 var resolution = new CanonicalDistanceFamilyResolver().Resolve(targetDistanceKm);
 
-                var eligible = Dark16KPilotEligibilityPolicy.IsEligible(
+                var eligibleCell = Dark16KPilotEligibilityPolicy.TryResolvePublicEligibleCell(
                     targetDistanceKm, resolution.CanonicalDistanceFamily, raceCommand.Level, raceCommand.DaysPerWeek);
 
-                if (!eligible)
+                if (eligibleCell is null)
                 {
                     throw new UnsupportedTargetDistanceException(
                         $"target_distance_km {targetDistanceKm} km (resolved family: {resolution.CanonicalDistanceFamily}, " +
                         $"level: {raceCommand.Level}, days_per_week: {raceCommand.DaysPerWeek}) is not an approved " +
-                        "public target-distance projection. Only the frozen pilot triple " +
-                        $"(target_distance_km={Dark16KPilotEligibilityPolicy.EligibleTargetDistanceKm}, " +
-                        $"resolved family={Dark16KPilotEligibilityPolicy.EligibleParentDistanceFamily}, " +
-                        $"level={Dark16KPilotEligibilityPolicy.EligibleLevel}, " +
-                        $"days_per_week={Dark16KPilotEligibilityPolicy.EligibleRunsPerWeek}) is currently supported. " +
-                        "Reason: UNSUPPORTED_TARGET_DISTANCE.");
+                        "public target-distance projection. Only the explicit approved public cells " +
+                        $"({string.Join(", ", Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Select(c => $"target_distance_km={c.TargetDistanceKm}/family={c.ParentDistanceFamily}/level={c.Level}/days_per_week={c.RunsPerWeek}"))}) " +
+                        "are currently supported. Reason: UNSUPPORTED_TARGET_DISTANCE.");
                 }
 
                 request.GoalDistance = resolution.CanonicalDistanceFamily;

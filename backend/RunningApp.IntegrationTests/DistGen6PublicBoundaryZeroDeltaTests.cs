@@ -11,17 +11,24 @@ namespace RunningApp.IntegrationTests;
 /// <summary>
 /// PHASE DIST-GEN.6 -- real HTTP/PostgreSQL public-boundary proof that adding
 /// the second, dark-only 15K x INTERMEDIATE x 4D target-distance projection
-/// changes NOTHING about the public activation surface DIST-GEN.3 already
-/// proved: a real public HTTP request for <c>target_distance_km: 15.0</c>
-/// must still be rejected with 400 UNSUPPORTED_TARGET_DISTANCE, exactly as
-/// every other non-16.0 target already is, and a real public HTTP request for
+/// changed NOTHING about the public activation surface DIST-GEN.3 already
+/// proved, at the time DIST-GEN.6 was written: a real public HTTP request for
 /// <c>target_distance_km: 16.0</c> must still succeed with 200 and the exact
-/// same identity/behavior as before this phase. Uses the exact same
-/// <see cref="PublishedCatalogTestRelease"/> + <see cref="CustomWebApplicationFactory"/>
-/// harness as <see cref="DistGen3PublicActivationTests"/> -- deliberately a
-/// SEPARATE test class/file (never a modification of that file) so this
-/// phase's own addition is independently auditable against the pre-existing
-/// DIST-GEN.3 public-activation proof.
+/// same identity/behavior as before that phase.
+///
+/// PHASE DIST-GEN.7 UPDATE: this class's original two 15K-stays-blocked tests
+/// (<c>PublicPreview_TargetDistance15_StillRejected_400_UnsupportedTargetDistance_NoPersistence</c>
+/// and <c>PublicPreview_TargetDistance15_RejectedAtEveryEligibleDarkHorizon_NeverLeaksThroughByHorizon</c>)
+/// were REMOVED here, not merely left stale: DIST-GEN.7 deliberately flipped
+/// 15K from publicly-blocked to publicly-admitted at Intermediate/4D, so their
+/// premise is now intentionally false. The superseding proof -- that 15.0 IS
+/// now admitted, at every eligible horizon, with correct identity -- lives in
+/// <see cref="DistGen7PublicActivationTests"/>. This class's remaining tests
+/// (16K zero-delta, Custom-without-target regression, TEN_K/HM zero-delta)
+/// were never about 15K's own reachability and remain fully valid, unchanged.
+/// Uses the exact same <see cref="PublishedCatalogTestRelease"/> +
+/// <see cref="CustomWebApplicationFactory"/> harness as
+/// <see cref="DistGen3PublicActivationTests"/>/<see cref="DistGen7PublicActivationTests"/>.
 /// </summary>
 [Collection(ApiIntegrationTestCollection.Name)]
 public sealed class DistGen6PublicBoundaryZeroDeltaTests : IClassFixture<PublishedCatalogTestRelease>, IDisposable
@@ -58,41 +65,12 @@ public sealed class DistGen6PublicBoundaryZeroDeltaTests : IClassFixture<Publish
         return (await db.PlanPreviews.CountAsync(), await db.TrainingPlans.CountAsync());
     }
 
-    // ── The critical zero-delta proof: 15K stays blocked at the public boundary ──
-
-    [Fact]
-    public async Task PublicPreview_TargetDistance15_StillRejected_400_UnsupportedTargetDistance_NoPersistence()
-    {
-        await ResetAsync();
-        var before = await CountPersistedRowsAsync();
-
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Request(12, targetDistanceKm: 15.0));
-        var body = await response.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
-        Assert.DoesNotContain("HALF_MARATHON__4D__INTERMEDIATE", body);
-        Assert.DoesNotContain("preview_id", body);
-
-        var after = await CountPersistedRowsAsync();
-        Assert.Equal(before, after);
-    }
-
-    [Theory]
-    [InlineData(10)]
-    [InlineData(11)]
-    [InlineData(12)]
-    [InlineData(13)]
-    [InlineData(14)]
-    public async Task PublicPreview_TargetDistance15_RejectedAtEveryEligibleDarkHorizon_NeverLeaksThroughByHorizon(int weeks)
-    {
-        await ResetAsync();
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Request(weeks, targetDistanceKm: 15.0));
-        var body = await response.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
-    }
+    // NOTE (DIST-GEN.7): the original two "15K stays blocked" tests that lived
+    // here were removed -- PHASE DIST-GEN.7 deliberately admitted
+    // target_distance_km=15.0 at Intermediate/4D publicly. See
+    // DistGen7PublicActivationTests.EligibleHorizons_15K_PublicPreview_Succeeds_WithCorrectIdentityAndVolume
+    // and NineWeekHorizon_15K_TypedRejection_.../FifteenWeekHorizon_15K_TypedRejection_...
+    // for the superseding (now-true) proof of 15K's real public horizon boundary.
 
     // ── Zero-delta: 16K public activation is completely unchanged by this phase ──
 

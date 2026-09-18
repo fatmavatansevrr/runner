@@ -13,6 +13,13 @@ void main() {
       );
     });
 
+    test('renders "15K" when requestedTargetDistanceKm is present (DIST-GEN.7 15K projected target)', () {
+      expect(
+        formatGoalDistanceLabel(goalDistance: 'half_marathon', requestedTargetDistanceKm: 15.0),
+        '15K',
+      );
+    });
+
     test('rounds a non-exact requestedTargetDistanceKm before labeling', () {
       expect(
         formatGoalDistanceLabel(goalDistance: 'half_marathon', requestedTargetDistanceKm: 15.6),
