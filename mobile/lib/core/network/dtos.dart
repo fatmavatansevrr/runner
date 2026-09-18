@@ -82,9 +82,16 @@ class GenerateRacePlanPreviewRequestDto {
     this.recentLongestRunKm,
     this.recentRunsPerWeek,
     this.recentRace,
+    this.targetDistanceKm,
   });
 
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — public numeric target-distance field. Only
+  /// meaningful when [goalDistance] is `'custom'`; omitted entirely from the
+  /// wire payload when null (see [toJson]), so every existing call site that
+  /// never sets this keeps behaving identically.
+  final double? targetDistanceKm;
 
   /// Running Background V2 wire value — one of "beginner", "intermediate",
   /// "advanced", "experienced" (see `RunningBackground.wireValue`). New
@@ -152,6 +159,7 @@ class GenerateRacePlanPreviewRequestDto {
         'recent_longest_run_km': recentLongestRunKm,
       if (recentRunsPerWeek != null) 'recent_runs_per_week': recentRunsPerWeek,
       'recent_race': recentRace?.toJson(),
+      if (targetDistanceKm != null) 'target_distance_km': targetDistanceKm,
     };
   }
 }
@@ -208,12 +216,19 @@ class GeneratePreviewResponse {
     // direct-constructor call site (tests included) keeps compiling and
     // behaving as "core confirmable" without being touched.
     this.lifecycle = 'core_confirmable',
+    // PHASE DIST-GEN.3: additive, optional, default null.
+    this.requestedTargetDistanceKm,
   });
 
   final String previewId;
   final String templateId;
   final String goalType;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — null for every canonical preview; the exact
+  /// requested numeric target (e.g. 16.0) only for the approved
+  /// 16K/HalfMarathon-family pilot.
+  final double? requestedTargetDistanceKm;
   final String level;
   final int daysPerWeek;
   final String unit;
@@ -256,6 +271,8 @@ class GeneratePreviewResponse {
       // Missing key (legacy fixture) -> null -> PreviewLifecycle.fromWire
       // maps null to coreConfirmable, the approved fallback (PART 1).
       lifecycle: json['lifecycle'] as String? ?? 'core_confirmable',
+      requestedTargetDistanceKm:
+          (json['requested_target_distance_km'] as num?)?.toDouble(),
     );
   }
 }
@@ -438,11 +455,16 @@ class ActivePlanSummaryDto {
     this.totalWeeks,
     this.currentWeekType,
     this.currentRunwayBlock,
+    this.requestedTargetDistanceKm,
   });
 
   final String planId;
   final String goalType;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — null for every canonical plan; 16.0 for the
+  /// approved 16K/HalfMarathon-family pilot.
+  final double? requestedTargetDistanceKm;
   final String level;
   final String progressText;
 
@@ -477,6 +499,8 @@ class ActivePlanSummaryDto {
       totalWeeks: json['total_weeks'] as int?,
       currentWeekType: json['current_week_type'] as String?,
       currentRunwayBlock: json['current_runway_block'] as String?,
+      requestedTargetDistanceKm:
+          (json['requested_target_distance_km'] as num?)?.toDouble(),
     );
   }
 }
@@ -882,11 +906,16 @@ class ProfilePlanStatsDto {
     required this.totalPlannedRunsCount,
     required this.totalCompletedDistance,
     required this.adherenceRatePercent,
+    this.requestedTargetDistanceKm,
   });
 
   final String planName;
   final String goalType;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — null for every canonical plan; 16.0 for the
+  /// approved 16K/HalfMarathon-family pilot.
+  final double? requestedTargetDistanceKm;
   final int completedRunsCount;
   final int totalPlannedRunsCount;
   final double totalCompletedDistance;
@@ -903,6 +932,8 @@ class ProfilePlanStatsDto {
           (json['total_completed_distance'] as num? ?? 0.0).toDouble(),
       adherenceRatePercent:
           (json['adherence_rate_percent'] as num? ?? 0.0).toDouble(),
+      requestedTargetDistanceKm:
+          (json['requested_target_distance_km'] as num?)?.toDouble(),
     );
   }
 }
@@ -928,6 +959,7 @@ class PlanDetailsResponse {
     required this.totalPlannedDistance,
     required this.totalCompletedDistance,
     required this.weeks,
+    this.requestedTargetDistanceKm,
   });
 
   final bool hasActivePlan;
@@ -936,6 +968,10 @@ class PlanDetailsResponse {
   final String status;
   final String goalType;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — null for every canonical plan; 16.0 for the
+  /// approved 16K/HalfMarathon-family pilot.
+  final double? requestedTargetDistanceKm;
   final String level;
   final int daysPerWeek;
   final String unit;
@@ -976,6 +1012,8 @@ class PlanDetailsResponse {
       weeks: (json['weeks'] as List? ?? [])
           .map((e) => PlanWeekDetailDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      requestedTargetDistanceKm:
+          (json['requested_target_distance_km'] as num?)?.toDouble(),
     );
   }
 }

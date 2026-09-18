@@ -25,6 +25,20 @@ public sealed class GenerateRacePlanPreviewRequest
 {
     public required GoalDistance GoalDistance { get; set; }
 
+    /// <summary>
+    /// PHASE DIST-GEN.3 — public numeric target-distance field, wired
+    /// `target_distance_km` on the wire (matches this DTO family's
+    /// existing snake_case convention). Nullable and purely additive: every
+    /// existing client that omits it continues to behave identically. Only
+    /// meaningful when <see cref="GoalDistance"/> is
+    /// <see cref="Domain.Enums.GoalDistance.Custom"/> — see
+    /// <see cref="Validation.GenerateRacePlanPreviewRequestValidator"/> and
+    /// <see cref="Commands.Plan.GeneratePreviewCommandMapper"/> for the
+    /// canonicalization/eligibility gate this field feeds into. Ignored for
+    /// every other <see cref="GoalDistance"/> value.
+    /// </summary>
+    public double? TargetDistanceKm { get; set; }
+
     /// <summary>See <see cref="GeneratePreviewRequest.Level"/> for why the property-level converter is required.</summary>
     [JsonConverter(typeof(RunningBackgroundCanonicalJsonConverter))]
     public required RunningBackground Level { get; set; }

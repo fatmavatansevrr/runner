@@ -7,6 +7,7 @@ import 'package:antigravity_app/core/network/dtos.dart';
 import 'package:antigravity_app/core/routing/app_router.dart';
 import 'package:antigravity_app/features/onboarding/presentation/race_details_page.dart';
 import 'package:antigravity_app/features/onboarding/presentation/custom_goal_page.dart';
+import 'package:antigravity_app/features/onboarding/data/onboarding_provider.dart';
 import 'package:antigravity_app/features/plan/data/plan_repository.dart';
 import 'package:antigravity_app/features/plan/data/long_horizon_repository.dart';
 import 'support/noop_long_horizon_repository.dart';
@@ -26,6 +27,7 @@ class _UnreachablePlanRepository extends PlanRepository {
   Future<GeneratePreviewResponse> generateHabitPlanPreview(GenerateHabitPlanPreviewRequestDto request) =>
       throw StateError('must not be called -- Continue is guarded');
 }
+
 
 /// PHASE DIST-GEN.0.1 -- frontend proof for the smallest honest UX change:
 /// neither onboarding screen that can express an arbitrary/unsupported
@@ -61,8 +63,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Like [pumpPage], but returns the [ProviderContainer] so a test can
+  /// inspect [onboardingProvider] state after interacting with the page
+  /// (e.g. to prove _onContinue set target_distance_km correctly).
+  Future<ProviderContainer> pumpPageWithContainer(WidgetTester tester, Widget page, String path) async {
+    final container = ProviderContainer(overrides: [
+      planRepositoryProvider.overrideWithValue(_UnreachablePlanRepository()),
+      longHorizonRepositoryProvider.overrideWithValue(NoopLongHorizonRepository()),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: routerFor(page, path)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return container;
+  }
+
   group('RaceDetailsPage — unsupported free-text distance', () {
-    testWidgets('typing a non-preset distance (e.g. 16) disables Continue and shows a guard message', (tester) async {
+    testWidgets('typing a non-preset, non-pilot distance (e.g. 12) disables Continue and shows a guard message', (tester) async {
       await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
 
       // Sanity: the default preset value (10.0, mapped from the default
@@ -70,7 +91,11 @@ void main() {
       var continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(continueButton.onPressed, isNotNull);
 
-      await tester.enterText(find.byType(TextField).at(1), '16');
+      // PHASE DIST-GEN.3 note: this must NOT be '16' -- exactly 16.0 is now
+      // the one approved pilot exact-match value and correctly ENABLES
+      // Continue (see the dedicated pilot group below). '12' remains a
+      // genuinely unsupported, non-preset, non-pilot value.
+      await tester.enterText(find.byType(TextField).at(1), '12');
       await tester.pumpAndSettle();
 
       continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
@@ -97,6 +122,92 @@ void main() {
         expect(find.textContaining('isn\'t supported yet'), findsNothing);
       });
     }
+  });
+
+  group('RaceDetailsPage — DIST-GEN.3 exact 16K pilot target', () {
+    testWidgets('typing exactly 16.0 enables Continue with no guard message', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '16');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull,
+          reason: 'Exactly 16.0 is the one approved public pilot target and must enable Continue.');
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
+    });
+
+    for (final blocked in ['15.0', '16.09', '18.0']) {
+      testWidgets('typing $blocked (near but not exactly 16.0) keeps Continue disabled', (tester) async {
+        await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+        await tester.enterText(find.byType(TextField).at(1), blocked);
+        await tester.pumpAndSettle();
+
+        final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(continueButton.onPressed, isNull,
+            reason: '$blocked must NOT be treated as the exact 16.0 pilot match (tight ~0.001 epsilon, '
+                'not the ±0.2 preset-snap band).');
+        expect(find.textContaining('isn\'t supported yet'), findsOneWidget);
+      });
+    }
+
+    testWidgets('submitting exactly 16.0 sets goal_distance=custom and target_distance_km=16.0 in state', (tester) async {
+      final container = await pumpPageWithContainer(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '16');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      final state = container.read(onboardingProvider);
+      expect(state.goalDistance, 'custom');
+      expect(state.targetDistanceKm, 16.0);
+
+      final payload = GenerateRacePlanPreviewRequestDto(
+        goalDistance: state.goalDistance,
+        targetDistanceKm: state.targetDistanceKm,
+        level: 'intermediate',
+        daysPerWeek: 4,
+        unit: 'km',
+        startDate: '2026-07-20',
+        preferredDays: const ['mon', 'wed', 'fri', 'sun'],
+        longRunDay: 'sun',
+        raceDate: '2026-10-12',
+        targetFinishTimeSeconds: 5400,
+        targetFinishTimeSource: TargetFinishTimeSourceWire.userDefined,
+      ).toJson();
+      expect(payload['goal_distance'], 'custom');
+      expect(payload['target_distance_km'], 16.0);
+    });
+
+    testWidgets('submitting a canonical preset never sends target_distance_km', (tester) async {
+      final container = await pumpPageWithContainer(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '10.0');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      final state = container.read(onboardingProvider);
+      expect(state.goalDistance, 'ten_k');
+      expect(state.targetDistanceKm, isNull);
+
+      final payload = GenerateRacePlanPreviewRequestDto(
+        goalDistance: state.goalDistance,
+        targetDistanceKm: state.targetDistanceKm,
+        level: 'intermediate',
+        daysPerWeek: 4,
+        unit: 'km',
+        startDate: '2026-07-20',
+        preferredDays: const ['mon', 'wed', 'fri', 'sun'],
+        longRunDay: 'sun',
+        raceDate: '2026-10-12',
+        targetFinishTimeSeconds: 3480,
+        targetFinishTimeSource: TargetFinishTimeSourceWire.productAverage,
+      ).toJson();
+      expect(payload.containsKey('target_distance_km'), isFalse);
+    });
   });
 
   group('CustomGoalPage — habit "custom goal" always maps to goal_distance=custom', () {

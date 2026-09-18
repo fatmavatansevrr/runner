@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/formatting/goal_distance_formatter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/routing/app_router.dart';
@@ -616,6 +617,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     return _PlanCompletedState(
                       userName: userName,
                       goalDistance: activePlan.goalDistance,
+                      requestedTargetDistanceKm:
+                          planDetails.requestedTargetDistanceKm,
                       totalDistance: planDetails.totalCompletedDistance,
                       onStartNew: () => context.go(AppRoutes.goalSelection),
                     );
@@ -2503,19 +2506,21 @@ class _PlanCompletedState extends StatelessWidget {
     required this.goalDistance,
     required this.totalDistance,
     required this.onStartNew,
+    this.requestedTargetDistanceKm,
   });
   final String userName;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — null for every canonical plan; 16.0 for the
+  /// approved 16K/HalfMarathon-family pilot.
+  final double? requestedTargetDistanceKm;
   final double totalDistance;
   final VoidCallback onStartNew;
 
-  String _fmtGoal(String val) => switch (val) {
-        'five_k' => '5K',
-        'ten_k' => '10K',
-        'half_marathon' => 'Half Marathon',
-        'marathon' => 'Marathon',
-        _ => val,
-      };
+  String _fmtGoal(String val) => formatGoalDistanceLabel(
+        goalDistance: val,
+        requestedTargetDistanceKm: requestedTargetDistanceKm,
+      );
 
   @override
   Widget build(BuildContext context) {

@@ -44,8 +44,26 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
   // user proceed into a request that used to silently misfire and now
   // correctly fails server-side -- never implying "16K supported" or
   // "coming soon".
+  //
+  // PHASE DIST-GEN.3: exactly one exception carved into this gate -- a
+  // typed value that is EXACTLY 16.0 (tight ~0.001 epsilon, deliberately
+  // NOT the ±0.2 preset-snap tolerance used for the four presets above,
+  // per this phase's explicit instruction not to accidentally authorize a
+  // 15.8-16.2 band) is the one approved public 16K pilot target and is
+  // allowed through. Every other non-preset value remains blocked exactly
+  // as before.
+  static const double _pilot16KTargetKm = 16.0;
+  static const double _pilot16KExactMatchEpsilon = 0.001;
+
+  bool get _isExactPilot16KMatch {
+    final val = double.tryParse(_distanceController.text.trim());
+    if (val == null) return false;
+    return (val - _pilot16KTargetKm).abs() < _pilot16KExactMatchEpsilon;
+  }
+
   bool get _isUnsupportedDistance =>
-      _mapDistanceTextToEnum(_distanceController.text.trim()) == 'custom';
+      _mapDistanceTextToEnum(_distanceController.text.trim()) == 'custom' &&
+      !_isExactPilot16KMatch;
 
   @override
   void dispose() {
@@ -79,8 +97,16 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
     final dateStr = _raceDate != null ? _raceDate!.toIso8601String().split('T')[0] : null;
     final distText = _distanceController.text.trim();
     final selectedEnum = _mapDistanceTextToEnum(distText);
+    final isPilot16K = selectedEnum == 'custom' && _isExactPilot16KMatch;
 
     ref.read(onboardingProvider.notifier).updateGoalDistance(selectedEnum);
+    // PHASE DIST-GEN.3: only the exact approved 16K pilot value is ever
+    // sent as a numeric target -- every other selection (including the
+    // four presets) clears it, so target_distance_km is never sent
+    // alongside a canonical goal_distance.
+    ref.read(onboardingProvider.notifier).updateTargetDistanceKm(
+          isPilot16K ? _pilot16KTargetKm : null,
+        );
     ref.read(onboardingProvider.notifier).updateUnit(_unit);
     if (name.isNotEmpty && dateStr != null) {
       ref.read(onboardingProvider.notifier).updateRaceDetails(name, dateStr);

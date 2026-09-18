@@ -51,6 +51,16 @@ public sealed record RacePlanPreviewCommand : PlanPreviewCommand
     public required int TargetFinishTimeSeconds { get; init; }
 
     /// <summary>
+    /// PHASE DIST-GEN.3 — the raw public numeric target distance (km), only
+    /// ever non-null when <see cref="PlanPreviewCommand.GoalDistance"/> is
+    /// <see cref="Domain.Enums.GoalDistance.Custom"/> and the validator
+    /// accepted a well-formed value. Canonicalization (resolving this to a
+    /// catalog family and checking pilot eligibility) happens exactly once,
+    /// in <see cref="GeneratePreviewCommandMapper.ToInternalRequest"/>.
+    /// </summary>
+    public double? TargetDistanceKm { get; init; }
+
+    /// <summary>
     /// Always set for a race command — required, never inferred from the
     /// numeric value or from recent-race presence. See
     /// PHASE4D_4_1_PRODUCT_AVERAGE_TARGET_TIME_GOAL_FEASIBILITY_CLASSIFICATION.md.

@@ -35,6 +35,16 @@ public class GeneratePreviewResponse
     public string TemplateId { get; set; } = string.Empty;
     public GoalType GoalType { get; set; }
     public GoalDistance GoalDistance { get; set; }
+
+    /// <summary>
+    /// PHASE DIST-GEN.3 — the exact numeric target distance (km) this
+    /// preview was generated for, when it differs from the family
+    /// representative distance implied by <see cref="GoalDistance"/> (e.g.
+    /// 16.0 for the approved 16K/HalfMarathon-family pilot). Null for every
+    /// canonical FIVE_K/TEN_K/HALF_MARATHON/MARATHON request — purely
+    /// additive, does not change <see cref="GoalDistance"/>'s meaning.
+    /// </summary>
+    public double? RequestedTargetDistanceKm { get; set; }
     public RunningBackground Level { get; set; }
     public int DaysPerWeek { get; set; }
     public DistanceUnit Unit { get; set; }

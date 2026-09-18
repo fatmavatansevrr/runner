@@ -27,13 +27,40 @@ public static class GenerateRacePlanPreviewRequestValidator
             throw new ArgumentException("StartDate is required.");
         }
 
-        // ── PHASE DIST-GEN.0.1 fail-closed gate ──────────────────────────────
+        // ── PHASE DIST-GEN.0.1 fail-closed gate (narrowed by DIST-GEN.3) ─────
         // Reject GoalDistance.Custom (or any other unresolvable GoalDistance)
         // at the earliest possible public boundary, before this command is
-        // even mapped to the internal pipeline. GeneratePreviewRequestValidator
-        // (the shared internal validator downstream) independently repeats
-        // this check, so this is defense-in-depth, not the only gate.
-        if (!GoalDistanceKm.TryResolve(request.GoalDistance, out _))
+        // even mapped to the internal pipeline — UNLESS the caller also
+        // supplied a well-formed target_distance_km, in which case the
+        // request is allowed to flow through to the one-place
+        // canonicalization/eligibility gate in
+        // GeneratePreviewCommandMapper.ToInternalRequest. This does NOT
+        // weaken the original root-defect guard: Custom with no
+        // target_distance_km (or a malformed one) is rejected exactly as
+        // before. GeneratePreviewRequestValidator (the shared internal
+        // validator downstream) independently repeats the "no target
+        // present" check, so this remains defense-in-depth, not the only
+        // gate.
+        if (request.GoalDistance == GoalDistance.Custom)
+        {
+            if (request.TargetDistanceKm is not { } customTargetKm)
+            {
+                throw new UnsupportedGoalDistanceException(
+                    $"goal_distance '{request.GoalDistance}' is not a supported goal distance for plan generation. " +
+                    "Only five_k, ten_k, half_marathon, and marathon are currently supported. Reason: GOAL_DISTANCE_CUSTOM_NOT_SUPPORTED.");
+            }
+
+            if (double.IsNaN(customTargetKm) || double.IsInfinity(customTargetKm) || customTargetKm <= 0)
+            {
+                throw new ArgumentException(
+                    $"target_distance_km must be a finite positive number, but was {request.TargetDistanceKm}.");
+            }
+
+            // Well-formed numeric target: eligibility/family resolution is
+            // deliberately NOT decided here — see
+            // GeneratePreviewCommandMapper.ToInternalRequest.
+        }
+        else if (!GoalDistanceKm.TryResolve(request.GoalDistance, out _))
         {
             throw new UnsupportedGoalDistanceException(
                 $"goal_distance '{request.GoalDistance}' is not a supported goal distance for plan generation. " +

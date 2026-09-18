@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/formatting/goal_distance_formatter.dart';
 import '../../../core/models/preparation_runway.dart';
 import '../../../core/network/dtos.dart';
 import '../../../core/theme/app_colors.dart';
@@ -18,14 +19,12 @@ import '../../profile/data/profile_provider.dart';
 class PlanDetailsPage extends ConsumerWidget {
   const PlanDetailsPage({super.key});
 
-  static String _goalLabel(String goalType, String goalDistance) {
-    final distLabel = switch (goalDistance) {
-      'five_k' => '5 km',
-      'ten_k' => '10 km',
-      'half_marathon' => 'Half Marathon',
-      'marathon' => 'Marathon',
-      _ => goalDistance,
-    };
+  static String _goalLabel(String goalType, String goalDistance,
+      [double? requestedTargetDistanceKm]) {
+    final distLabel = formatGoalDistanceLabel(
+      goalDistance: goalDistance,
+      requestedTargetDistanceKm: requestedTargetDistanceKm,
+    );
     final verb = goalType == 'race' ? 'Race' : 'Run';
     return '$verb $distLabel';
   }
@@ -122,7 +121,8 @@ class _PlanDetailsBody extends StatelessWidget {
         children: [
           const SizedBox(height: 24),
           _PlanHeroCard(
-            title: PlanDetailsPage._goalLabel(plan.goalType, plan.goalDistance),
+            title: PlanDetailsPage._goalLabel(
+                plan.goalType, plan.goalDistance, plan.requestedTargetDistanceKm),
             subtitle: '${plan.totalWeeks}-week plan',
             badges: [
               PlanDetailsPage._levelLabel(plan.level),

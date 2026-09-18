@@ -327,7 +327,9 @@ public sealed class LongHorizonPublicPreviewConfirmationReadinessTests
     {
         var type = typeof(RunningApp.Application.DTOs.Plan.GeneratePreviewResponse);
         var props = type.GetProperties().Select(p => p.Name).ToHashSet();
-        Assert.Equal(new HashSet<string> { "PreviewId", "TemplateId", "GoalType", "GoalDistance", "Level", "DaysPerWeek", "Unit", "Weeks", "FallbackUsed", "FallbackReason", "Lifecycle" }, props);
+        // PHASE DIST-GEN.3 -- RequestedTargetDistanceKm added (additive, nullable,
+        // always null except for the one approved 16K/HalfMarathon-family pilot).
+        Assert.Equal(new HashSet<string> { "PreviewId", "TemplateId", "GoalType", "GoalDistance", "RequestedTargetDistanceKm", "Level", "DaysPerWeek", "Unit", "Weeks", "FallbackUsed", "FallbackReason", "Lifecycle" }, props);
     }
 
     [Fact]

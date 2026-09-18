@@ -18,6 +18,13 @@ public class ActivePlanSummaryDto
     public Guid PlanId { get; set; }
     public string GoalType { get; set; } = string.Empty;
     public string GoalDistance { get; set; } = string.Empty;
+
+    /// <summary>
+    /// PHASE DIST-GEN.3 — additive, sourced from the persisted
+    /// <c>TrainingPlan.RequestedTargetDistanceKm</c> column. Null for every
+    /// canonical plan; 16.0 for the approved 16K/HalfMarathon-family pilot.
+    /// </summary>
+    public double? RequestedTargetDistanceKm { get; set; }
     public string Level { get; set; } = string.Empty;
     public string ProgressText { get; set; } = string.Empty;
 

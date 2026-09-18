@@ -18,6 +18,7 @@ class OnboardingState {
   OnboardingState({
     this.goalType = 'habit',
     this.goalDistance = 'five_k',
+    this.targetDistanceKm,
     this.runningBackground = RunningBackground.beginner,
     this.daysPerWeek = 3,
     this.unit = 'km',
@@ -42,6 +43,13 @@ class OnboardingState {
 
   final String goalType;
   final String goalDistance;
+
+  /// PHASE DIST-GEN.3 — the actual typed numeric target distance (km), only
+  /// ever set (and only ever sent to the backend) when [goalDistance] is
+  /// `'custom'` AND the typed value is exactly the one approved pilot value
+  /// (16.0, tight epsilon — see `race_details_page.dart`). Null for every
+  /// other goal-distance selection, including all four canonical presets.
+  final double? targetDistanceKm;
 
   /// Running Background V2 — replaces the prior raw-string `level` field.
   final RunningBackground runningBackground;
@@ -127,6 +135,8 @@ class OnboardingState {
   OnboardingState copyWith({
     String? goalType,
     String? goalDistance,
+    double? targetDistanceKm,
+    bool clearTargetDistanceKm = false,
     RunningBackground? runningBackground,
     int? daysPerWeek,
     String? unit,
@@ -156,6 +166,8 @@ class OnboardingState {
     return OnboardingState(
       goalType: goalType ?? this.goalType,
       goalDistance: goalDistance ?? this.goalDistance,
+      targetDistanceKm:
+          clearTargetDistanceKm ? null : (targetDistanceKm ?? this.targetDistanceKm),
       runningBackground: runningBackground ?? this.runningBackground,
       daysPerWeek: daysPerWeek ?? this.daysPerWeek,
       unit: unit ?? this.unit,
@@ -196,6 +208,15 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   void updateGoalType(String type) => state = state.copyWith(goalType: type);
   void updateGoalDistance(String dist) => state = state.copyWith(goalDistance: dist);
+
+  /// PHASE DIST-GEN.3 — sets the actual typed numeric target distance (km).
+  /// Callers must only pass a non-null value alongside `goalDistance =
+  /// 'custom'` when the typed distance is exactly the one approved pilot
+  /// value (see `race_details_page.dart`'s own tight-exact-match check) —
+  /// this setter does not itself re-validate that constraint.
+  void updateTargetDistanceKm(double? km) => state = km == null
+      ? state.copyWith(clearTargetDistanceKm: true)
+      : state.copyWith(targetDistanceKm: km);
 
   /// Sets the selected running background. When changing TO
   /// [RunningBackground.beginner] from any other level, any previously
@@ -359,6 +380,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
     return GenerateRacePlanPreviewRequestDto(
       goalDistance: state.goalDistance,
+      targetDistanceKm: state.targetDistanceKm,
       level: state.runningBackground.wireValue,
       daysPerWeek: state.daysPerWeek,
       unit: state.unit,

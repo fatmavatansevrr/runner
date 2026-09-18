@@ -460,6 +460,15 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             TemplateId = snapshot.CandidateKey,
             GoalType = request.GoalType,
             GoalDistance = request.GoalDistance,
+            // PHASE DIST-GEN.3 -- null for every canonical request (TargetDistanceKmOverride
+            // is always null on those); exactly the approved pilot's requested
+            // numeric target (16.0) only when the dark eligibility gate approved
+            // this exact request. request.TargetDistanceKmOverride, not
+            // snapshot.NormalizedInput.RequestedTargetDistanceKm -- the latter
+            // always carries a value (falling back to the family-representative
+            // distance for every non-eligible request), which would defeat this
+            // field's purpose of disambiguating "16K" from a true canonical request.
+            RequestedTargetDistanceKm = request.TargetDistanceKmOverride,
             Level = request.Level,
             DaysPerWeek = request.DaysPerWeek,
             Unit = request.Unit,
@@ -912,7 +921,8 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             return new PlanDetailsResponse
             {
                 PlanId = plan.Id, Status = EnumSnakeCase.ToSnakeCase(plan.Status), GoalType = plan.GoalType,
-                GoalDistance = plan.GoalDistance, Level = plan.Level, DaysPerWeek = plan.DaysPerWeek, Unit = plan.Unit,
+                GoalDistance = plan.GoalDistance, RequestedTargetDistanceKm = plan.RequestedTargetDistanceKm,
+                Level = plan.Level, DaysPerWeek = plan.DaysPerWeek, Unit = plan.Unit,
                 RaceName = plan.RaceName, RaceDate = plan.RaceDate, TargetFinishTimeSeconds = plan.TargetFinishTimeSeconds,
                 StartedAt = plan.StartedAt, EstimatedEndDate = plan.EstimatedEndDate, TotalWeeks = aggregate.TotalWeeks,
                 CompletedWeeksCount = completedWeeks, TotalPlannedDistance = activeSessions.Sum(s => s.DistanceKm),
@@ -944,6 +954,7 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             Status = EnumSnakeCase.ToSnakeCase(plan.Status),
             GoalType = plan.GoalType,
             GoalDistance = plan.GoalDistance,
+            RequestedTargetDistanceKm = plan.RequestedTargetDistanceKm,
             Level = plan.Level,
             DaysPerWeek = plan.DaysPerWeek,
             Unit = plan.Unit,
