@@ -348,7 +348,7 @@ internal static class CatalogGoalDistanceResolver
         }
 
         if (requestedTargetDistanceKm is { } requested && Math.Abs(catalogKm - requested) > 0.001 &&
-            !RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsEligible(
+            !RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsDarkEligible(
                 requested, requestGoalDistance, level, daysPerWeek))
         {
             throw new CatalogPrescriptionContractException("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", "Resolved request target distance disagrees with catalog candidate distance.");

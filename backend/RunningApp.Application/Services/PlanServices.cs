@@ -129,13 +129,17 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
         // policy below so the two can never disagree.
         if (request.GoalType == GoalType.Race && request.RaceDate is { } raceDateForHorizonCheck)
         {
-            // PHASE DIST-GEN.2 -- computed once, before any horizon decision.
-            // Always false for every real HTTP-originated request (TargetDistanceKmOverride
+            // PHASE DIST-GEN.2/DIST-GEN.6 -- computed once, before any horizon
+            // decision, against the small explicit approved-cell registry
+            // (Dark16KPilotEligibilityPolicy.ApprovedDarkCells). Always null
+            // for every real HTTP-originated request (TargetDistanceKmOverride
             // is always null on those), so every branch below that depends on
             // this remains structurally unreachable for canonical TEN_K/HALF_MARATHON
             // requests, not merely empirically untriggered.
-            var isDark16KEligible = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsEligible(
+            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
                 request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+            var isDark16KEligible = darkCell is not null;
+            var isDark15KTarget = darkCell is { TargetDistanceKm: 15.0 };
 
             // HM.18 Blocker 1 -- distance-aware horizon gate. For every
             // distance other than HalfMarathon this resolves to the exact
@@ -144,53 +148,77 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // real 10/14/16-week bounds instead of TEN_K's borrowed 8/12/14
             // -- see RaceHorizonPolicy.DecideForDistance's own doc comment.
             //
-            // PHASE DIST-GEN.2 -- the one approved dark 16K pilot does NOT use
-            // either of those: it has its own EXPLICIT, dedicated horizon
-            // authority (TargetDistance16KHorizonPolicy, 8/12/14 weeks), never
-            // TEN_K's fallback arm and never HALF_MARATHON's own 10/14/16
-            // bounds (which would be wrong for this pilot's own frozen
-            // authority even though it shares the same catalog identity).
-            var horizonDecision = isDark16KEligible
-                ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
-                : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
+            // PHASE DIST-GEN.2/DIST-GEN.6 -- the approved dark target-distance
+            // projections (16K, and now 15K) do NOT use either of those: each
+            // has its own EXPLICIT, dedicated horizon authority
+            // (TargetDistance16KHorizonPolicy / TargetDistance15KHorizonPolicy,
+            // both 10/12/14 weeks -- a disclosed evidence convergence, not a
+            // shared policy instance), never TEN_K's fallback arm and never
+            // HALF_MARATHON's own 10/14/16 bounds (which would be wrong for
+            // either pilot's own frozen authority even though both share the
+            // same catalog identity).
+            var horizonDecision = isDark15KTarget
+                ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
+                : isDark16KEligible
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
+                    : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
             var availableWeeks = horizonDecision.AvailableFullWeeks;
-            var classification = isDark16KEligible
-                ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Classify(horizonDecision)
-                : RaceHorizonPolicy.Classify(horizonDecision);
+            var classification = isDark15KTarget
+                ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.Classify(horizonDecision)
+                : isDark16KEligible
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Classify(horizonDecision)
+                    : RaceHorizonPolicy.Classify(horizonDecision);
 
-            // PHASE DIST-GEN.2 -- the dark 16K pilot's own typed horizon
+            // PHASE DIST-GEN.2/DIST-GEN.6 -- each dark pilot's own typed horizon
             // rejection, using its own explicit reason codes
-            // (DARK_16K_CORE_HORIZON_*_NOT_SUPPORTED), never HALF_MARATHON's
-            // PLAN_CORE_HORIZON_TOO_SHORT/PLAN_HORIZON_START_TOO_EARLY message
-            // text (which cites the wrong, HM-native 10/16-week bounds) and
-            // never TEN_K's fallback-arm reasoning. Handled and returned/thrown
-            // before either of the two GoalDistance==HalfMarathon-scoped blocks
-            // below ever runs for this case.
+            // (DARK_16K_CORE_HORIZON_*_NOT_SUPPORTED / DARK_15K_CORE_HORIZON_*_NOT_SUPPORTED),
+            // never HALF_MARATHON's PLAN_CORE_HORIZON_TOO_SHORT/PLAN_HORIZON_START_TOO_EARLY
+            // message text (which cites the wrong, HM-native 10/16-week bounds)
+            // and never TEN_K's fallback-arm reasoning. Handled and
+            // returned/thrown before either of the two
+            // GoalDistance==HalfMarathon-scoped blocks below ever runs for
+            // this case.
             if (isDark16KEligible && classification == RaceHorizonClassification.BelowMinimum)
             {
-                var reasonCode = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                var reasonCode = isDark15KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
+                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                var minimumCoreWeeks = isDark15KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MinimumCoreWeeks
+                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
+                // Message text preserves the exact "dark 16K target-distance" wording
+                // for the original pilot (byte-identical to pre-DIST-GEN.6 text, per
+                // existing Dark16KTargetDistanceProjectionTests assertions) and mirrors
+                // it with "dark 15K target-distance" for the second target -- never a
+                // single genericized string that would silently change either pilot's
+                // observable exception text.
+                var pilotLabel = isDark15KTarget ? "dark 15K" : "dark 16K";
                 _logger.LogWarning(
-                    "GeneratePreview: dark 16K target-distance race horizon is below the supported minimum. " +
+                    "GeneratePreview: {PilotLabel} target-distance race horizon is below the supported minimum. " +
                     "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MinimumSupportedWeeks={MinimumSupportedWeeks}",
-                    request.StartDate, raceDateForHorizonCheck, availableWeeks,
-                    RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks);
+                    pilotLabel, request.StartDate, raceDateForHorizonCheck, availableWeeks, minimumCoreWeeks);
                 throw new PlanCoreHorizonTooShortException(
-                    "The available race-plan horizon is shorter than the supported dark 16K target-distance standalone core minimum " +
-                    $"({RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks} weeks). Available horizon is approximately " +
+                    $"The available race-plan horizon is shorter than the supported {pilotLabel} target-distance standalone core minimum " +
+                    $"({minimumCoreWeeks} weeks). Available horizon is approximately " +
                     $"{availableWeeks} weeks. Reason: {reasonCode}.");
             }
 
             if (isDark16KEligible && classification == RaceHorizonClassification.CompositionRequired)
             {
-                var reasonCode = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                var reasonCode = isDark15KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
+                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                var maximumCoreWeeks = isDark15KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MaximumCoreWeeks
+                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks;
+                var pilotLabel = isDark15KTarget ? "dark 15K" : "dark 16K";
                 _logger.LogWarning(
-                    "GeneratePreview: dark 16K target-distance race horizon exceeds the supported maximum. " +
+                    "GeneratePreview: {PilotLabel} target-distance race horizon exceeds the supported maximum. " +
                     "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaximumSupportedWeeks={MaximumSupportedWeeks}",
-                    request.StartDate, raceDateForHorizonCheck, availableWeeks,
-                    RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks);
+                    pilotLabel, request.StartDate, raceDateForHorizonCheck, availableWeeks, maximumCoreWeeks);
                 throw new PlanHorizonCompositionRequiredException(
-                    "The available race-plan horizon exceeds the supported dark 16K target-distance standalone core maximum " +
-                    $"({RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks} weeks). Available horizon is approximately " +
+                    $"The available race-plan horizon exceeds the supported {pilotLabel} target-distance standalone core maximum " +
+                    $"({maximumCoreWeeks} weeks). Available horizon is approximately " +
                     $"{availableWeeks} weeks. Reason: {reasonCode}.");
             }
 

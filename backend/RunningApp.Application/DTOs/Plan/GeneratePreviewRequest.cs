@@ -142,14 +142,15 @@ public class GeneratePreviewRequest
     public RecentRaceInput? RecentRace { get; set; }
 
     /// <summary>
-    /// PHASE DIST-GEN.2 — internal-only, dark target-distance projection
-    /// override. Always null for every real HTTP-originated request: no
-    /// public wire DTO (<c>GenerateRacePlanPreviewRequest</c>/
+    /// PHASE DIST-GEN.2/DIST-GEN.6 — internal-only, dark target-distance
+    /// projection override. Always null for every real HTTP-originated
+    /// request: no public wire DTO (<c>GenerateRacePlanPreviewRequest</c>/
     /// <c>GenerateHabitPlanPreviewRequest</c>) carries a field for this, and
     /// <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper.ToInternalRequest"/>
-    /// never sets it. Consumed ONLY through the narrow
-    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
-    /// gate, which requires this to be exactly 16.0 AND <see cref="GoalDistance"/>
+    /// never sets it. Consumed ONLY through the small, explicit approved-cell
+    /// registry in <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
+    /// (DIST-GEN.6 — today: 16.0 or 15.0, both HalfMarathon/Intermediate/4D),
+    /// which requires this to be an exact approved value AND <see cref="GoalDistance"/>
     /// to be <see cref="Domain.Enums.GoalDistance.HalfMarathon"/> AND
     /// <see cref="Level"/> to be Intermediate AND <see cref="DaysPerWeek"/> to
     /// be 4 before it has any effect anywhere in the pipeline. This does NOT

@@ -637,12 +637,15 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         // disclosed blocker) — now both consume this single instance.
         var executionIndex = LoadExecutionIndex(candidate);
 
-        // PHASE DIST-GEN.2 -- computed once per call. Always false for a
-        // canonical request (TargetDistanceKmOverride is always null), so
-        // every branch below that reads this stays structurally unreachable
-        // for canonical TEN_K/HALF_MARATHON requests.
-        var isDark16KEligibleForSkeleton = Dark16KPilotEligibilityPolicy.IsEligible(
+        // PHASE DIST-GEN.2/DIST-GEN.6 -- computed once per call, against the
+        // small explicit approved-cell registry (never a single hardcoded
+        // 16K boolean). Always null for a canonical request
+        // (TargetDistanceKmOverride is always null), so every branch below
+        // that reads this stays structurally unreachable for canonical
+        // TEN_K/HALF_MARATHON requests.
+        var darkCellForSkeleton = Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
             request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+        var isDark16KEligibleForSkeleton = darkCellForSkeleton is not null;
 
         // PHASE DIST-GEN.2 -- every downstream peak-volume-band lookup in this
         // method (both the CompressedCore/ExtendedCore dynamic-core branch and
@@ -674,7 +677,13 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             // when eligible, else the candidate's own real CoreCycle bounds),
             // and Decide is invoked exactly once against whichever bounds apply.
             int horizonMinimumWeeks, horizonPreferredWeeks, horizonMaximumWeeks;
-            if (isDark16KEligibleForSkeleton)
+            if (darkCellForSkeleton is { TargetDistanceKm: 15.0 })
+            {
+                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MinimumCoreWeeks;
+                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.PreferredCoreWeeks;
+                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MaximumCoreWeeks;
+            }
+            else if (isDark16KEligibleForSkeleton)
             {
                 horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
                 horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.PreferredCoreWeeks;
@@ -1101,17 +1110,20 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
     /// RaceDate, or any target-race field.
     /// </summary>
     /// <summary>
-    /// PHASE DIST-GEN.2 — resolves the snapshot's own RequestedTargetDistanceKm.
+    /// PHASE DIST-GEN.2/DIST-GEN.6 — resolves the snapshot's own RequestedTargetDistanceKm.
     /// For every canonical request (<see cref="GeneratePreviewRequest.TargetDistanceKmOverride"/>
     /// is null) this is byte-identical to the original unconditional
     /// <c>CatalogGoalDistanceResolver.Resolve(...)</c> expression. Only when the
     /// dark <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
-    /// gate approves the exact (16.0, HalfMarathon, Intermediate, 4D) triple does
-    /// this diverge from the family-representative constant — never GoalDistanceKm
-    /// itself (see <see cref="CatalogGoalDistanceResolver.Resolve"/>'s own doc note).
+    /// registry approves an exact target/family/level/frequency cell (today:
+    /// 16.0 or 15.0, both HalfMarathon/Intermediate/4D) does this diverge from
+    /// the family-representative constant — never GoalDistanceKm itself (see
+    /// <see cref="CatalogGoalDistanceResolver.Resolve"/>'s own doc note). The
+    /// exact requested value is preserved verbatim (never collapsed to a
+    /// different approved cell's value).
     /// </summary>
     private static double ResolveRequestedTargetDistanceKm(GeneratePreviewRequest request, PlanCatalogCandidateSummary candidate) =>
-        Dark16KPilotEligibilityPolicy.IsEligible(
+        Dark16KPilotEligibilityPolicy.IsDarkEligible(
             request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek)
             ? request.TargetDistanceKmOverride!.Value
             : CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance);

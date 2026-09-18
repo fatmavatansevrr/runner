@@ -95,23 +95,35 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
-        // PHASE DIST-GEN.2 -- the dark 16K x INTERMEDIATE x 4D pilot's own
-        // frozen VolumeSafetyPolicy, selected BEFORE the generic HM
-        // Intermediate branch below so it never falls through to
-        // HalfMarathonIntermediate4D's own canonical (21.0975km) authority.
-        // Gated by Dark16KPilotEligibilityPolicy against the prescription
+        // PHASE DIST-GEN.2/DIST-GEN.6 -- the dark target-distance-projection
+        // pilots' (16K, and now 15K) own frozen VolumeSafetyPolicy instances,
+        // selected BEFORE the generic HM Intermediate branch below so they
+        // never fall through to HalfMarathonIntermediate4D's own canonical
+        // (21.0975km) authority. Resolved against the small, explicit
+        // approved-cell registry (Dark16KPilotEligibilityPolicy.ApprovedDarkCells,
+        // DIST-GEN.4 §38's own recommendation) using the prescription
         // context's own RequestedTargetDistanceKm -- for every canonical
         // HALF_MARATHON request that value always equals the family-representative
-        // 21.0975km (never 16.0), so this branch is structurally unreachable
-        // for any canonical request, not merely empirically untriggered.
+        // 21.0975km (never 15.0 or 16.0), so this branch is structurally
+        // unreachable for any canonical request, not merely empirically
+        // untriggered. Dispatches to the exact target-specific instance the
+        // registry matched, never a boolean-gated single instance.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
             request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 4 &&
-            ReferenceEquals(_policy, VolumeSafetyPolicy.Default) &&
-            RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsEligible(
-                request.PrescriptionContext.InputSnapshot.RequestedTargetDistanceKm,
-                request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek))
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
-            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance16K).Build(request);
+            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
+                request.PrescriptionContext.InputSnapshot.RequestedTargetDistanceKm,
+                request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek);
+
+            if (darkCell is { TargetDistanceKm: 15.0 })
+            {
+                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance15K).Build(request);
+            }
+            if (darkCell is { TargetDistanceKm: 16.0 })
+            {
+                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance16K).Build(request);
+            }
         }
 
         // HM.8 -- generalized from HM.2's single hardcoded DaysPerWeek == 4 exact-match
