@@ -124,6 +124,14 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             {
                 return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance16K).Build(request);
             }
+            // PHASE DIST-GEN.10 -- third dark target-distance projection (18.0),
+            // extending this cascade with a third branch (see
+            // PHASE_DIST_GEN_10_...md §56/§57 for the dispatch-generalization
+            // decision).
+            if (darkCell is { TargetDistanceKm: 18.0 })
+            {
+                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance18K).Build(request);
+            }
         }
 
         // HM.8 -- generalized from HM.2's single hardcoded DaysPerWeek == 4 exact-match

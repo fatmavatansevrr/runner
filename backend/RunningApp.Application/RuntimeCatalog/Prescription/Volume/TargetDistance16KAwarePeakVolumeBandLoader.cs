@@ -60,6 +60,15 @@ internal sealed class TargetDistance16KAwarePeakVolumeBandLoader : ICatalogPeakV
         {
             return Task.FromResult(TargetDistance16KPeakVolumeBandPolicy.Build(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
         }
+        // PHASE DIST-GEN.10 -- third dark target (18.0). Extends this existing
+        // registry-resolved cascade with a third branch (option (a) --
+        // "just extend it" -- see PHASE_DIST_GEN_10_...md §56/§57 for the
+        // disclosed reasoning against generalizing this dispatch to a keyed
+        // lookup in this same phase).
+        if (darkCell is { TargetDistanceKm: 18.0 })
+        {
+            return Task.FromResult(TargetDistance18KPeakVolumeBandPolicy.Build(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
+        }
 
         return _inner.LoadAsync(reference, distanceFamily, experience, runsPerWeek, ct);
     }

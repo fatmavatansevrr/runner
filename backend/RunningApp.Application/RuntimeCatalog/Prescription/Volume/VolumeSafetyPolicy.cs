@@ -316,6 +316,84 @@ public sealed record VolumeSafetyPolicy(
         ResolvedPeakReferenceIsSelectedCeiling: true);
 
     /// <summary>
+    /// PHASE DIST-GEN.10 -- implements the already-frozen DIST-GEN.9 §53 complete
+    /// policy table for the dark-only, THIRD target-distance 18K x INTERMEDIATE
+    /// x 4D projection (TargetDistanceKm=18.0, ParentDistanceFamily=HALF_MARATHON),
+    /// reusing the identical HALF_MARATHON__4D__INTERMEDIATE catalog identity the
+    /// 15K/16K targets above already reuse. Every field's value and
+    /// classification is consumed exactly as frozen, not re-derived here. Every
+    /// numeric field except <see cref="PreferredAbsolutePeakLongRunKm"/> is
+    /// byte-identical to <see cref="HalfMarathonIntermediate4DTargetDistance15K"/>'s
+    /// and <see cref="HalfMarathonIntermediate4DTargetDistance16K"/>'s own values
+    /// -- DIST-GEN.9's own real, independently re-derived evidence convergence
+    /// (§54/§55), NOT template-copying.
+    ///
+    /// PreferredMaxWeeklyIncreaseRatio/HardMaxWeeklyIncreaseRatio = 0.07/0.08 and
+    /// AbsoluteWeeklyIncrementCapKm = 2.5 are SHARED level/frequency authority
+    /// (DIRECT_EXISTING_AUTHORITY, DIST-GEN.9 §54 -- identical across every
+    /// Intermediate 4D anchor including canonical TEN_K/HM, not re-derived for
+    /// this target). GoldenFixtureStartingVolumeKm = 23.5 is a mechanical
+    /// consequence of the SAME shared 0.5814 ratio methodology
+    /// (<see cref="HalfMarathonIntermediate4D"/>'s own 25.0/43.0 ratio) applied
+    /// to this target's own peak (40.0 x 0.5814 = 23.26, rounded to 23.5 --
+    /// EVIDENCE_INFORMED_PRODUCT_DEFAULT, never a missing-readiness fallback).
+    /// ResolvedPeakReference = 40.0 is this target's own SELECTED PEAK within
+    /// the [34,46] band (<see cref="TargetDistance18KPeakVolumeBandPolicy"/>),
+    /// discovered-identical to both siblings' own selection, not re-derived.
+    /// GoldenFixtureNonTaperTransitions = 9 (identical derivation to 15K's/16K's
+    /// own, since the horizon triple and taper length are identical: 12
+    /// preferred weeks - 2 taper weeks - 1 = 9). Long-run share quadruple
+    /// 0.30/0.36/0.33/0.40 is SHARED level/frequency authority (identical across
+    /// every Intermediate 4D anchor). TaperVolumeMultiplier(s) = 0.70/0.43 are
+    /// SHARED PARENT-FAMILY authority, inherited from HALF_MARATHON's own 2-week
+    /// taper (never distance-banded -- TEN_K's own genuinely different 1-week/
+    /// 0.53 taper proves this is parent-family, not target-specific) --
+    /// deliberately reused DIRECTLY from <see cref="TargetDistance16KTaperVolumePolicy"/>'s
+    /// own already-declared constants rather than mechanically creating a third,
+    /// near-identical <c>TargetDistance18KTaperVolumePolicy</c> class: DIST-GEN.9
+    /// explicitly classified taper as SHARED_PARENT_FAMILY_AUTHORITY, not
+    /// target-specific, and this repo's own governing instruction warns against
+    /// representing every field as if it were an independent target decision.
+    /// See PHASE_DIST_GEN_10_...md §33/§37 for the full reasoning.
+    ///
+    /// <see cref="PreferredAbsolutePeakLongRunKm"/> = 16.0 (STRONG_EVIDENCE_DERIVED_DECISION,
+    /// DIST-GEN.9 §30, THE primary target-specific decision this policy encodes
+    /// -- deliberately different from both 15K's 14.5 and 16K's 15.0: strictly
+    /// below this 18.0km target distance, and below HM's own 19.0km ceiling).
+    /// ResolvedPeakReferenceIsSelectedCeiling = true (DIRECT_EXISTING_AUTHORITY,
+    /// the same generic HM.5.3 mechanism every other named HM-parented policy in
+    /// this file already uses, reused unmodified so 13W/14W saturate at 40.0km
+    /// instead of extrapolating past it). StartingAbsoluteLongRunCapKm = N/A
+    /// (SHARED authority, mirrors <see cref="HalfMarathonIntermediate4D"/>'s own
+    /// null). Dark-only: no public routing/gate is widened by this named
+    /// policy's existence -- reachable only through the
+    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
+    /// registry's dark-eligibility resolution, never through any public request DTO.
+    /// </summary>
+    public static VolumeSafetyPolicy HalfMarathonIntermediate4DTargetDistance18K { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 23.5d,
+        ResolvedPeakReference: new(40.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 9,
+        // Deliberately reused directly from TargetDistance16KTaperVolumePolicy --
+        // SHARED_PARENT_FAMILY_AUTHORITY, not a third near-duplicate taper class.
+        TaperVolumeMultiplier: TargetDistance16KTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        LongRunPreferredMinimumShare: 0.30d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.33d,
+        LongRunHardCapShare: 0.40d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: TargetDistance16KTaperVolumePolicy.OrderedMultipliers,
+        PreferredAbsolutePeakLongRunKm: 16.0d,
+        // DIST-GEN.9 §55 -- 40.0km is a frozen SELECTED PEAK CEILING for this
+        // target's own 10-14W Core family, not a calibration point 13W/14W may
+        // extrapolate past. Reuses HM.5.3's own generic mechanism unmodified.
+        ResolvedPeakReferenceIsSelectedCeiling: true);
+
+    /// <summary>
     /// Phase HM.8 -- implements the already-frozen HM.7 numeric authority for
     /// HALF_MARATHON x INTERMEDIATE x 3D x 10-16W x DARK
     /// (PHASE_HM_7_INTERMEDIATE_3D_NUMERIC_AUTHORITY_CLOSURE.md's complete

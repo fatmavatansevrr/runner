@@ -683,6 +683,14 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                 horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.PreferredCoreWeeks;
                 horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MaximumCoreWeeks;
             }
+            // PHASE DIST-GEN.10 -- third dark target (18.0), extending this
+            // cascade with a third branch (see PHASE_DIST_GEN_10_...md §56/§57).
+            else if (darkCellForSkeleton is { TargetDistanceKm: 18.0 })
+            {
+                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MinimumCoreWeeks;
+                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.PreferredCoreWeeks;
+                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MaximumCoreWeeks;
+            }
             else if (isDark16KEligibleForSkeleton)
             {
                 horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;

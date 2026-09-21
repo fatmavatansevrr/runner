@@ -107,14 +107,16 @@ public static class Dark16KPilotEligibilityPolicy
     /// non-public <see cref="RunningApp.Application.DTOs.Plan.GeneratePreviewRequest.TargetDistanceKmOverride"/>
     /// seam can materialize.
     ///
-    /// Two entries today: the original 16.0km pilot (DIST-GEN.1/2) and the
-    /// second, 15.0km target (DIST-GEN.5/6) — both reusing the identical
-    /// HALF_MARATHON×Intermediate×4D catalog identity. Kept as two explicit
+    /// Three entries today: the original 16.0km pilot (DIST-GEN.1/2), the
+    /// second, 15.0km target (DIST-GEN.5/6), and the third, 18.0km target
+    /// (DIST-GEN.9/10) — all three reusing the identical
+    /// HALF_MARATHON×Intermediate×4D catalog identity. Kept as three explicit
     /// records rather than a single deduplicated constant even though several
     /// of their downstream numeric fields coincide, per DIST-GEN.6's own
-    /// governing instruction: collapsing two independently-authorized cells
-    /// into one shared literal would misrepresent the authority structure a
-    /// future, materially different third target might need.
+    /// governing instruction (re-confirmed by DIST-GEN.10 for the third
+    /// entry): collapsing independently-authorized cells into one shared
+    /// literal would misrepresent the authority structure a future,
+    /// materially different fourth target might need.
     /// </summary>
     public sealed record ApprovedDarkTargetDistanceCell(
         double TargetDistanceKm,
@@ -127,6 +129,7 @@ public static class Dark16KPilotEligibilityPolicy
     [
         new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.1/2 -- 16.0km
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.5/6 -- 15.0km
+        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (DARK ONLY -- never added to ApprovedPublicCells)
     ];
 
     /// <summary>

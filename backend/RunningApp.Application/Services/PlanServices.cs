@@ -140,6 +140,12 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
                 request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
             var isDark16KEligible = darkCell is not null;
             var isDark15KTarget = darkCell is { TargetDistanceKm: 15.0 };
+            // PHASE DIST-GEN.10 -- third dark target (18.0). Extends this
+            // existing cascade with a third branch throughout this method
+            // (see PHASE_DIST_GEN_10_...md §56/§57 for the disclosed
+            // dispatch-generalization decision: extend, not generalize to a
+            // keyed lookup, in this phase).
+            var isDark18KTarget = darkCell is { TargetDistanceKm: 18.0 };
 
             // HM.18 Blocker 1 -- distance-aware horizon gate. For every
             // distance other than HalfMarathon this resolves to the exact
@@ -159,15 +165,19 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // same catalog identity).
             var horizonDecision = isDark15KTarget
                 ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
-                : isDark16KEligible
-                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
-                    : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
+                : isDark18KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
+                    : isDark16KEligible
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Decide(request.StartDate, raceDateForHorizonCheck)
+                        : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
             var availableWeeks = horizonDecision.AvailableFullWeeks;
             var classification = isDark15KTarget
                 ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.Classify(horizonDecision)
-                : isDark16KEligible
-                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Classify(horizonDecision)
-                    : RaceHorizonPolicy.Classify(horizonDecision);
+                : isDark18KTarget
+                    ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.Classify(horizonDecision)
+                    : isDark16KEligible
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.Classify(horizonDecision)
+                        : RaceHorizonPolicy.Classify(horizonDecision);
 
             // PHASE DIST-GEN.2/DIST-GEN.6 -- each dark pilot's own typed horizon
             // rejection, using its own explicit reason codes
@@ -182,17 +192,22 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             {
                 var reasonCode = isDark15KTarget
                     ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
-                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                    : isDark18KTarget
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
+                        : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
                 var minimumCoreWeeks = isDark15KTarget
                     ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MinimumCoreWeeks
-                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
+                    : isDark18KTarget
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MinimumCoreWeeks
+                        : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
                 // Message text preserves the exact "dark 16K target-distance" wording
                 // for the original pilot (byte-identical to pre-DIST-GEN.6 text, per
-                // existing Dark16KTargetDistanceProjectionTests assertions) and mirrors
-                // it with "dark 15K target-distance" for the second target -- never a
-                // single genericized string that would silently change either pilot's
+                // existing Dark16KTargetDistanceProjectionTests assertions), mirrors it
+                // with "dark 15K target-distance" for the second target, and now "dark
+                // 18K target-distance" for the third (DIST-GEN.10) -- never a single
+                // genericized string that would silently change any target's own
                 // observable exception text.
-                var pilotLabel = isDark15KTarget ? "dark 15K" : "dark 16K";
+                var pilotLabel = isDark15KTarget ? "dark 15K" : isDark18KTarget ? "dark 18K" : "dark 16K";
                 _logger.LogWarning(
                     "GeneratePreview: {PilotLabel} target-distance race horizon is below the supported minimum. " +
                     "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MinimumSupportedWeeks={MinimumSupportedWeeks}",
@@ -207,11 +222,15 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             {
                 var reasonCode = isDark15KTarget
                     ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
-                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
+                    : isDark18KTarget
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks)
+                        : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.GetUnsupportedReasonCode(availableWeeks);
                 var maximumCoreWeeks = isDark15KTarget
                     ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MaximumCoreWeeks
-                    : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks;
-                var pilotLabel = isDark15KTarget ? "dark 15K" : "dark 16K";
+                    : isDark18KTarget
+                        ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MaximumCoreWeeks
+                        : RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks;
+                var pilotLabel = isDark15KTarget ? "dark 15K" : isDark18KTarget ? "dark 18K" : "dark 16K";
                 _logger.LogWarning(
                     "GeneratePreview: {PilotLabel} target-distance race horizon exceeds the supported maximum. " +
                     "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaximumSupportedWeeks={MaximumSupportedWeeks}",
