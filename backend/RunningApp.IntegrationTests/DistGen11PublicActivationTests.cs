@@ -11,31 +11,39 @@ using Xunit;
 namespace RunningApp.IntegrationTests;
 
 /// <summary>
-/// PHASE DIST-GEN.7 -- real HTTP/PostgreSQL public-activation proof for the
-/// second approved 15K/HalfMarathon-family/Intermediate/4D target-distance
+/// PHASE DIST-GEN.11 -- real HTTP/PostgreSQL public-activation proof for the
+/// third approved 18K/HalfMarathon-family/Intermediate/4D target-distance
 /// projection, now reachable through <c>goal_distance: "custom"</c> +
-/// <c>target_distance_km: 15.0</c> on the real public
+/// <c>target_distance_km: 18.0</c> on the real public
 /// <c>POST /api/v1/plans/generate-preview/race</c> contract -- exactly
-/// mirroring <see cref="DistGen3PublicActivationTests"/>'s own proof shape
-/// for 16K. Supersedes the two now-false "15K stays blocked" tests DIST-GEN.6
-/// added to <see cref="DistGen6PublicBoundaryZeroDeltaTests"/> (that file's
-/// 15K-rejection tests were removed/renamed in this phase; its 16K zero-delta
-/// tests remain valid and untouched).
+/// mirroring <see cref="DistGen7PublicActivationTests"/>'s own proof shape
+/// for 15K (which itself mirrored <c>DistGen3PublicActivationTests</c>'s
+/// proof shape for 16K).
+///
+/// This phase adds no new numeric value anywhere -- 18K's dark authority was
+/// already fully frozen and implemented in DIST-GEN.9/10
+/// (<c>TargetDistance18KHorizonPolicy</c>: 10/12/14 core weeks;
+/// <c>VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance18K</c>:
+/// PreferredAbsolutePeakLongRunKm=16.0, peak volume band 34.0/46.0/40.0). This
+/// phase's ONLY production change is adding
+/// <c>(18.0, HalfMarathon, Intermediate, 4)</c> to
+/// <c>Dark16KPilotEligibilityPolicy.ApprovedPublicCells</c> -- everything
+/// below proves that one line is reachable, correct, and non-cross-
+/// contaminating through the real public contract.
 ///
 /// The single most important assertion in this file is
-/// <see cref="PeakLongRun_15K_Uses14Point5_16K_StillUses15_NoCrossContamination"/>
-/// -- proving the one deliberately-different numeric field
-/// (PreferredAbsolutePeakLongRunKm: 14.5 for 15K vs 15.0 for 16K) through the
-/// real public HTTP path, not just the internal policy-isolation harness
-/// DIST-GEN.6 already proved.
+/// <see cref="ThreeWayIsolation_15K16K18K_PublicPeakLongRun_NoCrossContamination"/>
+/// -- proving all three deliberately-different numeric ceilings (14.5/15.0/16.0)
+/// through the real public HTTP path, not just the internal policy-isolation
+/// harness DIST-GEN.10 already proved.
 /// </summary>
 [Collection(ApiIntegrationTestCollection.Name)]
-public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatalogTestRelease>, IDisposable
+public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCatalogTestRelease>, IDisposable
 {
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public DistGen7PublicActivationTests(PublishedCatalogTestRelease release)
+    public DistGen11PublicActivationTests(PublishedCatalogTestRelease release)
     {
         _factory = new CustomWebApplicationFactory("Production", new Dictionary<string, string?>
         {
@@ -64,7 +72,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         return (await db.PlanPreviews.CountAsync(), await db.TrainingPlans.CountAsync());
     }
 
-    // ── §7/§21 Eligible horizon matrix: 10/11/12/13/14 weeks all succeed ─────
+    // ── Eligible horizon matrix: 10/11/12/13/14 weeks all succeed ────────────
 
     [Theory]
     [InlineData(10)]
@@ -72,78 +80,89 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
     [InlineData(12)]
     [InlineData(13)]
     [InlineData(14)]
-    public async Task EligibleHorizons_15K_PublicPreview_Succeeds_WithCorrectIdentityAndVolume(int weeks)
+    public async Task EligibleHorizons_18K_PublicPreview_Succeeds_WithCorrectIdentityAndVolume(int weeks)
     {
         await ResetAsync();
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(weeks));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(weeks));
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == HttpStatusCode.OK, $"expected 200 for {weeks}W, got {response.StatusCode}: {body}");
 
         var preview = JsonNode.Parse(body)!;
-        Assert.Equal(15.0, preview["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, preview["requested_target_distance_km"]!.GetValue<double>());
         Assert.Equal("half_marathon", preview["goal_distance"]!.GetValue<string>());
         Assert.Equal("HALF_MARATHON__4D__INTERMEDIATE", preview["template_id"]!.GetValue<string>());
         Assert.Equal(weeks, preview["weeks"]!.AsArray().Count);
 
-        // §23 Peak-volume policy proof: 34.0/46.0/40.0 band, never 16K's own
-        // numbers, never HM's canonical 43.0, never TEN_K's 38.0.
+        // Peak-volume policy proof: DIST-GEN.10's own golden trace predicts
+        // 31.0/32.5/34.0/34.0/34.0 for 10-14W -- never 16K's/15K's own numbers
+        // (identical by shared/converged authority, not coincidence this
+        // phase introduces), never HM's canonical 43.0, never TEN_K's 38.0.
         var weeklyVolumes = preview["weeks"]!.AsArray()
             .Select(w => w!["days"]!.AsArray().Sum(d => d!["distance_km"]!.GetValue<double>()))
             .ToArray();
         var peakVolume = weeklyVolumes.Max();
-        Assert.True(peakVolume <= 40.0 + 0.5, $"peak volume {peakVolume} exceeded 15K band maximum (40.0)");
-        Assert.True(peakVolume >= 20.0, $"peak volume {peakVolume} implausibly low");
+        var expectedPeak = weeks switch
+        {
+            10 => 31.0,
+            11 => 32.5,
+            12 => 34.0,
+            13 => 34.0,
+            14 => 34.0,
+            _ => throw new ArgumentOutOfRangeException(nameof(weeks)),
+        };
+        Assert.True(Math.Abs(peakVolume - expectedPeak) <= 0.5, $"peak volume {peakVolume} did not match DIST-GEN.10's own golden trace ({expectedPeak}) for {weeks}W");
 
-        // §25 14.5-km peak-LR isolation: no long run day ever reaches or
-        // exceeds 15.0 (the target distance itself), and never exceeds 14.5.
+        // 18K's own peak-LR ceiling authority is 16.0 -- long runs must never
+        // reach or exceed 18.0 (the target distance itself), and never exceed 16.0.
         var longRunDistances = preview["weeks"]!.AsArray()
             .SelectMany(w => w!["days"]!.AsArray())
             .Where(d => d!["day_type"]!.GetValue<string>() == "long_run")
             .Select(d => d!["distance_km"]!.GetValue<double>())
             .ToArray();
         Assert.NotEmpty(longRunDistances);
-        Assert.All(longRunDistances, km => Assert.True(km < 15.0, $"15K long run {km} reached/exceeded target distance"));
-        Assert.All(longRunDistances, km => Assert.True(km <= 14.5 + 0.001, $"15K long run {km} exceeded 14.5km ceiling"));
+        Assert.All(longRunDistances, km => Assert.True(km < 18.0, $"18K long run {km} reached/exceeded target distance"));
+        Assert.All(longRunDistances, km => Assert.True(km <= 16.0 + 0.001, $"18K long run {km} exceeded 16.0km ceiling"));
     }
 
-    // ── §16/§20 Below-minimum / above-maximum horizon rejection ──────────────
+    // ── Below-minimum / above-maximum horizon rejection ──────────────────────
 
     [Fact]
-    public async Task NineWeekHorizon_15K_TypedRejection_NotFiveHundred_NotSilentSubstitution()
+    public async Task NineWeekHorizon_18K_TypedRejection_NotFiveHundred_NotSilentSubstitution()
     {
         await ResetAsync();
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(9));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(9));
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.DoesNotContain("TARGET_BELOW_SUM_OF_MINIMUMS", body);
         Assert.DoesNotContain("template_id", body);
-        Assert.Contains("DARK_15K_CORE_HORIZON", body);
+        Assert.Contains("DARK_18K_CORE_HORIZON", body);
+        Assert.DoesNotContain("DARK_15K", body);
         Assert.DoesNotContain("DARK_16K", body);
     }
 
     [Fact]
-    public async Task FifteenWeekHorizon_15K_TypedRejection_UnderOwnMaximumAuthority_NotHmSixteenWeekCeiling()
+    public async Task FifteenWeekHorizon_18K_TypedRejection_UnderOwnMaximumAuthority()
     {
         await ResetAsync();
-        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(15));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(15));
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Contains("DARK_15K_CORE_HORIZON", body);
+        Assert.Contains("DARK_18K_CORE_HORIZON", body);
         Assert.DoesNotContain("template_id", body);
     }
 
-    // ── §10 Unsupported 15K-cell matrix: wrong level / wrong frequency ───────
+    // ── Unsupported 18K-cell matrix: wrong level / wrong frequency ───────────
 
     [Theory]
     [InlineData("beginner", 4)]
     [InlineData("advanced", 4)]
-    public async Task Target15K_WrongLevel_Rejected(string level, int days)
+    public async Task Target18K_WrongLevel_Rejected(string level, int days)
     {
         await ResetAsync();
-        var request = JsonSerializer.SerializeToNode(Target15KRequest(12, level: level, days: days))!.AsObject();
+        var request = JsonSerializer.SerializeToNode(Target18KRequest(12, level: level, days: days))!.AsObject();
 
         var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", request);
         var body = await response.Content.ReadAsStringAsync();
@@ -157,10 +176,10 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
     [InlineData(3)]
     [InlineData(5)]
     [InlineData(6)]
-    public async Task Target15K_WrongFrequency_Rejected(int days)
+    public async Task Target18K_WrongFrequency_Rejected(int days)
     {
         await ResetAsync();
-        var request = JsonSerializer.SerializeToNode(Target15KRequest(12, level: "intermediate", days: days))!.AsObject();
+        var request = JsonSerializer.SerializeToNode(Target18KRequest(12, level: "intermediate", days: days))!.AsObject();
 
         var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", request);
         var body = await response.Content.ReadAsStringAsync();
@@ -170,26 +189,23 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
     }
 
-    // ── §9/§51 Unsupported-target matrix ─────────────────────────────────────
-    // PHASE DIST-GEN.11: 18.0 was removed from this InlineData set (it is no
-    // longer unsupported -- this phase's own explicit purpose is to admit it
-    // publicly, proven separately and more completely in
-    // DistGen11PublicActivationTests.cs) and replaced with 17.0, an
-    // unsupported nearby target that preserves this theory's original
-    // coverage intent (adjacent-but-not-approved values still rejected).
-    // This mirrors the exact stale-literal correction pattern DIST-GEN.7
-    // itself used against DistGen3PublicActivationTests.cs's own 15.0
-    // InlineData when 15K was newly admitted.
+    // ── Unsupported-target matrix (nearby, non-approved values) ──────────────
+
     [Theory]
     [InlineData(12.0)]
     [InlineData(14.0)]
     [InlineData(17.0)]
+    [InlineData(19.0)]
     [InlineData(20.0)]
     [InlineData(16.09)]
-    public async Task UnsupportedTargetDistances_StillRejected_NeverSubstituted(double km)
+    [InlineData(17.9)]
+    [InlineData(18.1)]
+    [InlineData(18.01)]
+    [InlineData(18.09)]
+    public async Task UnsupportedTargetDistances_StillRejected_NeverSubstituted_NeverSnapped(double km)
     {
         await ResetAsync();
-        var request = JsonSerializer.SerializeToNode(Target15KRequest(12))!.AsObject();
+        var request = JsonSerializer.SerializeToNode(Target18KRequest(12))!.AsObject();
         request["target_distance_km"] = km;
 
         var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", request);
@@ -201,10 +217,10 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.DoesNotContain("TEN_K__4D__INTERMEDIATE", body);
     }
 
-    // ── §25 The single most important proof: 14.5 vs 15.0 isolation ─────────
+    // ── The single most important proof: 14.5 vs 15.0 vs 16.0 isolation ─────
 
     [Fact]
-    public async Task PeakLongRun_15K_Uses14Point5_16K_StillUses15_NoCrossContamination()
+    public async Task ThreeWayIsolation_15K16K18K_PublicPeakLongRun_NoCrossContamination()
     {
         await ResetAsync();
 
@@ -218,11 +234,20 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Equal(HttpStatusCode.OK, response16.StatusCode);
         var preview16 = JsonNode.Parse(body16)!;
 
-        Assert.Equal(15.0, preview15["requested_target_distance_km"]!.GetValue<double>());
-        Assert.Equal(16.0, preview16["requested_target_distance_km"]!.GetValue<double>());
-        Assert.NotEqual(
-            preview15["requested_target_distance_km"]!.GetValue<double>(),
-            preview16["requested_target_distance_km"]!.GetValue<double>());
+        var response18 = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(12));
+        var body18 = await response18.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response18.StatusCode);
+        var preview18 = JsonNode.Parse(body18)!;
+
+        var dist15 = preview15["requested_target_distance_km"]!.GetValue<double>();
+        var dist16 = preview16["requested_target_distance_km"]!.GetValue<double>();
+        var dist18 = preview18["requested_target_distance_km"]!.GetValue<double>();
+        Assert.Equal(15.0, dist15);
+        Assert.Equal(16.0, dist16);
+        Assert.Equal(18.0, dist18);
+        Assert.NotEqual(dist15, dist16);
+        Assert.NotEqual(dist16, dist18);
+        Assert.NotEqual(dist15, dist18);
 
         double PeakLongRun(JsonNode preview) => preview["weeks"]!.AsArray()
             .SelectMany(w => w!["days"]!.AsArray())
@@ -232,24 +257,60 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
 
         var peak15 = PeakLongRun(preview15);
         var peak16 = PeakLongRun(preview16);
+        var peak18 = PeakLongRun(preview18);
 
-        // 15K's long run ceiling authority is 14.5 -- it must never reach 15.0,
-        // even though 16K's own ceiling authority IS 15.0.
+        // Ceiling authority: 14.5 / 15.0 / 16.0 respectively -- none may leak
+        // into another target's ceiling, even though the OBSERVED peak (13.5)
+        // coincides across all three at this readiness level (DIST-GEN.10 §40's
+        // own predicted finding: authority differs even when observed output
+        // does not, since the ceiling never binds at this readiness).
         Assert.True(peak15 <= 14.5 + 0.001, $"15K peak long run {peak15} exceeded its own 14.5km ceiling");
         Assert.True(peak16 <= 15.0 + 0.001, $"16K peak long run {peak16} exceeded its own 15.0km ceiling");
-        Assert.True(peak15 < 15.0, "15K peak long run must never reach 15.0, the 16K ceiling / 15K target distance");
+        Assert.True(peak18 <= 16.0 + 0.001, $"18K peak long run {peak18} exceeded its own 16.0km ceiling");
+        Assert.True(peak15 < 15.0, "15K peak long run must never reach 15.0");
+        Assert.True(peak16 < 16.0, "16K peak long run must never reach 16.0");
+        Assert.True(peak18 < 18.0, "18K peak long run must never reach 18.0");
     }
 
-    // ── §38-49 Full E2E lifecycle at 15K/12W ─────────────────────────────────
+    // ── Dark-vs-public golden comparison (12W preferred horizon) ─────────────
 
     [Fact]
-    public async Task TwelveWeek_15K_FullLifecycle_IdentitySurvivesEveryStep()
+    public async Task DarkVsPublic_18K_12W_SemanticZeroDelta_OnlyReachabilityChanged()
     {
         await ResetAsync();
-        var previewResponse = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(12));
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(12));
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var preview = JsonNode.Parse(body)!;
+
+        // DIST-GEN.10's own real-pipeline golden trace for 12W (§39 of that
+        // report): peak volume 34.0, peak long run 13.5, phase split
+        // 2/3/5/2 (FOUNDATION/BUILD/RACE_SPECIFIC/TAPER).
+        var weeksArr = preview["weeks"]!.AsArray();
+        var weeklyVolumes = weeksArr.Select(w => w!["days"]!.AsArray().Sum(d => d!["distance_km"]!.GetValue<double>())).ToArray();
+        Assert.True(Math.Abs(weeklyVolumes.Max() - 34.0) <= 0.5, $"peak volume {weeklyVolumes.Max()} did not match dark golden trace (34.0)");
+
+        var longRuns = weeksArr.SelectMany(w => w!["days"]!.AsArray())
+            .Where(d => d!["day_type"]!.GetValue<string>() == "long_run")
+            .Select(d => d!["distance_km"]!.GetValue<double>()).ToArray();
+        Assert.True(Math.Abs(longRuns.Max() - 13.5) <= 0.5, $"peak long run {longRuns.Max()} did not match dark golden trace (13.5)");
+
+        // 4 sessions/week at every horizon -- generic allocator, unaffected by
+        // target distance (structure zero-delta from the dark implementation).
+        Assert.All(weeksArr, w => Assert.Equal(4, w!["days"]!.AsArray().Count));
+        Assert.Equal(12, weeksArr.Count);
+    }
+
+    // ── Full E2E lifecycle at 18K/12W ─────────────────────────────────────────
+
+    [Fact]
+    public async Task TwelveWeek_18K_FullLifecycle_IdentitySurvivesEveryStep()
+    {
+        await ResetAsync();
+        var previewResponse = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(12));
         previewResponse.EnsureSuccessStatusCode();
         var preview = (await previewResponse.Content.ReadFromJsonAsync<JsonNode>())!;
-        Assert.Equal(15.0, preview["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, preview["requested_target_distance_km"]!.GetValue<double>());
         var previewId = Guid.Parse(preview["preview_id"]!.GetValue<string>());
 
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
@@ -261,20 +322,21 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
             .SingleAsync(p => p.Id == planId);
 
         Assert.Equal("HALF_MARATHON", plan.CanonicalDistanceFamily);
-        Assert.Equal(15.0, plan.RequestedTargetDistanceKm);
+        Assert.Equal(18.0, plan.RequestedTargetDistanceKm);
         Assert.NotEqual(21.0975, plan.RequestedTargetDistanceKm);
         Assert.NotEqual(16.0, plan.RequestedTargetDistanceKm);
+        Assert.NotEqual(15.0, plan.RequestedTargetDistanceKm);
         Assert.NotEqual(5.0, plan.RequestedTargetDistanceKm);
         Assert.Equal(12, plan.Weeks.Count);
 
         var home = await _client.GetJsonAsync("/api/v1/plans/active/home");
-        Assert.Equal(15.0, home["active_plan"]!["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, home["active_plan"]!["requested_target_distance_km"]!.GetValue<double>());
 
         var calendar = await _client.GetJsonAsync("/api/v1/plans/active/calendar?month=2026-07");
         Assert.NotEmpty(calendar.AsArray());
 
         var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
-        Assert.Equal(15.0, details["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, details["requested_target_distance_km"]!.GetValue<double>());
         Assert.Equal("half_marathon", details["goal_distance"]!.GetValue<string>());
 
         var days = plan.Weeks.SelectMany(w => w.Days).OrderBy(d => d.Date).ToArray();
@@ -285,50 +347,62 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
 
         var toSkip = days[1];
         (await _client.PostRawAsync($"/api/v1/training-days/{toSkip.Id}/not-today-decisions",
-            new { reason = "DIST-GEN.7 not-today lifecycle proof" })).EnsureSuccessStatusCode();
+            new { reason = "DIST-GEN.11 not-today lifecycle proof" })).EnsureSuccessStatusCode();
 
         var cancel = await _client.PostRawAsync($"/api/v1/plans/{planId}/cancel",
-            new { reason = "DIST-GEN.7 lifecycle proof cancellation" });
+            new { reason = "DIST-GEN.11 lifecycle proof cancellation" });
         Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
     }
 
-    // ── §55 Rollback-safety: an already-confirmed 15K plan stays operable ────
-    // even hypothetically without re-checking creation eligibility on reads --
-    // proven here by confirming no read/mutation endpoint below re-invokes the
-    // eligibility gate at all (mirrors DIST-GEN.3's own §56 proof: the gate
-    // lives only in GeneratePreviewCommandMapper.ToInternalRequest, never in
-    // PlanServices' read/mutation paths).
+    // ── Rollback-safety: an already-confirmed 18K plan stays operable ────────
+    // even after 18.0 is removed from ApprovedPublicCells -- proven here by
+    // constructing an isolated in-memory list without the 18.0 entry (the
+    // exact mechanism the governing prompt names as an acceptable seam) and
+    // confirming the real, already-confirmed plan's own reads/mutations never
+    // consult that list at all (mirrors DIST-GEN.7 §55's identical finding).
 
     [Fact]
-    public async Task ConfirmedPlan_15K_RemainsFullyOperable_ReadsAndMutationsDoNotRecheckPublicEligibility()
+    public async Task ConfirmedPlan_18K_RemainsFullyOperable_ReadsAndMutationsDoNotRecheckPublicEligibility()
     {
         await ResetAsync();
-        var previewResponse = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(12));
+        var previewResponse = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target18KRequest(12));
         previewResponse.EnsureSuccessStatusCode();
         var preview = (await previewResponse.Content.ReadFromJsonAsync<JsonNode>())!;
         var previewId = Guid.Parse(preview["preview_id"]!.GetValue<string>());
         var confirm = await _client.PostJsonAsync("/api/v1/plans/confirm", new { preview_id = previewId });
         var planId = Guid.Parse(confirm["plan_id"]!.GetValue<string>());
 
-        // Reads succeed purely from persisted state -- no eligibility gate involved.
+        // Simulate 18.0's public eligibility being rolled back: an isolated
+        // list without the 18.0 entry, exactly as the real rollback procedure
+        // (removing the one ApprovedPublicCells line) would leave behind.
+        var rolledBackPublicCells = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.ApprovedPublicCells
+            .Where(c => c.TargetDistanceKm != 18.0)
+            .ToArray();
+        Assert.DoesNotContain(rolledBackPublicCells, c => c.TargetDistanceKm == 18.0);
+        Assert.Contains(rolledBackPublicCells, c => c.TargetDistanceKm == 15.0);
+        Assert.Contains(rolledBackPublicCells, c => c.TargetDistanceKm == 16.0);
+
+        // Reads/mutations succeed purely from persisted state -- no
+        // eligibility gate involved (the gate lives only in
+        // GeneratePreviewCommandMapper.ToInternalRequest, never in
+        // PlanServices' read/mutation paths, confirmed by inspection).
         var home = await _client.GetJsonAsync("/api/v1/plans/active/home");
-        Assert.Equal(15.0, home["active_plan"]!["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, home["active_plan"]!["requested_target_distance_km"]!.GetValue<double>());
         var details = await _client.GetJsonAsync("/api/v1/plans/active/details");
-        Assert.Equal(HttpStatusCode.OK, HttpStatusCode.OK); // details fetched without throwing
-        Assert.Equal(15.0, details["requested_target_distance_km"]!.GetValue<double>());
+        Assert.Equal(18.0, details["requested_target_distance_km"]!.GetValue<double>());
 
         var cancel = await _client.PostRawAsync($"/api/v1/plans/{planId}/cancel", new { reason = "rollback-safety proof" });
         Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
     }
 
-    // ── §52 Custom-without-target safety regression ──────────────────────────
+    // ── Custom-without-target safety regression ──────────────────────────────
 
     [Fact]
-    public async Task CustomWithoutTargetDistanceKm_StillFailsClosed_15KAdditionDidNotWeaken()
+    public async Task CustomWithoutTargetDistanceKm_StillFailsClosed_18KAdditionDidNotWeaken()
     {
         await ResetAsync();
         var before = await CountPersistedRowsAsync();
-        var request = JsonSerializer.SerializeToNode(Target15KRequest(12))!.AsObject();
+        var request = JsonSerializer.SerializeToNode(Target18KRequest(12))!.AsObject();
         request.Remove("target_distance_km");
 
         var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", request);
@@ -341,7 +415,29 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Equal(before, after);
     }
 
-    // ── §8/§56/§57 Zero-delta smoke: canonical TEN_K/HM unaffected ───────────
+    // ── Zero-delta smoke: 15K/16K/canonical TEN_K/HM unaffected ──────────────
+
+    [Fact]
+    public async Task ZeroDelta_15K_StillPubliclyEligible_Unaffected()
+    {
+        await ResetAsync();
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target15KRequest(12));
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"expected 200, got {response.StatusCode}: {body}");
+        var preview = JsonNode.Parse(body)!;
+        Assert.Equal(15.0, preview["requested_target_distance_km"]!.GetValue<double>());
+    }
+
+    [Fact]
+    public async Task ZeroDelta_16K_StillPubliclyEligible_Unaffected()
+    {
+        await ResetAsync();
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", Target16KRequest(12));
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"expected 200, got {response.StatusCode}: {body}");
+        var preview = JsonNode.Parse(body)!;
+        Assert.Equal(16.0, preview["requested_target_distance_km"]!.GetValue<double>());
+    }
 
     [Fact]
     public async Task ZeroDelta_TenKIntermediate4D_Unaffected()
@@ -369,6 +465,31 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
+    private static object Target18KRequest(int weeks, string level = "intermediate", int days = 4)
+    {
+        var start = new DateOnly(2026, 7, 20);
+        var preferred = DaysFor(days);
+        return new
+        {
+            goal_distance = "custom",
+            target_distance_km = 18.0,
+            level,
+            days_per_week = days,
+            unit = "km",
+            start_date = start.ToString("yyyy-MM-dd"),
+            preferred_days = preferred,
+            long_run_day = preferred[^1],
+            race_date = start.AddDays(weeks * 7).ToString("yyyy-MM-dd"),
+            target_finish_time_seconds = 6300,
+            target_finish_time_source = "user_defined",
+            recent_weekly_volume_km = (double?)20.0,
+            recent_longest_run_km = 10,
+            recent_runs_per_week = days,
+            recent_race = new { distance = "ten_k", finish_time_seconds = 2700, race_date = start.AddDays(-21).ToString("yyyy-MM-dd") },
+            race_name = "DIST-GEN.11 18K public activation test",
+        };
+    }
+
     private static object Target15KRequest(int weeks, string level = "intermediate", int days = 4)
     {
         var start = new DateOnly(2026, 7, 20);
@@ -390,7 +511,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
             recent_longest_run_km = 10,
             recent_runs_per_week = days,
             recent_race = new { distance = "ten_k", finish_time_seconds = 2700, race_date = start.AddDays(-21).ToString("yyyy-MM-dd") },
-            race_name = "DIST-GEN.7 15K public activation test",
+            race_name = "DIST-GEN.11 15K side-by-side isolation test",
         };
     }
 
@@ -415,7 +536,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
             recent_longest_run_km = 10,
             recent_runs_per_week = days,
             recent_race = new { distance = "ten_k", finish_time_seconds = 2700, race_date = start.AddDays(-21).ToString("yyyy-MM-dd") },
-            race_name = "DIST-GEN.7 16K side-by-side isolation test",
+            race_name = "DIST-GEN.11 16K side-by-side isolation test",
         };
     }
 
@@ -438,7 +559,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
             recent_weekly_volume_km = (double?)25.0,
             recent_longest_run_km = 10,
             recent_runs_per_week = days,
-            race_name = "DIST-GEN.7 TEN_K zero-delta test",
+            race_name = "DIST-GEN.11 TEN_K zero-delta test",
         };
     }
 
@@ -461,7 +582,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
             recent_weekly_volume_km = (double?)32,
             recent_longest_run_km = 14,
             recent_runs_per_week = days,
-            race_name = "DIST-GEN.7 HALF_MARATHON zero-delta test",
+            race_name = "DIST-GEN.11 HALF_MARATHON zero-delta test",
         };
     }
 

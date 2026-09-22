@@ -59,7 +59,12 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
   // is the ONLY change this phase makes to this list -- still exact-match
   // only (same tight epsilon as before), still completely separate from the
   // ±0.2 preset-snap tolerance used for the four canonical presets.
-  static const List<double> _approvedProjectedTargetsKm = [15.0, 16.0];
+  //
+  // PHASE DIST-GEN.11: adding 18.0 here is the ONLY change this phase makes
+  // to this list -- mirrors the backend's own Dark16KPilotEligibilityPolicy
+  // .ApprovedPublicCells third-entry addition. Still exact-match only, still
+  // untouched ±0.2 preset-snap tolerance.
+  static const List<double> _approvedProjectedTargetsKm = [15.0, 16.0, 18.0];
   static const double _pilot16KExactMatchEpsilon = 0.001;
 
   bool get _isExactApprovedProjectedTargetMatch {

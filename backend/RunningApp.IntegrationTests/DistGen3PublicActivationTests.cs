@@ -141,10 +141,23 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
     // DistGen7PublicActivationTests.cs) -- it is no longer an unsupported
     // target and its premise here would now be false. 14.0 was added in its
     // place to keep this a 4-value unsupported matrix.
+    //
+    // NOTE: 18.0 was removed from this matrix by PHASE DIST-GEN.11, for the
+    // identical reason -- DIST-GEN.11 publicly activated
+    // target_distance_km=18.0 at Intermediate/4D (see
+    // DistGen11PublicActivationTests.cs), so this InlineData case's premise
+    // ("18.0 is unsupported") is now false by this phase's own explicit,
+    // required purpose. This is the exact same class of stale-literal
+    // correction as the 15.0 removal noted immediately above (and as
+    // DIST-GEN.10's own report §69 disclosed against
+    // Dark15KTargetDistanceProjectionTests.cs). 19.0 was added in its place
+    // to keep this a 4-value unsupported matrix; the equivalent, and more
+    // complete, real-HTTP coverage of 18.0's own new admission lives in
+    // DistGen11PublicActivationTests.cs.
     [Theory]
     [InlineData(12.0)]
     [InlineData(14.0)]
-    [InlineData(18.0)]
+    [InlineData(19.0)]
     [InlineData(20.0)]
     public async Task UnsupportedCustomTargetDistances_AtIntermediateFourDay_TypedRejection_NoSilentSubstitution(double km)
     {

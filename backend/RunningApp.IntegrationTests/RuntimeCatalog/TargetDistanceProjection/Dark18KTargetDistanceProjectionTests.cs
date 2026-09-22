@@ -100,27 +100,46 @@ public sealed class Dark18KTargetDistanceProjectionTests
     }
 
     /// <summary>
-    /// PUBLIC eligibility remains a DISTINCT, narrower concept from dark
-    /// eligibility -- must remain true ONLY for 15.0/16.0, never for 18.0,
-    /// even though the dark registry now grants all three.
+    /// PHASE DIST-GEN.10 (original): asserted public eligibility remained
+    /// narrower than dark eligibility, with 18.0 dark-only and NOT public.
+    ///
+    /// PHASE DIST-GEN.11 (this amendment): 18.0's own explicit, required
+    /// purpose is to add it to <see cref="Dark16KPilotEligibilityPolicy.ApprovedPublicCells"/>,
+    /// which makes <c>IsPubliclyEligible(18.0, HalfMarathon, Intermediate, 4)</c>
+    /// true -- directly, unavoidably, and correctly superseding this test's
+    /// original "18K never public" premise. This is the exact same kind of
+    /// stale-pre-expansion-literal correction DIST-GEN.10 itself disclosed in
+    /// its own report §69 (there, against `Dark15KTargetDistanceProjectionTests.cs`'s
+    /// hardcoded "18.0 is dark-ineligible" literals). No coverage is lost:
+    /// the equivalent, and more complete, real-HTTP public-admission proof for
+    /// 18.0 now lives in `DistGen11PublicActivationTests.cs`. This test is
+    /// renamed and rewritten to assert the new, correct post-DIST-GEN.11 state
+    /// rather than either being deleted or left permanently red.
     /// </summary>
     [Fact]
-    public void PublicEligibility_RemainsNarrowerThanDarkEligibility_18KNeverPublic()
+    public void PublicEligibility_18KNowPublic_AfterDistGen11_DarkRegistryUnaffected()
     {
         Assert.True(Dark16KPilotEligibilityPolicy.IsEligible(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
-        Assert.False(Dark16KPilotEligibilityPolicy.IsEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
-        Assert.False(Dark16KPilotEligibilityPolicy.IsPubliclyEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
 
-        // But 18.0 IS dark-eligible.
+        // As of DIST-GEN.11, 18.0 IS publicly eligible via the new registry
+        // overload (IsPubliclyEligible/ApprovedPublicCells). The historical,
+        // frozen single-triple IsEligible(...) overload (hardcoded to 16.0,
+        // DIST-GEN.1-3 authority) correctly remains false for 18.0 -- it was
+        // never generalized and is no longer the mapper's own gate (see
+        // GeneratePreviewCommandMapper.ToInternalRequest, unchanged this phase).
+        Assert.False(Dark16KPilotEligibilityPolicy.IsEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
+        Assert.True(Dark16KPilotEligibilityPolicy.IsPubliclyEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
+
+        // 18.0 remains dark-eligible (unaffected by the public grant).
         Assert.True(Dark16KPilotEligibilityPolicy.IsDarkEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
 
-        // ApprovedPublicCells must remain exactly the pre-existing two entries.
-        Assert.Equal(2, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
-        Assert.DoesNotContain(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 18.0);
+        // ApprovedPublicCells now has exactly three entries.
+        Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
+        Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 18.0);
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 15.0);
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 16.0);
 
-        // ApprovedDarkCells now has exactly three entries.
+        // ApprovedDarkCells is untouched by this phase -- still exactly three entries.
         Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
     }
 

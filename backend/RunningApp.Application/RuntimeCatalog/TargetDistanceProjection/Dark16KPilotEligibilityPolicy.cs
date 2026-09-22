@@ -217,14 +217,17 @@ public static class Dark16KPilotEligibilityPolicy
     /// are no longer called by the mapper and are effectively superseded,
     /// not dead in the sense of being unreferenced).
     ///
-    /// Exactly two entries: 16.0 (DIST-GEN.3's own original public grant) and
-    /// 15.0 (DIST-GEN.7's own new public grant). Never a computed range —
+    /// Exactly three entries: 16.0 (DIST-GEN.3's own original public grant),
+    /// 15.0 (DIST-GEN.7's own new public grant), and 18.0 (DIST-GEN.11's own
+    /// new public grant, reusing the dark authority already frozen and
+    /// implemented in DIST-GEN.9/10). Never a computed range —
     /// lookup is by exact match only, per this class's established pattern.
     /// </summary>
     public static readonly IReadOnlyList<ApprovedDarkTargetDistanceCell> ApprovedPublicCells =
     [
         new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.3 -- 16.0km
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.7 -- 15.0km
+        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.11 -- 18.0km
     ];
 
     /// <summary>

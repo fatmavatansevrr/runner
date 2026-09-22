@@ -140,7 +140,11 @@ void main() {
     // NOTE (DIST-GEN.7): 15.0 was removed from this "near but blocked" list --
     // it is now its own approved projected target (see the dedicated 15K
     // group below) and would make this test's premise false.
-    for (final blocked in ['14.9', '16.09', '18.0']) {
+    // NOTE (DIST-GEN.11): 18.0 was likewise removed -- it is now its own
+    // approved projected target (see the dedicated 18K group below) and
+    // replaced with 17.9 (near but not an approved target) to preserve this
+    // theory's original "near-miss stays blocked" coverage intent.
+    for (final blocked in ['14.9', '16.09', '17.9']) {
       testWidgets('typing $blocked (near but not exactly an approved target) keeps Continue disabled', (tester) async {
         await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
 
@@ -226,7 +230,10 @@ void main() {
       expect(find.textContaining('isn\'t supported yet'), findsNothing);
     });
 
-    for (final blocked in ['14.9', '15.1', '15.9', '16.1', '16.09', '18.0']) {
+    // NOTE (DIST-GEN.11): 18.0 was removed from this "near but blocked" list --
+    // it is now its own approved projected target (see the dedicated 18K
+    // group below) and would make this test's premise false.
+    for (final blocked in ['14.9', '15.1', '15.9', '16.1', '16.09', '17.9', '18.1']) {
       testWidgets('typing $blocked (near but not exactly an approved target) keeps Continue disabled', (tester) async {
         await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
 
@@ -235,8 +242,8 @@ void main() {
 
         final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(continueButton.onPressed, isNull,
-            reason: '$blocked must NOT be treated as an exact approved-target match (15.0 or 16.0 only, tight '
-                '~0.001 epsilon, not the ±0.2 preset-snap band).');
+            reason: '$blocked must NOT be treated as an exact approved-target match (15.0, 16.0, or 18.0 only, '
+                'tight ~0.001 epsilon, not the ±0.2 preset-snap band).');
         expect(find.textContaining('isn\'t supported yet'), findsOneWidget);
       });
     }
@@ -268,6 +275,86 @@ void main() {
       ).toJson();
       expect(payload['goal_distance'], 'custom');
       expect(payload['target_distance_km'], 15.0);
+    });
+
+    testWidgets('typing exactly 16.0 still enables Continue unchanged (16K zero-delta)', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '16');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull);
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
+    });
+  });
+
+  group('RaceDetailsPage — DIST-GEN.11 exact 18K projected target', () {
+    testWidgets('typing exactly 18.0 enables Continue with no guard message', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '18');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull,
+          reason: 'Exactly 18.0 is DIST-GEN.11\'s newly approved public projected target and must enable Continue.');
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
+    });
+
+    for (final blocked in ['17.9', '18.1', '18.01', '18.09', '17.0', '19.0', '20.0', '16.09']) {
+      testWidgets('typing $blocked (near but not exactly an approved target) keeps Continue disabled', (tester) async {
+        await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+        await tester.enterText(find.byType(TextField).at(1), blocked);
+        await tester.pumpAndSettle();
+
+        final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(continueButton.onPressed, isNull,
+            reason: '$blocked must NOT be treated as an exact approved-target match (15.0, 16.0, or 18.0 only, '
+                'tight ~0.001 epsilon, not the ±0.2 preset-snap band).');
+        expect(find.textContaining('isn\'t supported yet'), findsOneWidget);
+      });
+    }
+
+    testWidgets('submitting exactly 18.0 sets goal_distance=custom and target_distance_km=18.0 in state', (tester) async {
+      final container = await pumpPageWithContainer(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '18');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      final state = container.read(onboardingProvider);
+      expect(state.goalDistance, 'custom');
+      expect(state.targetDistanceKm, 18.0);
+
+      final payload = GenerateRacePlanPreviewRequestDto(
+        goalDistance: state.goalDistance,
+        targetDistanceKm: state.targetDistanceKm,
+        level: 'intermediate',
+        daysPerWeek: 4,
+        unit: 'km',
+        startDate: '2026-07-20',
+        preferredDays: const ['mon', 'wed', 'fri', 'sun'],
+        longRunDay: 'sun',
+        raceDate: '2026-10-12',
+        targetFinishTimeSeconds: 6300,
+        targetFinishTimeSource: TargetFinishTimeSourceWire.userDefined,
+      ).toJson();
+      expect(payload['goal_distance'], 'custom');
+      expect(payload['target_distance_km'], 18.0);
+    });
+
+    testWidgets('typing exactly 15.0 still enables Continue unchanged (15K zero-delta)', (tester) async {
+      await pumpPage(tester, const RaceDetailsPage(), AppRoutes.raceDetails);
+
+      await tester.enterText(find.byType(TextField).at(1), '15');
+      await tester.pumpAndSettle();
+
+      final continueButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(continueButton.onPressed, isNotNull);
+      expect(find.textContaining('isn\'t supported yet'), findsNothing);
     });
 
     testWidgets('typing exactly 16.0 still enables Continue unchanged (16K zero-delta)', (tester) async {
