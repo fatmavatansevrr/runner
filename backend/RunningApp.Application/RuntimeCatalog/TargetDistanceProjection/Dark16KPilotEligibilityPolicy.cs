@@ -107,6 +107,14 @@ public static class Dark16KPilotEligibilityPolicy
     /// non-public <see cref="RunningApp.Application.DTOs.Plan.GeneratePreviewRequest.TargetDistanceKmOverride"/>
     /// seam can materialize.
     ///
+    /// PHASE DIST-GEN.13 — a cell resolved here is mapped to its one complete
+    /// training-authority composition by
+    /// <see cref="ProjectedTargetAuthorityRegistry"/>, which sits strictly
+    /// DOWNSTREAM of this gate: that registry never decides eligibility, and
+    /// this gate never consults it. This registry's own governance meaning,
+    /// contents and separation from <see cref="ApprovedPublicCells"/> are
+    /// unchanged by that phase.
+    ///
     /// Three entries today: the original 16.0km pilot (DIST-GEN.1/2), the
     /// second, 15.0km target (DIST-GEN.5/6), and the third, 18.0km target
     /// (DIST-GEN.9/10) — all three reusing the identical
@@ -129,7 +137,7 @@ public static class Dark16KPilotEligibilityPolicy
     [
         new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.1/2 -- 16.0km
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.5/6 -- 15.0km
-        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (DARK ONLY -- never added to ApprovedPublicCells)
+        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (dark grant; separately granted public by DIST-GEN.11 via its own ApprovedPublicCells entry -- stale "DARK ONLY" note corrected in DIST-GEN.13 per DIST-GEN.12 §52)
     ];
 
     /// <summary>

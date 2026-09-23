@@ -50,8 +50,13 @@ public static class TargetDistance16KHorizonPolicy
     /// this reused identity's real minimum; 8-9W are deferred to a future,
     /// separately-governed compressed-core track (see this repo's own
     /// HM-X2 precedent for HALF_MARATHON's own 7-9W deferral).
+    ///
+    /// DIST-GEN.13 (per DIST-GEN.12 §53's own <c>MinimumCoreWeeks</c> row)
+    /// references the parent-family constant that already carried exactly this
+    /// structural fact instead of re-declaring a bare literal. The value is
+    /// unchanged at 10.
     /// </summary>
-    public const int MinimumCoreWeeks = 10;
+    public const int MinimumCoreWeeks = RaceHorizonPolicy.HalfMarathonMinimumSupportedStandaloneWeeks;
 
     /// <summary>DIST-GEN.1 §10 — preferred core length.</summary>
     public const int PreferredCoreWeeks = 12;

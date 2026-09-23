@@ -116,21 +116,18 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
                 request.PrescriptionContext.InputSnapshot.RequestedTargetDistanceKm,
                 request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek);
 
-            if (darkCell is { TargetDistanceKm: 15.0 })
+            // PHASE DIST-GEN.13 -- the ONE typed resolution boundary replacing
+            // the former three sequential per-target return branches. The named
+            // VolumeSafetyPolicy instances themselves are unchanged and are
+            // returned by reference; only the SELECTION is now an exact-cell
+            // lookup. Fail-closed: a cell without exactly one registered
+            // authority resolves to null and falls through to the generic HM
+            // Intermediate branch below, exactly as an unapproved target does
+            // today -- never a defaulted or numerically-close policy.
+            var projectedTargetAuthority = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.ProjectedTargetAuthorityRegistry.TryResolve(darkCell);
+            if (projectedTargetAuthority is { } projected)
             {
-                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance15K).Build(request);
-            }
-            if (darkCell is { TargetDistanceKm: 16.0 })
-            {
-                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance16K).Build(request);
-            }
-            // PHASE DIST-GEN.10 -- third dark target-distance projection (18.0),
-            // extending this cascade with a third branch (see
-            // PHASE_DIST_GEN_10_...md §56/§57 for the dispatch-generalization
-            // decision).
-            if (darkCell is { TargetDistanceKm: 18.0 })
-            {
-                return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance18K).Build(request);
+                return new CatalogVolumeAndLongRunPlanner(projected.VolumeSafetyPolicy).Build(request);
             }
         }
 

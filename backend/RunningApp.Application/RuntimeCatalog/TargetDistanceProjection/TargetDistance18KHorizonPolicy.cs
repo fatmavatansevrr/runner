@@ -26,8 +26,15 @@ namespace RunningApp.Application.RuntimeCatalog.TargetDistanceProjection;
 /// </summary>
 public static class TargetDistance18KHorizonPolicy
 {
-    /// <summary>DIST-GEN.9 §12 — the reused HALF_MARATHON catalog identity's own real phase-allocation minimum-week sum (2+3+3+2=10), a structural fact, not re-derived per target.</summary>
-    public const int MinimumCoreWeeks = 10;
+    /// <summary>
+    /// DIST-GEN.9 §12 — the reused HALF_MARATHON catalog identity's own real
+    /// phase-allocation minimum-week sum (2+3+3+2=10), a structural fact, not
+    /// re-derived per target. DIST-GEN.13 (per DIST-GEN.12 §53's own
+    /// <c>MinimumCoreWeeks</c> row) references the parent-family constant that
+    /// already carried exactly this fact instead of re-declaring a bare literal.
+    /// The value is unchanged at 10.
+    /// </summary>
+    public const int MinimumCoreWeeks = RaceHorizonPolicy.HalfMarathonMinimumSupportedStandaloneWeeks;
 
     /// <summary>DIST-GEN.9 §13 — evidence-informed product default, discovered convergence with 15K's/16K's own value.</summary>
     public const int PreferredCoreWeeks = 12;

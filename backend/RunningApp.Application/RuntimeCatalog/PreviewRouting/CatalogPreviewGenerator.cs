@@ -645,7 +645,13 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         // TEN_K/HALF_MARATHON requests.
         var darkCellForSkeleton = Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
             request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
-        var isDark16KEligibleForSkeleton = darkCellForSkeleton is not null;
+        // PHASE DIST-GEN.13 -- the ONE typed resolution boundary replacing the
+        // former three-armed if/else-if horizon-bounds cascade below. Exact-cell
+        // and fail-closed: null for any cell without exactly one registered
+        // authority, in which case this method behaves exactly as it does for a
+        // canonical request. See ProjectedTargetAuthorityRegistry.
+        var projectedTargetAuthorityForSkeleton = ProjectedTargetAuthorityRegistry.TryResolve(darkCellForSkeleton);
+        var isProjectedTargetForSkeleton = projectedTargetAuthorityForSkeleton is not null;
 
         // PHASE DIST-GEN.2 -- every downstream peak-volume-band lookup in this
         // method (both the CompressedCore/ExtendedCore dynamic-core branch and
@@ -676,26 +682,18 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             // bounds are resolved to plain locals first (pilot's own 8/12/14
             // when eligible, else the candidate's own real CoreCycle bounds),
             // and Decide is invoked exactly once against whichever bounds apply.
+            //
+            // PHASE DIST-GEN.13 -- each projected target's own horizon policy is
+            // still the authority for these three bounds; it is now selected by
+            // exact-cell lookup instead of a hand-written three-armed if/else-if
+            // chain. The canonical arm below is byte-identical to before, and
+            // RaceHorizonPolicy.Decide is still invoked exactly once.
             int horizonMinimumWeeks, horizonPreferredWeeks, horizonMaximumWeeks;
-            if (darkCellForSkeleton is { TargetDistanceKm: 15.0 })
+            if (projectedTargetAuthorityForSkeleton is { } projectedHorizonBounds)
             {
-                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MinimumCoreWeeks;
-                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.PreferredCoreWeeks;
-                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance15KHorizonPolicy.MaximumCoreWeeks;
-            }
-            // PHASE DIST-GEN.10 -- third dark target (18.0), extending this
-            // cascade with a third branch (see PHASE_DIST_GEN_10_...md §56/§57).
-            else if (darkCellForSkeleton is { TargetDistanceKm: 18.0 })
-            {
-                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MinimumCoreWeeks;
-                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.PreferredCoreWeeks;
-                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance18KHorizonPolicy.MaximumCoreWeeks;
-            }
-            else if (isDark16KEligibleForSkeleton)
-            {
-                horizonMinimumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MinimumCoreWeeks;
-                horizonPreferredWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.PreferredCoreWeeks;
-                horizonMaximumWeeks = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.TargetDistance16KHorizonPolicy.MaximumCoreWeeks;
+                horizonMinimumWeeks = projectedHorizonBounds.MinimumCoreWeeks;
+                horizonPreferredWeeks = projectedHorizonBounds.PreferredCoreWeeks;
+                horizonMaximumWeeks = projectedHorizonBounds.MaximumCoreWeeks;
             }
             else
             {
@@ -715,7 +713,7 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             // bounds. The dark 16K pilot must therefore ALWAYS use the
             // generic dynamic-core path (which does take an explicit
             // TargetWeekCount), regardless of horizon.Mode, whenever eligible.
-            if (isDark16KEligibleForSkeleton || horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
+            if (isProjectedTargetForSkeleton || horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
             {
                 var preferredDays = CatalogPreferredDayAdapter.ParsePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays));
                 var longRunDay = CatalogPreferredDayAdapter.ParseLongRunDay(WeekdayCsv.ToCsv(request.LongRunDay));

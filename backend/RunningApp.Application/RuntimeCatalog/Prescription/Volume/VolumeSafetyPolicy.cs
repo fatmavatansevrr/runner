@@ -230,17 +230,20 @@ public sealed record VolumeSafetyPolicy(
     /// internal seam, never through any public request DTO.
     /// </summary>
     public static VolumeSafetyPolicy HalfMarathonIntermediate4DTargetDistance16K { get; } = new(
-        PreferredMaxWeeklyIncreaseRatio: 0.07d,
-        HardMaxWeeklyIncreaseRatio: 0.08d,
-        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        // DIST-GEN.13 -- SHARED_LEVEL_FREQUENCY_AUTHORITY, referenced not copied.
+        // No value changed: 0.07/0.08/2.5 and 0.30/0.36/0.33/0.40 exactly as frozen.
+        PreferredMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.PreferredWeeklyIncreaseRate,
+        HardMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.HardWeeklyIncreaseRate,
+        AbsoluteWeeklyIncrementCapKm: IntermediateFourDayGrowthAuthority.AbsoluteWeeklyIncreaseCapKm,
+        // EXACT-TARGET below (DIST-GEN.12 §54) -- never normalized.
         GoldenFixtureStartingVolumeKm: 23.5d,
         ResolvedPeakReference: new(40.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
         GoldenFixtureNonTaperTransitions: 9,
         TaperVolumeMultiplier: TargetDistance16KTaperVolumePolicy.TaperWeek2VolumeMultiplier,
-        LongRunPreferredMinimumShare: 0.30d,
-        LongRunPreferredMaximumShare: 0.36d,
-        LongRunSelectionShare: 0.33d,
-        LongRunHardCapShare: 0.40d,
+        LongRunPreferredMinimumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMinimumShare,
+        LongRunPreferredMaximumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMaximumShare,
+        LongRunSelectionShare: IntermediateFourDayGrowthAuthority.LongRunSelectionShare,
+        LongRunHardCapShare: IntermediateFourDayGrowthAuthority.LongRunHardCapShare,
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
         TaperVolumeMultipliers: TargetDistance16KTaperVolumePolicy.OrderedMultipliers,
@@ -248,7 +251,12 @@ public sealed record VolumeSafetyPolicy(
         // DIST-GEN.1 §23/§39 -- 40.0km is a frozen SELECTED PEAK CEILING for this
         // pilot's own 8-14W Core family, not a calibration point 13W/14W may
         // extrapolate past. Reuses HM.5.3's own generic mechanism unmodified.
-        ResolvedPeakReferenceIsSelectedCeiling: true);
+        ResolvedPeakReferenceIsSelectedCeiling: true)
+    {
+        // DIST-GEN.13 -- frequency authority (null at 4D), referenced explicitly
+        // rather than left implicit. Value unchanged: null, exactly as before.
+        StartingAbsoluteLongRunCapKm = IntermediateFourDayGrowthAuthority.StartingAbsoluteLongRunCapKm,
+    };
 
     /// <summary>
     /// PHASE DIST-GEN.6 -- implements the already-frozen DIST-GEN.5 §53 complete
@@ -295,17 +303,20 @@ public sealed record VolumeSafetyPolicy(
     /// registry's dark-eligibility resolution, never through any public request DTO.
     /// </summary>
     public static VolumeSafetyPolicy HalfMarathonIntermediate4DTargetDistance15K { get; } = new(
-        PreferredMaxWeeklyIncreaseRatio: 0.07d,
-        HardMaxWeeklyIncreaseRatio: 0.08d,
-        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        // DIST-GEN.13 -- SHARED_LEVEL_FREQUENCY_AUTHORITY, referenced not copied.
+        // No value changed: 0.07/0.08/2.5 and 0.30/0.36/0.33/0.40 exactly as frozen.
+        PreferredMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.PreferredWeeklyIncreaseRate,
+        HardMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.HardWeeklyIncreaseRate,
+        AbsoluteWeeklyIncrementCapKm: IntermediateFourDayGrowthAuthority.AbsoluteWeeklyIncreaseCapKm,
+        // EXACT-TARGET below (DIST-GEN.12 §54) -- never normalized.
         GoldenFixtureStartingVolumeKm: 23.5d,
         ResolvedPeakReference: new(40.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
         GoldenFixtureNonTaperTransitions: 9,
         TaperVolumeMultiplier: TargetDistance15KTaperVolumePolicy.TaperWeek2VolumeMultiplier,
-        LongRunPreferredMinimumShare: 0.30d,
-        LongRunPreferredMaximumShare: 0.36d,
-        LongRunSelectionShare: 0.33d,
-        LongRunHardCapShare: 0.40d,
+        LongRunPreferredMinimumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMinimumShare,
+        LongRunPreferredMaximumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMaximumShare,
+        LongRunSelectionShare: IntermediateFourDayGrowthAuthority.LongRunSelectionShare,
+        LongRunHardCapShare: IntermediateFourDayGrowthAuthority.LongRunHardCapShare,
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
         TaperVolumeMultipliers: TargetDistance15KTaperVolumePolicy.OrderedMultipliers,
@@ -313,7 +324,12 @@ public sealed record VolumeSafetyPolicy(
         // DIST-GEN.5 §29/§47 -- 40.0km is a frozen SELECTED PEAK CEILING for this
         // target's own 10-14W Core family, not a calibration point 13W/14W may
         // extrapolate past. Reuses HM.5.3's own generic mechanism unmodified.
-        ResolvedPeakReferenceIsSelectedCeiling: true);
+        ResolvedPeakReferenceIsSelectedCeiling: true)
+    {
+        // DIST-GEN.13 -- frequency authority (null at 4D), referenced explicitly
+        // rather than left implicit. Value unchanged: null, exactly as before.
+        StartingAbsoluteLongRunCapKm = IntermediateFourDayGrowthAuthority.StartingAbsoluteLongRunCapKm,
+    };
 
     /// <summary>
     /// PHASE DIST-GEN.10 -- implements the already-frozen DIST-GEN.9 §53 complete
@@ -371,19 +387,25 @@ public sealed record VolumeSafetyPolicy(
     /// registry's dark-eligibility resolution, never through any public request DTO.
     /// </summary>
     public static VolumeSafetyPolicy HalfMarathonIntermediate4DTargetDistance18K { get; } = new(
-        PreferredMaxWeeklyIncreaseRatio: 0.07d,
-        HardMaxWeeklyIncreaseRatio: 0.08d,
-        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        // DIST-GEN.13 -- SHARED_LEVEL_FREQUENCY_AUTHORITY, referenced not copied.
+        // No value changed: 0.07/0.08/2.5 and 0.30/0.36/0.33/0.40 exactly as frozen.
+        PreferredMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.PreferredWeeklyIncreaseRate,
+        HardMaxWeeklyIncreaseRatio: IntermediateFourDayGrowthAuthority.HardWeeklyIncreaseRate,
+        AbsoluteWeeklyIncrementCapKm: IntermediateFourDayGrowthAuthority.AbsoluteWeeklyIncreaseCapKm,
+        // EXACT-TARGET below (DIST-GEN.12 §54) -- never normalized.
         GoldenFixtureStartingVolumeKm: 23.5d,
         ResolvedPeakReference: new(40.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
         GoldenFixtureNonTaperTransitions: 9,
-        // Deliberately reused directly from TargetDistance16KTaperVolumePolicy --
-        // SHARED_PARENT_FAMILY_AUTHORITY, not a third near-duplicate taper class.
+        // DIST-GEN.10 reused 16K's own taper constants directly rather than
+        // declaring a third near-duplicate class; DIST-GEN.13 leaves that
+        // reference in place, and it now resolves transitively to the single
+        // HalfMarathonParentTaperAuthority -- SHARED_PARENT_FAMILY_AUTHORITY,
+        // value unchanged at 0.70/0.43.
         TaperVolumeMultiplier: TargetDistance16KTaperVolumePolicy.TaperWeek2VolumeMultiplier,
-        LongRunPreferredMinimumShare: 0.30d,
-        LongRunPreferredMaximumShare: 0.36d,
-        LongRunSelectionShare: 0.33d,
-        LongRunHardCapShare: 0.40d,
+        LongRunPreferredMinimumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMinimumShare,
+        LongRunPreferredMaximumShare: IntermediateFourDayGrowthAuthority.LongRunPreferredMaximumShare,
+        LongRunSelectionShare: IntermediateFourDayGrowthAuthority.LongRunSelectionShare,
+        LongRunHardCapShare: IntermediateFourDayGrowthAuthority.LongRunHardCapShare,
         RoundingIncrementKm: 0.5d,
         RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
         TaperVolumeMultipliers: TargetDistance16KTaperVolumePolicy.OrderedMultipliers,
@@ -391,7 +413,12 @@ public sealed record VolumeSafetyPolicy(
         // DIST-GEN.9 §55 -- 40.0km is a frozen SELECTED PEAK CEILING for this
         // target's own 10-14W Core family, not a calibration point 13W/14W may
         // extrapolate past. Reuses HM.5.3's own generic mechanism unmodified.
-        ResolvedPeakReferenceIsSelectedCeiling: true);
+        ResolvedPeakReferenceIsSelectedCeiling: true)
+    {
+        // DIST-GEN.13 -- frequency authority (null at 4D), referenced explicitly
+        // rather than left implicit. Value unchanged: null, exactly as before.
+        StartingAbsoluteLongRunCapKm = IntermediateFourDayGrowthAuthority.StartingAbsoluteLongRunCapKm,
+    };
 
     /// <summary>
     /// Phase HM.8 -- implements the already-frozen HM.7 numeric authority for

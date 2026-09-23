@@ -14,10 +14,16 @@ namespace RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 /// <see cref="CatalogVolumeAndLongRunPlanner.BuildWeeklyPlan"/> non-chained
 /// taper branch every other named 2-week-taper HM policy already uses.
 ///
-/// Declared as a distinct class from <see cref="TargetDistance16KTaperVolumePolicy"/>
-/// rather than a shared constant, per DIST-GEN.6's own instruction: the
-/// numeric coincidence is a disclosed evidence convergence, not grounds to
-/// erase the second target's own independent authority trail.
+/// PHASE DIST-GEN.13 — the two multipliers below are no longer independently
+/// re-declared literals: they now REFERENCE
+/// <see cref="HalfMarathonParentTaperAuthority"/>, the single explicit
+/// implementation owner of HALF_MARATHON's own parent-family taper authority
+/// (DIST-GEN.8 §7 <c>SHARED_PARENT_FAMILY_AUTHORITY</c>, DIST-GEN.12 §18/§53's
+/// highest-priority normalization candidate). <b>No value changed</b> — both
+/// were already byte-identical to that source, verified before wiring. This
+/// class remains as this target's own named, traceable taper seam, and
+/// continues to own <see cref="ResolvedPeakReferenceKm"/>, which is an
+/// EXACT-TARGET field (DIST-GEN.12 §54) and is deliberately NOT normalized.
 ///
 /// Dark-only: <see cref="VolumeSafetyPolicy.HalfMarathonIntermediate4DTargetDistance15K"/>
 /// consumes these values. No public routing/gate is widened by that named
@@ -25,15 +31,15 @@ namespace RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 /// </summary>
 internal static class TargetDistance15KTaperVolumePolicy
 {
-    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ~30% reduction.</summary>
-    public const double TaperWeek1VolumeMultiplier = 0.70d;
+    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ~30% reduction. DIST-GEN.13: referenced from the HM-parent authority, value unchanged at 0.70.</summary>
+    public const double TaperWeek1VolumeMultiplier = HalfMarathonParentTaperAuthority.TaperWeek1VolumeMultiplier;
 
-    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ~57% reduction.</summary>
-    public const double TaperWeek2VolumeMultiplier = 0.43d;
+    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ~57% reduction. DIST-GEN.13: referenced from the HM-parent authority, value unchanged at 0.43.</summary>
+    public const double TaperWeek2VolumeMultiplier = HalfMarathonParentTaperAuthority.TaperWeek2VolumeMultiplier;
 
-    /// <summary>The frozen DIST-GEN.5 §29 pre-taper reference this target's taper multipliers are computed against.</summary>
+    /// <summary>EXACT-TARGET, deliberately NOT normalized (DIST-GEN.12 §54): the frozen DIST-GEN.5 §29 pre-taper reference this target's taper multipliers are computed against.</summary>
     public const double ResolvedPeakReferenceKm = 40.0d;
 
-    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
-    public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
+    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>. DIST-GEN.13: the one shared HM-parent sequence instance, so provenance is provable by reference, not only by value.</summary>
+    public static readonly IReadOnlyList<double> OrderedMultipliers = HalfMarathonParentTaperAuthority.OrderedMultipliers;
 }

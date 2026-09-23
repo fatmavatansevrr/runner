@@ -52,22 +52,17 @@ internal sealed class TargetDistance16KAwarePeakVolumeBandLoader : ICatalogPeakV
     public Task<CatalogPeakVolumeBand> LoadAsync(PlanCatalogReference reference, string distanceFamily, string experience, int runsPerWeek, CancellationToken ct = default)
     {
         var darkCell = Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(_targetDistanceKmOverride, _requestGoalDistance, _level, _daysPerWeek);
-        if (darkCell is { TargetDistanceKm: 15.0 })
+        // PHASE DIST-GEN.13 -- the ONE typed resolution boundary replacing the
+        // former three sequential per-target return branches. Each target's own
+        // independently-declared TargetDistanceNNKPeakVolumeBandPolicy still
+        // owns and builds its own band; only the SELECTION is now an exact-cell
+        // lookup. Fail-closed: a cell without exactly one registered authority
+        // resolves to null and delegates unchanged to the real catalog-backed
+        // loader below -- never a defaulted or numerically-close band.
+        var projectedTargetAuthority = ProjectedTargetAuthorityRegistry.TryResolve(darkCell);
+        if (projectedTargetAuthority is { } projected)
         {
-            return Task.FromResult(TargetDistance15KPeakVolumeBandPolicy.Build(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
-        }
-        if (darkCell is { TargetDistanceKm: 16.0 })
-        {
-            return Task.FromResult(TargetDistance16KPeakVolumeBandPolicy.Build(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
-        }
-        // PHASE DIST-GEN.10 -- third dark target (18.0). Extends this existing
-        // registry-resolved cascade with a third branch (option (a) --
-        // "just extend it" -- see PHASE_DIST_GEN_10_...md §56/§57 for the
-        // disclosed reasoning against generalizing this dispatch to a keyed
-        // lookup in this same phase).
-        if (darkCell is { TargetDistanceKm: 18.0 })
-        {
-            return Task.FromResult(TargetDistance18KPeakVolumeBandPolicy.Build(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
+            return Task.FromResult(projected.BuildPeakVolumeBand(distanceFamily, experience, runsPerWeek, reference.Key, reference.Version));
         }
 
         return _inner.LoadAsync(reference, distanceFamily, experience, runsPerWeek, ct);

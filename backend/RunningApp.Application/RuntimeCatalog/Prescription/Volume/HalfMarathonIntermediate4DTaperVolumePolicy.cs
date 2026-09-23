@@ -55,17 +55,17 @@ namespace RunningApp.Application.RuntimeCatalog.Prescription.Volume;
 /// </summary>
 internal static class HalfMarathonIntermediate4DTaperVolumePolicy
 {
-    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ≈30% reduction.</summary>
-    public const double TaperWeek1VolumeMultiplier = 0.70d;
+    /// <summary>First (shallower) taper week's multiplier, applied against the fixed pre-taper reference. ≈30% reduction. DIST-GEN.13: referenced from the HM-parent authority, value unchanged at 0.70.</summary>
+    public const double TaperWeek1VolumeMultiplier = HalfMarathonParentTaperAuthority.TaperWeek1VolumeMultiplier;
 
-    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ≈57% reduction.</summary>
-    public const double TaperWeek2VolumeMultiplier = 0.43d;
+    /// <summary>Second, race-week (deepest) taper week's multiplier, applied against the same fixed pre-taper reference — never chained from Week 1's own output. ≈57% reduction. DIST-GEN.13: referenced from the HM-parent authority, value unchanged at 0.43.</summary>
+    public const double TaperWeek2VolumeMultiplier = HalfMarathonParentTaperAuthority.TaperWeek2VolumeMultiplier;
 
-    /// <summary>The already-frozen pre-taper reference this cell's taper multipliers are computed against (HM.1.4/HM.1.5's own <c>ResolvedPeakReferenceKm</c>, not re-decided here).</summary>
+    /// <summary>EXACT-CELL, deliberately NOT normalized: the already-frozen pre-taper reference this cell's taper multipliers are computed against (HM.1.4/HM.1.5's own <c>ResolvedPeakReferenceKm</c>, not re-decided here, and genuinely different from every projected target's own 40.0).</summary>
     public const double ResolvedPeakReferenceKm = 43.0d;
 
-    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>.</summary>
-    public static readonly IReadOnlyList<double> OrderedMultipliers = [TaperWeek1VolumeMultiplier, TaperWeek2VolumeMultiplier];
+    /// <summary>Ordered, non-chained taper multiplier sequence for direct use as <see cref="VolumeSafetyPolicy.TaperVolumeMultipliers"/>. DIST-GEN.13: the one shared HM-parent sequence instance.</summary>
+    public static readonly IReadOnlyList<double> OrderedMultipliers = HalfMarathonParentTaperAuthority.OrderedMultipliers;
 }
 
 /// <summary>
