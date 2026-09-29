@@ -95,21 +95,35 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
-        // PHASE DIST-GEN.2/DIST-GEN.6 -- the dark target-distance-projection
-        // pilots' (16K, and now 15K) own frozen VolumeSafetyPolicy instances,
+        // PHASE DIST-GEN.2/DIST-GEN.6/DIST-GEN.16 -- the dark
+        // target-distance-projection targets' (16K, 15K, 18K, all at 4D, and
+        // now also 16K at 3D) own frozen VolumeSafetyPolicy instances,
         // selected BEFORE the generic HM Intermediate branch below so they
-        // never fall through to HalfMarathonIntermediate4D's own canonical
-        // (21.0975km) authority. Resolved against the small, explicit
-        // approved-cell registry (Dark16KPilotEligibilityPolicy.ApprovedDarkCells,
+        // never fall through to HalfMarathonIntermediate4D's/3D's own canonical
+        // authority. Resolved against the small, explicit approved-cell
+        // registry (Dark16KPilotEligibilityPolicy.ApprovedDarkCells,
         // DIST-GEN.4 §38's own recommendation) using the prescription
         // context's own RequestedTargetDistanceKm -- for every canonical
         // HALF_MARATHON request that value always equals the family-representative
-        // 21.0975km (never 15.0 or 16.0), so this branch is structurally
+        // 21.0975km (never 15.0, 16.0, or 18.0), so this branch is structurally
         // unreachable for any canonical request, not merely empirically
         // untriggered. Dispatches to the exact target-specific instance the
         // registry matched, never a boolean-gated single instance.
+        //
+        // DIST-GEN.16 recurring-4D-assumption fix: this condition was
+        // previously hardcoded to "DaysPerWeek == 4" -- the exact
+        // HIDDEN_4D_ASSUMPTION class this engagement's own §66-style audits
+        // watch for (cf. HM.8 §19's own named finding at the generic HM
+        // dispatcher below). Since ProjectedTargetAuthorityRegistry's own
+        // lookup is already exact-cell/fail-closed (a 3D candidate with no
+        // registered 3D authority still resolves null and falls through
+        // unchanged), the ONLY defect the old "== 4" gate caused was making
+        // the dark 16K x Intermediate x 3D cell structurally UNREACHABLE here
+        // even after DIST-GEN.16 registered it -- widening this outer gate to
+        // admit 3 is required for that new cell to ever reach the registry
+        // lookup at all. Zero delta for every existing 4D cell.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "INTERMEDIATE" && request.Candidate.DaysPerWeek == 4 &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(

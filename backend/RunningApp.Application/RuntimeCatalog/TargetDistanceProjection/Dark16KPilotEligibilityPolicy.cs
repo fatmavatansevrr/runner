@@ -138,6 +138,7 @@ public static class Dark16KPilotEligibilityPolicy
         new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.1/2 -- 16.0km
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.5/6 -- 15.0km
         new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (dark grant; separately granted public by DIST-GEN.11 via its own ApprovedPublicCells entry -- stale "DARK ONLY" note corrected in DIST-GEN.13 per DIST-GEN.12 §52)
+        new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3), // DIST-GEN.15/15B/16 -- 16.0km Intermediate 3D, the first projected-distance x non-4D-frequency cell (DARK ONLY -- deliberately never added to ApprovedPublicCells; see DIST-GEN.16's own public-registry zero-delta proof)
     ];
 
     /// <summary>

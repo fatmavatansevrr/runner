@@ -38,12 +38,15 @@ namespace RunningApp.Application.RuntimeCatalog.TargetDistanceProjection;
 /// to come first — see <see cref="BuildIndex"/>.</item>
 /// </list>
 ///
-/// <b>Exactly three registrations, one per approved dark cell</b> — 15.0, 16.0
-/// and 18.0, all HALF_MARATHON × Intermediate × 4D, matching
+/// <b>Exactly four registrations, one per approved dark cell</b> — 15.0, 16.0
+/// and 18.0 (all HALF_MARATHON × Intermediate × 4D), plus 16.0 × HALF_MARATHON
+/// × Intermediate × 3D (DIST-GEN.16 — the first projected-distance ×
+/// non-4D-frequency cell, proving <c>RunsPerWeek</c> is genuinely
+/// load-bearing in the key, not merely present), matching
 /// <see cref="Dark16KPilotEligibilityPolicy.ApprovedDarkCells"/> one-for-one.
-/// Adding a future fourth target is deliberately one registration here plus
-/// that target's own authority files, never a fourth hand-edited branch at four
-/// separate call sites. This phase adds no target and no registration.
+/// Adding a future fifth target/cell is deliberately one registration here
+/// plus that cell's own authority files, never a hand-edited branch at any
+/// dispatch call site.
 /// </summary>
 internal static class ProjectedTargetAuthorityRegistry
 {
@@ -115,6 +118,29 @@ internal static class ProjectedTargetAuthorityRegistry
             BuildPeakVolumeBand = TargetDistance18KPeakVolumeBandPolicy.Build,
             PeakVolumeBandMinimumKm = TargetDistance18KPeakVolumeBandPolicy.MinimumKm,
             PeakVolumeBandMaximumKm = TargetDistance18KPeakVolumeBandPolicy.MaximumKm,
+        },
+        // DIST-GEN.15/15B/16 -- 16.0km x Intermediate x 3D, the FIRST
+        // projected-distance x non-4D-frequency cell. Its own exact-target
+        // peak long run is 15.0km (unchanged, frequency-invariant, reused
+        // directly from this same target's own 4D cell above -- DIST-GEN.15
+        // §32). Every other field is either PARENT_FAMILY_ONLY, FREQUENCY_ONLY,
+        // TARGET_ONLY, or EXACT-CELL authority distinct from the 4D cell's own
+        // -- see VolumeSafetyPolicy.HalfMarathonIntermediate3DTargetDistance16K's
+        // own doc comment for the complete field-by-field provenance.
+        new()
+        {
+            Cell = new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3),
+            PilotLabel = "dark 16K Intermediate 3D",
+            MinimumCoreWeeks = TargetDistance16KIntermediate3DHorizonPolicy.MinimumCoreWeeks,
+            PreferredCoreWeeks = TargetDistance16KIntermediate3DHorizonPolicy.PreferredCoreWeeks,
+            MaximumCoreWeeks = TargetDistance16KIntermediate3DHorizonPolicy.MaximumCoreWeeks,
+            DecideHorizon = TargetDistance16KIntermediate3DHorizonPolicy.Decide,
+            ClassifyHorizon = TargetDistance16KIntermediate3DHorizonPolicy.Classify,
+            GetUnsupportedReasonCode = TargetDistance16KIntermediate3DHorizonPolicy.GetUnsupportedReasonCode,
+            VolumeSafetyPolicy = VolumeSafetyPolicy.HalfMarathonIntermediate3DTargetDistance16K,
+            BuildPeakVolumeBand = TargetDistance16KIntermediate3DPeakVolumeBandPolicy.Build,
+            PeakVolumeBandMinimumKm = TargetDistance16KIntermediate3DPeakVolumeBandPolicy.MinimumKm,
+            PeakVolumeBandMaximumKm = TargetDistance16KIntermediate3DPeakVolumeBandPolicy.MaximumKm,
         },
     ];
 

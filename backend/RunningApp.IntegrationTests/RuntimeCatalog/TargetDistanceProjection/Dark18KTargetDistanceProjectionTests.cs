@@ -139,8 +139,13 @@ public sealed class Dark18KTargetDistanceProjectionTests
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 15.0);
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 16.0);
 
-        // ApprovedDarkCells is untouched by this phase -- still exactly three entries.
-        Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
+        // ApprovedDarkCells was untouched by DIST-GEN.11 itself (still three
+        // entries at that phase). DIST-GEN.16 later added a fourth entry
+        // (16.0km x Intermediate x 3D, the first projected-distance x
+        // non-4D-frequency cell) -- this assertion is updated to reflect that
+        // real, intentional, subsequent addition; it does not reopen or
+        // affect anything DIST-GEN.11 itself froze for 18.0km.
+        Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
     }
 
     // ── Distance resolution: CanonicalDistanceFamilyResolver ────────────────

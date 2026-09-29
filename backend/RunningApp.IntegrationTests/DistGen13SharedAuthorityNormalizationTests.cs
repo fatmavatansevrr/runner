@@ -32,7 +32,10 @@ public sealed class DistGen13SharedAuthorityNormalizationTests
     public void Registry_HasExactlyOneAuthorityPerApprovedDarkCell_NoMoreNoFewer()
     {
         var darkCells = Dark16KPilotEligibilityPolicy.ApprovedDarkCells;
-        Assert.Equal(3, darkCells.Count);
+        // DIST-GEN.16 -- bumped from 3 to 4: the dark registry now also carries
+        // 16.0km x Intermediate x 3D, the first projected-distance x
+        // non-4D-frequency cell.
+        Assert.Equal(4, darkCells.Count);
         Assert.Equal(darkCells.Count, ProjectedTargetAuthorityRegistry.All.Count);
 
         foreach (var cell in darkCells)
@@ -59,6 +62,33 @@ public sealed class DistGen13SharedAuthorityNormalizationTests
         var ex = Assert.Throws<InvalidOperationException>(() =>
             ProjectedTargetAuthorityRegistry.BuildIndex([one!, one!]));
         Assert.Contains("registered more than once", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// DIST-GEN.16 -- extends the duplicate-registration refusal proof above to
+    /// the new 16K x Intermediate x 3D cell specifically, confirming the
+    /// registry's fail-closed duplicate-key protection is genuinely generic
+    /// (keyed on the full quadruple, RunsPerWeek included) and not somehow
+    /// specific to the three pre-existing 4D cells it was originally proven
+    /// against.
+    /// </summary>
+    [Fact]
+    public void Registry_DuplicateRegistration_FailsLoudlyAtConstruction_AlsoForTheNew16KIntermediate3DCell()
+    {
+        var i3D = ProjectedTargetAuthorityRegistry.TryResolve(new Cell(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
+        Assert.NotNull(i3D);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            ProjectedTargetAuthorityRegistry.BuildIndex([i3D!, i3D!]));
+        Assert.Contains("registered more than once", ex.Message, StringComparison.Ordinal);
+
+        // And mixing the 3D cell with an unrelated 4D cell in the same index
+        // build must NOT throw -- the duplicate check is keyed on the full
+        // cell, not merely on TargetDistanceKm=16.0.
+        var i4D = ProjectedTargetAuthorityRegistry.TryResolve(CellFor(16.0));
+        Assert.NotNull(i4D);
+        var index = ProjectedTargetAuthorityRegistry.BuildIndex([i3D!, i4D!]);
+        Assert.Equal(2, index.Count);
     }
 
     // ── Fail-closed lookup ──────────────────────────────────────────────────
