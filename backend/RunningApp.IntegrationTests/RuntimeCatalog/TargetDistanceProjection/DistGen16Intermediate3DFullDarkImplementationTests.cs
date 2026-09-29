@@ -208,19 +208,26 @@ public sealed class DistGen16Intermediate3DFullDarkImplementationTests
         Assert.Null(Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(km, GoalDistance.HalfMarathon, level, runsPerWeek));
     }
 
-    // ── Public zero-delta: 16K I3D stays completely dark-only ────────────────
-
+    // ── Public registry state as of DIST-GEN.16 (this phase's own dark-only
+    // implementation): 16K I3D was DARK ONLY at the time DIST-GEN.16 closed.
+    // PHASE DIST-GEN.17 subsequently made this exact cell publicly reachable
+    // via its own, separately-authored ApprovedPublicCells entry -- this test
+    // is updated in place (not superseded by a new file) to describe the
+    // registry's CURRENT state, per DIST-GEN.17's own zero-delta obligation
+    // to this file. See DistGen17PublicActivationTests for the full public
+    // activation proof.
     [Fact]
-    public void PublicRegistry_Never16KI3D_DarkOnly()
+    public void PublicRegistry_16KI3D_NowPublic_AsOfDistGen17()
     {
-        Assert.DoesNotContain(I3DCell, Dark16KPilotEligibilityPolicy.ApprovedPublicCells);
+        Assert.Contains(I3DCell, Dark16KPilotEligibilityPolicy.ApprovedPublicCells);
         Assert.Contains(I3DCell, Dark16KPilotEligibilityPolicy.ApprovedDarkCells);
-        Assert.False(Dark16KPilotEligibilityPolicy.IsPubliclyEligible(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
-        // 16K's own 4D public grant is unaffected.
+        Assert.True(Dark16KPilotEligibilityPolicy.IsPubliclyEligible(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3));
+        // 16K's own 4D public grant remains unaffected.
         Assert.True(Dark16KPilotEligibilityPolicy.IsPubliclyEligible(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
-        // Public registry size unchanged at 3 (15/16/18, all 4D).
-        Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
-        Assert.All(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => Assert.Equal(4, c.RunsPerWeek));
+        // Public registry now has 4 entries (15/16(4D)/18, all 4D, plus 16K I3D).
+        Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
+        Assert.Single(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.RunsPerWeek == 3);
+        Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count(c => c.RunsPerWeek == 4));
     }
 
     // ── Real production pipeline: full PlanServices.GeneratePreviewAsync ────

@@ -133,18 +133,25 @@ public sealed class Dark18KTargetDistanceProjectionTests
         // 18.0 remains dark-eligible (unaffected by the public grant).
         Assert.True(Dark16KPilotEligibilityPolicy.IsDarkEligible(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4));
 
-        // ApprovedPublicCells now has exactly three entries.
-        Assert.Equal(3, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
+        // ApprovedPublicCells had exactly three entries as of DIST-GEN.11.
+        // PHASE DIST-GEN.17 later added a fourth entry (16.0km x Intermediate
+        // x 3D, reusing DIST-GEN.16's own dark authority) -- this assertion is
+        // updated in place to reflect that real, intentional, subsequent
+        // addition, per the same disclosed-correction pattern this test's own
+        // doc comment already describes for DIST-GEN.10/11. It does not
+        // reopen or affect anything DIST-GEN.11 itself froze for 18.0km.
+        Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 18.0);
         Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 15.0);
-        Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 16.0);
+        Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 16.0 && c.RunsPerWeek == 4);
+        Assert.Contains(Dark16KPilotEligibilityPolicy.ApprovedPublicCells, c => c.TargetDistanceKm == 16.0 && c.RunsPerWeek == 3);
 
         // ApprovedDarkCells was untouched by DIST-GEN.11 itself (still three
         // entries at that phase). DIST-GEN.16 later added a fourth entry
         // (16.0km x Intermediate x 3D, the first projected-distance x
-        // non-4D-frequency cell) -- this assertion is updated to reflect that
-        // real, intentional, subsequent addition; it does not reopen or
-        // affect anything DIST-GEN.11 itself froze for 18.0km.
+        // non-4D-frequency cell) -- this assertion reflects that real,
+        // intentional, subsequent addition; DIST-GEN.17 did not touch
+        // ApprovedDarkCells at all (still four entries).
         Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
     }
 

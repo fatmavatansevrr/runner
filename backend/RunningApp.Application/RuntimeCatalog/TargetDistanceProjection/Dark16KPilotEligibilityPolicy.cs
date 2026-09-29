@@ -138,7 +138,7 @@ public static class Dark16KPilotEligibilityPolicy
         new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.1/2 -- 16.0km
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.5/6 -- 15.0km
         new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (dark grant; separately granted public by DIST-GEN.11 via its own ApprovedPublicCells entry -- stale "DARK ONLY" note corrected in DIST-GEN.13 per DIST-GEN.12 §52)
-        new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3), // DIST-GEN.15/15B/16 -- 16.0km Intermediate 3D, the first projected-distance x non-4D-frequency cell (DARK ONLY -- deliberately never added to ApprovedPublicCells; see DIST-GEN.16's own public-registry zero-delta proof)
+        new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3), // DIST-GEN.15/15B/16 -- 16.0km Intermediate 3D, the first projected-distance x non-4D-frequency cell (also separately granted public by DIST-GEN.17 via its own ApprovedPublicCells entry -- see that phase's own public-registry activation proof; this dark grant and that public grant remain two independently-declared records, per this class's established pattern for 18.0km)
     ];
 
     /// <summary>
@@ -226,17 +226,29 @@ public static class Dark16KPilotEligibilityPolicy
     /// are no longer called by the mapper and are effectively superseded,
     /// not dead in the sense of being unreferenced).
     ///
-    /// Exactly three entries: 16.0 (DIST-GEN.3's own original public grant),
-    /// 15.0 (DIST-GEN.7's own new public grant), and 18.0 (DIST-GEN.11's own
+    /// Exactly four entries: 16.0 (DIST-GEN.3's own original public grant),
+    /// 15.0 (DIST-GEN.7's own new public grant), 18.0 (DIST-GEN.11's own
     /// new public grant, reusing the dark authority already frozen and
-    /// implemented in DIST-GEN.9/10). Never a computed range —
-    /// lookup is by exact match only, per this class's established pattern.
+    /// implemented in DIST-GEN.9/10), and 16.0×Intermediate×3D (DIST-GEN.17's
+    /// own new public grant — the FIRST projected-distance ×
+    /// non-4D-frequency cell made publicly reachable, reusing the dark
+    /// authority already frozen and implemented in DIST-GEN.15/15B/16). Never
+    /// a computed range — lookup is by exact match only, per this class's
+    /// established pattern.
+    ///
+    /// PHASE DIST-GEN.17 note: this list is deliberately NOT derived from, or
+    /// merged with, <see cref="ApprovedDarkCells"/> even though both now
+    /// contain exactly four entries — that numeric coincidence is not a
+    /// structural relationship. Each list remains its own independently
+    /// authored and independently auditable governance record; a cell being
+    /// dark-eligible never implies public eligibility, and vice versa.
     /// </summary>
     public static readonly IReadOnlyList<ApprovedDarkTargetDistanceCell> ApprovedPublicCells =
     [
-        new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.3 -- 16.0km
-        new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.7 -- 15.0km
-        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.11 -- 18.0km
+        new(EligibleTargetDistanceKm, EligibleParentDistanceFamily, EligibleLevel, EligibleRunsPerWeek), // DIST-GEN.3 -- 16.0km, Intermediate, 4D
+        new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.7 -- 15.0km, Intermediate, 4D
+        new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.11 -- 18.0km, Intermediate, 4D
+        new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3), // DIST-GEN.17 -- 16.0km, Intermediate, 3D (first non-4D public frequency)
     ];
 
     /// <summary>

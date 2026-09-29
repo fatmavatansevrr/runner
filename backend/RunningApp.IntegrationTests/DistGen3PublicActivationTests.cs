@@ -208,8 +208,14 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
     }
 
+    // PHASE DIST-GEN.17 note: `days: 3` was removed from this negative matrix
+    // -- DIST-GEN.17 made (16.0, HalfMarathon, Intermediate, 3) a genuinely
+    // approved public cell (see DistGen17PublicActivationTests.cs), so 16K at
+    // 3 days/week is no longer a wrong-frequency rejection case. 5D/6D remain
+    // correctly rejected -- this phase only ever approved the exact 4-tuple
+    // (16.0, HalfMarathon, Intermediate, 3), never a general "any frequency"
+    // widening.
     [Theory]
-    [InlineData(3)]
     [InlineData(5)]
     [InlineData(6)]
     public async Task Pilot16K_WrongFrequency_Rejected(int days)
