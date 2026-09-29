@@ -192,6 +192,14 @@ public sealed class DistGen16Intermediate3DFullDarkImplementationTests
     }
 
     // ── Wrong-cell negatives ──────────────────────────────────────────────
+    // NOTE: (16.0, Intermediate, 5) was itself a valid negative case as of
+    // DIST-GEN.16's own closure -- DIST-GEN.20 later registered exactly that
+    // cell (dark-only). Removed from this negative list in place, per this
+    // engagement's own established convention for a real, intentional,
+    // subsequent registration (see DistGen18KTargetDistanceProjectionTests's
+    // own analogous in-place update); see
+    // DistGen20Intermediate5DFullDarkImplementationTests for the full 5D
+    // positive-case coverage this cell now requires.
 
     [Theory]
     [InlineData(15.0, RunningBackground.Intermediate, 3)]
@@ -200,7 +208,6 @@ public sealed class DistGen16Intermediate3DFullDarkImplementationTests
     [InlineData(20.0, RunningBackground.Intermediate, 3)]
     [InlineData(16.0, RunningBackground.Beginner, 3)]
     [InlineData(16.0, RunningBackground.Advanced, 3)]
-    [InlineData(16.0, RunningBackground.Intermediate, 5)]
     [InlineData(16.0, RunningBackground.Intermediate, 6)]
     public void Registry_WrongCell_NeverResolves(double km, RunningBackground level, int runsPerWeek)
     {

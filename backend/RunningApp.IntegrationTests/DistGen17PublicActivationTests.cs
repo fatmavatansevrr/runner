@@ -341,11 +341,22 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
     [Fact]
     public void PublicAndDarkRegistries_BothNowFourEntries_ButRemainIndependentlyDeclaredLists()
     {
+        // DIST-GEN.20 note: at DIST-GEN.17's own closure, Public and Dark were
+        // numerically equal (4=4) -- this test's own name reflects that
+        // historical moment and is kept in place (not renamed) per this
+        // engagement's own convention of updating assertions rather than
+        // superseding files. DIST-GEN.20 later added 16.0km x Intermediate x 5D
+        // to Dark only (deliberately not Public) -- the first intentional
+        // dark/public divergence since this phase. The counts below are
+        // updated in place to reflect that real, intentional, subsequent
+        // change; the structural "independently declared lists" proof this
+        // test performs is unaffected and, if anything, more clearly
+        // demonstrated now that the two counts differ.
         var publicCells = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.ApprovedPublicCells;
         var darkCells = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.ApprovedDarkCells;
 
         Assert.Equal(4, publicCells.Count);
-        Assert.Equal(4, darkCells.Count);
+        Assert.Equal(5, darkCells.Count);
         Assert.False(ReferenceEquals(publicCells, darkCells));
 
         // Every public cell also happens to be dark-eligible today (expected:

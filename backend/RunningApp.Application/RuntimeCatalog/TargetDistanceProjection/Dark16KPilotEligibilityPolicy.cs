@@ -139,6 +139,7 @@ public static class Dark16KPilotEligibilityPolicy
         new(15.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.5/6 -- 15.0km
         new(18.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 4), // DIST-GEN.9/10 -- 18.0km (dark grant; separately granted public by DIST-GEN.11 via its own ApprovedPublicCells entry -- stale "DARK ONLY" note corrected in DIST-GEN.13 per DIST-GEN.12 §52)
         new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 3), // DIST-GEN.15/15B/16 -- 16.0km Intermediate 3D, the first projected-distance x non-4D-frequency cell (also separately granted public by DIST-GEN.17 via its own ApprovedPublicCells entry -- see that phase's own public-registry activation proof; this dark grant and that public grant remain two independently-declared records, per this class's established pattern for 18.0km)
+        new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5), // DIST-GEN.19/19A/20 -- 16.0km Intermediate 5D, the SECOND projected-distance x non-4D-frequency cell, and the first to exercise the KEY2/secondary-quality-lane dimension. DARK ONLY: deliberately NOT added to ApprovedPublicCells below -- this is the first intentional dark/public divergence since DIST-GEN.17 made the two registries numerically equal (see this class's own governing doc comment on ApprovedPublicCells).
     ];
 
     /// <summary>

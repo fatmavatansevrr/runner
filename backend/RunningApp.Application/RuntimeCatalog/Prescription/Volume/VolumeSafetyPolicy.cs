@@ -356,6 +356,114 @@ public sealed record VolumeSafetyPolicy(
     };
 
     /// <summary>
+    /// PHASE DIST-GEN.20 -- implements the already-frozen DIST-GEN.19/19A
+    /// complete policy table for the dark-only, SECOND projected-distance x
+    /// non-4D-frequency cell: 16K x INTERMEDIATE x 5D (TargetDistanceKm=16.0,
+    /// ParentDistanceFamily=HALF_MARATHON, RunsPerWeek=5), reusing the existing
+    /// HALF_MARATHON__5D__INTERMEDIATE catalog identity (never a new candidate,
+    /// never a new catalog row). Every field's value and classification is
+    /// consumed exactly as frozen, not re-derived here.
+    ///
+    /// PreferredMaxWeeklyIncreaseRatio/HardMaxWeeklyIncreaseRatio = 0.07/0.08
+    /// (DIST-GEN.19 §22, `GENERIC` -- universal literal, identical at every
+    /// anchor/frequency, declared directly as a literal here exactly as
+    /// canonical <see cref="HalfMarathonIntermediate5D"/> does).
+    /// AbsoluteWeeklyIncrementCapKm = 2.5 (DIST-GEN.19 §23, `FREQUENCY_ONLY`
+    /// -- confirmed by exact cross-family agreement between TEN_K and
+    /// HALF_MARATHON at Intermediate x5D; no shared 5D frequency-authority
+    /// component exists in this codebase today, so declared as a literal here,
+    /// mirroring canonical <see cref="HalfMarathonIntermediate5D"/>'s own
+    /// declaration). GoldenFixtureStartingVolumeKm = 29.5 (DIST-GEN.19A §17,
+    /// EXACT-CELL `NEW_TARGET_FREQUENCY_CELL_AUTHORITY` -- adopts canonical
+    /// <see cref="HalfMarathonIntermediate5D"/>'s own numeric value directly as
+    /// this cell's own independent authority, per DIST-GEN.19A §13's explicit
+    /// "value equality != authority equality" distinction -- never a reference
+    /// to that canonical policy object). ResolvedPeakReference = 51.0
+    /// (DIST-GEN.19A §16, same EXACT-CELL classification and same distinction
+    /// -- exact midpoint of this cell's own frozen [44,58] band, see
+    /// <see cref="TargetDistance16KIntermediate5DPeakVolumeBandPolicy"/>).
+    /// GoldenFixtureNonTaperTransitions = 9 (this cell's own
+    /// PreferredCoreWeeks=12 -- the same target-owned, frequency-invariant
+    /// value 16K's own 3D/4D cells use -- minus 2 taper weeks = 10 non-taper
+    /// weeks -&gt; 9 transitions; identical derivation to, but NOT the same
+    /// authority as, canonical HM I5D's own 11, which is derived from HM's own
+    /// 14W preferred horizon, not 16K's own 12W). TaperVolumeMultiplier(s) =
+    /// 0.70/0.43 (DIST-GEN.19 §27, `PARENT_FAMILY_ONLY`, referenced from
+    /// <see cref="HalfMarathonParentTaperAuthority"/> via
+    /// <see cref="TargetDistance16KIntermediate5DTaperVolumePolicy"/> -- the
+    /// identical HM-parent taper 16K's own 3D/4D cells already consume).
+    /// Long-run share quadruple 0.28/0.36/0.28/0.36 (DIST-GEN.19 §24,
+    /// `FREQUENCY_ONLY` -- genuine cross-family agreement at 5D, unlike 3D;
+    /// declared as a literal here since no shared 5D LR-share component exists
+    /// in this codebase, mirroring canonical <see cref="HalfMarathonIntermediate5D"/>'s
+    /// own declaration; DELIBERATELY DIFFERENT from 16K's own 3D cell's
+    /// 0.34/0.40/0.38/0.46 and 4D cell's 0.30/0.36/0.33/0.40).
+    /// PreferredAbsolutePeakLongRunKm = 15.0 (DIST-GEN.19 §26, `TARGET_ONLY` --
+    /// reused directly, unchanged, from 16K's own 3D/4D cells, a real,
+    /// demonstrated frequency-invariance finding, not a coincidence to "fix";
+    /// the LR-below-target invariant, 15.0 &lt; 16.0, holds unchanged; NEVER
+    /// canonical HM's own 19.0 ceiling). ResolvedPeakReferenceIsSelectedCeiling
+    /// = true (DIRECT_EXISTING_AUTHORITY, the same generic HM.5.3 mechanism
+    /// every other HM-parented policy in this file already uses, reused
+    /// unmodified so 13W/14W saturate at 51.0km instead of extrapolating past
+    /// it). StartingAbsoluteLongRunCapKm = 12.0 (DIST-GEN.19 §25/DIST-GEN.19A
+    /// §19, `PARENT_FAMILY_X_FREQUENCY` -- the corrected DIST-GEN.18 finding:
+    /// null throughout TEN_K at every frequency including 5D/6D, but 12.0 at
+    /// HALF_MARATHON's own Intermediate x5D/x6D specifically; since 16K's
+    /// structural parent is HALF_MARATHON and this is an internally
+    /// consistent, disclosed, parent-scoped rule, 16K x I x 5D inherits 12.0
+    /// -- declared as a literal here, exactly mirroring canonical
+    /// <see cref="HalfMarathonIntermediate5D"/>'s own declaration, DELIBERATELY
+    /// DIFFERENT from 16K's own 3D/4D cells' null). Dark-only: no public
+    /// routing/gate is widened by this named policy's existence -- reachable
+    /// only through the
+    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>
+    /// registry's dark-eligibility resolution, never through any public
+    /// request DTO, and never added to
+    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.ApprovedPublicCells"/>.
+    /// </summary>
+    public static VolumeSafetyPolicy HalfMarathonIntermediate5DTargetDistance16K { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        // DIST-GEN.20 -- FREQUENCY_ONLY, cross-family agreed at 5D. No shared
+        // 5D frequency-authority component exists; declared as a literal,
+        // mirroring canonical HalfMarathonIntermediate5D's own declaration.
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        // EXACT-CELL below (DIST-GEN.19A) -- never normalized, never a
+        // reference to canonical HalfMarathonIntermediate5D's own policy
+        // object, even though the numbers match.
+        GoldenFixtureStartingVolumeKm: 29.5d,
+        ResolvedPeakReference: new(51.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 9,
+        TaperVolumeMultiplier: TargetDistance16KIntermediate5DTaperVolumePolicy.TaperWeek2VolumeMultiplier,
+        // DIST-GEN.20 -- FREQUENCY_ONLY (DIST-GEN.19 §24): genuine cross-family
+        // agreement at 5D. No shared 5D LR-share component exists; declared as
+        // a literal, mirroring canonical HalfMarathonIntermediate5D's own
+        // declaration. Deliberately DIFFERENT from this same target's own 3D
+        // and 4D quadruples.
+        LongRunPreferredMinimumShare: 0.28d,
+        LongRunPreferredMaximumShare: 0.36d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.36d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate",
+        TaperVolumeMultipliers: TargetDistance16KIntermediate5DTaperVolumePolicy.OrderedMultipliers,
+        // TARGET_ONLY (DIST-GEN.19 §26) -- reused unchanged from this same
+        // target's own 3D/4D cells; a demonstrated frequency-invariance
+        // finding. NEVER canonical HM's own 19.0 ceiling.
+        PreferredAbsolutePeakLongRunKm: 15.0d,
+        // DIST-GEN.19A §30 -- 51.0km is a frozen SELECTED PEAK CEILING for this
+        // cell's own 10-14W Core family, not a calibration point 13W/14W may
+        // extrapolate past. Reuses HM.5.3's own generic mechanism unmodified.
+        ResolvedPeakReferenceIsSelectedCeiling: true)
+    {
+        // DIST-GEN.20 -- PARENT_FAMILY_X_FREQUENCY (DIST-GEN.19 §25/DIST-GEN.19A
+        // §19), referenced explicitly rather than left implicit. Deliberately
+        // DIFFERENT from this same target's own 3D/4D cells' null.
+        StartingAbsoluteLongRunCapKm = 12.0d,
+    };
+
+    /// <summary>
     /// PHASE DIST-GEN.6 -- implements the already-frozen DIST-GEN.5 §53 complete
     /// policy table for the dark-only, SECOND target-distance 15K x INTERMEDIATE
     /// x 4D projection (TargetDistanceKm=15.0, ParentDistanceFamily=HALF_MARATHON),

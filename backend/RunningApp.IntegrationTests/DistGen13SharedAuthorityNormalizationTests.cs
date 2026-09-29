@@ -34,8 +34,10 @@ public sealed class DistGen13SharedAuthorityNormalizationTests
         var darkCells = Dark16KPilotEligibilityPolicy.ApprovedDarkCells;
         // DIST-GEN.16 -- bumped from 3 to 4: the dark registry now also carries
         // 16.0km x Intermediate x 3D, the first projected-distance x
-        // non-4D-frequency cell.
-        Assert.Equal(4, darkCells.Count);
+        // non-4D-frequency cell. DIST-GEN.20 -- bumped from 4 to 5: the dark
+        // registry now also carries 16.0km x Intermediate x 5D, dark-only (the
+        // first intentional dark/public divergence since DIST-GEN.17).
+        Assert.Equal(5, darkCells.Count);
         Assert.Equal(darkCells.Count, ProjectedTargetAuthorityRegistry.All.Count);
 
         foreach (var cell in darkCells)
@@ -121,12 +123,16 @@ public sealed class DistGen13SharedAuthorityNormalizationTests
         Assert.Null(ProjectedTargetAuthorityRegistry.TryResolve(darkCell));
     }
 
+    // NOTE: (16.0, Intermediate, 5) was itself a valid negative case as of
+    // DIST-GEN.13's own closure -- DIST-GEN.20 later registered exactly that
+    // cell (dark-only). Removed from this negative list in place, per this
+    // engagement's own established convention for a real, intentional,
+    // subsequent registration.
     [Theory]
     [InlineData(15.0, RunningBackground.Beginner, 4)]
     [InlineData(16.0, RunningBackground.Advanced, 4)]
     [InlineData(18.0, RunningBackground.Beginner, 4)]
     [InlineData(15.0, RunningBackground.Intermediate, 3)]
-    [InlineData(16.0, RunningBackground.Intermediate, 5)]
     [InlineData(18.0, RunningBackground.Intermediate, 6)]
     public void Registry_WrongLevelOrFrequency_ResolvesNothing_KeyIsTheFullQuadruple(
         double km, RunningBackground level, int runsPerWeek)

@@ -149,10 +149,14 @@ public sealed class Dark18KTargetDistanceProjectionTests
         // ApprovedDarkCells was untouched by DIST-GEN.11 itself (still three
         // entries at that phase). DIST-GEN.16 later added a fourth entry
         // (16.0km x Intermediate x 3D, the first projected-distance x
-        // non-4D-frequency cell) -- this assertion reflects that real,
-        // intentional, subsequent addition; DIST-GEN.17 did not touch
-        // ApprovedDarkCells at all (still four entries).
-        Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
+        // non-4D-frequency cell) -- DIST-GEN.17 did not touch ApprovedDarkCells
+        // at all (still four entries). DIST-GEN.20 later added a fifth entry
+        // (16.0km x Intermediate x 5D, dark-only, the first intentional
+        // dark/public divergence since DIST-GEN.17) -- this assertion is
+        // updated in place to reflect that real, intentional, subsequent
+        // addition, per the same disclosed-correction pattern this test's own
+        // doc comment already describes.
+        Assert.Equal(5, Dark16KPilotEligibilityPolicy.ApprovedDarkCells.Count);
     }
 
     // ── Distance resolution: CanonicalDistanceFamilyResolver ────────────────

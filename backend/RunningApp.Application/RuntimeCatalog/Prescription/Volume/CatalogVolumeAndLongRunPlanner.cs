@@ -122,8 +122,21 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
         // even after DIST-GEN.16 registered it -- widening this outer gate to
         // admit 3 is required for that new cell to ever reach the registry
         // lookup at all. Zero delta for every existing 4D cell.
+        //
+        // DIST-GEN.20 -- widened again, identically, to admit 5: the dark 16K
+        // x Intermediate x 5D cell (DIST-GEN.19/19A/20) is registered in
+        // ProjectedTargetAuthorityRegistry but was structurally unreachable
+        // here until this outer gate also admitted DaysPerWeek == 5. This is
+        // NOT widened to >=3 or any range -- only the exact, named 3/4/5
+        // values, mirroring 16K's own three actually-registered dark
+        // frequencies. 16K x Intermediate x 6D remains unregistered and this
+        // gate does not admit 6, so it still falls through unchanged to the
+        // generic HM Intermediate dispatcher below. Zero delta for every
+        // existing 3D/4D cell: the registry lookup itself is unchanged and
+        // still resolves null (and falls through) for any cell without
+        // exactly one registered authority.
         if (request.Candidate.CanonicalDistanceFamily == "HALF_MARATHON" &&
-            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4) &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
             var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(

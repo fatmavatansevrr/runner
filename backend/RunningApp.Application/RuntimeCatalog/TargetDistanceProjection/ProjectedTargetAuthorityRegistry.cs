@@ -142,6 +142,33 @@ internal static class ProjectedTargetAuthorityRegistry
             PeakVolumeBandMinimumKm = TargetDistance16KIntermediate3DPeakVolumeBandPolicy.MinimumKm,
             PeakVolumeBandMaximumKm = TargetDistance16KIntermediate3DPeakVolumeBandPolicy.MaximumKm,
         },
+        // DIST-GEN.19/19A/20 -- 16.0km x Intermediate x 5D, the SECOND
+        // projected-distance x non-4D-frequency cell, and the first to
+        // exercise the KEY2/secondary-quality-lane dimension. Its own
+        // exact-target peak long run is 15.0km (unchanged, frequency-invariant,
+        // reused directly from this same target's own 3D/4D cells above).
+        // Every other field is either PARENT_FAMILY_ONLY, FREQUENCY_ONLY,
+        // TARGET_ONLY, PARENT_FAMILY_X_FREQUENCY, or EXACT-CELL authority
+        // distinct from the 3D/4D cells' own -- see
+        // VolumeSafetyPolicy.HalfMarathonIntermediate5DTargetDistance16K's own
+        // doc comment for the complete field-by-field provenance. DARK ONLY --
+        // this cell is deliberately NOT registered in
+        // Dark16KPilotEligibilityPolicy.ApprovedPublicCells.
+        new()
+        {
+            Cell = new(16.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 5),
+            PilotLabel = "dark 16K Intermediate 5D",
+            MinimumCoreWeeks = TargetDistance16KIntermediate5DHorizonPolicy.MinimumCoreWeeks,
+            PreferredCoreWeeks = TargetDistance16KIntermediate5DHorizonPolicy.PreferredCoreWeeks,
+            MaximumCoreWeeks = TargetDistance16KIntermediate5DHorizonPolicy.MaximumCoreWeeks,
+            DecideHorizon = TargetDistance16KIntermediate5DHorizonPolicy.Decide,
+            ClassifyHorizon = TargetDistance16KIntermediate5DHorizonPolicy.Classify,
+            GetUnsupportedReasonCode = TargetDistance16KIntermediate5DHorizonPolicy.GetUnsupportedReasonCode,
+            VolumeSafetyPolicy = VolumeSafetyPolicy.HalfMarathonIntermediate5DTargetDistance16K,
+            BuildPeakVolumeBand = TargetDistance16KIntermediate5DPeakVolumeBandPolicy.Build,
+            PeakVolumeBandMinimumKm = TargetDistance16KIntermediate5DPeakVolumeBandPolicy.MinimumKm,
+            PeakVolumeBandMaximumKm = TargetDistance16KIntermediate5DPeakVolumeBandPolicy.MaximumKm,
+        },
     ];
 
     /// <summary>
