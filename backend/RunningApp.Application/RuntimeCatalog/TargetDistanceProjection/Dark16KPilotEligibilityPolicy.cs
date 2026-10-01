@@ -215,10 +215,24 @@ public static class Dark16KPilotEligibilityPolicy
     /// internally (dark) never implies it is publicly reachable, and vice
     /// versa; the two lists are independently authored and independently
     /// auditable, even though today they happen to contain the same two
-    /// entries. Consulted exclusively by
-    /// <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper"/>'s
-    /// canonicalization gate — the ONE place public target-distance
-    /// eligibility is decided. As of DIST-GEN.7 this supersedes the original,
+    /// entries.
+    ///
+    /// PHASE DERIVED-DIST.3 ownership update (closes DERIVED-DIST.2 §96's own
+    /// disclosed stale-comment item): this registry is no longer the mapper's
+    /// primary/exclusive gate. Since DERIVED-DIST.2, <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper"/>
+    /// consults <see cref="CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest"/>
+    /// first, which checks <see cref="DerivedDistanceEligibilityPolicy"/> (the
+    /// production-default route for new creation since DERIVED-DIST.2); this
+    /// registry is now consulted only as the FALLBACK for a request the
+    /// generic derived policy does not approve, and unconditionally when
+    /// <see cref="CustomDistanceRoutingMode.ProductionDefault"/> is flipped to
+    /// <see cref="CustomDistanceRoutingDecision.LegacyExactProjected"/> (the
+    /// one rollback path). DERIVED-DIST.3's own call-graph audit confirmed no
+    /// existing-plan read/mutation path (Home/Calendar/TrainingDay/
+    /// PlanDetails/Complete/Not-Today/Cancel) ever re-consults this registry —
+    /// only NEW creation and rollback mode do, so it is retained as
+    /// ROLLBACK_ONLY + ongoing ApprovedDarkCells historical-oracle authority,
+    /// not deleted. As of DIST-GEN.7 this supersedes the original,
     /// single-target <see cref="IsEligible(double?,GoalDistance,RunningBackground?,int?)"/>
     /// overloads as the mapper's own gate (those overloads are left in place,
     /// unmodified, as the historical/frozen DIST-GEN.1-3 single-triple
