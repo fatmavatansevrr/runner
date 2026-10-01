@@ -34,24 +34,31 @@ internal sealed class TargetDistance16KAwarePeakVolumeBandLoader : ICatalogPeakV
     private readonly GoalDistance _requestGoalDistance;
     private readonly RunningBackground _level;
     private readonly int _daysPerWeek;
+    private readonly CustomDistanceRoutingDecision? _routingDecision;
 
     public TargetDistance16KAwarePeakVolumeBandLoader(
         ICatalogPeakVolumeBandLoader inner,
         double? targetDistanceKmOverride,
         GoalDistance requestGoalDistance,
         RunningBackground level,
-        int daysPerWeek)
+        int daysPerWeek,
+        CustomDistanceRoutingDecision? routingDecision = null)
     {
         _inner = inner;
         _targetDistanceKmOverride = targetDistanceKmOverride;
         _requestGoalDistance = requestGoalDistance;
         _level = level;
         _daysPerWeek = daysPerWeek;
+        _routingDecision = routingDecision;
     }
 
     public Task<CatalogPeakVolumeBand> LoadAsync(PlanCatalogReference reference, string distanceFamily, string experience, int runsPerWeek, CancellationToken ct = default)
     {
-        var darkCell = Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(_targetDistanceKmOverride, _requestGoalDistance, _level, _daysPerWeek);
+        // PHASE DERIVED-DIST.2 §16 -- the one internal dispatch boundary; a
+        // null routing decision (constructor's optional parameter, every
+        // pre-existing call site/test that predates this phase) resolves
+        // exactly as before.
+        var darkCell = CustomDistanceNewCreationRouter.ResolveLegacyExactCellForDispatch(_routingDecision, _targetDistanceKmOverride, _requestGoalDistance, _level, _daysPerWeek);
         // PHASE DIST-GEN.13 -- the ONE typed resolution boundary replacing the
         // former three sequential per-target return branches. Each target's own
         // independently-declared TargetDistanceNNKPeakVolumeBandPolicy still

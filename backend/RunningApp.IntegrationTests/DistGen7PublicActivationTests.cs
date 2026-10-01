@@ -108,7 +108,11 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
 
     // ── §16/§20 Below-minimum / above-maximum horizon rejection ──────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: new public 15K I4D creation now
+    // routes through the generic derived engine; 9W/15W rejections now carry
+    // the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not
+    // DARK_15K_CORE_HORIZON. See DerivedDist2PublicActivationTests.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 15K I4D 9W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_15K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task NineWeekHorizon_15K_TypedRejection_NotFiveHundred_NotSilentSubstitution()
     {
         await ResetAsync();
@@ -123,7 +127,7 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.DoesNotContain("DARK_16K", body);
     }
 
-    [Fact]
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 15K I4D 15W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_15K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task FifteenWeekHorizon_15K_TypedRejection_UnderOwnMaximumAuthority_NotHmSixteenWeekCeiling()
     {
         await ResetAsync();
@@ -153,9 +157,11 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
     }
 
+    // SUPERSEDED (partially) BY PHASE DERIVED-DIST.2 §9/§13: 15K at
+    // Intermediate 3D and 5D is now ACCEPTED via generic derived routing
+    // (never publicly approved at any frequency but 4D before) -- removed
+    // from this matrix. Intermediate 6D remains correctly rejected.
     [Theory]
-    [InlineData(3)]
-    [InlineData(5)]
     [InlineData(6)]
     public async Task Target15K_WrongFrequency_Rejected(int days)
     {
@@ -180,7 +186,10 @@ public sealed class DistGen7PublicActivationTests : IClassFixture<PublishedCatal
     // This mirrors the exact stale-literal correction pattern DIST-GEN.7
     // itself used against DistGen3PublicActivationTests.cs's own 15.0
     // InlineData when 15K was newly admitted.
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 §8/§14: every value here is strictly
+    // inside the generic derived interval at Intermediate 4D, so all are now
+    // deliberately accepted. See DerivedDist2PublicActivationTests.
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: every value here is now a deliberately-accepted arbitrary decimal derived target (§8/§14). See DerivedDist2PublicActivationTests.")]
     [InlineData(12.0)]
     [InlineData(14.0)]
     [InlineData(17.0)]

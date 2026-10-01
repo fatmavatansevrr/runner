@@ -155,6 +155,16 @@ internal sealed record CatalogPrescriptionInputSnapshot
     /// into it — see <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy"/>.
     /// </summary>
     public double? RequestedTargetDistanceKm { get; init; }
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.2 §16 — carried verbatim from
+    /// <see cref="RunningApp.Application.DTOs.Plan.GeneratePreviewRequest.RoutingDecision"/>
+    /// so <c>CatalogVolumeAndLongRunPlanner</c>'s dispatch can consult the
+    /// same persisted routing decision as every other internal dispatch seam,
+    /// without re-deriving it. Null for every canonical request and for every
+    /// pre-existing dark/legacy test harness.
+    /// </summary>
+    public RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceRoutingDecision? RequestRoutingDecision { get; init; }
     public required RunningBackground Level { get; init; }
     public required int DaysPerWeek { get; init; }
     public required DateOnly StartDate { get; init; }

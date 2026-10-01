@@ -74,7 +74,18 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Eligible horizon matrix: 10/11/12/13/14 weeks all succeed ────────────
 
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 (§13/§17/§28/§67 EXPECTED_MODEL_CHANGE):
+    // new public 18K I4D creation now routes through the generic derived
+    // engine (HM-sourced trajectory, HM's own ~19.0km parent long-run
+    // authority), not this exact cell's own narrower 16.0km ceiling / 10-14-week
+    // DARK_18K_CORE_HORIZON authority / DIST-GEN.10 golden peak-volume trace.
+    // The 18K exact-cell registry and its own horizon/volume/peak-LR authority
+    // remain fully compiled, tested and reachable for legacy/rollback use (see
+    // Dark18KTargetDistanceProjectionTests, unmodified and still green) -- only
+    // NEW public creation no longer resolves to it by default. See
+    // DerivedDist2PublicActivationTests for the current, correct public
+    // 15K/16K/18K-via-derived provenance proofs and realized peak-LR capture.
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: 18K I4D new public creation now routes via generic derived, not this exact cell's own authority. See DerivedDist2PublicActivationTests.")]
     [InlineData(10)]
     [InlineData(11)]
     [InlineData(12)]
@@ -126,7 +137,11 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Below-minimum / above-maximum horizon rejection ──────────────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: 9W now rejects via the generic
+    // derived horizon authority's own reason code (DERIVED_DISTANCE_CORE_HORIZON_*),
+    // not DARK_18K_CORE_HORIZON -- same 10/12/14-week bounds, different (shared,
+    // non-per-distance) authority, per DERIVED-DIST.1's frozen horizon decision.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 18K I4D 9W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_18K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task NineWeekHorizon_18K_TypedRejection_NotFiveHundred_NotSilentSubstitution()
     {
         await ResetAsync();
@@ -142,7 +157,8 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
         Assert.DoesNotContain("DARK_16K", body);
     }
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: same rationale as the 9W test above.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 18K I4D 15W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_18K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task FifteenWeekHorizon_18K_TypedRejection_UnderOwnMaximumAuthority()
     {
         await ResetAsync();
@@ -172,9 +188,14 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
         Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
     }
 
+    // SUPERSEDED (partially) BY PHASE DERIVED-DIST.2 §9/§13: 18K at Intermediate
+    // 3D/5D is now ACCEPTED (derived V1 product subset admits Intermediate
+    // 3D/4D/5D for ANY in-range target, not merely the historically-registered
+    // 4D exact cell) -- removed from this rejection matrix; see
+    // DerivedDist2PublicActivationTests for the current positive proof.
+    // Intermediate 6D remains correctly rejected (out of V1 derived scope,
+    // §9/§48) -- kept here unchanged.
     [Theory]
-    [InlineData(3)]
-    [InlineData(5)]
     [InlineData(6)]
     public async Task Target18K_WrongFrequency_Rejected(int days)
     {
@@ -191,7 +212,15 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Unsupported-target matrix (nearby, non-approved values) ──────────────
 
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 §8/§14: every one of these values is
+    // strictly inside the generic derived interval (10K, HALF_MARATHON) at
+    // Intermediate 4D, so all are now DELIBERATELY ACCEPTED (arbitrary decimal
+    // target support, the whole point of §8 -- "no per-distance registration
+    // required"). This is the intended removal of the old "only an exact
+    // registered cell is accepted" model, not a regression. See
+    // DerivedDist2PublicActivationTests for the current decimal-acceptance and
+    // persistence proofs (17.7K in particular).
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: every value here is now a deliberately-accepted arbitrary decimal derived target (§8/§14), not an unsupported one. See DerivedDist2PublicActivationTests.")]
     [InlineData(12.0)]
     [InlineData(14.0)]
     [InlineData(17.0)]
@@ -274,7 +303,15 @@ public sealed class DistGen11PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Dark-vs-public golden comparison (12W preferred horizon) ─────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: this test's whole premise ("public
+    // reachability is the ONLY delta vs. the dark exact-cell golden trace") no
+    // longer holds -- new public 18K I4D creation now realizes the generic
+    // derived/HM-sourced trajectory's own numbers (peak volume 32.0, not the
+    // exact cell's own 34.0), a genuinely different, intentionally-adopted
+    // model (DERIVED-DIST.1's frozen long-run/volume decision), not merely a
+    // reachability change. The dark exact-cell golden trace itself is
+    // unaffected and still independently provable via Dark18KTargetDistanceProjectionTests.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 18K I4D now realizes the generic derived model's own numbers, not the exact cell's golden trace. Dark18KTargetDistanceProjectionTests still proves the legacy trace unchanged.")]
     public async Task DarkVsPublic_18K_12W_SemanticZeroDelta_OnlyReachabilityChanged()
     {
         await ResetAsync();

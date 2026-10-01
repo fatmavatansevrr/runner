@@ -136,8 +136,16 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // is always null on those), so every branch below that depends on
             // this remains structurally unreachable for canonical TEN_K/HALF_MARATHON
             // requests, not merely empirically untriggered.
-            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
-                request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+            // PHASE DERIVED-DIST.2 §16 -- routed through the one internal
+            // dispatch boundary (CustomDistanceNewCreationRouter) instead of
+            // calling Dark16KPilotEligibilityPolicy directly, so this seam
+            // can never disagree with CatalogPreviewGenerator's/
+            // CatalogVolumeAndLongRunPlanner's own dispatch about which route
+            // a given request takes. Back-compat: null RoutingDecision (every
+            // pre-existing dark/legacy test harness) resolves exactly as
+            // before.
+            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceNewCreationRouter.ResolveLegacyExactCellForDispatch(
+                request.RoutingDecision, request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
             // PHASE DIST-GEN.13 -- the ONE typed resolution boundary that
             // replaced this method's previous eight hand-written three-armed
             // cascades (horizon decide, horizon classify, two reason-code

@@ -643,8 +643,12 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         // (TargetDistanceKmOverride is always null), so every branch below
         // that reads this stays structurally unreachable for canonical
         // TEN_K/HALF_MARATHON requests.
-        var darkCellForSkeleton = Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
-            request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+        // PHASE DERIVED-DIST.2 §16 -- the one internal dispatch boundary (see
+        // CustomDistanceNewCreationRouter's own doc comment); null
+        // RoutingDecision (every pre-existing dark/legacy test harness)
+        // resolves exactly as before.
+        var darkCellForSkeleton = CustomDistanceNewCreationRouter.ResolveLegacyExactCellForDispatch(
+            request.RoutingDecision, request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
         // PHASE DIST-GEN.13 -- the ONE typed resolution boundary replacing the
         // former three-armed if/else-if horizon-bounds cascade below. Exact-cell
         // and fail-closed: null for any cell without exactly one registered
@@ -674,7 +678,8 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         // byte-identical, and both the static and dynamic-core 16K paths get
         // the same, correct, non-catalog band.
         var peakVolumeBandLoaderForRequest = new TargetDistance16KAwarePeakVolumeBandLoader(
-            _peakVolumeBandLoader, request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+            _peakVolumeBandLoader, request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek,
+            request.RoutingDecision);
 
         if (request.RaceDate is { } activatedRaceDate)
         {

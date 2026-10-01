@@ -94,7 +94,11 @@ public sealed class DistGen6PublicBoundaryZeroDeltaTests : IClassFixture<Publish
         Assert.Equal(weeks, preview["weeks"]!.AsArray().Count);
     }
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: new public 16K I4D creation now
+    // routes through the generic derived engine; the 9W rejection now carries
+    // the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not
+    // DARK_16K_CORE_HORIZON. See DerivedDist2PublicActivationTests.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 16K I4D 9W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code. See DerivedDist2PublicActivationTests.")]
     public async Task PublicPreview_TargetDistance16_9WeekHorizon_StillTypedRejection_Unchanged()
     {
         await ResetAsync();

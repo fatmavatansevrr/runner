@@ -88,7 +88,11 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
 
     // ── §15/§21 Below-minimum / above-maximum horizon rejection ─────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: new public 16K I4D creation now
+    // routes through the generic derived engine; 9W/15W rejections now carry
+    // the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not
+    // DARK_16K_CORE_HORIZON. See DerivedDist2PublicActivationTests.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 16K I4D 9W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_16K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task NineWeekHorizon_TypedRejection_NotFiveHundred_NotSilentSubstitution()
     {
         await ResetAsync();
@@ -102,7 +106,7 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
         Assert.Contains("DARK_16K_CORE_HORIZON", body);
     }
 
-    [Fact]
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 16K I4D 15W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code, not DARK_16K_CORE_HORIZON. See DerivedDist2PublicActivationTests.")]
     public async Task FifteenWeekHorizon_TypedRejection_UnderOwnMaximumAuthority_NotHmSixteenWeekCeiling()
     {
         await ResetAsync();
@@ -154,7 +158,10 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
     // to keep this a 4-value unsupported matrix; the equivalent, and more
     // complete, real-HTTP coverage of 18.0's own new admission lives in
     // DistGen11PublicActivationTests.cs.
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 §8/§14: every value here is strictly
+    // inside the generic derived interval at Intermediate 4D, so all are now
+    // deliberately accepted. See DerivedDist2PublicActivationTests.
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: every value here is now a deliberately-accepted arbitrary decimal derived target (§8/§14). See DerivedDist2PublicActivationTests.")]
     [InlineData(12.0)]
     [InlineData(14.0)]
     [InlineData(19.0)]
@@ -176,7 +183,11 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
 
     // ── §75 10-mile-exact numeric-semantics proof ────────────────────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 §8: 16.09km is now a deliberately-
+    // accepted arbitrary decimal derived target (strictly inside the 10K-HM
+    // interval at Intermediate 4D) -- this test's own premise (a near-16K
+    // non-exact value must be rejected) is exactly what §8 overturns.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: 16.09km is now a deliberately-accepted arbitrary decimal derived target (§8). See DerivedDist2PublicActivationTests.")]
     public async Task TenMileExact_16Point09_NotTreatedAsEligible_TypedRejection()
     {
         await ResetAsync();
@@ -215,8 +226,11 @@ public sealed class DistGen3PublicActivationTests : IClassFixture<PublishedCatal
     // correctly rejected -- this phase only ever approved the exact 4-tuple
     // (16.0, HalfMarathon, Intermediate, 3), never a general "any frequency"
     // widening.
+    // SUPERSEDED (partially) BY PHASE DERIVED-DIST.2 §13: 16K at Intermediate
+    // 5D is now ACCEPTED via generic derived routing -- removed from this
+    // rejection matrix. Intermediate 6D remains correctly rejected (out of V1
+    // derived scope) -- kept unchanged.
     [Theory]
-    [InlineData(5)]
     [InlineData(6)]
     public async Task Pilot16K_WrongFrequency_Rejected(int days)
     {

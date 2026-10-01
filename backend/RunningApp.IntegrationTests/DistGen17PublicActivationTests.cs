@@ -121,7 +121,15 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Eligible horizon matrix: 10/11/12/13/14 weeks all succeed (3D) ────────
 
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 (§13/§17/§28/§67 EXPECTED_MODEL_CHANGE):
+    // new public 16K I3D creation now routes through the generic derived
+    // engine (HM-sourced trajectory, HM's own parent long-run authority), not
+    // this exact cell's own narrower 15.0km ceiling. The exact cell's own
+    // legacy authority remains fully compiled/tested/reachable for
+    // legacy/rollback use (DistGen16Intermediate3DFullDarkImplementationTests,
+    // unmodified and still green). See DerivedDist2PublicActivationTests for
+    // the current, correct provenance and realized peak-LR proofs.
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: 16K I3D new public creation now routes via generic derived, not this exact cell's own 15.0km ceiling. See DerivedDist2PublicActivationTests.")]
     [InlineData(10)]
     [InlineData(11)]
     [InlineData(12)]
@@ -157,7 +165,9 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Below-minimum / above-maximum horizon rejection ──────────────────────
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: 9W now rejects via the generic
+    // derived horizon authority's own reason code, not DARK_16K_I3D_CORE_HORIZON.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 16K I3D 9W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code. See DerivedDist2PublicActivationTests.")]
     public async Task NineWeekHorizon_16KI3D_TypedRejection_NotFiveHundred_NotFallback()
     {
         await ResetAsync();
@@ -171,7 +181,8 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
         Assert.DoesNotContain("TARGET_BELOW_SUM_OF_MINIMUMS", body);
     }
 
-    [Fact]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2: same rationale as the 9W test above.
+    [Fact(Skip = "Superseded by DERIVED-DIST.2: new public 16K I3D 15W rejection now carries the generic DERIVED_DISTANCE_CORE_HORIZON_* reason code. See DerivedDist2PublicActivationTests.")]
     public async Task FifteenWeekHorizon_16KI3D_TypedRejection_UnderOwnMaximumAuthority()
     {
         await ResetAsync();
@@ -390,8 +401,14 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
         Assert.Contains("UNSUPPORTED_TARGET_DISTANCE", body);
     }
 
+    // SUPERSEDED (partially) BY PHASE DERIVED-DIST.2 §13: 16K at Intermediate
+    // 5D is now ACCEPTED -- this is the exact DIST-GEN.21-superseding scenario
+    // (§13/§36-38/§60): 16K I5D public capability now comes through generic
+    // derived routing only, never a new exact-cell public activation. Removed
+    // from this rejection matrix; see DerivedDist2PublicActivationTests for
+    // the current positive KEY2-persistence proof. Intermediate 6D remains
+    // correctly rejected (out of V1 derived scope, §9/§48) -- kept unchanged.
     [Theory]
-    [InlineData(5)]
     [InlineData(6)]
     public async Task Target16K_Intermediate_WrongFrequency_5Dand6D_Rejected(int days)
     {
@@ -408,7 +425,11 @@ public sealed class DistGen17PublicActivationTests : IClassFixture<PublishedCata
 
     // ── Unsupported 3D matrix: other target distances at Intermediate x 3D ────
 
-    [Theory]
+    // SUPERSEDED BY PHASE DERIVED-DIST.2 §8/§14: every one of these values is
+    // strictly inside the generic derived interval at Intermediate 3D, so all
+    // are now deliberately accepted (15K/18K via derived migration, 12K/20K as
+    // genuinely-arbitrary decimal targets). See DerivedDist2PublicActivationTests.
+    [Theory(Skip = "Superseded by DERIVED-DIST.2: every value here is now a deliberately-accepted derived target at Intermediate 3D (§8/§13/§14). See DerivedDist2PublicActivationTests.")]
     [InlineData(15.0)]
     [InlineData(18.0)]
     [InlineData(12.0)]

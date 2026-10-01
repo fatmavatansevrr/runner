@@ -163,4 +163,31 @@ public class GeneratePreviewRequest
     /// it. See PHASE_DIST_GEN_2_16K_INTERMEDIATE_4D_FULL_DARK_TARGET_DISTANCE_PROJECTION_IMPLEMENTATION.md.
     /// </summary>
     public double? TargetDistanceKmOverride { get; set; }
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.2 §16/§18/§21 — internal-only, set exactly once by
+    /// <see cref="RunningApp.Application.Commands.Plan.GeneratePreviewCommandMapper.ToInternalRequest"/>
+    /// at the moment a brand-new public Custom-target request is classified
+    /// (<see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest"/>).
+    /// Null for every canonical request and for every pre-existing
+    /// dark/legacy internal test harness that constructs this type directly
+    /// (predating this phase) — those keep resolving through the unchanged,
+    /// unconditional <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(double?,Domain.Enums.GoalDistance,Domain.Enums.RunningBackground?,int?)"/>
+    /// fallback (see <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceNewCreationRouter.ResolveLegacyExactCellForDispatch(RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceRoutingDecision?,double?,Domain.Enums.GoalDistance,Domain.Enums.RunningBackground?,int?)"/>'s
+    /// own doc comment), so no pre-existing legacy/dark regression test
+    /// changes behavior.
+    ///
+    /// Serialized verbatim into <c>PlanPreview.RequestPayloadJson</c> at
+    /// preview-generation time (the same existing JSON column every other
+    /// field of this type already round-trips through — no new persistence
+    /// structure, no DB migration). This is what makes the routing decision
+    /// for a given plan IMMUTABLE once a preview exists: a later flip of
+    /// <see cref="RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceRoutingMode.ProductionDefault"/>
+    /// (the rollback switch) can never silently change which route an
+    /// already-generated pending preview confirms into, and can never affect
+    /// an already-confirmed plan's Home/Calendar/TrainingDay/PlanDetails/
+    /// Complete/Not-Today/Cancel flow at all (none of those re-run the
+    /// mapper or re-classify this field).
+    /// </summary>
+    public RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceRoutingDecision? RoutingDecision { get; set; }
 }

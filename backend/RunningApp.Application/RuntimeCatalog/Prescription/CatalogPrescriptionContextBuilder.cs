@@ -43,6 +43,7 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
             GoalDistance = request.PreviewRequest.GoalDistance,
             GoalDistanceKm = goalDistanceKm,
             RequestedTargetDistanceKm = request.ResolverInput.RequestedTargetDistanceKm,
+            RequestRoutingDecision = request.PreviewRequest.RoutingDecision,
             Level = request.PreviewRequest.Level,
             DaysPerWeek = request.PreviewRequest.DaysPerWeek,
             StartDate = request.ResolverInput.StartDate ?? request.AsOfDate,

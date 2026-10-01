@@ -139,7 +139,12 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 3 || request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
             ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
         {
-            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.TryResolveDarkEligibleCell(
+            // PHASE DERIVED-DIST.2 §16 -- the one internal dispatch boundary;
+            // RequestRoutingDecision is null for every pre-existing
+            // dark/legacy test harness (predating this phase), resolving
+            // exactly as before.
+            var darkCell = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.CustomDistanceNewCreationRouter.ResolveLegacyExactCellForDispatch(
+                request.PrescriptionContext.InputSnapshot.RequestRoutingDecision,
                 request.PrescriptionContext.InputSnapshot.RequestedTargetDistanceKm,
                 request.Candidate.CanonicalDistanceFamily, request.Candidate.Level, request.Candidate.DaysPerWeek);
 

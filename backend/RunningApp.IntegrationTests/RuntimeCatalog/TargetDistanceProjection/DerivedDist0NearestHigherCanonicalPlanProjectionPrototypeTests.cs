@@ -676,17 +676,134 @@ public sealed class DerivedDist0NearestHigherCanonicalPlanProjectionPrototypeTes
         Assert.Equal(4, Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Count);
     }
 
+    /// <summary>
+    /// SUPERSEDED BY PHASE DERIVED-DIST.2. This test originally proved
+    /// DERIVED-DIST.0's own dark/internal-prototype-only invariant: the
+    /// public mapper never consulted the derived policy at all. That
+    /// invariant was DELIBERATELY INVERTED by DERIVED-DIST.2's own governing
+    /// mandate (public activation of the generic derived route) -- so this
+    /// test's ORIGINAL assertions (DoesNotContain DerivedDistanceEligibilityPolicy)
+    /// would now fail by design, not by regression. Per DERIVED-DIST.2 §67's
+    /// EXPECTED_MODEL_CHANGE classification, the correct action is to update
+    /// the proof to the new, equally non-gameable invariant: the mapper
+    /// consults the derived policy ONLY through the one central routing
+    /// boundary (CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest),
+    /// never a raw duplicated containment check -- see
+    /// DerivedPublicEligibilityStructurallyConsultsHalfMarathonParentMatrixTests
+    /// for the companion non-gameable structural-coupling proof.
+    /// </summary>
     [Fact]
-    public void PublicZeroDelta_NoNewPublicCellAdded_DerivedPolicyNeverConsultedByPublicMapper()
+    public void DerivedDist2_PublicMapperNowConsultsDerivedPolicyThroughTheOneCentralRoutingBoundary()
     {
-        // The public mapper (GeneratePreviewCommandMapper.ToInternalRequest) consults ONLY
-        // Dark16KPilotEligibilityPolicy.TryResolvePublicEligibleCell -- confirmed by source text,
-        // since that is the one public-reachable gate this phase must never widen.
         var source = File.ReadAllText(Path.Combine(
             TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application",
             "Commands", "Plan", "GeneratePreviewCommandMapper.cs"));
-        Assert.Contains("TryResolvePublicEligibleCell", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("DerivedDistanceEligibilityPolicy", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("DerivedDistanceHorizonAuthority", source, StringComparison.Ordinal);
+
+        // The mapper still consults the legacy public registry (fallback route,
+        // DERIVED-DIST.2 §13/§17) -- that line never disappears, it just stops
+        // being tried first.
+        Assert.Contains("ApprovedPublicCells", source, StringComparison.Ordinal);
+
+        // The mapper no longer calls Dark16KPilotEligibilityPolicy.TryResolvePublicEligibleCell
+        // directly -- that call now lives exclusively inside
+        // CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest, the ONE
+        // place new-creation routing precedence is decided (DERIVED-DIST.2 §16).
+        Assert.DoesNotContain("TryResolvePublicEligibleCell", source, StringComparison.Ordinal);
+        Assert.Contains("CustomDistanceNewCreationRouter", source, StringComparison.Ordinal);
+        Assert.Contains("ClassifyNewPublicCustomRequest", source, StringComparison.Ordinal);
+
+        // And the router itself (not the mapper) is the one place that actually
+        // names DerivedDistanceEligibilityPolicy for public new-creation purposes --
+        // confirming the derived policy is reached through exactly one seam, not
+        // duplicated inline in the mapper.
+        var routerSource = File.ReadAllText(Path.Combine(
+            TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application",
+            "RuntimeCatalog", "TargetDistanceProjection", "CustomDistanceNewCreationRouter.cs"));
+        Assert.Contains("DerivedDistanceEligibilityPolicy.IsEligible", routerSource, StringComparison.Ordinal);
+
+        // The mapper never calls the derived policy directly (no ".IsEligible("
+        // or ".TryResolve(" invocation on DerivedDistanceEligibilityPolicy) --
+        // only the router does. A doc-comment mention of the type name (e.g.
+        // explaining the routing rule in prose) is fine; a direct call is not.
+        Assert.DoesNotContain("DerivedDistanceEligibilityPolicy.IsEligible", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("DerivedDistanceEligibilityPolicy.TryResolve", source, StringComparison.Ordinal);
+    }
+
+    // ───────────────────────── PHASE DERIVED-DIST.2 §10/§50/§51 ─────────────────────────
+
+    /// <summary>
+    /// §50 -- the non-gameable structural-coupling proof. Rather than merely
+    /// comparing output for today's frozen HM matrix (which a hardcoded
+    /// duplicate could also satisfy by coincidence), this asserts the actual
+    /// SOURCE-TEXT coupling: <see cref="DerivedDistanceEligibilityPolicy"/>
+    /// calls <see cref="V1CatalogPilotIdentityPolicy.IsSupportedIdentity"/> by
+    /// name, never re-declaring any part of HM's own Level×Frequency matrix
+    /// inline. This is the same "source-text scan proving a path does/does not
+    /// take a route" discipline this engagement has used throughout, applied
+    /// here to prove coupling exists (not merely that a forbidden route is
+    /// avoided).
+    /// </summary>
+    [Fact]
+    public void DerivedPublicEligibilityStructurallyConsultsHalfMarathonParentMatrixTests()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            TestPlanServicesFactory.RepoRoot(), "backend", "RunningApp.Application",
+            "RuntimeCatalog", "TargetDistanceProjection", "DerivedDistanceEligibilityPolicy.cs"));
+        Assert.Contains("V1CatalogPilotIdentityPolicy.IsSupportedIdentity", source, StringComparison.Ordinal);
+
+        // And never a second, independently-declared copy of HM's own
+        // (level, daysPerWeek) tuples inline in this file (which would be a
+        // duplicate, gameable "containment" check rather than real coupling).
+        Assert.DoesNotContain("RunningBackground.Beginner, 3", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("RunningBackground.Advanced, 3", source, StringComparison.Ordinal);
+
+        // Behavioral corroboration: every (level, runsPerWeek) pair the real
+        // parent matrix admits for HALF_MARATHON is also a pair the derived
+        // policy's own gate (B) would admit, confirmed by direct call (not a
+        // re-implemented copy of the matrix in this test either).
+        foreach (var level in new[] { RunningBackground.Intermediate, RunningBackground.Beginner, RunningBackground.Advanced })
+        {
+            foreach (var days in new[] { 3, 4, 5, 6 })
+            {
+                var parentAllows = V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, days);
+                var derivedAllows = DerivedDistanceEligibilityPolicy.IsEligible(14.0, GoalDistance.HalfMarathon, level, days);
+
+                // Gate (A) -- the V1 product subset -- may still narrow Intermediate
+                // 3/4/5D further (proven separately below), so derivedAllows=>parentAllows
+                // must always hold, but the converse need not.
+                if (derivedAllows)
+                {
+                    Assert.True(parentAllows, $"derived policy admitted ({level},{days}D) but the real HM parent matrix does not -- structural coupling is broken.");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// §51 -- the product-subset test: HM's own parent matrix admits
+    /// Intermediate 6D for HALF_MARATHON, but derived V1 must still reject it
+    /// -- proving parent eligibility is NECESSARY but not SUFFICIENT.
+    /// </summary>
+    [Fact]
+    public void DerivedPublicEligibilityProductSubsetStillRestrictsIntermediate6DTests()
+    {
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6),
+            "test premise invalid: HM parent matrix no longer admits Intermediate 6D -- update this test's premise.");
+        Assert.False(DerivedDistanceEligibilityPolicy.IsEligible(14.0, GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6),
+            "derived V1 product subset must still reject Intermediate 6D even though the HM parent matrix admits it.");
+    }
+
+    [Theory]
+    [InlineData(RunningBackground.Beginner, 3)]
+    [InlineData(RunningBackground.Beginner, 4)]
+    [InlineData(RunningBackground.Advanced, 3)]
+    [InlineData(RunningBackground.Advanced, 4)]
+    [InlineData(RunningBackground.Advanced, 5)]
+    [InlineData(RunningBackground.Advanced, 6)]
+    public void DerivedPublicEligibility_RejectsEveryNonIntermediateLevel_EvenWhereHmParentAdmitsIt(RunningBackground level, int days)
+    {
+        Assert.True(V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, days),
+            $"test premise invalid: HM parent matrix no longer admits ({level},{days}D).");
+        Assert.False(DerivedDistanceEligibilityPolicy.IsEligible(14.0, GoalDistance.HalfMarathon, level, days));
     }
 }

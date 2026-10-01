@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RunningApp.Application.Common;
+using RunningApp.Application.RuntimeCatalog.PreviewRouting;
 using RunningApp.Domain.Enums;
 
 namespace RunningApp.Application.RuntimeCatalog.TargetDistanceProjection;
@@ -44,21 +45,48 @@ public static class DerivedDistanceEligibilityPolicy
     private const double ToleranceKm = 0.001;
 
     /// <summary>
-    /// V1 prototype scope (governing prompt §41): Intermediate only. The
-    /// resolver itself is not hardwired to this list structurally (see
-    /// <see cref="TryResolve"/>'s own shape) — widening to another level is a
-    /// one-line addition here, never a new per-distance policy class.
+    /// PHASE DERIVED-DIST.2 §9/§51 — the PRODUCT V1 derived subset. Gate (A)
+    /// of the two independent gates this policy now composes (see
+    /// <see cref="TryResolve"/>'s own doc comment): Intermediate only, the
+    /// resolver itself is not hardwired to this list structurally — widening
+    /// to another level is a one-line addition here, never a new
+    /// per-distance policy class. This gate alone is NECESSARY but never
+    /// SUFFICIENT — see <see cref="IsPublicForHalfMarathonParent"/>, gate (B).
     /// </summary>
     private static readonly IReadOnlyList<RunningBackground> EligibleLevels = [RunningBackground.Intermediate];
 
     /// <summary>
-    /// V1 prototype scope (governing prompt §33/§42): the three frequencies
-    /// canonical HALF_MARATHON Intermediate already has its own named
-    /// <see cref="Prescription.Volume.VolumeSafetyPolicy"/> instance for
-    /// (3D/4D/5D). No per-target frequency registry is introduced — this is
-    /// the SAME generic list for every requested target distance in range.
+    /// PHASE DERIVED-DIST.2 §9/§51 — the PRODUCT V1 derived subset's
+    /// frequency arm. Gate (A), paired with <see cref="EligibleLevels"/>: the
+    /// three frequencies canonical HALF_MARATHON Intermediate already has its
+    /// own named <see cref="Prescription.Volume.VolumeSafetyPolicy"/> instance
+    /// for (3D/4D/5D). No per-target frequency registry is introduced — this
+    /// is the SAME generic list for every requested target distance in range.
+    /// Deliberately excludes Intermediate 6D even though gate (B) (the real
+    /// HM parent public matrix) admits it — proven by
+    /// <c>DerivedPublicEligibilityProductSubsetStillRestrictsIntermediate6DTests</c>.
     /// </summary>
     private static readonly IReadOnlyList<int> EligibleRunsPerWeek = [3, 4, 5];
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.2 §10/§11/§50 — gate (B): structural coupling to the
+    /// REAL canonical HALF_MARATHON public Level×Frequency eligibility source,
+    /// fixing the accidental/hardcoded containment DERIVED-DIST.1 disclosed
+    /// (this policy previously stayed within HM's own public matrix only
+    /// because its own V1 scope happened to be a subset of it, never because
+    /// it actually asked HM's own authority). <see cref="V1CatalogPilotIdentityPolicy.IsSupportedIdentity"/>
+    /// is the single, centrally-owned definition of HM's own public
+    /// Level×Frequency allow-list (HALF_MARATHON arm: Intermediate 3D/4D/5D/6D,
+    /// Beginner 3D/4D, Advanced 3D/4D/5D/6D) — this method asks it directly,
+    /// by reference, rather than duplicating any part of that matrix here. A
+    /// future change to HM's own public matrix (widening OR narrowing)
+    /// therefore propagates to derived eligibility automatically and without
+    /// a second edit — see <c>DerivedPublicEligibilityStructurallyConsultsHalfMarathonParentMatrixTests</c>
+    /// for the non-gameable coupling proof (not merely an output-equality
+    /// check — see that test's own doc comment).
+    /// </summary>
+    private static bool IsPublicForHalfMarathonParent(RunningBackground level, int runsPerWeek) =>
+        V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, runsPerWeek);
 
     /// <summary>
     /// One resolved derived-eligible request shape — deliberately NOT the
@@ -130,12 +158,23 @@ public static class DerivedDistanceEligibilityPolicy
             return null;
         }
 
+        // Gate (A) -- product V1 derived subset (§9/§51).
         if (level is not { } resolvedLevel || !EligibleLevels.Contains(resolvedLevel))
         {
             return null;
         }
 
         if (runsPerWeek is not { } resolvedRunsPerWeek || !EligibleRunsPerWeek.Contains(resolvedRunsPerWeek))
+        {
+            return null;
+        }
+
+        // Gate (B) -- the real canonical HALF_MARATHON parent's own public
+        // Level×Frequency eligibility (§10/§11/§50). BOTH gates must pass;
+        // neither is sufficient alone (§51's product-subset test proves (A)
+        // still restricts even where (B) alone would admit more, e.g.
+        // Intermediate 6D).
+        if (!IsPublicForHalfMarathonParent(resolvedLevel, resolvedRunsPerWeek))
         {
             return null;
         }

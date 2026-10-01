@@ -90,38 +90,55 @@ public static class GeneratePreviewCommandMapper
             request.TargetFinishTimeSource = raceCommand.TargetFinishTimeSource;
             request.RaceName = raceCommand.RaceName;
 
-            // ── PHASE DIST-GEN.3/7 — the one canonicalization/eligibility gate ──
-            // Only reachable when GoalDistance == Custom AND the validator
-            // already accepted a well-formed TargetDistanceKm (see
-            // GenerateRacePlanPreviewRequestValidator). Resolves the numeric
-            // target to a catalog family, checks it against the explicit,
-            // small PUBLIC projected-target registry
-            // (Dark16KPilotEligibilityPolicy.ApprovedPublicCells — DIST-GEN.7),
-            // and — only if eligible — substitutes GoalDistance/TargetDistanceKmOverride
-            // to exactly mirror the internal shape the dark pilot's own test
-            // harness has always used. Any other Custom target (out of every
-            // band, or in-band but not an exact approved public cell) is
-            // rejected here with UnsupportedTargetDistanceException (400),
-            // never silently substituted into an unrelated canonical family.
+            // ── PHASE DIST-GEN.3/7, migrated by PHASE DERIVED-DIST.2 §5/§13/§17 ──
+            // the ONE canonicalization/eligibility/ROUTING gate for every
+            // public Custom-target request. Only reachable when
+            // GoalDistance == Custom AND the validator already accepted a
+            // well-formed TargetDistanceKm (see GenerateRacePlanPreviewRequestValidator).
+            //
+            // DERIVED-DIST.2 central routing rule: generic derived routing
+            // (DerivedDistanceEligibilityPolicy — structurally coupled to the
+            // real canonical HALF_MARATHON public Level×Frequency matrix, see
+            // that policy's own doc comment) is now the PRIMARY route for the
+            // strict 10K-HALF_MARATHON interval at Intermediate 3D/4D/5D
+            // (production default; see CustomDistanceRoutingMode). The
+            // historical exact public-cell registry
+            // (Dark16KPilotEligibilityPolicy.ApprovedPublicCells — DIST-GEN.7)
+            // is consulted only as a fallback: a request is routed there
+            // ONLY when it is not derived-eligible (or when the rollback
+            // switch has disabled generic-derived new creation), so an
+            // existing exact cell (15K/16K/18K I4D, 16K I3D) is no longer the
+            // winning route for new creation merely because it exists.
+            //
+            // Exactly which route won is recorded on the resulting internal
+            // request's own RoutingDecision field and persisted verbatim with
+            // the preview (see that field's own doc comment) — confirm never
+            // re-runs this classification. Any other Custom target (out of
+            // range, or in-range but matching neither route) is rejected here
+            // with UnsupportedTargetDistanceException (400), never silently
+            // substituted into an unrelated canonical family.
             if (raceCommand.GoalDistance == GoalDistance.Custom && raceCommand.TargetDistanceKm is { } targetDistanceKm)
             {
                 var resolution = new CanonicalDistanceFamilyResolver().Resolve(targetDistanceKm);
 
-                var eligibleCell = Dark16KPilotEligibilityPolicy.TryResolvePublicEligibleCell(
+                var routingDecision = CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest(
                     targetDistanceKm, resolution.CanonicalDistanceFamily, raceCommand.Level, raceCommand.DaysPerWeek);
 
-                if (eligibleCell is null)
+                if (routingDecision is null)
                 {
                     throw new UnsupportedTargetDistanceException(
                         $"target_distance_km {targetDistanceKm} km (resolved family: {resolution.CanonicalDistanceFamily}, " +
                         $"level: {raceCommand.Level}, days_per_week: {raceCommand.DaysPerWeek}) is not an approved " +
-                        "public target-distance projection. Only the explicit approved public cells " +
+                        "public target-distance projection. Only the generic derived interval " +
+                        "(strictly between TEN_K and HALF_MARATHON, Intermediate 3D/4D/5D, subject to HALF_MARATHON's own " +
+                        "public Level×Frequency eligibility) and the explicit legacy approved public cells " +
                         $"({string.Join(", ", Dark16KPilotEligibilityPolicy.ApprovedPublicCells.Select(c => $"target_distance_km={c.TargetDistanceKm}/family={c.ParentDistanceFamily}/level={c.Level}/days_per_week={c.RunsPerWeek}"))}) " +
                         "are currently supported. Reason: UNSUPPORTED_TARGET_DISTANCE.");
                 }
 
                 request.GoalDistance = resolution.CanonicalDistanceFamily;
                 request.TargetDistanceKmOverride = targetDistanceKm;
+                request.RoutingDecision = routingDecision;
             }
         }
         else if (command is HabitPlanPreviewCommand habitCommand)
