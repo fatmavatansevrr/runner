@@ -151,6 +151,25 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // ProjectedTargetAuthorityRegistry.
             var projectedTargetAuthority = RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.ProjectedTargetAuthorityRegistry.TryResolve(darkCell);
 
+            // PHASE DERIVED-DIST.0 -- dark/internal prototype only, never
+            // reachable from any public request DTO (TargetDistanceKmOverride
+            // is always null for a real HTTP-originated request). Consulted
+            // ONLY when no exact projected-cell authority matched above -- an
+            // unregistered derived cell never shadows a registered exact cell
+            // (15K/16K/18K keep going through their own, completely
+            // unmodified DIST-GEN path). Resolves the ONE generic horizon
+            // authority (DerivedDistanceHorizonAuthority's own reused,
+            // convergent 10/12/14 triple -- see that class's own doc comment)
+            // for any request whose TargetDistanceKmOverride falls strictly
+            // between TEN_K and HALF_MARATHON for a supported level/frequency
+            // (DerivedDistanceEligibilityPolicy). Never a per-distance
+            // registration: this single authority covers every derived target
+            // in range, which is the whole point of this prototype.
+            var derivedHorizonAuthority = projectedTargetAuthority is null
+                ? RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.DerivedDistanceHorizonAuthority.TryResolve(
+                    request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek)
+                : null;
+
             // HM.18 Blocker 1 -- distance-aware horizon gate. For every
             // distance other than HalfMarathon this resolves to the exact
             // same parameterless Decide(...) TEN_K has always used (zero
@@ -174,11 +193,15 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // arm is byte-identical to before.
             var horizonDecision = projectedTargetAuthority is { } projectedForDecide
                 ? projectedForDecide.DecideHorizon(request.StartDate, raceDateForHorizonCheck)
-                : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
+                : derivedHorizonAuthority is { } derivedForDecide
+                    ? derivedForDecide.DecideHorizon(request.StartDate, raceDateForHorizonCheck)
+                    : RaceHorizonPolicy.DecideForDistance(request.StartDate, raceDateForHorizonCheck, request.GoalDistance);
             var availableWeeks = horizonDecision.AvailableFullWeeks;
             var classification = projectedTargetAuthority is { } projectedForClassify
                 ? projectedForClassify.ClassifyHorizon(horizonDecision)
-                : RaceHorizonPolicy.Classify(horizonDecision);
+                : derivedHorizonAuthority is { } derivedForClassify
+                    ? derivedForClassify.ClassifyHorizon(horizonDecision)
+                    : RaceHorizonPolicy.Classify(horizonDecision);
 
             // PHASE DIST-GEN.2/DIST-GEN.6 -- each dark pilot's own typed horizon
             // rejection, using its own explicit reason codes
@@ -189,6 +212,14 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
             // returned/thrown before either of the two
             // GoalDistance==HalfMarathon-scoped blocks below ever runs for
             // this case.
+            // PHASE DERIVED-DIST.0 -- the same typed below-minimum rejection
+            // DIST-GEN.2/.6/.13 already established for each exact projected
+            // cell, generalized to the ONE generic derived authority. Uses
+            // that authority's own reason code (DERIVED_DISTANCE_CORE_HORIZON_*)
+            // and pilot label ("derived {km}km (source HALF_MARATHON)"),
+            // never HALF_MARATHON's own PLAN_CORE_HORIZON_TOO_SHORT message
+            // (which cites the wrong, HM-native 10/16-week bounds) and never
+            // any exact projected cell's own label.
             if (projectedTargetAuthority is { } projectedBelowMinimum && classification == RaceHorizonClassification.BelowMinimum)
             {
                 var reasonCode = projectedBelowMinimum.GetUnsupportedReasonCode(availableWeeks);
@@ -213,11 +244,46 @@ public class PlanServices : IPlanPreviewService, IPlanConfirmationService, IPlan
                     $"{availableWeeks} weeks. Reason: {reasonCode}.");
             }
 
+            // PHASE DERIVED-DIST.0 -- derived-cell counterpart of the block
+            // immediately above, using DerivedDistanceHorizonAuthority's own
+            // reason code/pilot label instead of an exact projected cell's.
+            if (derivedHorizonAuthority is { } derivedBelowMinimum && classification == RaceHorizonClassification.BelowMinimum)
+            {
+                var reasonCode = derivedBelowMinimum.GetUnsupportedReasonCode(availableWeeks);
+                var minimumCoreWeeks = derivedBelowMinimum.MinimumCoreWeeks;
+                var pilotLabel = derivedBelowMinimum.PilotLabel;
+                _logger.LogWarning(
+                    "GeneratePreview: {PilotLabel} target-distance race horizon is below the supported minimum. " +
+                    "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MinimumSupportedWeeks={MinimumSupportedWeeks}",
+                    pilotLabel, request.StartDate, raceDateForHorizonCheck, availableWeeks, minimumCoreWeeks);
+                throw new PlanCoreHorizonTooShortException(
+                    $"The available race-plan horizon is shorter than the supported {pilotLabel} target-distance standalone core minimum " +
+                    $"({minimumCoreWeeks} weeks). Available horizon is approximately " +
+                    $"{availableWeeks} weeks. Reason: {reasonCode}.");
+            }
+
             if (projectedTargetAuthority is { } projectedAboveMaximum && classification == RaceHorizonClassification.CompositionRequired)
             {
                 var reasonCode = projectedAboveMaximum.GetUnsupportedReasonCode(availableWeeks);
                 var maximumCoreWeeks = projectedAboveMaximum.MaximumCoreWeeks;
                 var pilotLabel = projectedAboveMaximum.PilotLabel;
+                _logger.LogWarning(
+                    "GeneratePreview: {PilotLabel} target-distance race horizon exceeds the supported maximum. " +
+                    "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaximumSupportedWeeks={MaximumSupportedWeeks}",
+                    pilotLabel, request.StartDate, raceDateForHorizonCheck, availableWeeks, maximumCoreWeeks);
+                throw new PlanHorizonCompositionRequiredException(
+                    $"The available race-plan horizon exceeds the supported {pilotLabel} target-distance standalone core maximum " +
+                    $"({maximumCoreWeeks} weeks). Available horizon is approximately " +
+                    $"{availableWeeks} weeks. Reason: {reasonCode}.");
+            }
+
+            // PHASE DERIVED-DIST.0 -- derived-cell counterpart of the block
+            // immediately above.
+            if (derivedHorizonAuthority is { } derivedAboveMaximum && classification == RaceHorizonClassification.CompositionRequired)
+            {
+                var reasonCode = derivedAboveMaximum.GetUnsupportedReasonCode(availableWeeks);
+                var maximumCoreWeeks = derivedAboveMaximum.MaximumCoreWeeks;
+                var pilotLabel = derivedAboveMaximum.PilotLabel;
                 _logger.LogWarning(
                     "GeneratePreview: {PilotLabel} target-distance race horizon exceeds the supported maximum. " +
                     "StartDate={StartDate}, RaceDate={RaceDate}, AvailableWeeks={AvailableWeeks}, MaximumSupportedWeeks={MaximumSupportedWeeks}",

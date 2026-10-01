@@ -347,8 +347,17 @@ internal static class CatalogGoalDistanceResolver
             throw new CatalogPrescriptionContractException("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", "Request goal distance disagrees with catalog candidate distance.");
         }
 
+        // PHASE DERIVED-DIST.0 -- widened to also admit a
+        // DerivedDistanceEligibilityPolicy-eligible target, mirroring the
+        // existing Dark16KPilotEligibilityPolicy arm exactly. Both checks are
+        // purely consistency gates ("is a divergent requested target
+        // pre-approved to diverge from the catalog candidate's own
+        // family-representative distance") -- never a widening of which
+        // catalog candidate is loaded or how it is structurally generated.
         if (requestedTargetDistanceKm is { } requested && Math.Abs(catalogKm - requested) > 0.001 &&
             !RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.Dark16KPilotEligibilityPolicy.IsDarkEligible(
+                requested, requestGoalDistance, level, daysPerWeek) &&
+            !RunningApp.Application.RuntimeCatalog.TargetDistanceProjection.DerivedDistanceEligibilityPolicy.IsEligible(
                 requested, requestGoalDistance, level, daysPerWeek))
         {
             throw new CatalogPrescriptionContractException("GOAL_DISTANCE_REQUEST_CATALOG_MISMATCH", "Resolved request target distance disagrees with catalog candidate distance.");

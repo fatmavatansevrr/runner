@@ -653,6 +653,17 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         var projectedTargetAuthorityForSkeleton = ProjectedTargetAuthorityRegistry.TryResolve(darkCellForSkeleton);
         var isProjectedTargetForSkeleton = projectedTargetAuthorityForSkeleton is not null;
 
+        // PHASE DERIVED-DIST.0 -- consulted only when no exact projected cell
+        // matched above (an unregistered derived cell never shadows a
+        // registered exact cell). Resolves the ONE generic horizon authority
+        // for any request whose TargetDistanceKmOverride falls strictly
+        // between TEN_K and HALF_MARATHON for a supported level/frequency.
+        var derivedAuthorityForSkeleton = isProjectedTargetForSkeleton
+            ? null
+            : DerivedDistanceHorizonAuthority.TryResolve(
+                request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek);
+        var isDerivedTargetForSkeleton = derivedAuthorityForSkeleton is not null;
+
         // PHASE DIST-GEN.2 -- every downstream peak-volume-band lookup in this
         // method (both the CompressedCore/ExtendedCore dynamic-core branch and
         // the exact-preferred-core static branch further below) goes through
@@ -695,6 +706,15 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
                 horizonPreferredWeeks = projectedHorizonBounds.PreferredCoreWeeks;
                 horizonMaximumWeeks = projectedHorizonBounds.MaximumCoreWeeks;
             }
+            // PHASE DERIVED-DIST.0 -- same substitution as the exact-projected
+            // arm above, for the ONE generic derived authority instead of an
+            // exact registered cell.
+            else if (derivedAuthorityForSkeleton is { } derivedHorizonBounds)
+            {
+                horizonMinimumWeeks = derivedHorizonBounds.MinimumCoreWeeks;
+                horizonPreferredWeeks = derivedHorizonBounds.PreferredCoreWeeks;
+                horizonMaximumWeeks = derivedHorizonBounds.MaximumCoreWeeks;
+            }
             else
             {
                 horizonMinimumWeeks = candidate.CoreCycle.MinimumWeeks;
@@ -713,7 +733,16 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
             // bounds. The dark 16K pilot must therefore ALWAYS use the
             // generic dynamic-core path (which does take an explicit
             // TargetWeekCount), regardless of horizon.Mode, whenever eligible.
-            if (isProjectedTargetForSkeleton || horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
+            // PHASE DERIVED-DIST.0 -- same forced-dynamic-core reasoning
+            // DIST-GEN.2 already established for exact projected cells
+            // (isProjectedTargetForSkeleton): the static "exact preferred
+            // core" path below structurally assumes the reused candidate's
+            // OWN declared week count (HALF_MARATHON's real 14-week
+            // preferred), never this derived target's own distinct
+            // (possibly shorter) preferred length -- so a derived target
+            // must always use the generic dynamic-core path too, regardless
+            // of horizon.Mode.
+            if (isProjectedTargetForSkeleton || isDerivedTargetForSkeleton || horizon.Mode is CoreHorizonMode.CompressedCore or CoreHorizonMode.ExtendedCore)
             {
                 var preferredDays = CatalogPreferredDayAdapter.ParsePreferredDays(WeekdayCsv.ToCsv(request.PreferredDays));
                 var longRunDay = CatalogPreferredDayAdapter.ParseLongRunDay(WeekdayCsv.ToCsv(request.LongRunDay));
@@ -1132,7 +1161,16 @@ public sealed class CatalogPreviewGenerator : ICatalogPreviewGenerator
         Dark16KPilotEligibilityPolicy.IsDarkEligible(
             request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek)
             ? request.TargetDistanceKmOverride!.Value
-            : CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance);
+            // PHASE DERIVED-DIST.0 -- consulted only when no exact projected
+            // cell matched above. Generic, continuous-range eligibility
+            // (DerivedDistanceEligibilityPolicy), never an exact-cell
+            // registration. Dark/internal-prototype-only, same seam as the
+            // dark-eligible arm above (TargetDistanceKmOverride is always
+            // null for a real HTTP-originated request).
+            : DerivedDistanceEligibilityPolicy.IsEligible(
+                request.TargetDistanceKmOverride, request.GoalDistance, request.Level, request.DaysPerWeek)
+                ? request.TargetDistanceKmOverride!.Value
+                : CatalogGoalDistanceResolver.Resolve(candidate.CanonicalDistanceFamily, request.GoalDistance);
 
     private static ResolverInputSnapshot BuildInputSnapshot(GeneratePreviewRequest request, DateOnly asOfDate, PlanCatalogCandidateSummary candidate) => new()
     {
