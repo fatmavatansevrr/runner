@@ -69,24 +69,54 @@ public static class DerivedDistanceEligibilityPolicy
     private static readonly IReadOnlyList<int> EligibleRunsPerWeek = [3, 4, 5];
 
     /// <summary>
-    /// PHASE DERIVED-DIST.2 §10/§11/§50 — gate (B): structural coupling to the
-    /// REAL canonical HALF_MARATHON public Level×Frequency eligibility source,
-    /// fixing the accidental/hardcoded containment DERIVED-DIST.1 disclosed
-    /// (this policy previously stayed within HM's own public matrix only
-    /// because its own V1 scope happened to be a subset of it, never because
-    /// it actually asked HM's own authority). <see cref="V1CatalogPilotIdentityPolicy.IsSupportedIdentity"/>
-    /// is the single, centrally-owned definition of HM's own public
-    /// Level×Frequency allow-list (HALF_MARATHON arm: Intermediate 3D/4D/5D/6D,
-    /// Beginner 3D/4D, Advanced 3D/4D/5D/6D) — this method asks it directly,
-    /// by reference, rather than duplicating any part of that matrix here. A
-    /// future change to HM's own public matrix (widening OR narrowing)
+    /// PHASE DERIVED-DIST.4 §41 — the ONE dark/internal-only activation
+    /// switch for the newly-generalized TEN_K-sourced derived interval
+    /// (5K&lt;target&lt;TEN_K). Mirrors the established
+    /// <see cref="CustomDistanceRoutingMode.ProductionDefault"/>/
+    /// <see cref="Dark16KPilotEligibilityPolicy.ApprovedDarkCells"/>
+    /// public/dark-split pattern: default <c>false</c> means <see cref="TryResolve"/>
+    /// behaves BYTE-IDENTICALLY to pre-DERIVED-DIST.4 for every real request
+    /// (public or otherwise) — a TEN_K-sourced km never resolves eligible,
+    /// exactly as before this phase. This is NOT wired into
+    /// <see cref="CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest"/>'s
+    /// own call site or into any public DTO/validator, and is never flipped
+    /// by production code anywhere in this codebase — it exists solely so an
+    /// internal/dark test harness (mirroring DERIVED-DIST.0's own dark-only
+    /// prototype testing seam) can set it true, exercise the REAL generation
+    /// pipeline end-to-end for a TEN_K-sourced target, and reset it to false
+    /// afterward, WITHOUT making the 5K-10K interval reachable by any real
+    /// public request. Flipping this switch to true in production would be a
+    /// deliberate, separate, explicitly-governed public-activation decision
+    /// (DERIVED-DIST.1/.2's own two-phase precedent for the HALF_MARATHON
+    /// interval: prototype first, activate later) — this phase makes no such
+    /// activation.
+    /// </summary>
+    public static bool AllowTenKSourcedDerivationForInternalVerificationOnly { get; set; }
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.2 §10/§11/§50, generalized by PHASE DERIVED-DIST.4
+    /// §41 — gate (B): structural coupling to the REAL canonical parent's
+    /// public Level×Frequency eligibility source, fixing the accidental/
+    /// hardcoded containment DERIVED-DIST.1 disclosed (this policy previously
+    /// stayed within HM's own public matrix only because its own V1 scope
+    /// happened to be a subset of it, never because it actually asked HM's
+    /// own authority). <see cref="V1CatalogPilotIdentityPolicy.IsSupportedIdentity"/>
+    /// is the single, centrally-owned definition of EVERY family's own public
+    /// Level×Frequency allow-list (not only HALF_MARATHON's: it already has a
+    /// genuinely distinct TEN_K arm — Intermediate 2D/3D/4D/5D/6D, Beginner
+    /// 2D/3D/4D, Advanced 3D/4D/5D/6D — confirmed by direct read, zero lines
+    /// of that file changed by DERIVED-DIST.4) — this method asks it
+    /// directly, by reference, parameterized by whichever parent family
+    /// <see cref="TryResolve"/> actually resolved, rather than duplicating
+    /// any part of either matrix here or hardcoding a single family. A future
+    /// change to either family's own public matrix (widening OR narrowing)
     /// therefore propagates to derived eligibility automatically and without
     /// a second edit — see <c>DerivedPublicEligibilityStructurallyConsultsHalfMarathonParentMatrixTests</c>
-    /// for the non-gameable coupling proof (not merely an output-equality
-    /// check — see that test's own doc comment).
+    /// for the pre-existing, still-valid non-gameable coupling proof for the
+    /// HALF_MARATHON arm specifically.
     /// </summary>
-    private static bool IsPublicForHalfMarathonParent(RunningBackground level, int runsPerWeek) =>
-        V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, GoalDistance.HalfMarathon, level, runsPerWeek);
+    private static bool IsPublicForParent(GoalDistance parentFamily, RunningBackground level, int runsPerWeek) =>
+        V1CatalogPilotIdentityPolicy.IsSupportedIdentity(GoalType.Race, parentFamily, level, runsPerWeek);
 
     /// <summary>
     /// One resolved derived-eligible request shape — deliberately NOT the
@@ -102,17 +132,50 @@ public static class DerivedDistanceEligibilityPolicy
         TryResolve(targetDistanceKmOverride, requestGoalDistance, level, runsPerWeek) is not null;
 
     /// <summary>
+    /// PHASE DERIVED-DIST.4 §41 — maps a <see cref="NearestHigherCanonicalPlanResolver.CanonicalPlan"/>'s
+    /// own <c>Family</c> string to the <see cref="GoalDistance"/> every
+    /// caller of this policy must already carry for a request to be eligible
+    /// through that source. Deliberately exhaustive over
+    /// <see cref="NearestHigherCanonicalPlanResolver.ReadyCanonicalPlans"/>'s
+    /// own two entries today (TEN_K, HALF_MARATHON) — FIVE_K is deliberately
+    /// NOT a case here (and is not in <c>ReadyCanonicalPlans</c> either),
+    /// because canonical FIVE_K has no governed generation authority for this
+    /// mechanism to fall through to (PHASE_DERIVED_DIST_4...md §2); adding a
+    /// FIVE_K arm here without first building that authority would be exactly
+    /// the kind of silent, ungoverned widening this policy's whole design
+    /// exists to prevent. A source family with no arm below resolves to null,
+    /// never a guessed/default family.
+    /// </summary>
+    private static GoalDistance? ExpectedRequestGoalDistanceFor(string sourceFamily) => sourceFamily switch
+    {
+        "TEN_K" => GoalDistance.TenK,
+        "HALF_MARATHON" => GoalDistance.HalfMarathon,
+        _ => null,
+    };
+
+    /// <summary>
     /// Resolves a request as DERIVED-eligible, or null for any of: no
     /// target-distance override at all (every canonical/non-override
-    /// request); a requested distance at or below TEN_K's own real distance,
-    /// or at or above HALF_MARATHON's own real distance (exact-canonical
-    /// bypass, governing prompt §5/§40 — those requests must keep going
-    /// through their own unmodified canonical generation path, never this
-    /// derivation path); a resolved nearest-higher source that is not
-    /// HALF_MARATHON (structurally impossible for V1's own (10, HALF_MARATHON)
-    /// scope, defensive only); an unsupported level or frequency (governing
-    /// prompt §41 — never silently widened beyond what this prototype
-    /// actually exercises).
+    /// request); no ready-higher canonical source at all (at/above
+    /// HALF_MARATHON's own real distance — governing prompt §5/§40, fail
+    /// closed, never a fallback to the nearest lower plan); a requested
+    /// distance at or within tolerance of the resolved source's own real
+    /// distance (exact-canonical bypass — that request must keep going
+    /// through its own unmodified canonical generation path, never this
+    /// derivation path); a request whose own GoalDistance does not already
+    /// name the resolved source's structural family (PHASE DERIVED-DIST.4
+    /// §41 generalization — previously hardcoded to require HALF_MARATHON
+    /// specifically; now generic over whichever ready canonical family
+    /// <see cref="NearestHigherCanonicalPlanResolver"/> actually resolves,
+    /// via <see cref="ExpectedRequestGoalDistanceFor"/>, so a request whose
+    /// own GoalDistance is TEN_K is eligible for the 5K&lt;target&lt;TEN_K
+    /// interval exactly as HALF_MARATHON was already eligible for
+    /// TEN_K&lt;target&lt;HALF_MARATHON — never inferred from the numeric
+    /// distance alone, mirroring Dark16KPilotEligibilityPolicy's own
+    /// requirement that the request's GoalDistance already names the
+    /// structural parent family); an unsupported level or frequency
+    /// (governing prompt §41 — never silently widened beyond what this
+    /// mechanism actually exercises for either interval).
     /// </summary>
     public static DerivedDistanceCell? TryResolve(
         double? targetDistanceKmOverride,
@@ -125,40 +188,99 @@ public static class DerivedDistanceEligibilityPolicy
             return null;
         }
 
-        // Exact-canonical bypass (§5/§40): strictly inside the open interval
-        // only. A request numerically at (or within tolerance of) either
-        // canonical endpoint must never be treated as derived.
-        var tenKKm = GoalDistanceKm.Resolve(GoalDistance.TenK);
-        var halfMarathonKm = GoalDistanceKm.Resolve(GoalDistance.HalfMarathon);
-        if (km <= tenKKm + ToleranceKm || km >= halfMarathonKm - ToleranceKm)
-        {
-            return null;
-        }
-
-        // Governing prompt §4: V1 prototype scope is strictly the 10K->HM
-        // interval. The request's own GoalDistance must already be
-        // HALF_MARATHON (the one family this interval's nearest-higher
-        // source resolves to) -- never inferred from the numeric distance
-        // alone, mirroring Dark16KPilotEligibilityPolicy's own requirement
-        // that the request's GoalDistance already names the structural
-        // parent family.
-        if (requestGoalDistance != GoalDistance.HalfMarathon)
-        {
-            return null;
-        }
-
-        // Defensive re-confirmation through the generic nearest-higher
-        // resolver (never bypassed, even though the two endpoint checks
-        // above already make the answer structurally HALF_MARATHON for
-        // every value that reaches this line) -- keeps this policy and
-        // NearestHigherCanonicalPlanResolver from ever silently diverging.
+        // The ONE generic nearest-higher-canonical-plan source-selection call
+        // (PHASE DERIVED-DIST.4 §41 -- this was previously only a defensive
+        // re-confirmation performed AFTER two separate hardcoded endpoint
+        // checks; it is now the PRIMARY source of both the ceiling (the
+        // resolved source's own distance) and the family identity, so the
+        // two concerns can never silently diverge from each other again).
+        // Fails closed (null) for any km at/above HALF_MARATHON's own real
+        // distance, with zero per-distance registration of any kind, exactly
+        // as before.
         var source = NearestHigherCanonicalPlanResolver.TryResolveNearestHigher(km);
-        if (source is null || source.Family != "HALF_MARATHON")
+        if (source is null)
         {
             return null;
         }
 
-        // Gate (A) -- product V1 derived subset (§9/§51).
+        // Exact-canonical bypass: strictly inside the open interval below
+        // the resolved source's own real distance only. A request
+        // numerically at (or within tolerance of) the resolved canonical
+        // endpoint must never be treated as derived.
+        if (km >= source.DistanceKm - ToleranceKm)
+        {
+            return null;
+        }
+
+        // PHASE DERIVED-DIST.4 §41 -- the FLOOR half of the open interval,
+        // restored generically (a regression caught by this phase's own
+        // full-regression run, §46/§9: the single-sided ceiling check above
+        // is NOT sufficient on its own -- without this floor, km=10.0 with
+        // GoalDistance=HalfMarathon would incorrectly resolve eligible,
+        // because TryResolveNearestHigher(10.0) itself correctly answers
+        // "HALF_MARATHON is the nearest plan strictly above 10.0" with no
+        // concept of a lower bound; the floor is this policy's own concern,
+        // not the resolver's). For a HALF_MARATHON-sourced cell the floor is
+        // TEN_K's own real distance -- byte-identical to the pre-DERIVED-DIST.4
+        // hardcoded "km <= tenKKm" check. For a TEN_K-sourced cell the floor
+        // is FIVE_K's own real distance (reused GoalDistanceKm.Resolve
+        // constant, never a new number) -- defense-in-depth alongside the
+        // family-equality check below, which already independently rejects
+        // any FIVE_K-flavored request via CanonicalDistanceFamilyResolver's
+        // own band assignment (see that check's own doc comment).
+        var floorKm = source.Family switch
+        {
+            "HALF_MARATHON" => GoalDistanceKm.Resolve(GoalDistance.TenK),
+            "TEN_K" => GoalDistanceKm.Resolve(GoalDistance.FiveK),
+            _ => 0d,
+        };
+        if (km <= floorKm + ToleranceKm)
+        {
+            return null;
+        }
+
+        // PHASE DERIVED-DIST.4 §41 generalization: the request's own
+        // GoalDistance must already name the SAME family the resolver
+        // independently picked for this numeric target -- never inferred
+        // from the numeric distance alone. For km in (TEN_K, HALF_MARATHON)
+        // this still requires exactly HALF_MARATHON (byte-identical to the
+        // pre-DERIVED-DIST.4 hardcoded check, since source.Family can only
+        // ever be "HALF_MARATHON" for that range). For km in (FIVE_K, TEN_K)
+        // this now requires exactly TEN_K. A FIVE_K-flavored request (km at
+        // or below FIVE_K's own real distance) can never pass this check: no
+        // ready canonical plan exists at or below FIVE_K in
+        // NearestHigherCanonicalPlanResolver.ReadyCanonicalPlans today, so
+        // TryResolveNearestHigher would itself resolve TEN_K as the nearest
+        // higher plan for such a km -- but CanonicalDistanceFamilyResolver
+        // (the one place request.GoalDistance is actually assigned for a
+        // real public request, see GeneratePreviewCommandMapper.cs) assigns
+        // GoalDistance.FiveK for any km at or below 5.0, which will never
+        // equal GoalDistance.TenK, so this check still correctly rejects it.
+        // This is a structural, not incidental, guarantee -- see
+        // PHASE_DERIVED_DIST_4...md §41/§9 for the full disclosure of why
+        // this is deliberately NOT widened to admit FIVE_K.
+        var expectedGoalDistance = ExpectedRequestGoalDistanceFor(source.Family);
+        if (expectedGoalDistance is null || requestGoalDistance != expectedGoalDistance)
+        {
+            return null;
+        }
+
+        // PHASE DERIVED-DIST.4 §41 -- the TEN_K-sourced arm is dark/internal
+        // verification only (see AllowTenKSourcedDerivationForInternalVerificationOnly's
+        // own doc comment). Default false means this returns null here for
+        // every real request today, exactly as the pre-DERIVED-DIST.4 code
+        // unconditionally did for any non-HALF_MARATHON family -- zero public
+        // eligibility change.
+        if (expectedGoalDistance == GoalDistance.TenK && !AllowTenKSourcedDerivationForInternalVerificationOnly)
+        {
+            return null;
+        }
+
+        // Gate (A) -- product V1 derived subset (§9/§51), SHARED unchanged
+        // across both intervals: reusing the same already-approved,
+        // deliberately conservative Intermediate x {3,4,5} subset for the
+        // 5K-10K interval rather than inventing a second, wider or narrower
+        // product decision for it (PHASE_DERIVED_DIST_4...md §41).
         if (level is not { } resolvedLevel || !EligibleLevels.Contains(resolvedLevel))
         {
             return null;
@@ -169,12 +291,12 @@ public static class DerivedDistanceEligibilityPolicy
             return null;
         }
 
-        // Gate (B) -- the real canonical HALF_MARATHON parent's own public
-        // Level×Frequency eligibility (§10/§11/§50). BOTH gates must pass;
-        // neither is sufficient alone (§51's product-subset test proves (A)
-        // still restricts even where (B) alone would admit more, e.g.
-        // Intermediate 6D).
-        if (!IsPublicForHalfMarathonParent(resolvedLevel, resolvedRunsPerWeek))
+        // Gate (B) -- the real canonical RESOLVED parent's own public
+        // Level×Frequency eligibility (§10/§11/§50, generalized §41). BOTH
+        // gates must pass; neither is sufficient alone (§51's product-subset
+        // test proves (A) still restricts even where (B) alone would admit
+        // more, e.g. Intermediate 6D, for either family).
+        if (!IsPublicForParent(expectedGoalDistance.Value, resolvedLevel, resolvedRunsPerWeek))
         {
             return null;
         }

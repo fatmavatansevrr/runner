@@ -48,6 +48,47 @@ public static class DerivedDistanceHorizonAuthority
     public const int PreferredCoreWeeks = 12;
     public const int MaximumCoreWeeks = 14;
 
+    /// <summary>
+    /// PHASE DERIVED-DIST.4 §41 — TEN_K's OWN real, already-governed
+    /// standalone-core horizon triple: <see cref="RaceHorizonPolicy.MinimumSupportedStandaloneWeeks"/>/
+    /// <see cref="RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks"/>/
+    /// <see cref="RaceHorizonPolicy.MaximumSupportedStandaloneWeeks"/> — the
+    /// EXACT same triple canonical exact-TEN_K generation already uses via
+    /// <see cref="RaceHorizonPolicy.DecideForDistance"/>'s own default
+    /// (non-HalfMarathon) arm. Reused, not invented, for TEN_K-sourced
+    /// derived cells (5K&lt;target&lt;TEN_K) per the governing prompt's own
+    /// §18-19 instruction not to reuse HALF_MARATHON's horizon for a
+    /// different parent family. Deliberately NOT the same triple as
+    /// <see cref="MinimumCoreWeeks"/>/<see cref="PreferredCoreWeeks"/>/
+    /// <see cref="MaximumCoreWeeks"/> above (8/12/14 vs 10/12/14) — the two
+    /// intervals' own parents genuinely differ only in their minimum, which
+    /// is exactly the kind of "value equality != authority equality" fact
+    /// this engagement's culture requires preserving rather than collapsing.
+    /// </summary>
+    public const int TenKMinimumCoreWeeks = RaceHorizonPolicy.MinimumSupportedStandaloneWeeks;
+
+    /// <summary>See <see cref="TenKMinimumCoreWeeks"/>.</summary>
+    public const int TenKPreferredCoreWeeks = RaceHorizonPolicy.ExactStandaloneCoreSupportedWeeks;
+
+    /// <summary>See <see cref="TenKMinimumCoreWeeks"/>.</summary>
+    public const int TenKMaximumCoreWeeks = RaceHorizonPolicy.MaximumSupportedStandaloneWeeks;
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.4 §41 — selects which already-governed horizon
+    /// triple applies, by the resolved cell's own <c>ParentDistanceFamily</c>
+    /// (never by the numeric target distance directly). Exhaustive over the
+    /// two families <see cref="DerivedDistanceEligibilityPolicy.TryResolve"/>
+    /// can ever return today; a future family with no arm here throws rather
+    /// than silently defaulting to either existing triple.
+    /// </summary>
+    private static (int Minimum, int Preferred, int Maximum) TripleFor(GoalDistance parentDistanceFamily) => parentDistanceFamily switch
+    {
+        GoalDistance.HalfMarathon => (MinimumCoreWeeks, PreferredCoreWeeks, MaximumCoreWeeks),
+        GoalDistance.TenK => (TenKMinimumCoreWeeks, TenKPreferredCoreWeeks, TenKMaximumCoreWeeks),
+        _ => throw new ArgumentOutOfRangeException(nameof(parentDistanceFamily), parentDistanceFamily, "No derived-distance horizon triple is governed for this parent family."),
+    };
+
+    /// <summary>Byte-identical to pre-DERIVED-DIST.4 behavior: the HALF_MARATHON-sourced interval's own fixed triple.</summary>
     public static CoreHorizonDecision Decide(DateOnly startDate, DateOnly raceDate) =>
         RaceHorizonPolicy.Decide(startDate, raceDate, MinimumCoreWeeks, PreferredCoreWeeks, MaximumCoreWeeks);
 
@@ -98,13 +139,35 @@ public static class DerivedDistanceHorizonAuthority
             return null;
         }
 
+        // PHASE DERIVED-DIST.4 §41 -- the triple (and the decide/classify
+        // closures bound to it) is now selected by the resolved cell's own
+        // ParentDistanceFamily instead of always being the fixed HALF_MARATHON
+        // triple. For a HALF_MARATHON-sourced cell this resolves to exactly
+        // MinimumCoreWeeks/PreferredCoreWeeks/MaximumCoreWeeks and
+        // RaceHorizonPolicy.Decide invoked with those same three constants —
+        // byte-identical to the pre-DERIVED-DIST.4 body for every existing
+        // live request.
+        var (minimum, preferred, maximum) = TripleFor(cell.ParentDistanceFamily);
+        // PHASE DERIVED-DIST.4 §41 -- the label's "(source ...)" suffix must
+        // keep using the same literal family string
+        // NearestHigherCanonicalPlanResolver itself uses ("HALF_MARATHON"/
+        // "TEN_K"), never the GoalDistance enum's own ToString ("HalfMarathon"),
+        // so this string is byte-identical to pre-DERIVED-DIST.4 for the
+        // HALF_MARATHON arm -- a regression caught by this phase's own full
+        // regression run (§46), not a cosmetic choice.
+        var sourceFamilyLabel = cell.ParentDistanceFamily switch
+        {
+            GoalDistance.HalfMarathon => "HALF_MARATHON",
+            GoalDistance.TenK => "TEN_K",
+            _ => cell.ParentDistanceFamily.ToString(),
+        };
         return new ResolvedAuthority(
             cell,
-            $"derived {cell.TargetDistanceKm:0.###}km (source HALF_MARATHON)",
-            MinimumCoreWeeks,
-            PreferredCoreWeeks,
-            MaximumCoreWeeks,
-            Decide,
+            $"derived {cell.TargetDistanceKm:0.###}km (source {sourceFamilyLabel})",
+            minimum,
+            preferred,
+            maximum,
+            (startDate, raceDate) => RaceHorizonPolicy.Decide(startDate, raceDate, minimum, preferred, maximum),
             Classify,
             GetUnsupportedReasonCode);
     }
