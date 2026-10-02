@@ -69,29 +69,28 @@ public static class DerivedDistanceEligibilityPolicy
     private static readonly IReadOnlyList<int> EligibleRunsPerWeek = [3, 4, 5];
 
     /// <summary>
-    /// PHASE DERIVED-DIST.4 §41 — the ONE dark/internal-only activation
-    /// switch for the newly-generalized TEN_K-sourced derived interval
-    /// (5K&lt;target&lt;TEN_K). Mirrors the established
-    /// <see cref="CustomDistanceRoutingMode.ProductionDefault"/>/
-    /// <see cref="Dark16KPilotEligibilityPolicy.ApprovedDarkCells"/>
-    /// public/dark-split pattern: default <c>false</c> means <see cref="TryResolve"/>
-    /// behaves BYTE-IDENTICALLY to pre-DERIVED-DIST.4 for every real request
-    /// (public or otherwise) — a TEN_K-sourced km never resolves eligible,
-    /// exactly as before this phase. This is NOT wired into
-    /// <see cref="CustomDistanceNewCreationRouter.ClassifyNewPublicCustomRequest"/>'s
-    /// own call site or into any public DTO/validator, and is never flipped
-    /// by production code anywhere in this codebase — it exists solely so an
-    /// internal/dark test harness (mirroring DERIVED-DIST.0's own dark-only
-    /// prototype testing seam) can set it true, exercise the REAL generation
-    /// pipeline end-to-end for a TEN_K-sourced target, and reset it to false
-    /// afterward, WITHOUT making the 5K-10K interval reachable by any real
-    /// public request. Flipping this switch to true in production would be a
-    /// deliberate, separate, explicitly-governed public-activation decision
-    /// (DERIVED-DIST.1/.2's own two-phase precedent for the HALF_MARATHON
-    /// interval: prototype first, activate later) — this phase makes no such
-    /// activation.
+    /// PHASE DERIVED-DIST.4A §19/§20/§51 — the TEN_K-sourced derived interval
+    /// (5K&lt;target&lt;TEN_K) is now structurally public, gated the SAME way
+    /// the HALF_MARATHON-sourced interval already was from DERIVED-DIST.2
+    /// onward: gate (A), <see cref="EligibleLevels"/>/<see cref="EligibleRunsPerWeek"/>
+    /// (the shared V1 product subset), composed with gate (B),
+    /// <see cref="IsPublicForParent"/> consulting canonical TEN_K's own real
+    /// public Level×Frequency matrix. DERIVED-DIST.4 originally shipped this
+    /// interval behind a dark/internal-only mutable static switch,
+    /// <c>AllowTenKSourcedDerivationForInternalVerificationOnly</c>
+    /// (default <c>false</c>), so the generalized generation pipeline could be
+    /// proven end-to-end without widening any real public eligibility.
+    /// DERIVED-DIST.4A's own TEN_K long-run safety audit (PHASE_DERIVED_DIST_4A...md
+    /// §11) found TEN_K's existing share-based/growth-capped volume-safety
+    /// authority (<see cref="Prescription.Volume.VolumeSafetyPolicy"/>)
+    /// sufficient for this interval as-is — no new guardrail, no invented
+    /// ceiling — so that switch has been REMOVED (not merely defaulted true):
+    /// a mutable test-only global flag controlling production support is not
+    /// an acceptable final design (governing-prompt §19). The two gates below
+    /// are now the only thing standing between a TEN_K-sourced km and
+    /// eligibility, exactly mirroring the HALF_MARATHON-sourced interval's own
+    /// already-public composition.
     /// </summary>
-    public static bool AllowTenKSourcedDerivationForInternalVerificationOnly { get; set; }
 
     /// <summary>
     /// PHASE DERIVED-DIST.2 §10/§11/§50, generalized by PHASE DERIVED-DIST.4
@@ -265,16 +264,10 @@ public static class DerivedDistanceEligibilityPolicy
             return null;
         }
 
-        // PHASE DERIVED-DIST.4 §41 -- the TEN_K-sourced arm is dark/internal
-        // verification only (see AllowTenKSourcedDerivationForInternalVerificationOnly's
-        // own doc comment). Default false means this returns null here for
-        // every real request today, exactly as the pre-DERIVED-DIST.4 code
-        // unconditionally did for any non-HALF_MARATHON family -- zero public
-        // eligibility change.
-        if (expectedGoalDistance == GoalDistance.TenK && !AllowTenKSourcedDerivationForInternalVerificationOnly)
-        {
-            return null;
-        }
+        // PHASE DERIVED-DIST.4A §19/§20 -- the TEN_K-sourced arm is now
+        // structurally public, on the same footing as the HALF_MARATHON-sourced
+        // arm: no dark/internal-only switch gates it any longer. Gates (A) and
+        // (B) below are the only remaining admission checks.
 
         // Gate (A) -- product V1 derived subset (§9/§51), SHARED unchanged
         // across both intervals: reusing the same already-approved,

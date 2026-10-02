@@ -35,48 +35,53 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
     _distanceController.addListener(() => setState(() {}));
   }
 
-  // PHASE DIST-GEN.0.1 safety fix: today, only the four preset distances
-  // (5K/10K/Half Marathon/Marathon) actually reach the backend -- anything
-  // else resolves to the literal string 'custom', which the backend now
-  // correctly rejects with a typed error rather than silently generating a
-  // 5K plan (the exact defect this phase closes). This is the smallest
-  // honest UX change: block Continue and say so, rather than letting the
-  // user proceed into a request that used to silently misfire and now
-  // correctly fails server-side -- never implying "16K supported" or
-  // "coming soon".
+  // PHASE DIST-GEN.0.1 safety fix (original defect this gate closes): any
+  // non-preset distance resolves to the literal string 'custom', which the
+  // backend rejects with a typed error rather than silently generating a 5K
+  // plan. Block Continue and say so, rather than letting the user proceed
+  // into a request that fails server-side.
   //
-  // PHASE DIST-GEN.3: exactly one exception carved into this gate -- a
-  // typed value that is EXACTLY 16.0 (tight ~0.001 epsilon, deliberately
-  // NOT the ±0.2 preset-snap tolerance used for the four presets above,
-  // per this phase's explicit instruction not to accidentally authorize a
-  // 15.8-16.2 band) is the one approved public 16K pilot target and is
-  // allowed through. Every other non-preset value remains blocked exactly
-  // as before.
+  // PHASE DERIVED-DIST.4A §29/§30: the original enumerated allowlist
+  // (DIST-GEN.3/.7/.11's exact-match [15.0, 16.0, 18.0] list, mirroring the
+  // backend's own now-retired dark exact-cell registry) is REPLACED with a
+  // range-based check, matching the backend's actual current product
+  // contract: any custom target strictly between canonical FIVE_K and
+  // canonical HALF_MARATHON is derivable from a ready canonical parent
+  // (TEN_K for 5K<target<10K, HALF_MARATHON for 10K<target<HM -- see
+  // NearestHigherCanonicalPlanResolver.ReadyCanonicalPlans and
+  // DerivedDistanceEligibilityPolicy on the backend). This frontend check
+  // answers ONLY "is this requested distance inside the current V1 product
+  // range" -- it does not know or duplicate which parent family, horizon,
+  // volume policy, or Level×Frequency combination the backend will actually
+  // route to; the backend remains the sole authority for all of that and
+  // still rejects unsupported Level×Frequency combinations on its own. Exact
+  // 15.0/16.0/18.0 receive no special treatment any more -- they are
+  // ordinary values inside this range, exactly like 17.7 or 19.0.
   //
-  // PHASE DIST-GEN.7: generalized to a small, explicit, exact-match list of
-  // approved public projected targets, mirroring the backend's own
-  // Dark16KPilotEligibilityPolicy.ApprovedPublicCells shape. Adding 15.0 here
-  // is the ONLY change this phase makes to this list -- still exact-match
-  // only (same tight epsilon as before), still completely separate from the
-  // ±0.2 preset-snap tolerance used for the four canonical presets.
-  //
-  // PHASE DIST-GEN.11: adding 18.0 here is the ONLY change this phase makes
-  // to this list -- mirrors the backend's own Dark16KPilotEligibilityPolicy
-  // .ApprovedPublicCells third-entry addition. Still exact-match only, still
-  // untouched ±0.2 preset-snap tolerance.
-  static const List<double> _approvedProjectedTargetsKm = [15.0, 16.0, 18.0];
-  static const double _pilot16KExactMatchEpsilon = 0.001;
+  // Exact canonical FIVE_K itself is NOT widened by this change: canonical
+  // FIVE_K has no governed generation authority on the backend today, so the
+  // four-preset mapping below (±0.2 snap-to-5.0 -> 'five_k') is left exactly
+  // as it already was -- this range only ever applies to values the preset
+  // mapping below does NOT already resolve to 'five_k'/'ten_k'/
+  // 'half_marathon'/'marathon'.
+  static const double _derivedRangeFloorKm = 5.0;
+  static const double _derivedRangeCeilingKm = 21.0975;
 
-  bool get _isExactApprovedProjectedTargetMatch {
+  bool get _isSupportedCustomDistance {
     final val = double.tryParse(_distanceController.text.trim());
     if (val == null) return false;
-    return _approvedProjectedTargetsKm
-        .any((approved) => (val - approved).abs() < _pilot16KExactMatchEpsilon);
+    return val > _derivedRangeFloorKm && val < _derivedRangeCeilingKm;
   }
 
-  bool get _isUnsupportedDistance =>
-      _mapDistanceTextToEnum(_distanceController.text.trim()) == 'custom' &&
-      !_isExactApprovedProjectedTargetMatch;
+  bool get _isUnsupportedDistance {
+    final text = _distanceController.text.trim();
+    // DERIVED-DIST.4A §32/§33 -- non-numeric/empty input must be rejected
+    // directly here, never silently treated as a valid preset.
+    // _mapDistanceTextToEnum's own null-branch exists only as a safe default
+    // for enum<->text round-tripping elsewhere, not as a validation decision.
+    if (double.tryParse(text) == null) return true;
+    return _mapDistanceTextToEnum(text) == 'custom' && !_isSupportedCustomDistance;
+  }
 
   @override
   void dispose() {
@@ -110,17 +115,18 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
     final dateStr = _raceDate != null ? _raceDate!.toIso8601String().split('T')[0] : null;
     final distText = _distanceController.text.trim();
     final selectedEnum = _mapDistanceTextToEnum(distText);
-    final isApprovedProjectedTarget =
-        selectedEnum == 'custom' && _isExactApprovedProjectedTargetMatch;
+    final isSupportedCustomTarget =
+        selectedEnum == 'custom' && _isSupportedCustomDistance;
     final parsedTargetKm = double.tryParse(distText);
 
     ref.read(onboardingProvider.notifier).updateGoalDistance(selectedEnum);
-    // PHASE DIST-GEN.3/7: only an exact approved projected-target value (see
-    // _approvedProjectedTargetsKm) is ever sent as a numeric target -- every
-    // other selection (including the four presets) clears it, so
-    // target_distance_km is never sent alongside a canonical goal_distance.
+    // PHASE DERIVED-DIST.4A: only a custom target inside the current V1
+    // range (see _isSupportedCustomDistance) is ever sent as a numeric
+    // target -- every other selection (including the four presets) clears
+    // it, so target_distance_km is never sent alongside a canonical
+    // goal_distance.
     ref.read(onboardingProvider.notifier).updateTargetDistanceKm(
-          isApprovedProjectedTarget ? parsedTargetKm : null,
+          isSupportedCustomTarget ? parsedTargetKm : null,
         );
     ref.read(onboardingProvider.notifier).updateUnit(_unit);
     if (name.isNotEmpty && dateStr != null) {
@@ -335,7 +341,7 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
                     if (_isUnsupportedDistance) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'This exact distance isn\'t supported yet. Please choose 5K, 10K, Half Marathon, or Marathon.',
+                        'This distance isn\'t supported yet. Please enter a value between 5K and the half marathon, or choose 5K, 10K, Half Marathon, or Marathon.',
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.missed),
                       ),
                     ],

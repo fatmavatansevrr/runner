@@ -485,16 +485,48 @@ public sealed class DerivedDist3BackendCoverageTests : IClassFixture<PublishedCa
     }
 
     [Theory]
-    [InlineData(9.5)]
     [InlineData(22.0)]
+    [InlineData(25.0)]
     public async Task OutsideInterval_RejectedAsCustomTarget_NoNearestLowerFallback(double km)
     {
+        // PHASE DERIVED-DIST.4A note: 9.5 was REMOVED from this theory's data
+        // (originally [9.5, 22.0]) -- an EXPECTED_MODEL_CHANGE consequence of
+        // this phase's own TEN_K-sourced 5K<target<10K structural public
+        // activation (DerivedDistanceEligibilityPolicy's dark-only switch was
+        // removed), mirroring DERIVED-DIST.2's own established convention of
+        // updating a stale negative assertion in place rather than silently
+        // deleting or weakening it. 9.5 is no longer "outside the interval" --
+        // it is now a real, publicly-eligible TEN_K-sourced target; its own
+        // positive coverage is proven by
+        // DerivedDist4ATenKSourcedSubTenKPublicActivationTests instead. Above
+        // the real canonical HALF_MARATHON ceiling (21.0975) there is still no
+        // ready-higher canonical source, so 22.0/25.0 must keep rejecting with
+        // no nearest-lower fallback to either TEN_K or HALF_MARATHON.
         await ResetAsync();
         var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", CustomRequest(km, 12));
         var body = await response.Content.ReadAsStringAsync();
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
         Assert.DoesNotContain("\"template_id\":\"TEN_K", body);
         Assert.DoesNotContain("\"template_id\":\"HALF_MARATHON", body);
+    }
+
+    /// <summary>
+    /// PHASE DERIVED-DIST.4A -- the positive counterpart of the note above:
+    /// 9.5 (previously asserted REJECTED in this file, pre-activation) now
+    /// correctly succeeds as a TEN_K-sourced derived target, through the real
+    /// public HTTP entry point, proving the model-change end to end at this
+    /// exact file's own call site rather than only in the new phase's own
+    /// dedicated test file.
+    /// </summary>
+    [Fact]
+    public async Task NinePointFiveK_NowInsideTenKSourcedInterval_SucceedsAsTenKDerived()
+    {
+        await ResetAsync();
+        var response = await _client.PostRawAsync("/api/v1/plans/generate-preview/race", CustomRequest(9.5, 12));
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"template_id\":\"TEN_K", body);
+        Assert.Contains("\"requested_target_distance_km\":9.5", body);
     }
 
     // ───────────────────────── §31-34 Real persisted legacy exact-cell fixture (pre-cleanup gate) ─────────────────────────
