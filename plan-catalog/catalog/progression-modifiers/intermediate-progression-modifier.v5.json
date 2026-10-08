@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "schemaVersion": 2,
+    "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1",
+    "version": 5,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- FIVE_K's own dedicated progression-modifier version, numerically identical to v2 (TEN_K's own) and v4 (HALF_MARATHON's own) but a SEPARATE versioned artifact, per this repository's established 'value equality != authority equality' discipline (domain-wave5-d2-ownership.md's own TEN_K-only ownership boundary for v2, executably guarded by DomainWave5D2ResolutionTests.IntermediateProgressionModifierV2_ReuseIsExecutablyGuarded_NoUnapprovedCombinationFamilyReferrer -- this new version avoids widening that guard's TEN_K-only scope). Encodes FIVE-K.0B §18/§19's frozen KEY1-phase-driven/no-KEY2 mechanism: maximumHardSessionsPerWeek=1, allowSecondHardStimulus=false -- the single shared SHAPE every single-KEY-lane candidate in this catalog already uses, reused as a mechanism, never as a borrowed artifact reference.",
+  "experience": "INTERMEDIATE",
+  "maximumHardSessionsPerWeek": 1,
+  "mainSetDoseMultiplier": 1.0,
+  "allowGoalPaceRehearsal": true,
+  "allowSecondHardStimulus": false
+}

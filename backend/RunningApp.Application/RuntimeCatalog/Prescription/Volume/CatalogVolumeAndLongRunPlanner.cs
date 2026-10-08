@@ -211,6 +211,21 @@ internal sealed class CatalogVolumeAndLongRunPlanner : ICatalogVolumeAndLongRunP
             return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
         }
 
+        // PHASE FIVE-K.1 -- implements the FIVE-K.0B-frozen FIVE_K Intermediate
+        // {4D,5D} volume/long-run authority. Mirrors HM's own Intermediate
+        // dispatch shape exactly (same ReferenceEquals(_policy, Default) guard,
+        // same distance+level+daysPerWeek exact match); deliberately admits
+        // ONLY 4 and 5 -- no 2D/3D/6D, no Beginner/Advanced -- per FIVE-K.0B
+        // §8/§36's restricted V1 matrix. Any other FIVE_K frequency/level falls
+        // through unchanged to the fail-closed guard below (never silently
+        // inherits TEN_K's own VolumeSafetyPolicy.Default authority).
+        if (request.Candidate.CanonicalDistanceFamily == "FIVE_K" &&
+            request.Candidate.Level == "INTERMEDIATE" && (request.Candidate.DaysPerWeek == 4 || request.Candidate.DaysPerWeek == 5) &&
+            ReferenceEquals(_policy, VolumeSafetyPolicy.Default))
+        {
+            return new CatalogVolumeAndLongRunPlanner(VolumeSafetyPolicy.ForFiveKIntermediateDaysPerWeek(request.Candidate.DaysPerWeek)).Build(request);
+        }
+
         // HM.2 Step 1c — closes HM.0 §F.3/§G Family 1's primary occurrence:
         // every branch above now explicitly requires CanonicalDistanceFamily
         // == "TEN_K", so any candidate reaching this point with the

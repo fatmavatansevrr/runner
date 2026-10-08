@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "documentType": "RULE_PACK",
+    "schemaVersion": 1,
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 12,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase FIVE-K.1 -- byte-identical to v11 except peakVolumeBandPolicy, which now points to the new additive PEAK_VOLUME_BANDS_V1 v11 (the two new FIVE_K rows). Referenced only by the new five-k-4d-intermediate.v1.json / five-k-5d-intermediate.v1.json combination files. Every existing combination file continues to reference v11 (pinned to PEAK_VOLUME_BANDS_V1 v10) unmodified -- zero delta for every existing TEN_K/HALF_MARATHON cell.",
+  "runtimeConditionValueRegistry": {
+    "documentType": "RUNTIME_CONDITION_VALUE_REGISTRY",
+    "key": "RUNTIME_CONDITION_VALUES_V1",
+    "version": 2
+  },
+  "peakVolumeBandPolicy": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 11
+  },
+  "policies": [],
+  "rules": []
+}

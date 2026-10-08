@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "documentType": "RUN_LAYOUT",
+    "schemaVersion": 1,
+    "key": "RUN_LAYOUT_5D_SINGLE_KEY",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- FIVE-K.0B §19's frozen, binding decision: FIVE_K Intermediate x5D has NO second KEY_SESSION. Deliberately a NEW layout artifact, not a reuse of RUN_LAYOUT_5D (which structurally carries two KEY_SESSION slots for every HALF_MARATHON/TEN_K Intermediate x5D candidate) -- reusing that layout would silently contradict the frozen no-KEY2 decision regardless of what the workout-progression/level-modifier layers say. The 5th weekly session here is plain EASY_SUPPORT, not a second quality slot, exactly as FIVE-K.0B §19 requires.",
+  "runsPerWeek": 5,
+  "slots": [
+    { "sequenceOrder": 1, "role": "KEY_SESSION" },
+    { "sequenceOrder": 2, "role": "EASY_SUPPORT" },
+    { "sequenceOrder": 3, "role": "EASY_SUPPORT" },
+    { "sequenceOrder": 4, "role": "EASY_SUPPORT" },
+    { "sequenceOrder": 5, "role": "LONG_RUN" }
+  ]
+}

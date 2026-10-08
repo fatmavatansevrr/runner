@@ -344,6 +344,40 @@ public static class V1CatalogPilotIdentityPolicy
     public const int HalfMarathonSixDayAdvancedCandidateVersion = 1;
 
     /// <summary>
+    /// PHASE FIVE-K.1 -- the publicly-activated, canonical FIVE_K Intermediate×4D
+    /// Core candidate identity, implementing FIVE-K.0B's frozen restricted V1
+    /// matrix (PHASE_FIVE_K_0B_CANONICAL_FIVE_K_PRODUCT_DEFAULT_RESOLUTION_FOR_RESTRICTED_V1_MATRIX.md
+    /// §8/§36/§42). Unlike every HALF_MARATHON cell above (all introduced
+    /// dark-only), FIVE_K Intermediate 4D/5D are PUBLIC from first activation
+    /// -- FIVE-K.0B's own restricted-V1 principle (§6) already narrowed the
+    /// matrix to exactly these two cells before implementation began, so no
+    /// separate dark-verification phase precedes public activation here. Added
+    /// directly to <see cref="IsSupportedLevelFrequency(GoalDistance,RunningBackground,int)"/>'s
+    /// own FIVE_K arm (consulted by both <see cref="IsSupportedIdentity"/> and
+    /// <see cref="ResolveCandidate(GoalDistance,RunningBackground,int)"/>), so
+    /// this identity is reachable through the real public routing path
+    /// (<see cref="RunningApp.Application.RuntimeCatalog.PreviewRouting.V1LiveCatalogPilotRoutingPolicy"/>)
+    /// from the moment this candidate is PUBLISHED, exactly like every other
+    /// publicly-activated TEN_K cell.
+    /// </summary>
+    public const string FiveKFourDayIntermediateCandidateKey = "FIVE_K__4D__INTERMEDIATE";
+    public const int FiveKFourDayIntermediateCandidateVersion = 1;
+
+    /// <summary>
+    /// PHASE FIVE-K.1 -- the publicly-activated, canonical FIVE_K Intermediate×5D
+    /// Core candidate identity. See <see cref="FiveKFourDayIntermediateCandidateKey"/>'s
+    /// own doc comment for the full rationale. FIVE-K.0B §19's frozen
+    /// decision -- this candidate's own run layout has NO second KEY_SESSION
+    /// slot (the 5th weekly session is EASY_SUPPORT, not a second quality day)
+    /// -- is encoded entirely in this candidate's own catalog layout artifact
+    /// (a dedicated single-KEY 5D run layout, deliberately NOT the existing
+    /// dual-KEY <c>RUN_LAYOUT_5D</c> every HALF_MARATHON/TEN_K Intermediate×5D
+    /// candidate uses), never in this identity-policy file.
+    /// </summary>
+    public const string FiveKFiveDayIntermediateCandidateKey = "FIVE_K__5D__INTERMEDIATE";
+    public const int FiveKFiveDayIntermediateCandidateVersion = 1;
+
+    /// <summary>
     /// The complete, explicit allow-list of (Level, DaysPerWeek) pairs the
     /// pilot recognizes for TEN_K. Deliberately enumerated rather than
     /// derived, so a future cell can never be admitted by accident — the two
@@ -414,6 +448,14 @@ public static class V1CatalogPilotIdentityPolicy
                 (RunningBackground.Advanced, 4) or
                 (RunningBackground.Advanced, 5) or
                 (RunningBackground.Advanced, 6),
+            // PHASE FIVE-K.1 -- the complete, deliberately narrow FIVE_K public
+            // V1 matrix: Intermediate×{4,5} only (FIVE-K.0B §8/§36). No
+            // Beginner, no Advanced, no 2D/3D/6D -- all deferred per FIVE-K.0B
+            // §37-39, not silently admitted because the generic engine could
+            // technically generate them.
+            Domain.Enums.GoalDistance.FiveK => (level, daysPerWeek) is
+                (RunningBackground.Intermediate, 4) or
+                (RunningBackground.Intermediate, 5),
             _ => false,
         };
     // (Beginner, 3): Phase 10K-GEN.25 public activation, implementing the
@@ -482,7 +524,7 @@ public static class V1CatalogPilotIdentityPolicy
         RunningBackground level,
         int daysPerWeek) =>
         goalType == GoalType &&
-        (goalDistance == GoalDistance || goalDistance == Domain.Enums.GoalDistance.HalfMarathon) &&
+        (goalDistance == GoalDistance || goalDistance == Domain.Enums.GoalDistance.HalfMarathon || goalDistance == Domain.Enums.GoalDistance.FiveK) &&
         IsSupportedLevelFrequency(goalDistance, level, daysPerWeek);
 
     /// <summary>
@@ -541,7 +583,12 @@ public static class V1CatalogPilotIdentityPolicy
         // them, for internal/dark-only test harness use.
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Intermediate, 6) => (HalfMarathonSixDayIntermediateCandidateKey, HalfMarathonSixDayIntermediateCandidateVersion),
         (Domain.Enums.GoalDistance.HalfMarathon, RunningBackground.Advanced, 6) => (HalfMarathonSixDayAdvancedCandidateKey, HalfMarathonSixDayAdvancedCandidateVersion),
-        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D/5D/6D, Beginner 3D/4D, and Advanced 3D/4D/5D/6D identities, are resolvable.")
+        // PHASE FIVE-K.1 -- public, additive. See FiveKFourDayIntermediateCandidateKey's/
+        // FiveKFiveDayIntermediateCandidateKey's own doc comments. Only the two
+        // FIVE-K.0B-approved cells -- no other FIVE_K (level, daysPerWeek) pair resolves.
+        (Domain.Enums.GoalDistance.FiveK, RunningBackground.Intermediate, 4) => (FiveKFourDayIntermediateCandidateKey, FiveKFourDayIntermediateCandidateVersion),
+        (Domain.Enums.GoalDistance.FiveK, RunningBackground.Intermediate, 5) => (FiveKFiveDayIntermediateCandidateKey, FiveKFiveDayIntermediateCandidateVersion),
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), "Only the activated Intermediate 3D/4D/5D/6D, Beginner 4D/2D/3D, Intermediate 2D, and Advanced 3D/4D/5D/6D TEN_K Core pilot identities, plus the dark-only HALF_MARATHON Intermediate 3D/4D/5D/6D, Beginner 3D/4D, and Advanced 3D/4D/5D/6D identities, plus the publicly-activated FIVE_K Intermediate 4D/5D identities, are resolvable.")
     };
 
     /// <summary>

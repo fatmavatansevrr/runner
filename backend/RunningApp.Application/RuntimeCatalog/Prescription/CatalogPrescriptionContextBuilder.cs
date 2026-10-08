@@ -241,6 +241,8 @@ internal sealed class CatalogPrescriptionContextBuilder : ICatalogPrescriptionCo
         "THRESHOLD_TEMPO" => ["continuous tempo duration/dose"],
         "GOAL_PACE_TEN_K" => ["goal-pace dose after feasibility gate"],
         "HM_PACE" => ["HM-pace dose from independent current-fitness evidence"],
+        "VO2_INTERVAL_FIVE_K" => ["VO2 interval work/recovery durations and repetition count"],
+        "GOAL_PACE_FIVE_K" => ["goal-pace dose after feasibility gate"],
         _ => []
     };
 
@@ -333,6 +335,11 @@ internal static class CatalogGoalDistanceResolver
             // comment). Present here so the resolver itself is not a second
             // place a future HM catalog author must remember to widen.
             "HALF_MARATHON" => GoalDistanceKm.Resolve(GoalDistance.HalfMarathon),
+            // PHASE FIVE-K.1 -- additive. The real, publicly-activated FIVE_K
+            // candidates (FiveKFourDayIntermediateCandidateKey/FiveKFiveDayIntermediateCandidateKey)
+            // reach this arm on every real generation. Mirrors the HALF_MARATHON
+            // arm's own shape exactly.
+            "FIVE_K" => GoalDistanceKm.Resolve(GoalDistance.FiveK),
             _ => throw new CatalogPrescriptionContractException("UNSUPPORTED_CATALOG_GOAL_DISTANCE", $"Unsupported catalog distance family '{catalogDistanceFamily}'.")
         };
 
@@ -340,6 +347,8 @@ internal static class CatalogGoalDistanceResolver
         {
             GoalDistance.TenK => GoalDistanceKm.Resolve(GoalDistance.TenK),
             GoalDistance.HalfMarathon => GoalDistanceKm.Resolve(GoalDistance.HalfMarathon),
+            // PHASE FIVE-K.1 -- additive, same shape as the HALF_MARATHON arm.
+            GoalDistance.FiveK => GoalDistanceKm.Resolve(GoalDistance.FiveK),
             _ => throw new CatalogPrescriptionContractException("UNSUPPORTED_REQUEST_GOAL_DISTANCE", $"Unsupported request goal distance '{requestGoalDistance}' for V1 pilot.")
         };
 
@@ -605,6 +614,22 @@ internal static class CatalogPrescriptionContextValidator
             return;
         }
 
+        // PHASE FIVE-K.1 -- same single-KEY-lane Taper identity shape as
+        // CatalogFinalPrescribedPlanValidator's own FIVE_K branch (FIVE-K.0B
+        // §33/§35): exactly one KEY_SESSION Taper week, bound to
+        // GOAL_PACE_FIVE_K (or its EASY_STANDARD effort-fallback), never the
+        // generic Legacy TAPER_SHARPEN identity the fallback path below requires.
+        if ((boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.FiveKFourDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.FiveKFourDayIntermediateCandidateVersion) ||
+            (boundPlan.CandidateKey == V1CatalogPilotIdentityPolicy.FiveKFiveDayIntermediateCandidateKey &&
+                boundPlan.CandidateVersion == V1CatalogPilotIdentityPolicy.FiveKFiveDayIntermediateCandidateVersion))
+        {
+            var valid = taperKeySessions.Count == 1 && taperKeySessions.All(s =>
+                (s.ProgressionStageKey == "TAPER_FIVE_K_ACTIVATION" && s.WorkoutDefinitionKey == "GOAL_PACE_FIVE_K") ||
+                (s.ProgressionStageKey == "TAPER_FIVE_K_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            if (!valid) errors.Add("FIVE_K_TAPER_ACTIVATION_CONTEXT_MISSING");
+            return;
+        }
 
         var partialLineage = taperKeySessions
             .Where(s => (s.PrescriptionProfileKey is null) != (s.PrescriptionProfileVersion is null))

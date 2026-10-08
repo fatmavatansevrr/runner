@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "documentType": "PEAK_VOLUME_BAND_POLICY",
+    "schemaVersion": 1,
+    "key": "PEAK_VOLUME_BANDS_V1",
+    "version": 11,
+    "status": "VALIDATED"
+  },
+  "_comment": "Phase FIVE-K.1 -- additive-only version bump from v10. Every v10 entry is reproduced byte-identical; the only change is the two new appended FIVE_K rows (Intermediate 4D/5D, both [35.0,44.0] -- FIVE-K.0B §23: the band itself does not vary by frequency, only the SelectedPeakReference within it does, which lives in VolumeSafetyPolicy, not here). Referenced only by the new five-k-4d-intermediate.v1.json / five-k-5d-intermediate.v1.json combination files via a new rule-pack version; every existing combination file continues to reference its own already-pinned peak-volume-band version unmodified -- zero delta for every existing TEN_K/HALF_MARATHON cell.",
+  "entries": [
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 2, "minimumKm": 16, "maximumKm": 22 },
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 3, "minimumKm": 16, "maximumKm": 20 },
+    { "distanceFamily": "TEN_K", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 18, "maximumKm": 24 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 2, "minimumKm": 20, "maximumKm": 30 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 4, "minimumKm": 30, "maximumKm": 42 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 36, "maximumKm": 50 },
+    { "distanceFamily": "TEN_K", "experience": "INTERMEDIATE", "runsPerWeek": 6, "minimumKm": 36, "maximumKm": 50 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 3, "minimumKm": 34, "maximumKm": 46 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 4, "minimumKm": 38, "maximumKm": 52 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 5, "minimumKm": 42, "maximumKm": 58 },
+    { "distanceFamily": "TEN_K", "experience": "ADVANCED", "runsPerWeek": 6, "minimumKm": 42, "maximumKm": 60 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 4, "minimumKm": 36, "maximumKm": 50 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 3, "minimumKm": 28, "maximumKm": 40 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 44, "maximumKm": 58 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "NEW", "runsPerWeek": 3, "minimumKm": 22, "maximumKm": 32 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "NEW", "runsPerWeek": 4, "minimumKm": 28, "maximumKm": 38 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 3, "minimumKm": 36, "maximumKm": 48 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 4, "minimumKm": 46, "maximumKm": 60 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 5, "minimumKm": 54, "maximumKm": 70 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "INTERMEDIATE", "runsPerWeek": 6, "minimumKm": 44, "maximumKm": 58 },
+    { "distanceFamily": "HALF_MARATHON", "experience": "ADVANCED", "runsPerWeek": 6, "minimumKm": 54, "maximumKm": 72 },
+    { "distanceFamily": "FIVE_K", "experience": "INTERMEDIATE", "runsPerWeek": 4, "minimumKm": 35.0, "maximumKm": 44.0 },
+    { "distanceFamily": "FIVE_K", "experience": "INTERMEDIATE", "runsPerWeek": 5, "minimumKm": 35.0, "maximumKm": 44.0 }
+  ]
+}

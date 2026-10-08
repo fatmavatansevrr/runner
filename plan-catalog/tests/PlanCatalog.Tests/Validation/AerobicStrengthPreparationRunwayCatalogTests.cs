@@ -71,7 +71,11 @@ public sealed class AerobicStrengthPreparationRunwayCatalogTests
         // + HM.2's HM_PACE v1 distance-specific parameterization = 31,
         // + HM.11's FARTLEK v6 eligibility-only widening for RACE_SPECIFIC while preserving
         // the already-approved v4 component/dose semantics verbatim = 32.
-        Assert.Equal(32, files.Length);
+        // + PHASE FIVE-K.1's two new FIVE_K-specific catalog additions (VO2_INTERVAL_FIVE_K v1,
+        // GOAL_PACE_FIVE_K v1), per FIVE-K.0B §48-49's FIVE_K_V1_REQUIRES_SMALL_CATALOG_ADDITION
+        // finding -- no existing workout satisfied the frozen VO2/interval or goal-pace stage
+        // contracts (confirmed by direct semantic audit, not name-matching) = 34.
+        Assert.Equal(34, files.Length);
 
         foreach (var file in files)
         {

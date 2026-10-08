@@ -87,7 +87,18 @@ public sealed class PlanCatalogDeploymentPackagingTests
     // half-marathon-master.v4.json, half-marathon-master.v5.json (templates),
     // peak-volume-bands.v10.json (policies), appsel-race-plan.v11.json (rule-packs). No existing
     // file was removed or renamed.
-    internal const int ExpectedRuntimeCatalogJsonFiles = 160;
+    // PHASE FIVE-K.1 -- bumped from 160 by exactly 11 new additive JSON artifacts implementing
+    // FIVE-K.0B's frozen canonical FIVE_K Intermediate 4D/5D V1 matrix: vo2-interval-five-k.v1.json,
+    // goal-pace-five-k.v1.json (workouts); five-k-master.v1.json (templates);
+    // five-k-workout-progression.v1.json (workout-progressions); run-layout-5d-single-key.v1.json
+    // (layouts -- FIVE-K.0B §19's no-KEY2 invariant, deliberately not a reuse of the existing
+    // dual-KEY run-layout-5d.v1.json); intermediate-modifier.v10.json (level-modifiers);
+    // intermediate-progression-modifier.v5.json (progression-modifiers -- FIVE_K's own dedicated
+    // artifact, numerically identical to but never a reference to TEN_K's v2/HM's v4);
+    // peak-volume-bands.v11.json (policies); appsel-race-plan.v12.json (rule-packs);
+    // five-k-4d-intermediate.v1.json, five-k-5d-intermediate.v1.json (combinations). No existing
+    // file was removed or renamed.
+    internal const int ExpectedRuntimeCatalogJsonFiles = 171;
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

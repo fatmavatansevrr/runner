@@ -291,6 +291,39 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 "TargetFinishTimeSeconds / GoalDistanceKm");
         }
 
+        // PHASE FIVE-K.1 -- FIVE-K.0B §20/§22/§47's frozen goal-pace contract:
+        // structural analog of GOAL_PACE_TEN_K above (same goal-derived pace
+        // mechanism, same feasibility gate, same goal-time-never-manufactures-
+        // fitness discipline), bound to GoalDistanceKm=5.0 for an exact FIVE_K
+        // request rather than copying any TEN_K/HM numeric value. Reused
+        // identically for both the RACE_SPECIFIC rehearsal stage and the
+        // TAPER_FIVE_K_ACTIVATION stage (§35's "reused at reduced dose" --
+        // the reduced dose comes entirely from the Taper week's own lower
+        // planned distance, not from a different pace formula).
+        if (session.WorkoutDefinitionKey == "GOAL_PACE_FIVE_K")
+        {
+            if (feasibility is not ("REALISTIC" or "CHALLENGING"))
+            {
+                throw new CatalogGoalPacePrescriptionUnsupportedException("GOAL_PACE_FIVE_K requires REALISTIC or CHALLENGING goal feasibility.");
+            }
+
+            if (context.InputSnapshot.TargetFinishTimeSeconds is not { } fiveKTargetSeconds)
+            {
+                throw new CatalogGoalPacePrescriptionUnsupportedException("GOAL_PACE_FIVE_K requires TargetFinishTimeSeconds.");
+            }
+
+            var fiveKSecondsPerKm = Math.Round(fiveKTargetSeconds / context.InputSnapshot.GoalDistanceKm, 2, MidpointRounding.AwayFromZero);
+            return new CatalogPacePrescription(
+                CatalogPacePrescriptionKind.ExactPace,
+                fiveKSecondsPerKm,
+                null,
+                null,
+                CatalogPaceSourceSelection.TargetGoalDerived,
+                "GOAL_FEASIBILITY_" + feasibility,
+                "GOAL_PACE",
+                "TargetFinishTimeSeconds / GoalDistanceKm");
+        }
+
         if (session.WorkoutDefinitionKey == "HM_PACE")
         {
             if (context.PaceSource.Source != PrescriptionPaceSource.RecentRace ||
@@ -333,7 +366,7 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
         CatalogWorkoutDefinitionSummary definition)
     {
         var rejected = new List<string>();
-        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE"))
+        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE" or "GOAL_PACE_FIVE_K"))
         {
             rejected.Add("TARGET_GOAL_PACE_NOT_PERMITTED_FOR_" + definition.Key);
         }
@@ -431,6 +464,8 @@ internal sealed class CatalogSessionPrescriptionPlanner : ICatalogSessionPrescri
                 "THRESHOLD_TEMPO" => "THRESHOLD_EFFORT",
                 "GOAL_PACE_TEN_K" => "GOAL_PACE",
                 "HM_PACE" => "HM_PACE",
+                "VO2_INTERVAL_FIVE_K" => "VO2_INTERVAL_EFFORT",
+                "GOAL_PACE_FIVE_K" => "GOAL_PACE",
                 _ => "EASY"
             };
 

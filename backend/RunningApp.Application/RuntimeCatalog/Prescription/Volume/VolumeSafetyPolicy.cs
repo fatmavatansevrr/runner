@@ -914,6 +914,99 @@ public sealed record VolumeSafetyPolicy(
     };
 
     /// <summary>
+    /// PHASE FIVE-K.1 -- implements the already-frozen FIVE-K.0B canonical
+    /// authority (PHASE_FIVE_K_0B_CANONICAL_FIVE_K_PRODUCT_DEFAULT_RESOLUTION_FOR_RESTRICTED_V1_MATRIX.md
+    /// §23-31/§41/§44-45) for the restricted public V1 matrix FIVE_K x
+    /// INTERMEDIATE x {4D, 5D}. Every field's value and classification is
+    /// consumed exactly as frozen, not re-derived here:
+    /// PreferredMaxWeeklyIncreaseRatio/HardMaxWeeklyIncreaseRatio = 0.07/0.08
+    /// and AbsoluteWeeklyIncrementCapKm = 2.5 (§26, `SHARED_AUTHORITY` -- the
+    /// already-governed generic growth-cap mechanism, reused unmodified, never
+    /// a new FIVE_K-owned duplicate). GoldenFixtureStartingVolumeKm = 25.0
+    /// (4D) / 28.0 (5D) -- FIVE-K.0B §25 `EXPLICIT_PRODUCT_DEFAULT`: these are
+    /// literal fixture-default numbers mechanically derived in §25's own
+    /// governance document from the shared 0.07 growth ratio compounded over 6
+    /// preferred Foundation+Build ramp weeks (Peak / 1.07^6 ≈ Peak / 1.50), NOT
+    /// a runtime-invoked mechanism to re-derive here -- FIVE-K.0B's own §25
+    /// resolves this to a stored constant, the same way every other named
+    /// policy in this file stores its own GoldenFixtureStartingVolumeKm as a
+    /// literal. The 4D value's numeric coincidence with HM's own 25.0 fixture
+    /// default is explicitly disclosed by FIVE-K.0B §25 as coincidence of the
+    /// shared arithmetic formula applied to FIVE_K's own independently-selected
+    /// peak -- never copied, never a reference to HM's own policy object.
+    /// ResolvedPeakReference = 38.0 (4D) / 42.0 (5D) (§23,
+    /// `EVIDENCE_INFORMED_PRODUCT_DEFAULT`, the SelectedPeakReference chosen
+    /// within the shared [35.0,44.0] PeakVolumeBand -- band and selected
+    /// reference kept as separate authority concepts, §24, never collapsed).
+    /// GoldenFixtureNonTaperTransitions = 8 (both frequencies -- mechanically
+    /// derived from the frozen preferred horizon: 10 preferred weeks - 1 taper
+    /// week = 9 non-taper weeks -&gt; 8 transitions, identical derivation
+    /// pattern to every other named policy in this file, e.g. TEN_K's own
+    /// 12-1-1=10 and HM's own 14-2-1=11). TaperVolumeMultiplier = 0.55 (§34,
+    /// `EVIDENCE_INFORMED_PRODUCT_DEFAULT`, single non-chained anchor -- FIVE_K's
+    /// own distinct value, never TEN_K's 0.53 or HM's 0.70/0.43).
+    /// Long-run share quadruple 0.25/0.30/0.28/0.33 (§28,
+    /// `EVIDENCE_INFORMED_PRODUCT_DEFAULT`, identical across both frequencies --
+    /// FIVE-K.0B's own §28 governs this at the distance level, not per-frequency).
+    /// PreferredAbsolutePeakLongRunKm = null (§29, `NO_FIVE_K_SPECIFIC_ABSOLUTE_LR_CEILING_REQUIRED`
+    /// -- intentional, mirrors TEN_K's own real null precedent, never copied by
+    /// reference). StartingAbsoluteLongRunCapKm = null (§30, `SHARED_AUTHORITY`,
+    /// mirrors TEN_K's own real null precedent at every frequency).
+    /// ResolvedPeakReferenceIsSelectedCeiling = false (FIVE-K.0B never froze this
+    /// runtime-only interpolation-saturation field either way -- leaving it at
+    /// its default, TEN_K's own already-shipped extrapolation-past-calibration
+    /// behavior for longer horizons, is the position that invents no new
+    /// authority; the resolved "selected" peak is still clamped to the frozen
+    /// [35.0,44.0] PeakVolumeBand's own maximum by
+    /// <see cref="CatalogVolumeAndLongRunPlanner.ResolvePeak"/>'s existing
+    /// generic band-clamp regardless of this flag, so no FIVE_K plan can ever
+    /// exceed the governed band irrespective of this choice).
+    /// </summary>
+    public static VolumeSafetyPolicy FiveKIntermediate4D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 25.0d,
+        ResolvedPeakReference: new(38.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 8,
+        TaperVolumeMultiplier: 0.55d,
+        LongRunPreferredMinimumShare: 0.25d,
+        LongRunPreferredMaximumShare: 0.30d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.33d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>FIVE-K.1 -- see <see cref="FiveKIntermediate4D"/>'s own doc comment for the full frozen-authority citation. Every field is identical except SelectedPeakReference/GoldenFixtureStartingVolumeKm, which are this frequency's own FIVE-K.0B §23/§25 values (42.0/28.0, not 38.0/25.0).</summary>
+    public static VolumeSafetyPolicy FiveKIntermediate5D { get; } = new(
+        PreferredMaxWeeklyIncreaseRatio: 0.07d,
+        HardMaxWeeklyIncreaseRatio: 0.08d,
+        AbsoluteWeeklyIncrementCapKm: 2.5d,
+        GoldenFixtureStartingVolumeKm: 28.0d,
+        ResolvedPeakReference: new(42.0d, ResolvedPeakReferenceProvenance.ProductDefaultWithEvidenceEnvelope),
+        GoldenFixtureNonTaperTransitions: 8,
+        TaperVolumeMultiplier: 0.55d,
+        LongRunPreferredMinimumShare: 0.25d,
+        LongRunPreferredMaximumShare: 0.30d,
+        LongRunSelectionShare: 0.28d,
+        LongRunHardCapShare: 0.33d,
+        RoundingIncrementKm: 0.5d,
+        RoundingRule: "round_nearest_0.5km_after_each_week_value_then_validate");
+
+    /// <summary>
+    /// FIVE-K.1 -- centralizes the FIVE_K Intermediate daysPerWeek-to-policy
+    /// dispatch, mirroring <see cref="ForHalfMarathonIntermediateDaysPerWeek"/>'s
+    /// own shape. Fail-closed for any FIVE_K Intermediate frequency without an
+    /// approved policy -- only 4D/5D are approved V1 (FIVE-K.0B §8/§36).
+    /// </summary>
+    public static VolumeSafetyPolicy ForFiveKIntermediateDaysPerWeek(int daysPerWeek) => daysPerWeek switch
+    {
+        4 => FiveKIntermediate4D,
+        5 => FiveKIntermediate5D,
+        _ => throw new ArgumentOutOfRangeException(nameof(daysPerWeek), daysPerWeek, "No approved FIVE_K Intermediate VolumeSafetyPolicy exists for this DaysPerWeek (only 4D/5D are V1-approved, FIVE-K.0B §8)."),
+    };
+
+    /// <summary>
     /// Phase HM-X1.3 -- implements the already-frozen HM-X1.2 numeric authority for
     /// HALF_MARATHON x INTERMEDIATE x 6D x 10-16W x DARK
     /// (PHASE_HM_X1_2_..._STRUCTURAL_AND_NUMERIC_AUTHORITY_CLOSURE.md §34's complete

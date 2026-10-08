@@ -58,12 +58,23 @@ class _RaceDetailsPageState extends ConsumerState<RaceDetailsPage> {
   // 15.0/16.0/18.0 receive no special treatment any more -- they are
   // ordinary values inside this range, exactly like 17.7 or 19.0.
   //
-  // Exact canonical FIVE_K itself is NOT widened by this change: canonical
-  // FIVE_K has no governed generation authority on the backend today, so the
-  // four-preset mapping below (±0.2 snap-to-5.0 -> 'five_k') is left exactly
-  // as it already was -- this range only ever applies to values the preset
-  // mapping below does NOT already resolve to 'five_k'/'ten_k'/
-  // 'half_marathon'/'marathon'.
+  // Exact canonical FIVE_K itself is NOT widened by this change: this range
+  // only ever applies to values the preset mapping below does NOT already
+  // resolve to 'five_k'/'ten_k'/'half_marathon'/'marathon' -- the four-preset
+  // mapping (±0.2 snap-to-5.0 -> 'five_k') is unchanged by this check.
+  //
+  // PHASE FIVE-K.1: canonical FIVE_K now DOES have governed generation
+  // authority on the backend, for exactly Intermediate x {4D, 5D}
+  // (PHASE_FIVE_K_0B_..._RESTRICTED_V1_MATRIX.md's frozen matrix). No
+  // frontend change was needed for this: the exact-5.0 preset already sent
+  // goal_distance='five_k' with no numeric target (never routed through the
+  // custom/derived machinery this file's own range check governs), and the
+  // backend was, and remains, the sole authority for Level×Frequency
+  // eligibility -- it already rejects every FIVE_K cell outside Intermediate
+  // 4D/5D (Beginner/Advanced/2D/3D/6D) with a typed, non-5xx error, exactly
+  // as it already did for every other distance's unsupported cells. This
+  // comment is updated only so a future reader does not assume FIVE_K is
+  // still backend-ungoverned.
   static const double _derivedRangeFloorKm = 5.0;
   static const double _derivedRangeCeilingKm = 21.0975;
 

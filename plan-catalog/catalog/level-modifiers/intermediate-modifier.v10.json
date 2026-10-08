@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "documentType": "LEVEL_MODIFIER",
+    "schemaVersion": 2,
+    "key": "INTERMEDIATE_MODIFIER",
+    "version": 10,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- new eligible-workout set for the FIVE_K Intermediate 4D/5D V1 matrix (FIVE-K.0B §16/§48-49): EASY_STANDARD, LONG_RUN_STANDARD, THRESHOLD_TEMPO (all pre-existing, reused unchanged) plus the two new FIVE_K catalog additions (VO2_INTERVAL_FIVE_K, GOAL_PACE_FIVE_K). Deliberately omits FARTLEK/HM_PACE -- FIVE-K.0B's frozen workout progression never uses either. References the new dedicated progressionModifier v5 (maximumHardSessionsPerWeek=1, allowSecondHardStimulus=false) -- numerically identical to TEN_K's own v2 and HALF_MARATHON's own v4, but FIVE_K's own separate artifact, per this repository's established cross-distance-family ownership discipline (see intermediate-progression-modifier.v5.json's own doc comment). This mechanism is what guarantees a future shared adapter can never silently inject a second quality day at FIVE_K Intermediate x5D (FIVE-K.0B §19's no-KEY2 invariant).",
+  "experience": "INTERMEDIATE",
+  "eligibleWorkouts": [
+    { "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "LONG_RUN_STANDARD", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "VO2_INTERVAL_FIVE_K", "version": 1 },
+    { "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_FIVE_K", "version": 1 }
+  ],
+  "progressionModifier": {
+    "documentType": "PROGRESSION_MODIFIER",
+    "key": "INTERMEDIATE_PROGRESSION_MODIFIER_V1",
+    "version": 5
+  }
+}

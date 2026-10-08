@@ -305,6 +305,15 @@ internal static class V1CatalogPublicWorkoutTypeMappingPolicy
             // Key-only (no version branch) per 5E's confirmed key-level mapping-ownership
             // authority — every reachable version shares the same athlete-facing semantics.
             ("AEROBIC_STRENGTH_CONTROLLED_INTRO", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
+            // PHASE FIVE-K.1 -- FIVE_K's own new VO2/interval and goal-pace
+            // catalog additions (FIVE-K.0B §48-49). Mapped to the same public
+            // categories their structural analogs already use: FARTLEK/
+            // GOAL_PACE_TEN_K/HM_PACE all map to Interval, so the new
+            // structured VO2-interval workout and the goal-pace-rehearsal
+            // workout follow the identical existing convention rather than
+            // inventing a new public category.
+            ("VO2_INTERVAL_FIVE_K", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
+            ("GOAL_PACE_FIVE_K", "KEY_SESSION", _) => GeneratedCatalogWorkoutType.Interval,
             _ => throw new CatalogPublicWorkoutTypeUnsupportedException(
                 $"No public workout type mapping for workout '{session.WorkoutDefinitionKey}', role '{session.StructuralRole}', stage '{session.ProgressionStageKey}'.")
         };

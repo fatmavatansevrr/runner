@@ -141,6 +141,15 @@ internal static class CatalogFinalPrescribedPlanValidator
             return VolumeSafetyPolicy.ForHalfMarathonAdvancedDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
         }
 
+        // PHASE FIVE-K.1 -- mirrors the same VolumeSafetyPolicy.ForFiveKIntermediateDaysPerWeek
+        // dispatcher CatalogVolumeAndLongRunPlanner now uses (FIVE-K.0B §28's frozen 0.33
+        // hard-cap authority, identical across both approved frequencies).
+        if (candidate.CanonicalDistanceFamily == "FIVE_K" &&
+            candidate.Level == "INTERMEDIATE" && (candidate.DaysPerWeek == 4 || candidate.DaysPerWeek == 5))
+        {
+            return VolumeSafetyPolicy.ForFiveKIntermediateDaysPerWeek(candidate.DaysPerWeek).LongRunHardCapShare;
+        }
+
         // HM.2 Step 1c — HM.0 §G Family 1, a THIRD occurrence found by this
         // phase's own deeper search (not caught by HM.0's original audit,
         // which only inspected CatalogVolumeAndLongRunPlanner and
@@ -204,7 +213,7 @@ internal static class CatalogFinalPrescribedPlanValidator
         {
             errors.Add($"FINAL_SESSION_{session.WeekNumber}_{session.StructuralRole}_DISTANCE_ACCOUNTING_MISMATCH");
         }
-        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE") &&
+        if (session.WorkoutDefinitionKey is not ("GOAL_PACE_TEN_K" or "HM_PACE" or "GOAL_PACE_FIVE_K") &&
             (session.Prescription.PacePrescription.Kind == CatalogPacePrescriptionKind.ExactPace ||
              segments.Any(s => s.PacePrescription.Kind == CatalogPacePrescriptionKind.ExactPace)))
         {
@@ -305,6 +314,26 @@ internal static class CatalogFinalPrescribedPlanValidator
             {
                 errors.Add("FINAL_HM_5D_TAPER_ACTIVATION_COUNT_OR_IDENTITY_INVALID");
             }
+            return;
+        }
+
+        // PHASE FIVE-K.1 -- FIVE_K Intermediate 4D/5D share the identical
+        // single-KEY-lane Taper stage shape (FIVE-K.0B §33: TaperWeeks=1, so
+        // exactly one KEY_SESSION Taper week at every approved frequency,
+        // never a dual-lane shape like HALF_MARATHON's own 5D/6D). Reuses
+        // GOAL_PACE_FIVE_K at reduced dose (FIVE-K.0B §35), never the legacy
+        // TAPER_SHARPEN/EASY_STANDARD mechanism -- so this candidate's Taper
+        // KEY_SESSION must be explicitly recognized here, mirroring the
+        // HM 3D/4D single-lane branch above exactly.
+        if ((candidate.CandidateKey == V1CatalogPilotIdentityPolicy.FiveKFourDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.FiveKFourDayIntermediateCandidateVersion) ||
+            (candidate.CandidateKey == V1CatalogPilotIdentityPolicy.FiveKFiveDayIntermediateCandidateKey &&
+                candidate.CandidateVersion == V1CatalogPilotIdentityPolicy.FiveKFiveDayIntermediateCandidateVersion))
+        {
+            var valid = taperKeySessions.Count == 1 && taperKeySessions.All(s =>
+                (s.ProgressionStageKey == "TAPER_FIVE_K_ACTIVATION" && s.WorkoutDefinitionKey == "GOAL_PACE_FIVE_K") ||
+                (s.ProgressionStageKey == "TAPER_FIVE_K_ACTIVATION_EFFORT_FALLBACK" && s.WorkoutDefinitionKey == "EASY_STANDARD"));
+            if (!valid) errors.Add("FINAL_FIVE_K_TAPER_ACTIVATION_COUNT_OR_IDENTITY_INVALID");
             return;
         }
 

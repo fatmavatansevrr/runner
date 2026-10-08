@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "schemaVersion": 2,
+    "key": "FIVE_K_WORKOUT_PROGRESSION_V1",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- implements the frozen FIVE-K.0B §16-17/§43 workout-progression contract exactly as governed. Single-lane throughout (no laneOrdinal/prescriptionProfileCandidates) -- FIVE-K.0B §18/§19 freezes KEY1 as phase-driven (one quality stage active per phase) and KEY2 as ABSENT at every approved frequency (the 5th weekly session at Intermediate x5D is plain EASY_SUPPORT, bound outside this progression entirely, never a second KEY lane here). Every stage's workout, phase placement, and exposure count is read directly from FIVE-K.0B §16-17 -- none mechanically re-derived or counted from sample plans. BUILD and RACE_SPECIFIC's VO2 exposure split (1 Build-phase stage + 1 RaceSpecific-phase stage, both named FIVE_K_VO2_INTERVAL_DEVELOPMENT conceptually in FIVE-K.0B's own table but necessarily represented as two separate per-phase stage entries in this schema) together total the frozen 2/3/3 @8W/10W/13W exposure table: BUILD_VO2_INTERVAL_DEVELOPMENT alone contributes 1 (@8W, Build=3wk) or 2 (@10W/13W, Build=4wk); RACE_SPECIFIC_VO2_CONTINUATION contributes a fixed 1 at every horizon (RaceSpecific is always exactly 3 weeks).",
+  "distanceFamily": "FIVE_K",
+  "phaseProgressions": [
+    {
+      "phaseKey": "FOUNDATION",
+      "stages": [
+        {
+          "stageKey": "FOUNDATION_AEROBIC_BASE",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 }],
+          "minimumExposures": 1,
+          "maximumExposures": 5,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "BUILD",
+      "stages": [
+        {
+          "stageKey": "BUILD_THRESHOLD_DEVELOPMENT",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        },
+        {
+          "stageKey": "BUILD_VO2_INTERVAL_DEVELOPMENT",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "VO2_INTERVAL_FIVE_K", "version": 1 }],
+          "minimumExposures": 1,
+          "maximumExposures": 2,
+          "compressionBehavior": "COMPRESSIBLE",
+          "extensionBehavior": "EXTENDABLE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "stages": [
+        {
+          "stageKey": "RACE_SPECIFIC_VO2_CONTINUATION",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "VO2_INTERVAL_FIVE_K", "version": 1 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_REHEARSAL",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_FIVE_K", "version": 1 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] }
+          ],
+          "fallbackStageKey": "RACE_SPECIFIC_REHEARSAL_CURRENT_FITNESS_FALLBACK"
+        },
+        {
+          "stageKey": "RACE_SPECIFIC_REHEARSAL_CURRENT_FITNESS_FALLBACK",
+          "relativeOrder": 3,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "THRESHOLD_TEMPO", "version": 4 }],
+          "minimumExposures": 2,
+          "maximumExposures": 2,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "phaseKey": "TAPER",
+      "stages": [
+        {
+          "stageKey": "TAPER_FIVE_K_ACTIVATION",
+          "relativeOrder": 1,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "GOAL_PACE_FIVE_K", "version": 1 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": [
+            { "conditionType": "GOAL_FEASIBILITY_IN", "allowedValues": ["REALISTIC", "CHALLENGING"] }
+          ],
+          "fallbackStageKey": "TAPER_FIVE_K_ACTIVATION_EFFORT_FALLBACK"
+        },
+        {
+          "stageKey": "TAPER_FIVE_K_ACTIVATION_EFFORT_FALLBACK",
+          "relativeOrder": 2,
+          "workoutCandidates": [{ "documentType": "WORKOUT_DEFINITION", "key": "EASY_STANDARD", "version": 4 }],
+          "minimumExposures": 1,
+          "maximumExposures": 1,
+          "compressionBehavior": "PROTECTED",
+          "extensionBehavior": "FIXED_EXPOSURE",
+          "requires": []
+        }
+      ]
+    }
+  ]
+}

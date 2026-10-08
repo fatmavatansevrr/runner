@@ -67,7 +67,12 @@ public sealed class Phase4F8_2LivePilotRoutingTests
         var request = PilotRequest();
         switch (fieldToChange)
         {
-            case nameof(GeneratePreviewRequest.GoalDistance): request.GoalDistance = GoalDistance.FiveK; break;
+            // PHASE FIVE-K.1 deliberately widened (FiveK, Intermediate, 4) to a real,
+            // distinct pilot identity, so it's no longer a valid "make this non-pilot"
+            // mutation (see the Level case's identical note below for Beginner/GEN.4E).
+            // Marathon remains genuinely unwidened at every level/frequency and still
+            // exercises the same negative-identity path.
+            case nameof(GeneratePreviewRequest.GoalDistance): request.GoalDistance = GoalDistance.Marathon; break;
             // GEN.4E deliberately widened (Beginner, 4) to a real, distinct
             // pilot identity, so it's no longer a valid "make this non-pilot"
             // mutation; GEN.10 subsequently widened Advanced too (3D/4D/5D/6D),
@@ -302,7 +307,10 @@ public sealed class Phase4F8_2LivePilotRoutingTests
             NewRoutingService(new FixedStatusLoader("PUBLISHED"), catalogLivePilotOptions: new CatalogLivePilotOptions { Enabled = true }),
             catalog);
         var request = PilotRequest(DateOnly.FromDateTime(DateTime.UtcNow), weeks: 12);
-        request.GoalDistance = GoalDistance.FiveK;
+        // PHASE FIVE-K.1 widened (FiveK, Intermediate, 4) to a real pilot identity (see the
+        // identical note on Phase4F8_2_NonPilotRequest_RoutesLegacyWithoutCatalog above) --
+        // Marathon remains genuinely unwidened and still exercises the Legacy-routing path.
+        request.GoalDistance = GoalDistance.Marathon;
 
         await Assert.ThrowsAsync<PlanTemplateNotAvailableException>(() =>
             service.GeneratePreviewAsync(Guid.NewGuid(), request));

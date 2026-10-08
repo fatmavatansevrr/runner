@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "documentType": "WORKOUT_DEFINITION",
+    "schemaVersion": 1,
+    "key": "GOAL_PACE_FIVE_K",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- FIVE-K.0B §16/§20/§35/§48-49's structural analog of GOAL_PACE_TEN_K (goal-pace-ten-k.v3.json), byte-identical shape (WARM_UP/MAIN_SET(GOAL_PACE)/COOL_DOWN), reused for both FIVE_K_RACE_SPECIFIC_REHEARSAL and (at reduced dose, via the Taper week's own lower planned volume -- never a different formula) FIVE_K_TAPER_ACTIVATION. The numeric goal pace itself is computed by CatalogSessionPrescriptionPlanner.PaceFor's GOAL_PACE_FIVE_K branch (TargetFinishTimeSeconds / GoalDistanceKm), mirroring GOAL_PACE_TEN_K's own mechanism exactly -- never a new pace-derivation formula.",
+  "family": "QUALITY",
+  "complexityTier": 2,
+  "eligiblePhases": ["RACE_SPECIFIC", "TAPER"],
+  "allowedPrescriptionModes": ["PACE_BASED"],
+  "allowedDistanceAccountingModes": ["ESTIMATED_SESSION_TOTAL"],
+  "eligibleForLegacyDefaultResolution": false,
+  "components": [
+    { "sequenceOrder": 1, "componentType": "WARM_UP", "intensityDescriptor": "EASY" },
+    { "sequenceOrder": 2, "componentType": "MAIN_SET", "intensityDescriptor": "GOAL_PACE" },
+    { "sequenceOrder": 3, "componentType": "COOL_DOWN", "intensityDescriptor": "EASY" }
+  ]
+}

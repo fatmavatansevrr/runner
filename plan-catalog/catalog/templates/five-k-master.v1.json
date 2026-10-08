@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "documentType": "PLAN_TEMPLATE",
+    "schemaVersion": 2,
+    "key": "FIVE_K_MASTER",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- implements the frozen FIVE-K.0B §12-15/§42 canonical FIVE_K master contract exactly as governed, for the restricted V1 matrix Intermediate x {4D,5D} only. coreCycle 8/10/13 (§12, EVIDENCE_INFORMED_PRODUCT_DEFAULT). Phase table (§13) read directly from FIVE-K.0B, not inferred: Foundation 1/2/5, Build 3/4/4, RaceSpecific 3/3/3, Taper 1/1/1. compressionPriority/extensionPriority ordering (Foundation=1,Build=2,RaceSpecific=3,Taper=4 for both) mechanically reproduces FIVE-K.0B §14-15's frozen compression order (Foundation-first down to floor, then Build, RaceSpecific floor never reached in-range, Taper never) and extension policy (Foundation absorbs 100% of weeks above Preferred) through this repository's existing, already-proven generic CatalogPhaseAllocationResolver mechanism (confirmed by direct read: phase allocation is driven entirely by catalog-declared minimumWeeks/preferredWeeks/maximumWeeks/compressionPriority/extensionPriority fields, no new C# logic required) -- never a new distance-specific allocation algorithm. Build/RaceSpecific/Taper each have maximumWeeks==preferredWeeks (no extension headroom), so 100% of extension above Preferred=10 is structurally forced onto Foundation alone, exactly as FIVE-K.0B §15 requires.",
+  "distanceFamily": "FIVE_K",
+  "coreCycle": {
+    "minimumWeeks": 8,
+    "defaultWeeks": 10,
+    "maximumWeeks": 13
+  },
+  "supportedRunsPerWeek": [4, 5],
+  "phases": [
+    {
+      "phaseKey": "FOUNDATION",
+      "minimumWeeks": 1,
+      "preferredWeeks": 2,
+      "maximumWeeks": 5,
+      "intents": ["AEROBIC_BASE"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN"],
+      "compressionPriority": 1,
+      "extensionPriority": 1,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "BUILD",
+      "minimumWeeks": 3,
+      "preferredWeeks": 4,
+      "maximumWeeks": 4,
+      "intents": ["VOLUME_BUILD", "INTENSITY_INTRODUCTION"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 2,
+      "extensionPriority": 2,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "RACE_SPECIFIC",
+      "minimumWeeks": 3,
+      "preferredWeeks": 3,
+      "maximumWeeks": 3,
+      "intents": ["RACE_SPECIFIC_SHARPENING"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY"],
+      "compressionPriority": 3,
+      "extensionPriority": 3,
+      "isCompressionProtected": false
+    },
+    {
+      "phaseKey": "TAPER",
+      "minimumWeeks": 1,
+      "preferredWeeks": 1,
+      "maximumWeeks": 1,
+      "intents": ["TAPER"],
+      "eligibleWorkoutFamilies": ["EASY", "LONG_RUN", "QUALITY", "RACE"],
+      "compressionPriority": 4,
+      "extensionPriority": 4,
+      "isCompressionProtected": true
+    }
+  ],
+  "workoutProgression": {
+    "documentType": "WORKOUT_PROGRESSION",
+    "key": "FIVE_K_WORKOUT_PROGRESSION_V1",
+    "version": 1
+  },
+  "requiredRuleKeys": ["APPSEL_RACE_PLAN_V1"]
+}

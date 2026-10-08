@@ -100,6 +100,24 @@ public static class RaceHorizonPolicy
     public const int HalfMarathonExactStandaloneCoreSupportedWeeks = 14;
 
     /// <summary>
+    /// FIVE-K.1 — FIVE_K's own real, frozen standalone core bounds, mirroring
+    /// FIVE_K_MASTER's coreCycle (minimumWeeks/defaultWeeks/maximumWeeks:
+    /// 8/10/13, FIVE-K.0B §12/§42). Additive only, same zero-delta pattern
+    /// HM.18 established for <see cref="HalfMarathonMinimumSupportedStandaloneWeeks"/>:
+    /// introducing these constants does not change
+    /// <see cref="MinimumSupportedStandaloneWeeks"/>/<see cref="ExactStandaloneCoreSupportedWeeks"/>/
+    /// <see cref="MaximumSupportedStandaloneWeeks"/> (TEN_K's own bounds) at
+    /// all, so every existing TEN_K/HALF_MARATHON caller remains byte-identical.
+    /// </summary>
+    public const int FiveKMinimumSupportedStandaloneWeeks = 8;
+
+    /// <summary>See <see cref="FiveKMinimumSupportedStandaloneWeeks"/>.</summary>
+    public const int FiveKMaximumSupportedStandaloneWeeks = 13;
+
+    /// <summary>See <see cref="FiveKMinimumSupportedStandaloneWeeks"/>.</summary>
+    public const int FiveKExactStandaloneCoreSupportedWeeks = 10;
+
+    /// <summary>
     /// Complete weeks available between <paramref name="startDate"/> and
     /// <paramref name="raceDate"/>. The canonical decision retains any
     /// partial days separately and never rounds this value upward.
@@ -131,6 +149,13 @@ public static class RaceHorizonPolicy
                 HalfMarathonMinimumSupportedStandaloneWeeks,
                 HalfMarathonExactStandaloneCoreSupportedWeeks,
                 HalfMarathonMaximumSupportedStandaloneWeeks),
+            // FIVE-K.1 -- FIVE_K's own real 8/10/13 bounds (FIVE-K.0B §12),
+            // mirroring HALF_MARATHON's own distance-aware arm above exactly.
+            GoalDistance.FiveK => Decide(
+                startDate, raceDate,
+                FiveKMinimumSupportedStandaloneWeeks,
+                FiveKExactStandaloneCoreSupportedWeeks,
+                FiveKMaximumSupportedStandaloneWeeks),
             _ => Decide(startDate, raceDate),
         };
 

@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "documentType": "TEMPLATE_COMBINATION",
+    "schemaVersion": 1,
+    "key": "FIVE_K__5D__INTERMEDIATE",
+    "version": 1,
+    "status": "VALIDATED"
+  },
+  "_comment": "PHASE FIVE-K.1 -- deliberately references RUN_LAYOUT_5D_SINGLE_KEY, NOT the existing dual-KEY RUN_LAYOUT_5D every HALF_MARATHON/TEN_K Intermediate x5D candidate uses. This is the structural encoding of FIVE-K.0B §19's frozen no-KEY2 decision: the 5th weekly session is EASY_SUPPORT, never a second quality slot.",
+  "masterTemplate": {
+    "documentType": "PLAN_TEMPLATE",
+    "key": "FIVE_K_MASTER",
+    "version": 1
+  },
+  "layout": {
+    "documentType": "RUN_LAYOUT",
+    "key": "RUN_LAYOUT_5D_SINGLE_KEY",
+    "version": 1
+  },
+  "levelModifier": {
+    "documentType": "LEVEL_MODIFIER",
+    "key": "INTERMEDIATE_MODIFIER",
+    "version": 10
+  },
+  "rulePack": {
+    "documentType": "RULE_PACK",
+    "key": "APPSEL_RACE_PLAN_V1",
+    "version": 12
+  }
+}
