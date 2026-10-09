@@ -104,6 +104,36 @@ public sealed class CoreEntryReadinessResolverTests
         Assert.Equal("1", result.Metadata["recentRunsPerWeek"]);
     }
 
+    // ─── PHASE V1-HARDEN.2 (V1HARDEN0-005) ────────────────────────────────
+    // RecentLongestRunKm exceeding RecentWeeklyVolumeKm (an internally
+    // inconsistent-looking combination) is not a crash and not rejected --
+    // it classifies deterministically via the same independent per-field
+    // thresholds as every other combination, exactly per this resolver's
+    // own doc comment worked example (weekly=20/longest=3 -> NOT_READY).
+    [Fact]
+    public void Resolve_LongestExceedsWeekly_ClassifiesDeterministically_NotRejected()
+    {
+        var resolver = new CoreEntryReadinessResolver();
+        var input = new ResolverInputSnapshot { RecentWeeklyVolumeKm = 0, RecentLongestRunKm = 30 };
+
+        var result = resolver.Resolve(Context(input));
+
+        Assert.Equal(RuntimeConditionResolutionStatus.Evaluated, result.Status);
+        Assert.Equal("NOT_READY", result.OutputValue);
+        Assert.Equal("CORE_ENTRY_NOT_READY", result.ReasonCode);
+    }
+
+    [Fact]
+    public void Resolve_DocCommentWorkedExample_Weekly20Longest3_ReturnsNotReady()
+    {
+        var resolver = new CoreEntryReadinessResolver();
+        var input = new ResolverInputSnapshot { RecentWeeklyVolumeKm = 20, RecentLongestRunKm = 3 };
+
+        var result = resolver.Resolve(Context(input));
+
+        Assert.Equal("NOT_READY", result.OutputValue);
+    }
+
     // ─── B. CAUTION ──────────────────────────────────────────────────────────
 
     [Fact]

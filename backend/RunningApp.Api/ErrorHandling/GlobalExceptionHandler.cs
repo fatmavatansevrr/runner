@@ -27,6 +27,37 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
 
     private readonly ILogger<GlobalExceptionHandler> _logger;
 
+    // PHASE V1-HARDEN.2 (V1HARDEN0-006): a handful of non-500 typed
+    // exceptions carry internal catalog/engineering vocabulary in
+    // exception.Message (candidate keys/versions, schema versions, internal
+    // policy names) that would otherwise be sent to the client verbatim --
+    // see GlobalExceptionHandler.cs's existing precedent for
+    // ROLLBACK_COMPATIBILITY_MUTATION_BLOCKED below. These are all
+    // operational/catalog-lifecycle failures, not ordinary user-input
+    // mistakes (confirmed by the exact exception types named in the
+    // V1-HARDEN.0 audit, §38-40), so a safe, generic, product-appropriate
+    // message is substituted here. The HTTP status code and ErrorCode are
+    // unchanged -- only the human-readable Message text changes -- so this
+    // is purely additive and does not alter the machine-readable contract.
+    private static readonly IReadOnlyDictionary<string, string> SafeOperationalMessagesByErrorCode =
+        new Dictionary<string, string>
+        {
+            ["CATALOG_CANDIDATE_NOT_PUBLISHED"] =
+                "This plan isn't available yet. Please try again later or choose a different option.",
+            ["CATALOG_DEPENDENCY_NOT_RUNTIME_ELIGIBLE"] =
+                "This plan isn't available yet. Please try again later or choose a different option.",
+            ["CATALOG_PREVIEW_PERSISTENCE_CONTRACT"] =
+                "This plan preview can't be confirmed right now. Please generate a new preview and try again.",
+            ["CATALOG_RACE_DATE_ALIGNMENT_INVALID"] =
+                "This plan couldn't be generated for the selected race date. Please try a different race date.",
+            ["CATALOG_PREVIEW_SCHEDULE_SCHEMA_UNSUPPORTED"] =
+                "This plan preview is no longer valid. Please generate a new preview and try again.",
+            ["CATALOG_PREVIEW_SCHEDULE_INVALID"] =
+                "This plan preview is no longer valid. Please generate a new preview and try again.",
+            ["PLAN_PREVIEW_SNAPSHOT_MALFORMED"] =
+                "This plan preview is no longer valid. Please generate a new preview and try again.",
+        };
+
     public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
     {
         _logger = logger;
@@ -201,6 +232,18 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 "[{CorrelationId}] Rollback compatibility mutation blocked. Path={Path}",
                 correlationId, httpContext.Request.Path);
         }
+        else if (SafeOperationalMessagesByErrorCode.ContainsKey(errorCode))
+        {
+            // PHASE V1-HARDEN.2 (V1HARDEN0-006): the client now receives a
+            // safe generic message instead of exception.Message for these
+            // operational/catalog-lifecycle codes, so the original internal
+            // detail is preserved here, server-side only, via the existing
+            // ILogger -- no new logging infrastructure, no request body.
+            _logger.LogWarning(
+                exception,
+                "[{CorrelationId}] Operational catalog error ({ErrorCode}) on {Path}",
+                correlationId, errorCode, httpContext.Request.Path);
+        }
 
         var response = new ApiErrorResponse
         {
@@ -210,6 +253,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 "ROLLBACK_COMPATIBILITY_MUTATION_BLOCKED" =>
                     "This plan can't be changed while the service is temporarily running in compatibility mode. Your plan data is unchanged.",
                 _ when statusCode == StatusCodes.Status500InternalServerError => "An unexpected error occurred.",
+                _ when SafeOperationalMessagesByErrorCode.TryGetValue(errorCode, out var safeMessage) => safeMessage,
                 _ => exception.Message,
             },
             CorrelationId = correlationId,

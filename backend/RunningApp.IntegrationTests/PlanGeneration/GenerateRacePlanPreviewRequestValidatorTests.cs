@@ -217,6 +217,30 @@ public sealed class GenerateRacePlanPreviewRequestValidatorTests
         Assert.Contains("RecentRunsPerWeek", ex.Message);
     }
 
+    // ── PHASE V1-HARDEN.2 (V1HARDEN0-005) ────────────────────────────────
+    // RecentLongestRunKm > RecentWeeklyVolumeKm is NOT rejected here.
+    // CoreEntryReadinessResolver's own owner-approved V1 thresholds
+    // (Phase 4D.3.1, CoreEntryReadinessResolver.cs's doc comment) already
+    // document and deterministically classify exactly this inconsistent
+    // combination (its own worked example: weekly=20/longest=3 is
+    // NOT_READY, not a crash) -- no product-decision source anywhere in
+    // this repo asserts RecentLongestRunKm <= RecentWeeklyVolumeKm as a
+    // required invariant, so inventing a rejection here would both lack
+    // authority and contradict the resolver's own documented, tested
+    // tolerance for this exact shape. See
+    // CoreEntryReadinessResolverTests.Resolve_LongestExceedsWeekly_ClassifiesDeterministically_NotRejected
+    // for the resolver-level proof.
+    [Fact]
+    public void RecentLongestRunKm_ExceedsRecentWeeklyVolumeKm_IsNotRejectedByInputValidation()
+    {
+        var request = ValidRequest();
+        request.RecentWeeklyVolumeKm = 0;
+        request.RecentLongestRunKm = 30;
+        GenerateRacePlanPreviewRequestValidator.Validate(request);
+        Assert.Equal(0, request.RecentWeeklyVolumeKm);
+        Assert.Equal(30, request.RecentLongestRunKm);
+    }
+
     [Fact]
     public void NullReadinessFields_LeftNull_Passes()
     {
