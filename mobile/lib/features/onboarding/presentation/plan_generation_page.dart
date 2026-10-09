@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/widgets/app_button.dart';
-import '../../home/data/home_provider.dart';
+import '../data/onboarding_provider.dart';
+import '../data/plan_generation_error_mapper.dart';
 
 class PlanGenerationPage extends ConsumerStatefulWidget {
   const PlanGenerationPage({super.key});
@@ -77,43 +78,36 @@ class _PlanGenerationPageState extends ConsumerState<PlanGenerationPage>
     _tickStep(2, 900);
     _tickStep(3, 1400);
 
-    // TEST SHORTCUT: skip the real generate-preview/confirm/backend round
-    // trip entirely and jump straight to Home with mock data for the
-    // current week (see useMockHomeDataProvider / buildMockHomeResponse in
-    // features/home/data/home_provider.dart and mock_home_data.dart).
-    //
-    // To restore the real flow, replace this block with:
-    //   try {
-    //     await ref.read(onboardingProvider.notifier).generatePreview();
-    //     if (mounted) {
-    //       setState(() => _completedSteps = 4);
-    //       await Future.delayed(const Duration(milliseconds: 300));
-    //       if (mounted) {
-    //         // Backend-decided routing: generatePreview() populates exactly
-    //         // one of previewResponse / longHorizonPreviewResponse — the
-    //         // client only reads which one to decide which preview screen
-    //         // to show, it never decides the schedule itself.
-    //         final isLongHorizon =
-    //             ref.read(onboardingProvider).isLongHorizonPreview;
-    //         context.pushReplacement(
-    //             isLongHorizon ? AppRoutes.longHorizonPlanPreview : AppRoutes.planPreview);
-    //       }
-    //     }
-    //   } catch (e) {
-    //     // planGenerationUserSafeMessage never retries, never mutates
-    //     // onboarding state, and never resubmits with a shortened
-    //     // horizon — it only picks the display copy. Onboarding state
-    //     // (including startDate/raceDate) stays exactly as the user left
-    //     // it, so they can go back and change either.
-    //     if (mounted) setState(() => _error = planGenerationUserSafeMessage(e));
-    //   }
-    if (mounted) {
-      setState(() => _completedSteps = 4);
-      await Future.delayed(const Duration(milliseconds: 300));
+    // Real generate-preview round trip. generatePreview() calls the
+    // authoritative backend endpoint (race or habit, canonical or
+    // long-horizon as the backend itself decides) and populates exactly one
+    // of previewResponse / longHorizonPreviewResponse in onboardingProvider.
+    // Navigation to Home never happens from here — only Preview/Confirm can
+    // reach Home, and only after a real successful confirm (see
+    // plan_preview_page.dart / long_horizon_plan_preview_page.dart).
+    try {
+      await ref.read(onboardingProvider.notifier).generatePreview();
       if (mounted) {
-        ref.read(useMockHomeDataProvider.notifier).state = true;
-        context.go(AppRoutes.home);
+        setState(() => _completedSteps = 4);
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (mounted) {
+          // Backend-decided routing: generatePreview() populates exactly
+          // one of previewResponse / longHorizonPreviewResponse — the
+          // client only reads which one to decide which preview screen
+          // to show, it never decides the schedule itself.
+          final isLongHorizon =
+              ref.read(onboardingProvider).isLongHorizonPreview;
+          context.pushReplacement(
+              isLongHorizon ? AppRoutes.longHorizonPlanPreview : AppRoutes.planPreview);
+        }
       }
+    } catch (e) {
+      // planGenerationUserSafeMessage never retries, never mutates
+      // onboarding state, and never resubmits with a shortened
+      // horizon — it only picks the display copy. Onboarding state
+      // (including startDate/raceDate) stays exactly as the user left
+      // it, so they can go back and change either.
+      if (mounted) setState(() => _error = planGenerationUserSafeMessage(e));
     }
   }
 
