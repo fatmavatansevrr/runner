@@ -54,7 +54,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsql => npgsql.MigrationsAssembly("RunningApp.Persistence")
-    ));
+    )
+    // PHASE V1-HARDEN.1: TrainingDay now maps the Postgres-native "xmin"
+    // system column as an EF concurrency token (AppDbContext.cs), the same
+    // pattern already used for LongHorizonRollingPlanState. That column
+    // already exists on every table with zero schema change required, but
+    // EF Core 9's own migration-safety check (PendingModelChangesWarning)
+    // throws by default on Database.MigrateAsync() whenever the live model
+    // differs from the last migration's snapshot -- even when, as here, the
+    // only difference is a shadow-property read of a column that already
+    // exists and needs no DDL. Downgrading this specific warning (the exact
+    // escape hatch EF's own exception message names) avoids adding a
+    // migration whose Up/Down would contain no real schema change, per the
+    // "no unnecessary DB migration" discipline -- this is a diagnostic
+    // configuration change, not a database/schema change.
+    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // ─── Error handling ─────────────────────────────────────────────────────────
 // AddProblemDetails() is required by UseExceptionHandler() as a startup

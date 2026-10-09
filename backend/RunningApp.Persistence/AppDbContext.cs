@@ -284,6 +284,20 @@ public class AppDbContext : DbContext
             .Property(d => d.CatalogPrescriptionJson)
             .HasColumnType("jsonb");
 
+        // PHASE V1-HARDEN.1: optimistic-concurrency protection for TrainingDay
+        // Complete/Not-Today mutations (closes V1HARDEN0-002/003/004's
+        // concurrency gap). Reuses Postgres's own built-in "xmin" system
+        // column exactly like LongHorizonRollingPlanState already does below
+        // — no migration is needed, since xmin already exists on every
+        // table; this is purely an EF model-configuration change telling EF
+        // to read/compare it.
+        modelBuilder.Entity<TrainingDay>()
+            .Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         // ── Indexes ───────────────────────────────────────────────────────────
         modelBuilder.Entity<PlanTemplate>()
             .HasIndex(t => t.TemplateId)

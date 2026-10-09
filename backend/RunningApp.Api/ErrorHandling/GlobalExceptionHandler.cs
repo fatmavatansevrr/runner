@@ -176,6 +176,12 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             LongHorizonAdaptationConcurrencyConflictException  => (StatusCodes.Status409Conflict, "LONG_HORIZON_ADAPTATION_CONCURRENCY_CONFLICT"),
             LongHorizonAdaptationIntegrityViolationException   => (StatusCodes.Status500InternalServerError, "LONG_HORIZON_ADAPTATION_INTEGRITY_VIOLATION"),
             LongHorizonRollingSessionSupersededException       => (StatusCodes.Status409Conflict, "LONG_HORIZON_ROLLING_SESSION_SUPERSEDED"),
+            // PHASE V1-HARDEN.1: Core TrainingDay mutation status/transition
+            // guards (Complete / Not-Today). See AppExceptions.cs for the
+            // exact invariant each one protects.
+            TrainingDayCompletionConflictException        => (StatusCodes.Status409Conflict, "TRAINING_DAY_COMPLETION_CONFLICT"),
+            TrainingDayTransitionConflictException        => (StatusCodes.Status409Conflict, "TRAINING_DAY_TRANSITION_CONFLICT"),
+            TrainingDayMutationConcurrencyConflictException => (StatusCodes.Status409Conflict, "TRAINING_DAY_MUTATION_CONCURRENCY_CONFLICT"),
             ArgumentException                 => (StatusCodes.Status400BadRequest,    "VALIDATION_ERROR"),
             _                                 => (StatusCodes.Status500InternalServerError, "INTERNAL_ERROR"),
         };

@@ -385,17 +385,81 @@ public class QueryAndMutationServices :
     }
 
     // ─── WORKOUT COMPLETION SERVICE ──────────────────────────────────────────
+    // PHASE V1-HARDEN.1: closes V1HARDEN0-002 (Complete had no status guard —
+    // a repeated/retried call silently overwrote actuals and appended an
+    // unbounded number of duplicate WorkoutLog/PlanEvent rows) and the
+    // adjacent concurrency gap identified alongside it. See
+    // PHASE_V1_HARDEN_1_...md §9/§19-21 for the full design rationale.
     public async Task<CompleteWorkoutResponse> CompleteWorkoutAsync(Guid internalUserId, Guid trainingDayId, CompleteWorkoutRequest request, CancellationToken ct = default)
     {
-        var day = await _context.TrainingDays
-            .Include(d => d.Week)
-            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
-
-        if (day == null)
+        await using var tx = await _context.Database.BeginTransactionAsync(ct);
+        try
         {
-            throw new NotFoundAppException("Training day not found.");
-        }
+            var day = await LoadOwnedActiveDayForMutationAsync(internalUserId, trainingDayId, ct);
 
+            if (day.Status == TrainingDayStatus.Completed)
+            {
+                // Same-mutation retry: exact replay is an idempotent success,
+                // not a second logical completion. No new WorkoutLog/PlanEvent
+                // row, no re-mutated actuals/timestamp.
+                if (IsSameCompletion(day, request))
+                {
+                    return new CompleteWorkoutResponse { DayId = day.Id, Status = "completed" };
+                }
+
+                throw new TrainingDayCompletionConflictException(
+                    "This training day is already completed with different actual values. Reload the current result before retrying.");
+            }
+
+            if (day.Status == TrainingDayStatus.Missed)
+            {
+                // NotToday→Complete: rejected by the existing product-state
+                // guard (CanMarkComplete/CanMarkNotToday are both already set
+                // false the moment a day becomes Missed via a confirmed
+                // Not-Today decision — see ConfirmNotTodayDecisionAsync and
+                // ResolvePendingConfirmationAsync, both of which already flip
+                // the same two flags for the same reason). This is resolved
+                // from that existing, pre-established source convention, not
+                // invented here.
+                throw new TrainingDayTransitionConflictException(
+                    "This training day was already recorded as not today and cannot be completed.");
+            }
+
+            await ApplyCompletionAsync(day, internalUserId, request, ct);
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+
+            return new CompleteWorkoutResponse { DayId = day.Id, Status = "completed" };
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // A concurrent writer committed first. Reload fresh and recover
+            // idempotently if the committed outcome is an exact replay of
+            // this request; otherwise surface a deterministic 409 — never an
+            // uncontrolled 500 and never a silent last-write-wins overwrite.
+            await tx.RollbackAsync(ct);
+            _context.ChangeTracker.Clear();
+            var current = await _context.TrainingDays.AsNoTracking().FirstOrDefaultAsync(d => d.Id == trainingDayId, ct);
+            if (current != null && current.Status == TrainingDayStatus.Completed && IsSameCompletion(current, request))
+            {
+                return new CompleteWorkoutResponse { DayId = current.Id, Status = "completed" };
+            }
+
+            throw new TrainingDayMutationConcurrencyConflictException(
+                "A concurrent update changed this training day. Reload the current result before retrying.");
+        }
+    }
+
+    /// <summary>
+    /// Applies the Completed mutation plus its two side effects (WorkoutLog
+    /// append + week.ActualVolumeKm recompute + PlanEvent append) — unchanged
+    /// business logic from the pre-V1-HARDEN.1 implementation, now only ever
+    /// reached once per logical completion (the caller's status guard above
+    /// ensures this never runs a second time for the same day).
+    /// </summary>
+    private async Task ApplyCompletionAsync(TrainingDay day, Guid internalUserId, CompleteWorkoutRequest request, CancellationToken ct)
+    {
         day.Status = TrainingDayStatus.Completed;
         day.ActualDistanceKm = request.ActualDistanceKm;
         day.ActualDurationMin = request.ActualDurationMin;
@@ -440,26 +504,120 @@ public class QueryAndMutationServices :
             CreatedAt = DateTime.UtcNow
         };
         _context.PlanEvents.Add(planEvent);
-
-        await _context.SaveChangesAsync(ct);
-
-        return new CompleteWorkoutResponse
-        {
-            DayId = day.Id,
-            Status = "completed"
-        };
     }
 
-    // ─── NOT TODAY SERVICE ───────────────────────────────────────────────────
-    public async Task<CreateNotTodayDecisionResponse> CreateNotTodayDecisionAsync(Guid internalUserId, Guid trainingDayId, CreateNotTodayDecisionRequest request, CancellationToken ct = default)
+    private static bool IsSameCompletion(TrainingDay day, CompleteWorkoutRequest request) =>
+        day.Status == TrainingDayStatus.Completed
+        && Math.Abs((day.ActualDistanceKm ?? double.MinValue) - request.ActualDistanceKm) < 0.0001
+        && day.ActualDurationMin == request.ActualDurationMin;
+
+    /// <summary>
+    /// Single authoritative load used by every Core TrainingDay mutation
+    /// (Complete, CreateNotTodayDecision, ConfirmNotTodayDecision) —
+    /// PHASE V1-HARDEN.1 §9/§18-21/§73. Enforces cross-user ownership (zero
+    /// delta from the existing <c>InternalUserId</c> predicate convention),
+    /// the plan-state guard (a cancelled/inactive plan's TrainingDay is
+    /// never mutable — reported as 404, mirroring
+    /// <c>LongHorizonRollingSessionMutationService.LoadOwnedAsync</c>'s own
+    /// "not found" treatment of a non-Active owning plan), and serializes
+    /// concurrent mutations against the same plan with a Postgres row lock
+    /// on the owning TrainingPlan row — the exact same
+    /// <c>SELECT ... FOR UPDATE</c> pattern already used for the Long-Horizon
+    /// rolling-session mutation service, reused here rather than inventing a
+    /// second concurrency mechanism. Must be called inside an open
+    /// transaction (the lock is held until that transaction commits/rolls
+    /// back).
+    /// </summary>
+    private async Task<TrainingDay> LoadOwnedActiveDayForMutationAsync(Guid internalUserId, Guid trainingDayId, CancellationToken ct)
     {
-        var day = await _context.TrainingDays
+        var planId = await _context.TrainingDays
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId, ct);
+            .Where(d => d.Id == trainingDayId && d.Plan.InternalUserId == internalUserId)
+            .Select(d => d.PlanId)
+            .FirstOrDefaultAsync(ct);
+
+        if (planId == Guid.Empty)
+        {
+            throw new NotFoundAppException("Training day not found.");
+        }
+
+        var lockedPlan = await _context.TrainingPlans
+            .FromSqlInterpolated($"SELECT * FROM \"TrainingPlans\" WHERE \"Id\" = {planId} FOR UPDATE")
+            .AsNoTracking()
+            .SingleAsync(ct);
+
+        if (lockedPlan.Status != TrainingPlanStatus.Active)
+        {
+            // A cancelled/non-active plan's TrainingDay rows remain readable
+            // historical artifacts (zero delta from V1-HARDEN.0 §17's own
+            // finding) but are never mutable through this surface.
+            throw new NotFoundAppException("Training day not found.");
+        }
+
+        var day = await _context.TrainingDays
+            .Include(d => d.Week)
+            .FirstOrDefaultAsync(d => d.Id == trainingDayId, ct);
 
         if (day == null)
         {
             throw new NotFoundAppException("Training day not found.");
+        }
+
+        return day;
+    }
+
+    // ─── NOT TODAY SERVICE ───────────────────────────────────────────────────
+    // PHASE V1-HARDEN.1: closes V1HARDEN0-004 (a Completed day could still
+    // receive a Not-Today decision, which once confirmed silently reverted
+    // it to Missed) and V1HARDEN0-003 (unbounded duplicate Pending decisions
+    // for one real tap). The authoritative status guard against reverting a
+    // Completed day lives in ConfirmNotTodayDecisionAsync below (the method
+    // that actually performs the Completed→Missed mutation and is therefore
+    // the one true race-safe guard point — see its own doc comment); this
+    // method additionally rejects the common, non-racing case early.
+    public async Task<CreateNotTodayDecisionResponse> CreateNotTodayDecisionAsync(Guid internalUserId, Guid trainingDayId, CreateNotTodayDecisionRequest request, CancellationToken ct = default)
+    {
+        await using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+        var day = await LoadOwnedActiveDayForMutationAsync(internalUserId, trainingDayId, ct);
+
+        if (day.Status == TrainingDayStatus.Completed)
+        {
+            throw new TrainingDayTransitionConflictException(
+                "This training day is already completed and cannot be marked not today.");
+        }
+
+        if (day.Status == TrainingDayStatus.Missed)
+        {
+            // NotToday→NotToday retry, reached after the day's prior Not-Today
+            // decision was already confirmed: return that resolved decision
+            // instead of creating a redundant new Pending row.
+            var existingResolved = await _context.NotTodayDecisions
+                .AsNoTracking()
+                .Where(d => d.TrainingDayId == trainingDayId && d.Status == NotTodayDecisionStatus.Confirmed)
+                .OrderByDescending(d => d.ConfirmedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (existingResolved != null)
+            {
+                return new CreateNotTodayDecisionResponse { DecisionId = existingResolved.Id, Status = "confirmed" };
+            }
+
+            throw new TrainingDayTransitionConflictException(
+                "This training day has already been resolved and cannot be marked not today again.");
+        }
+
+        // V1HARDEN0-003: dedupe a retried/duplicated request against the same
+        // still-Pending decision rather than creating a second one.
+        var existingPending = await _context.NotTodayDecisions
+            .Where(d => d.TrainingDayId == trainingDayId && d.Status == NotTodayDecisionStatus.Pending)
+            .OrderByDescending(d => d.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (existingPending != null)
+        {
+            await tx.CommitAsync(ct);
+            return new CreateNotTodayDecisionResponse { DecisionId = existingPending.Id, Status = "pending" };
         }
 
         var decision = new NotTodayDecision
@@ -478,6 +636,7 @@ public class QueryAndMutationServices :
 
         _context.NotTodayDecisions.Add(decision);
         await _context.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
 
         return new CreateNotTodayDecisionResponse
         {
@@ -486,57 +645,126 @@ public class QueryAndMutationServices :
         };
     }
 
+    // PHASE V1-HARDEN.1: this is the one true authoritative guard point for
+    // V1HARDEN0-004 — regardless of the TrainingDay's status when the
+    // decision was CREATED, this is the method that actually performs the
+    // Missed mutation, so it must re-check the day's current status itself
+    // (a concurrent Complete may have committed in between). Locks the
+    // owning plan FOR UPDATE (via LoadOwnedActiveDayForMutationAsync) before
+    // re-reading the decision fresh, so two concurrent confirms of the SAME
+    // decision — or a concurrent Complete racing this confirm — serialize
+    // through the same single lock Complete/CreateNotTodayDecision already use.
     public async Task<ConfirmNotTodayDecisionResponse> ConfirmNotTodayDecisionAsync(Guid internalUserId, Guid decisionId, ConfirmNotTodayDecisionRequest request, CancellationToken ct = default)
     {
-        var decision = await _context.NotTodayDecisions
+        var decisionLookup = await _context.NotTodayDecisions
+            .AsNoTracking()
             .FirstOrDefaultAsync(d => d.Id == decisionId && d.InternalUserId == internalUserId, ct);
 
-        if (decision == null)
+        if (decisionLookup == null)
         {
             throw new NotFoundAppException("Decision not found.");
         }
 
-        // Ask the adaptation engine what to do. Phase 1: always NoChange —
-        // this never reschedules or mutates future training days.
-        var adaptation = await _adaptationEngine.EvaluateNotTodayAsync(
-            decision.PlanId, decision.TrainingDayId, decision.TriggerSource, decision.Reason, ct);
-
-        decision.Status = NotTodayDecisionStatus.Confirmed;
-        decision.ConfirmedAt = DateTime.UtcNow;
-        decision.Action = adaptation.Action;
-
-        // Apply missed status to the training day (today only — no future days touched)
-        var day = await _context.TrainingDays.FirstOrDefaultAsync(d => d.Id == decision.TrainingDayId, ct);
-        if (day != null)
+        await using var tx = await _context.Database.BeginTransactionAsync(ct);
+        try
         {
+            // Lock the owning plan first so this confirm serializes against
+            // any concurrent Complete/CreateNotTodayDecision/Confirm for the
+            // same plan (see LoadOwnedActiveDayForMutationAsync's doc comment).
+            var day = await LoadOwnedActiveDayForMutationAsync(internalUserId, decisionLookup.TrainingDayId, ct);
+
+            // Re-read the decision fresh now that the lock is held, so a
+            // concurrent confirm of this exact decision cannot also pass the
+            // Pending check before this transaction commits.
+            var decision = await _context.NotTodayDecisions
+                .FirstOrDefaultAsync(d => d.Id == decisionId && d.InternalUserId == internalUserId, ct);
+
+            if (decision == null)
+            {
+                throw new NotFoundAppException("Decision not found.");
+            }
+
+            if (decision.Status == NotTodayDecisionStatus.Confirmed)
+            {
+                // Same-mutation retry: idempotent success, no re-run
+                // adaptation, no duplicate WorkoutMissed PlanEvent, no
+                // ConfirmedAt timestamp change.
+                return new ConfirmNotTodayDecisionResponse
+                {
+                    DecisionId = decision.Id,
+                    Status = "confirmed",
+                    Action = EnumSnakeCase.ToSnakeCase(decision.Action),
+                    PlanAdapted = false
+                };
+            }
+
+            if (decision.Status != NotTodayDecisionStatus.Pending)
+            {
+                throw new TrainingDayTransitionConflictException(
+                    "This not-today decision is no longer pending and cannot be confirmed.");
+            }
+
+            if (day.Status == TrainingDayStatus.Completed)
+            {
+                // V1HARDEN0-004's exact scenario: the day was completed after
+                // this decision was created (e.g. a race) but before it was
+                // confirmed. Never silently revert a genuinely completed day
+                // to Missed — cancel the stale decision instead and reject.
+                decision.Status = NotTodayDecisionStatus.Cancelled;
+                decision.ConfirmedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+
+                throw new TrainingDayTransitionConflictException(
+                    "This training day was completed before the not-today decision could be confirmed; the completed result is preserved.");
+            }
+
+            // Ask the adaptation engine what to do. Phase 1: always NoChange —
+            // this never reschedules or mutates future training days.
+            var adaptation = await _adaptationEngine.EvaluateNotTodayAsync(
+                decision.PlanId, decision.TrainingDayId, decision.TriggerSource, decision.Reason, ct);
+
+            decision.Status = NotTodayDecisionStatus.Confirmed;
+            decision.ConfirmedAt = DateTime.UtcNow;
+            decision.Action = adaptation.Action;
+
+            // Apply missed status to the training day (today only — no future days touched)
             day.Status = TrainingDayStatus.Missed;
             day.CanMarkComplete = false;
             day.CanMarkNotToday = false;
             day.UpdatedAt = DateTime.UtcNow;
+
+            // Log Missed event
+            var planEvent = new PlanEvent
+            {
+                Id = Guid.NewGuid(),
+                InternalUserId = internalUserId,
+                PlanId = decision.PlanId,
+                TrainingDayId = decision.TrainingDayId,
+                EventType = "WorkoutMissed",
+                PayloadJson = System.Text.Json.JsonSerializer.Serialize(new { reason = decision.Reason }),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.PlanEvents.Add(planEvent);
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+
+            return new ConfirmNotTodayDecisionResponse
+            {
+                DecisionId = decision.Id,
+                Status = "confirmed",
+                Action = EnumSnakeCase.ToSnakeCase(adaptation.Action),
+                PlanAdapted = adaptation.PlanAdapted
+            };
         }
-
-        // Log Missed event
-        var planEvent = new PlanEvent
+        catch (DbUpdateConcurrencyException)
         {
-            Id = Guid.NewGuid(),
-            InternalUserId = internalUserId,
-            PlanId = decision.PlanId,
-            TrainingDayId = decision.TrainingDayId,
-            EventType = "WorkoutMissed",
-            PayloadJson = System.Text.Json.JsonSerializer.Serialize(new { reason = decision.Reason }),
-            CreatedAt = DateTime.UtcNow
-        };
-        _context.PlanEvents.Add(planEvent);
-
-        await _context.SaveChangesAsync(ct);
-
-        return new ConfirmNotTodayDecisionResponse
-        {
-            DecisionId = decision.Id,
-            Status = "confirmed",
-            Action = EnumSnakeCase.ToSnakeCase(adaptation.Action),
-            PlanAdapted = adaptation.PlanAdapted
-        };
+            await tx.RollbackAsync(ct);
+            _context.ChangeTracker.Clear();
+            throw new TrainingDayMutationConcurrencyConflictException(
+                "A concurrent update changed this training day. Reload the current result before retrying.");
+        }
     }
 
     // ─── PENDING CONFIRMATIONS ──────────────────────────────────────────────

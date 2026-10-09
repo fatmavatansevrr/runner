@@ -497,6 +497,48 @@ public sealed class CatalogPrescriptionPersistenceUnsupportedException : Excepti
     public CatalogPrescriptionPersistenceUnsupportedException(string message) : base(message) { }
 }
 
+// ── PHASE V1-HARDEN.1: Core TrainingDay mutation status/transition guards ───
+// Closes V1HARDEN0-002 (Complete idempotency), V1HARDEN0-003 (duplicate
+// pending Not-Today decisions), V1HARDEN0-004 (Completed day silently
+// reverted to Missed by a later-confirmed Not-Today decision). All three are
+// mapped to HTTP 409 — these represent a genuine, expected state conflict on
+// a resource whose identity is not in question, never an unhandled 500.
+
+/// <summary>
+/// Thrown when Complete is retried for a TrainingDay that is already
+/// Completed with DIFFERENT actual values than the current request. An
+/// exact replay (same values) is handled as an idempotent success instead —
+/// this exception is reserved for a genuine conflicting retry.
+/// </summary>
+public sealed class TrainingDayCompletionConflictException : Exception
+{
+    public TrainingDayCompletionConflictException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Thrown when a TrainingDay/Not-Today-decision mutation is rejected because
+/// the day (or decision) has already reached a different, protected terminal
+/// state — e.g. Complete on an already-Missed day, a Not-Today decision
+/// against an already-Completed day, or confirming a decision that is no
+/// longer Pending. Never silently reverts a protected status.
+/// </summary>
+public sealed class TrainingDayTransitionConflictException : Exception
+{
+    public TrainingDayTransitionConflictException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Thrown when a concurrent writer won the race for the same TrainingDay
+/// (detected via the Postgres <c>xmin</c> optimistic-concurrency token) and
+/// the loser's request cannot be resolved as an idempotent replay of the
+/// winner's exact outcome. The client should reload the current state and
+/// retry rather than assume its own write applied.
+/// </summary>
+public sealed class TrainingDayMutationConcurrencyConflictException : Exception
+{
+    public TrainingDayMutationConcurrencyConflictException(string message) : base(message) { }
+}
+
 // ── Long-horizon race fail-closed safety constraint ──────────────────────────
 // Temporary: long-horizon preparation + race-core composition is not yet
 // implemented. See RunningApp.Application.Common.RaceHorizonPolicy and
